@@ -28,9 +28,11 @@ own doc for the detail that belongs to it:
   and style conventions (each repo keeps its own copy — see below).
 - [testing.md](testing.md) — testing and verification strategy for the
   whole stack.
-- [future-work/](future-work/) — deferred capabilities with no design yet:
-  the `surge-net` networking layer, schema evolution/versioning, and a
-  headless CI runner.
+- [future-work/](future-work/) — deferred capabilities with no design yet
+  (the `surge-net` networking layer, schema evolution/versioning, and a
+  headless CI runner), plus the findings of the September 2026 adversarial
+  review: confirmed correctness bugs, determinism gaps, and test, benchmark,
+  documentation, and CI coverage gaps, one document per unit of work.
 
 ## Repository layout
 
