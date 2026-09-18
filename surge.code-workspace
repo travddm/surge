@@ -1,7 +1,7 @@
 {
 	"folders": [
 		{ "name": "surge (@rbxts/surge)", "path": "." },
-		{ "name": "rbxts-transformer-surge", "path": "../rbxts-transformer-surge" }
+		{ "name": "rbxts-transformer-surge", "path": "../rbxts-transformer-surge" },
 	],
 	// Window-scoped settings (task buttons, icon theme associations, the TS SDK picker) are
 	// filtered out of a folder's own .vscode/settings.json when that folder is part of a
@@ -18,7 +18,7 @@
 		"js/ts.tsdk.promptToUseWorkspaceVersion": true,
 		"material-icon-theme.files.associations": {
 			"coding-standards.md": "bibliography",
-			"testing.md": "todo"
+			"testing.md": "todo",
 		},
 		"VsCodeTaskButtons.showCounter": false,
 		// vscode-task-buttons can't disambiguate two folders' tasks sharing one label (verified
@@ -34,9 +34,9 @@
 					{
 						"label": "transformer",
 						"task": "transformer: compile",
-						"description": "mise run compile (rbxts-transformer-surge)"
-					}
-				]
+						"description": "mise run compile (rbxts-transformer-surge)",
+					},
+				],
 			},
 			{
 				"label": "$(wrench) Fix",
@@ -46,19 +46,19 @@
 					{
 						"label": "surge: format",
 						"task": "surge: format:fix",
-						"description": "mise run format:fix (surge)"
+						"description": "mise run format:fix (surge)",
 					},
 					{
 						"label": "transformer: lint",
 						"task": "transformer: lint:fix",
-						"description": "mise run lint:fix (rbxts-transformer-surge)"
+						"description": "mise run lint:fix (rbxts-transformer-surge)",
 					},
 					{
 						"label": "transformer: format",
 						"task": "transformer: format:fix",
-						"description": "mise run format:fix (rbxts-transformer-surge)"
-					}
-				]
+						"description": "mise run format:fix (rbxts-transformer-surge)",
+					},
+				],
 			},
 			{
 				"label": "$(beaker) CI",
@@ -68,25 +68,25 @@
 					{
 						"label": "surge: round-trip tests",
 						"task": "surge: tests:test",
-						"description": "mise run tests:test (surge)"
+						"description": "mise run tests:test (surge)",
 					},
 					{
 						"label": "surge: golden-Luau tests",
 						"task": "surge: test",
-						"description": "mise run test (surge)"
+						"description": "mise run test (surge)",
 					},
 					{
 						"label": "transformer: all",
 						"task": "transformer: ci",
-						"description": "mise run ci (rbxts-transformer-surge)"
+						"description": "mise run ci (rbxts-transformer-surge)",
 					},
 					{
 						"label": "transformer: test",
 						"task": "transformer: test",
-						"description": "mise run test (rbxts-transformer-surge)"
-					}
-				]
-			}
-		]
-	}
+						"description": "mise run test (rbxts-transformer-surge)",
+					},
+				],
+			},
+		],
+	},
 }
