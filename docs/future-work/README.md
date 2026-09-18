@@ -16,8 +16,8 @@ alongside the fixes below rather than as their own step.
 
 | Step | Document                                                       | Why here                                                                                                                                         |
 | ---- | -------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| 1    | [walk-type-identity.md](walk-type-identity.md)                 | Silent wrong bytes for any generic instantiation. Also the identity model the next two steps build on.                                           |
-| 2    | [recursive-union-types.md](recursive-union-types.md)           | Compiler crash on recursive unions; needs step 1's type-identity tracking and generalizes helpers for step 3.                                    |
+| 1    | [walk-type-identity.md](walk-type-identity.md)                 | Silent wrong bytes when one shape uses two instantiations of one generic. Also the identity model the next two steps build on.                   |
+| 2    | [recursive-union-types.md](recursive-union-types.md)           | Compiler crash on recursive tagged unions; needs step 1's type-identity tracking and generalizes helpers for step 3.                             |
 | 3    | [read-order-side-effects.md](read-order-side-effects.md)       | Silent cursor and blob desync; small change to `readField`, best done once helpers are settled.                                                  |
 | 4    | [wire-format-determinism.md](wire-format-determinism.md)       | Encoding depends on unrelated files. Changes the wire format, so it should land before anyone pins bytes in tests or ships.                      |
 | 5    | [enum-encoding.md](enum-encoding.md)                           | `Enum.KeyCode` overflow (wire-format change, same release as step 4) and the O(1) table the design already promises.                             |

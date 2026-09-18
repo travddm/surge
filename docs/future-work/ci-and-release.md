@@ -5,7 +5,7 @@ Part of the [surge](../architecture.md) design.
 ## What
 
 - **The transformer's CI never runs the integration suite.** Its workflow
-  runs lint, format, spell, `tsc`, and eight Jest tests. A transformer
+  runs lint, format, spell, `tsc`, and its Jest unit suite. A transformer
   change that breaks every generated serializer passes the transformer's
   own CI; only a later push to `surge` would notice, and only if someone
   pushes there.
@@ -21,17 +21,19 @@ Part of the [surge](../architecture.md) design.
   diagnostic when it differs from the transformer's own version is a
   small, cheap backstop. Neither repository has a tag yet, both are
   `0.1.0`, and there is no documented tagging step.
-- **`npm install`, not `npm ci`.** Both workflows and `mise run ci` use
-  `npm install`, which can update the lockfile silently; CI does not fail
+- **`npm install`, not `npm ci`.** Both workflows install with
+  `npm install` (the transformer's through the mise `postinstall` hook),
+  and `surge`'s `mise run ci` runs `npm install --prefix tests`. That
+  can update the lockfile silently; CI does not fail
   on lockfile drift, and the `restore-keys` prefix match restores a stale
   `node_modules` before installing on top of it.
 - **No Windows job.** The maintainer develops on Windows and the mise
   tasks assume a POSIX shell (documented as a VS Code task override);
   nothing exercises that path automatically.
-- **`tests/package.json` lists `rbxts-transformer-flamework` under
-  `dependencies`**; it is a build-time tool and belongs in
-  `devDependencies` with the rest of the toolchain (harmless today, since
-  the package is private).
+- **`tests/package.json` lists `rbxts-transformer-flamework` and
+  `rbxts-transformer-surge` under `dependencies`**; both are build-time
+  tools and belong in `devDependencies` with the rest of the toolchain
+  (harmless today, since the package is private).
 
 ## Why deferred
 

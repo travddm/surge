@@ -30,9 +30,11 @@ READMEs point at design docs instead.
 - `surge/src/data-type.ts`'s JSDoc for `Packed<T>` (the one users see in
   their editor) says "`boolean`/`optional` fields inside collapse to 1 bit
   each"; only `boolean` does.
-- `surge/src/pack.ts` refers readers to "docs/future-work/ (or the
-  follow-up noted in transformer.md)" for packed `CFrame`; no such
-  document existed before this review.
+- `surge/src/pack.ts`'s header comment says the same ("`boolean`/`optional`
+  fields"), and it refers readers to "docs/future-work/ (or the follow-up
+  noted in transformer.md)" for packed `CFrame`. That follow-up is Tier A
+  item 3 of [type-coverage-parity.md](type-coverage-parity.md); the
+  comment should name it.
 - `rbxts-transformer-surge/src/field.ts` says the emitter is
   `emit-write.ts`/`emit-read.ts`; it is `emit.ts`.
 - Risks in transformer.md: "a flat sequence of hundreds of
@@ -45,11 +47,15 @@ READMEs point at design docs instead.
   [wire-format-determinism.md](wire-format-determinism.md)).
 - Type Coverage in transformer.md lists `Instance` as `blob`; it is
   walked structurally (see [blob-classification.md](blob-classification.md)).
+- The last paragraph of transformer.md lists "the lack of automated
+  runtime CI" as an open item; the round-trip suite runs in CI under Lune,
+  and only benchmark automation is open (see
+  [headless-ci.md](headless-ci.md)).
 - [testing.md](../testing.md) describes `@Theory`/`@InlineData` cases and
   seeded fuzz loops per shape; none exist (see
   [round-trip-test-coverage.md](round-trip-test-coverage.md)). It also
   says golden checks cover "a curated set of representative shapes"; there
-  are three regex checks over two files.
+  are three tests (four regex assertions) over two files.
 - [serde.md](../serde.md) says the factories are "declared here as
   ambient generics" with "no real runtime body"; they have a body that
   throws.

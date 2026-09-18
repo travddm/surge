@@ -19,8 +19,8 @@ Promised by [testing.md](../testing.md) but absent from
 Kinds and features with no round-trip fixture at all:
 
 - `DataType.f32`/`u8`/`u16`/`u32`/`i8`/`i16`/`i32` (no branded width is
-  used anywhere in `tests/`; `walk.test.ts` cannot test them either, since
-  it has no `@rbxts/surge` package to resolve the brand against).
+  used anywhere in `tests/`; `walk.test.ts` checks only that `DataType.f32`
+  classifies as `f32`, not how any width round-trips).
 - `blob` (`unknown`, `Instance`), `ColorSequence`, `NumberSequence`
   (the Lune runner does not bind those globals yet), `literal` unions,
   `literalConst` zero-byte fields, TypeScript `enum`s, `Enum` values with
@@ -32,8 +32,10 @@ Kinds and features with no round-trip fixture at all:
   through `Map`/optional, `Packed<T>` over a nested object or inside a
   union variant, a packed shape with more than 8 booleans (crosses a byte).
 - `createSerializer`/`createDeserializer` used individually, and a
-  re-exported or aliased factory (the spike that de-risked §1 detection
-  was deleted; nothing pins it).
+  re-exported or aliased factory (the transformer repository's unit tests
+  cover these only at compile time: `detect.test.ts` resolves an aliased
+  factory, and `transform.test.ts` transforms `createSerializer` and
+  `createDeserializer` calls; no round-trip fixture runs any of them).
 - `deserialize` called without `inputBlobs` on a blob-free shape.
 - Empty collections, empty strings inside collections, strings with
   embedded `\0` and multibyte UTF-8, numeric edge values (`NaN`, `-0`,
@@ -50,14 +52,16 @@ Weak assertions in the existing facts:
 
 - `roundTripsRobloxTypes` asserts `position.X` and `rig` only; the
   `CFrame` rotation and the `Color3` are serialized but never checked.
-- `roundTripsCollections` checks sizes and one element per collection;
-  `pair[0]`, `record.y`, and `set.has("q")` are not checked.
+- `roundTripsCollections` checks `items.size()` and one entry of each
+  other collection; no `items` element, `pair[0]`, `record.y`, or
+  `set.has("q")` is checked.
 - `roundTripsTaggedUnion` checks only the tag, not `width`/`height`, and
   never serializes the `circle` variant.
 
 Runner gaps: `lune-test-runner.luau` binds `CFrame`, `Vector3`, `Color3`,
-`Enum`; fixtures for sequences, `Vector2`, `UDim2`, or `Instance` blobs
-need the corresponding globals or a fake Instance class added there.
+`Enum`, and an `Instance.new` shim that builds only `BindableEvent`;
+fixtures for sequences, `Vector2`, `UDim2`, or `Instance` blobs need the
+corresponding globals or a constructible fake Instance class added there.
 
 ## Why deferred
 

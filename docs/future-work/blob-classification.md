@@ -27,8 +27,8 @@ Confirmed by executing the compiled walker with `@rbxts/types` loaded:
   `Rect`, `NumberRange`, `Region3`, `Vector3int16`, `TweenInfo`, `Font`,
   `Ray`, `DateTime`, ...).
 - A template literal string type (`` `id-${number}` ``) is walked as the
-  apparent members of `String` (blobs for every method); `bigint` and
-  `symbol` behave the same. `null` becomes a blob.
+  apparent members of `String` (blobs for every method); `symbol` is walked
+  the same way through `Symbol`. `bigint` and `null` become blobs.
 - `ROBLOX_SCALAR_KINDS` matches by symbol _name_: a user-declared
   `interface Vector3 { foo: string }` classifies as `vector3`. This is the
   name-matching Transformer Design §1 rejects for factory detection.
@@ -43,9 +43,12 @@ Silent-but-wrong classifications that are not crashes:
 - A type with declared properties _and_ an index signature
   (`{ a: number; [k: string]: number }`) drops the index signature.
 
-None of this is covered by tests: there is no `Instance`, `unknown`, or
-function-typed fixture anywhere in either repository, and the Lune runner
-has no fake `Instance` a fixture could use.
+Test coverage is minimal. `test/walk.test.ts` has one `Instance` walker
+fixture, and it pins the current structural walk, not the documented
+blob. There is no `unknown` or function-typed walker fixture, no blob
+round-trip fixture in `tests/`, and the Lune runner's `Instance.new` shim
+builds only `BindableEvent`, so no fixture can construct an `Instance`
+there.
 
 ## Why deferred
 
@@ -73,7 +76,8 @@ implicit blobs. That is a design change to the walk, not a patch.
   `bigint`, `null`, template literal types, and property-plus-index
   signature objects, pointing at `unknown` as the explicit opt-in.
 - Encode an empty object as zero bytes.
-- Tests: walker fixtures for each line above; a blob round-trip fixture
+- Tests: walker fixtures for each line above (update the existing
+  `Instance` fixture to expect `blob`); a blob round-trip fixture
   in `coverage.spec.ts` (an `unknown` field holding a table is enough
   under Lune; an `Instance` fixture needs the runner to expose a fake
   Instance class).

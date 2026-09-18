@@ -11,20 +11,28 @@ a type reappearing on its own walk path compiles to a named helper. That
 detection exists only in `tryWalkObject` (`walk.ts`), keyed by the object
 type's symbol. A union type has no such symbol, and `buildTaggedUnion`
 walks each variant's properties directly without marking anything in
-progress, so recursion that re-enters through the union never terminates.
+progress, so recursion that re-enters through a tagged union never
+terminates.
 
-Confirmed by executing the compiled walker (`Maximum call stack size
-exceeded` in every case):
+Confirmed by executing the compiled walker with `@rbxts/types` loaded
+(`Maximum call stack size exceeded` in every case):
 
 - `type Expr = { kind: "num"; v: number } | { kind: "add"; l: Expr; r: Expr }`
 - The same with named variants:
   `interface Add { kind: "add"; l: Expr; r: Expr }` and
   `type Expr = Num | Add`.
-- `type Node = Leaf | Branch` where `interface Branch { kids: Node[] }`.
+- `type Tree = Leaf | Branch` where
+  `interface Leaf { kind: "leaf"; v: number }` and
+  `interface Branch { kind: "branch"; kids: Tree[] }`.
 
 Confirmed working (recursion re-enters through a named interface):
 `interface TreeMap { children: Map<string, TreeMap> }`, and
 `interface Cell { next?: { kind: "some"; cell: Cell } | { kind: "none" } }`.
+
+Without a discriminant, the same `Leaf | Branch` shape does not crash:
+`classifyUnion` walks each variant through `tryWalkObject`, so the
+recursion terminates, and the existing two-table-shaped-variants
+diagnostic rejects the union.
 
 AST-like and JSON-like shapes are exactly the recursive unions users write,
 so this blocks a common shape entirely, and the failure is an uncaught

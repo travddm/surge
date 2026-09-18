@@ -18,7 +18,9 @@ by executing the compiled walker and emitter unless marked otherwise.
   a type whose symbol is `toString`, `valueOf`, `constructor`, or
   `hasOwnProperty` (for example a method `toString(): string`, whose
   function type's symbol is `toString`) matches through the prototype and
-  yields `{ kind: undefined }`. The emitter then throws
+  yields a `Field` whose `kind` is the inherited function (for example
+  `Object.prototype.toString`). No emitter case matches it, so `readField`
+  returns `undefined` and the emitter then throws
   `Cannot read properties of undefined (reading 'kind')`.
 - **Tuples with a leading or middle rest element.**
   `[...number[], string]` walks as fixed `[str]` plus rest `num`, so the
@@ -30,8 +32,10 @@ by executing the compiled walker and emitter unless marked otherwise.
   variant, and `classifyUnion` does not count these as table-shaped, so
   `Vector3 | CFrame` reaches the emitter and crashes with a stack trace
   instead of a diagnostic. `Vector3 | string` only works because the
-  userdata variant happens to sort last and is never guarded. (From code
-  reading; `Vector3 | string` was executed and works.)
+  userdata variant happens to come last in the checker's constituent
+  order and the last variant is never guarded. (Both walks were executed:
+  `Vector3 | CFrame` produces a `guardedUnion` of `vector3` then `cframe`,
+  which `guardFor` rejects; the emitter throw itself is from code reading.)
 - **Re-aliased `Packed<T>`.** `type PackedFlags = DataType.Packed<Flags>`
   is not recognized: the alias symbol is `PackedFlags`, so
   `getPackedInnerType` returns nothing and the intersection is walked
@@ -50,8 +54,11 @@ by executing the compiled walker and emitter unless marked otherwise.
   never used.
 - **Injected import name collisions.** The transformer adds
   `import { alloc, beginWrite, ... } from "@rbxts/surge"` at the top of the
-  file; a user file that already declares a top-level `alloc` or `value`
-  gets a duplicate-identifier error. From code reading.
+  file, and the generated IIFE refers to those names unqualified. A user
+  file that already declares a top-level `alloc` gets a
+  duplicate-identifier error; a local `alloc` in a scope enclosing the call
+  site shadows the import, so the generated code silently calls the user's
+  function. From code reading.
 
 ## Why deferred
 

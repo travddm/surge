@@ -1,8 +1,9 @@
 # Future work: key the type walk's caches by type identity, not symbol
 
 Part of the [surge](../architecture.md) design. **This is a correctness bug
-in shipped behavior, not a parity gap:** ordinary generic shapes serialize
-with the wrong field layout, silently.
+in shipped behavior, not a parity gap:** a shape that reaches one generic
+declaration through two different instantiations encodes at least one of
+them wrongly, with no diagnostic.
 
 ## What
 
@@ -34,9 +35,9 @@ Confirmed by executing the compiled walker against throwaway `ts.Program`s
   recursion points through the packed helper, so `plain.next` is read
   with the packed bit layout.
 
-None of the existing tests can see this: `test/walk.test.ts` never walks a
-generic instantiation, and `tests/src/tests/*.spec.ts` has no generic
-shape.
+None of the existing tests can see this: `test/walk.test.ts` never walks
+two instantiations of one generic in the same walk, and
+`tests/src/tests/*.spec.ts` has no generic shape.
 
 ## Why deferred
 

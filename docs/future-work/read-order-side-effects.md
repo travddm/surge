@@ -20,7 +20,8 @@ side-effecting expression with no statement:
 Confirmed by printing the emitter's output:
 
 - `interface Wrap { inner: Tree; zebra: number }` with
-  `interface Tree { kids: Wrap[] }`. Write order is `inner` then `zebra`
+  `interface Tree { kids: Wrap[] }`, walked from `Tree` (so `Tree` gets the
+  helper). Write order is `inner` then `zebra`
   (name-sorted). The read emits `readAlloc(8)` for `zebra` first, then
   evaluates `surge_Tree_1_read()` inside the literal, so `zebra` reads the
   first 8 bytes of `inner`'s data and the helper reads from the wrong
