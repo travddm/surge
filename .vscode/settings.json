@@ -1,0 +1,69 @@
+{
+	"js/ts.tsdk.promptToUseWorkspaceVersion": true,
+	"js/ts.tsdk.path": "node_modules/typescript/lib",
+	"files.eol": "\n",
+	"[typescript]": {
+		"editor.defaultFormatter": "dbaeumer.vscode-eslint",
+		"editor.formatOnSave": true
+	},
+	"[typescriptreact]": {
+		"editor.defaultFormatter": "dbaeumer.vscode-eslint",
+		"editor.formatOnSave": true
+	},
+	"[json]": {
+		"editor.defaultFormatter": "esbenp.prettier-vscode",
+		"editor.formatOnSave": true
+	},
+	"[jsonc]": {
+		"editor.defaultFormatter": "esbenp.prettier-vscode",
+		"editor.formatOnSave": true
+	},
+	"[markdown]": {
+		"editor.defaultFormatter": "esbenp.prettier-vscode",
+		"editor.formatOnSave": true
+	},
+	"cSpell.enabled": true,
+	"eslint.run": "onType",
+	"eslint.format.enable": true,
+	"luau-lsp.sourcemap.enabled": true,
+	"luau-lsp.sourcemap.autogenerate": true,
+	"luau-lsp.sourcemap.useVSCodeWatcher": false,
+	"luau-lsp.sourcemap.generatorCommand": "mise exec -- rojo sourcemap tests/default.project.json -o tests/out/sourcemap.json --watch --absolute",
+	"luau-lsp.sourcemap.rojoProjectFile": "tests/default.project.json",
+	"luau-lsp.sourcemap.sourcemapFile": "tests/out/sourcemap.json",
+	"luau-lsp.ignoreGlobs": ["**/out/**", "**/include/**", "**/node_modules/**"],
+	"material-icon-theme.files.associations": {
+		"coding-standards.md": "bibliography",
+		"testing.md": "todo"
+	},
+	"markdownlint.configFile": ".markdownlint.json",
+	"VsCodeTaskButtons.showCounter": false,
+	"VsCodeTaskButtons.tasks": [
+		{
+			"label": "$(gear) Compile",
+			"tooltip": "Compile the project",
+			"task": "surge: compile"
+		},
+		{
+			"label": "$(wrench) Fix",
+			"tooltip": "Apply lint and formatting fixes",
+			"tasks": [
+				{ "label": "Lint", "task": "surge: lint:fix", "description": "mise run lint:fix" },
+				{ "label": "Format", "task": "surge: format:fix", "description": "mise run format:fix" }
+			]
+		},
+		{
+			"label": "$(beaker) CI",
+			"tooltip": "Run all CI checks or a single step",
+			"tasks": [
+				{ "label": "All", "task": "surge: ci", "description": "mise run ci" },
+				{ "label": "Lint", "task": "surge: lint:check", "description": "mise run lint:check" },
+				{ "label": "Format", "task": "surge: format:check", "description": "mise run format:check" },
+				{ "label": "Spell", "task": "surge: spell", "description": "mise run spell" },
+				{ "label": "Compile", "task": "surge: compile", "description": "mise run compile" },
+				{ "label": "Round-trip tests", "task": "surge: tests:test", "description": "mise run tests:test" },
+				{ "label": "Golden-Luau tests", "task": "surge: test", "description": "mise run test" }
+			]
+		}
+	]
+}

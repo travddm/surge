@@ -1,0 +1,98 @@
+[tools]
+node = "24.18.0"
+"github:rojo-rbx/rojo" = "7.7.0-rc.1"
+# Runs the round-trip suite headlessly (see testing.md) via a fake-Instance shim in
+# tests/scripts/lune-test-runner.luau -- Roblox Studio is reserved for benchmarks only.
+"github:lune-org/lune" = "0.10.5"
+# Drives a real Roblox Studio process to run the benchmark suite (see testing.md), via
+# tests/scripts/run-in-roblox-benchmarks.luau -- confirmed to run as its own Script instance
+# without simulating Play, so it never triggers MainServer/MainBenchmarks itself.
+"github:rojo-rbx/run-in-roblox" = "0.3.0"
+
+[hooks]
+# Keeps node_modules in sync whenever `mise install` runs (e.g. after a [tools] version bump),
+# without a separate manual step.
+postinstall = "npm install"
+
+[tasks.compile]
+description = "Build @rbxts/surge (this package) with rbxtsc"
+run = "npm run compile"
+
+[tasks."tests:install"]
+description = "npm install inside tests/ (its own project, not a workspace member)"
+run = "npm run tests:install"
+
+[tasks."tests:compile"]
+description = "Build the tests place through the real transformer + this package"
+run = "npm run tests:compile"
+
+[tasks."tests:compile:watch"]
+description = "Watch-compile the tests place"
+run = "npm run tests:compile:watch"
+
+[tasks."tests:sourcemap"]
+description = "Generate the sourcemap for the tests place with Rojo"
+run = "npm run tests:sourcemap"
+
+[tasks."tests:serve"]
+description = "Serve the tests place with Rojo"
+run = "npm run tests:serve"
+
+[tasks."tests:build"]
+description = "Build the tests place into a .rbxl"
+run = "npm run tests:build"
+
+[tasks."tests:test"]
+description = "Run the @rbxts/runit round-trip suite headlessly under Lune (see testing.md)"
+run = "npm run tests:test"
+
+[tasks."tests:benchmark"]
+description = "Build the tests place and run the benchmark suite in a real Roblox Studio process via run-in-roblox (see testing.md); not part of ci -- benchmark numbers are read by hand, not gated pass/fail"
+run = "npm run tests:benchmark"
+
+[tasks."dev:tests"]
+description = "Compile once, then watch-compile and serve the tests place"
+run = "npm run dev:tests"
+
+[tasks."lint:check"]
+description = "Lint with ESLint and markdownlint"
+run = "npm run lint:check"
+
+[tasks."lint:fix"]
+description = "Lint with ESLint and markdownlint and apply fixes"
+run = "npm run lint:fix"
+
+[tasks."format:check"]
+description = "Check formatting with Prettier"
+run = "npm run format:check"
+
+[tasks."format:fix"]
+description = "Format with Prettier and apply fixes"
+run = "npm run format:fix"
+
+[tasks.spell]
+description = "Spell check with cspell"
+run = "npm run spell"
+
+[tasks.test]
+description = "Run the golden-Luau invariant checks against tests/'s compiled output (plain Node, node:test)"
+run = "npm run test"
+
+[tasks."hooks:install"]
+description = "Install the project's git hooks (opt-in)"
+run = "git config core.hooksPath .githooks"
+
+[tasks.ci]
+description = "Run all CI checks in order (for agent verification)"
+# tests:install runs before lint:check: ESLint resolves tests/'s own @rbxts/* imports against
+# tests/node_modules, which doesn't exist yet on a fresh checkout (see testing.md).
+run = [
+	"npm run tests:install",
+	"npm run lint:check",
+	"npm run format:check",
+	"npm run spell",
+	"npm run compile",
+	"npm run tests:compile",
+	"npm run tests:test",
+	"npm run test",
+]

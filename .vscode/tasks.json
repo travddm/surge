@@ -1,0 +1,155 @@
+{
+	"version": "2.0.0",
+	// mise tasks assume a POSIX shell (confirmed: PowerShell mis-invokes node_modules/.bin's
+	// shebang scripts here, e.g. `mise run lint:check` fails with "uname: command not found").
+	"windows": {
+		"options": {
+			"shell": {
+				"executable": "C:\\Program Files\\Git\\bin\\bash.exe",
+				"args": ["-c"]
+			}
+		}
+	},
+	"tasks": [
+		{
+			"label": "surge: ci",
+			"detail": "Run the full verification suite (mise run ci)",
+			"type": "shell",
+			"command": "mise run ci",
+			"group": "test",
+			"problemMatcher": []
+		},
+		{
+			"label": "surge: tests:test",
+			"detail": "Run the @rbxts/runit round-trip suite headlessly under Lune (mise run tests:test)",
+			"type": "shell",
+			"command": "mise run tests:test",
+			"group": { "kind": "test", "isDefault": true },
+			"problemMatcher": []
+		},
+		{
+			"label": "surge: tests:benchmark",
+			"detail": "Run the benchmark suite in a real Roblox Studio process via run-in-roblox (mise run tests:benchmark)",
+			"type": "shell",
+			"command": "mise run tests:benchmark",
+			"group": "test",
+			"problemMatcher": []
+		},
+		{
+			"label": "surge: test",
+			"detail": "Run the golden-Luau invariant checks against tests/'s compiled output (mise run test)",
+			"type": "shell",
+			"command": "mise run test",
+			"group": "test",
+			"problemMatcher": []
+		},
+		{
+			"label": "surge: lint:check",
+			"detail": "Lint with ESLint and markdownlint (mise run lint:check)",
+			"type": "shell",
+			"command": "mise run lint:check",
+			"group": "test",
+			"problemMatcher": []
+		},
+		{
+			"label": "surge: lint:fix",
+			"detail": "Lint with ESLint and markdownlint and apply fixes (mise run lint:fix)",
+			"type": "shell",
+			"command": "mise run lint:fix",
+			"problemMatcher": []
+		},
+		{
+			"label": "surge: format:check",
+			"detail": "Check formatting with Prettier (mise run format:check)",
+			"type": "shell",
+			"command": "mise run format:check",
+			"group": "test",
+			"problemMatcher": []
+		},
+		{
+			"label": "surge: format:fix",
+			"detail": "Format with Prettier and apply fixes (mise run format:fix)",
+			"type": "shell",
+			"command": "mise run format:fix",
+			"problemMatcher": []
+		},
+		{
+			"label": "surge: spell",
+			"detail": "Spell check with cspell (mise run spell)",
+			"type": "shell",
+			"command": "mise run spell",
+			"group": "test",
+			"problemMatcher": []
+		},
+		{
+			"label": "surge: compile",
+			"detail": "Build @rbxts/surge (this package) with rbxtsc (mise run compile)",
+			"type": "shell",
+			"command": "mise run compile",
+			"group": { "kind": "build", "isDefault": true },
+			"problemMatcher": []
+		},
+		{
+			"label": "surge: tests:install",
+			"detail": "npm install inside tests/ (mise run tests:install)",
+			"type": "shell",
+			"command": "mise run tests:install",
+			"problemMatcher": []
+		},
+		{
+			"label": "surge: tests:compile",
+			"detail": "Build the tests place through the real transformer + this package (mise run tests:compile)",
+			"type": "shell",
+			"command": "mise run tests:compile",
+			"group": "build",
+			"problemMatcher": []
+		},
+		{
+			"label": "surge: tests:compile:watch",
+			"detail": "Watch-compile the tests place (mise run tests:compile:watch)",
+			"type": "shell",
+			"command": "mise run tests:compile:watch",
+			"isBackground": true,
+			"group": "build",
+			"problemMatcher": []
+		},
+		{
+			"label": "surge: tests:sourcemap",
+			"detail": "Generate the sourcemap for the tests place with Rojo (mise run tests:sourcemap)",
+			"type": "shell",
+			"command": "mise run tests:sourcemap",
+			"problemMatcher": []
+		},
+		{
+			"label": "surge: tests:serve",
+			"detail": "Serve the tests place with Rojo (mise run tests:serve)",
+			"type": "shell",
+			"command": "mise run tests:serve",
+			"isBackground": true,
+			"problemMatcher": []
+		},
+		{
+			"label": "surge: tests:build",
+			"detail": "Build the tests place into a .rbxl (mise run tests:build)",
+			"type": "shell",
+			"command": "mise run tests:build",
+			"group": "build",
+			"problemMatcher": []
+		},
+		{
+			"label": "surge: dev:tests",
+			"detail": "Compile once, then watch-compile and serve the tests place (mise run dev:tests)",
+			"type": "shell",
+			"command": "mise run dev:tests",
+			"isBackground": true,
+			"problemMatcher": []
+		},
+		{
+			"label": "surge: hooks:install",
+			"detail": "Install the project's git hooks (mise run hooks:install)",
+			"type": "shell",
+			"command": "mise run hooks:install",
+			"problemMatcher": []
+		}
+	]
+}

@@ -1,0 +1,33 @@
+{
+	"compilerOptions": {
+		"allowSyntheticDefaultImports": true,
+		"downlevelIteration": true,
+		"module": "commonjs",
+		"moduleResolution": "Node",
+		"noLib": true,
+		"noEmit": false,
+		"resolveJsonModule": true,
+		"experimentalDecorators": true,
+		"forceConsistentCasingInFileNames": true,
+		"moduleDetection": "force",
+		"strict": true,
+		"target": "ESNext",
+		"typeRoots": ["node_modules/@rbxts", "node_modules/@flamework"],
+		"plugins": [
+			// surge must run before flamework, for the same reason the template
+			// runs jecs before flamework: flamework rewrites macros (e.g.
+			// runit's `Assert`) into synthetic AST nodes this transformer never
+			// needs to read, so there's no reason to risk running after it (see
+			// testing.md).
+			{ "transform": "rbxts-transformer-surge" },
+			{ "transform": "rbxts-transformer-flamework" }
+		],
+
+		"rootDir": "src",
+		"outDir": "out",
+		"baseUrl": "src",
+		"incremental": true,
+		"tsBuildInfoFile": "out/tsconfig.tsbuildinfo"
+	},
+	"include": ["src/**/*"]
+}

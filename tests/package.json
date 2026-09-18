@@ -1,0 +1,30 @@
+{
+	"name": "surge-tests",
+	"version": "0.1.0",
+	"private": true,
+	"description": "Round-trip and benchmark suite exercising rbxts-transformer-surge and @rbxts/surge together.",
+	"scripts": {
+		"compile": "rbxtsc -p tsconfig.json --rojo default.project.json",
+		"compile:watch": "npm run compile -- -w",
+		"sourcemap": "rojo sourcemap default.project.json -o out/sourcemap.json --absolute",
+		"serve": "rojo serve default.project.json",
+		"build": "node scripts/ensure-dist.mjs && rojo build default.project.json -o dist/tests.rbxl",
+		"test": "node scripts/check-test-output.mjs lune run scripts/lune-test-runner.luau",
+		"benchmark": "npm run build && run-in-roblox --place dist/tests.rbxl --script scripts/run-in-roblox-benchmarks.luau"
+	},
+	"author": "travddm",
+	"license": "ISC",
+	"dependencies": {
+		"@rbxts/surge": "file:..",
+		"rbxts-transformer-surge": "file:../../rbxts-transformer-surge",
+		"@flamework/core": "^1.3.2",
+		"@rbxts/runit": "^1.4.7",
+		"rbxts-transformer-flamework": "^1.3.2"
+	},
+	"devDependencies": {
+		"@rbxts/compiler-types": "^3.0.0-types.0",
+		"@rbxts/types": "^1.0.896",
+		"roblox-ts": "3.0.0",
+		"typescript": "5.5.3"
+	}
+}

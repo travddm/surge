@@ -1,0 +1,84 @@
+name: CI
+
+on:
+    push:
+        branches: [master]
+    pull_request:
+        branches: [master]
+
+jobs:
+    ci:
+        name: Lint + Format + Spell Check + Compile + Test
+        runs-on: ubuntu-latest
+        timeout-minutes: 15
+        # tests/'s file: dependencies on both packages (see testing.md) mean every mise/npm
+        # command below needs to run from inside surge/, not $GITHUB_WORKSPACE itself.
+        defaults:
+            run:
+                working-directory: surge
+        steps:
+            - name: Checkout surge
+              uses: actions/checkout@v7
+              with:
+                  path: surge
+
+            # A sibling checkout, not a submodule: tests/package.json's
+            # `"rbxts-transformer-surge": "file:../../rbxts-transformer-surge"` (see testing.md)
+            # resolves relative to surge/tests/, exactly matching local sibling-checkout dev.
+            - name: Checkout rbxts-transformer-surge
+              uses: actions/checkout@v7
+              with:
+                  repository: travddm/rbxts-transformer-surge
+                  path: rbxts-transformer-surge
+
+            - name: Cache npm dependencies
+              uses: actions/cache@v6
+              with:
+                  path: |
+                      surge/node_modules
+                      surge/tests/node_modules
+                      rbxts-transformer-surge/node_modules
+                  key: ${{ runner.os }}-node-modules-${{ hashFiles('surge/package-lock.json', 'surge/tests/package-lock.json', 'rbxts-transformer-surge/package-lock.json') }}
+                  restore-keys: |
+                      ${{ runner.os }}-node-modules-
+
+            - name: Set up mise
+              uses: jdx/mise-action@v4
+              with:
+                  install: true
+                  cache: true
+                  working_directory: surge
+
+            # Each file: dependency's own `prepare` script (which compiles it) runs during the
+            # *consumer's* install, so each package needs its own devDependencies in place first
+            # -- confirmed by reproducing this exact failure in a from-scratch sibling checkout
+            # before adding these two steps (see testing.md).
+            - name: Install rbxts-transformer-surge's own dependencies
+              working-directory: rbxts-transformer-surge
+              run: npm install
+
+            - name: Install this package's own dependencies
+              run: npm install
+
+            - name: "Test: install tests/ (needed before lint can resolve its imports)"
+              run: mise run tests:install
+
+            - name: "Check: Lint"
+              run: mise run lint:check
+
+            - name: "Check: Format"
+              run: mise run format:check
+
+            - name: "Check: Spell"
+              run: mise run spell
+
+            - name: "Check: Compile"
+              run: mise run compile
+
+            - name: "Test: round-trip suite (Lune)"
+              run: |
+                  mise run tests:compile
+                  mise run tests:test
+
+            - name: "Test: golden-Luau invariants"
+              run: mise run test
