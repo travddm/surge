@@ -12,30 +12,34 @@ fix below can land with a regression test; that document now tracks only
 the remaining walker cases and diagnostic-message assertions, added
 alongside the fixes below rather than as their own step.
 
+The five correctness fixes that used to be steps 1 to 5 here (type-identity
+keying for the walker's caches, recursion through unions, read-side
+statement order, literal/guardedUnion/discriminant determinism plus packed
+padding, and enum index width with an O(1) lookup table) have all landed,
+with regression tests in the transformer repo's `test/walk.test.ts`/
+`test/emit.test.ts`/`test/transform.test.ts` and round-trip fixtures in
+`coverage.spec.ts`. See Transformer Design in [transformer.md](../transformer.md)
+for the current, corrected behavior. One narrow, non-correctness item from
+the enum-encoding review is still open: see
+[enum-encoding.md](enum-encoding.md).
+
 ## Order
 
-| Step | Document                                                       | Why here                                                                                                                                         |
-| ---- | -------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| 1    | [walk-type-identity.md](walk-type-identity.md)                 | Silent wrong bytes when one shape uses two instantiations of one generic. Also the identity model the next two steps build on.                   |
-| 2    | [recursive-union-types.md](recursive-union-types.md)           | Compiler crash on recursive tagged unions; needs step 1's type-identity tracking and generalizes helpers for step 3.                             |
-| 3    | [read-order-side-effects.md](read-order-side-effects.md)       | Silent cursor and blob desync; small change to `readField`, best done once helpers are settled.                                                  |
-| 4    | [wire-format-determinism.md](wire-format-determinism.md)       | Encoding depends on unrelated files. Changes the wire format, so it should land before anyone pins bytes in tests or ships.                      |
-| 5    | [enum-encoding.md](enum-encoding.md)                           | `Enum.KeyCode` overflow (wire-format change, same release as step 4) and the O(1) table the design already promises.                             |
-| 6    | [blob-classification.md](blob-classification.md)               | `Instance` passthrough does not work as documented; needs an identity-based notion of Roblox classes and datatypes.                              |
-| 7    | [walker-emitter-robustness.md](walker-emitter-robustness.md)   | Defines the diagnostic model once and applies it to the remaining crash and invalid-output cases.                                                |
-| 8    | [type-coverage-parity.md](type-coverage-parity.md)             | With the walk correct and the diagnostic model in place, close the type-coverage gaps against fbs, serio, Blink, and Zap.                        |
-| 9    | [round-trip-test-coverage.md](round-trip-test-coverage.md)     | Full round-trip and byte-pinning suites over the now-complete type surface; the fuzz loops testing.md promises.                                  |
-| 10   | [benchmark-tooling.md](benchmark-tooling.md)                   | The size and speed comparison harness against the four libraries. Needs the wire format frozen (steps 4 and 5) so numbers stay comparable.       |
-| 11   | [generated-code-performance.md](generated-code-performance.md) | Every item is measurement-driven, so it follows the harness. The local-register ceiling is the exception and can be fixed any time after step 3. |
-| 12   | [deserialize-hardening.md](deserialize-hardening.md)           | Opt-in checks; needed before the networking layer, not before.                                                                                   |
-| 13   | [documentation-gaps.md](documentation-gaps.md)                 | User documentation written against fixed behavior; each stale statement is corrected as its fix lands, and the usage guide comes last.           |
-| 14   | [ci-and-release.md](ci-and-release.md)                         | Cross-repository CI and the version backstop, with the first tagged release.                                                                     |
+| Step | Document                                                       | Why here                                                                                                                               |
+| ---- | -------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| 1    | [blob-classification.md](blob-classification.md)               | `Instance` passthrough does not work as documented; needs an identity-based notion of Roblox classes and datatypes.                    |
+| 2    | [walker-emitter-robustness.md](walker-emitter-robustness.md)   | Defines the diagnostic model once and applies it to the remaining crash and invalid-output cases.                                      |
+| 3    | [type-coverage-parity.md](type-coverage-parity.md)             | With the walk correct and the diagnostic model in place, close the type-coverage gaps against fbs, serio, Blink, and Zap.              |
+| 4    | [round-trip-test-coverage.md](round-trip-test-coverage.md)     | Full round-trip and byte-pinning suites over the now-complete type surface; the fuzz loops testing.md promises.                        |
+| 5    | [benchmark-tooling.md](benchmark-tooling.md)                   | The size and speed comparison harness against the four libraries. The wire format is now frozen, so numbers stay comparable.           |
+| 6    | [generated-code-performance.md](generated-code-performance.md) | Every item is measurement-driven, so it follows the harness. The local-register ceiling is the exception and can be fixed any time.    |
+| 7    | [deserialize-hardening.md](deserialize-hardening.md)           | Opt-in checks; needed before the networking layer, not before.                                                                         |
+| 8    | [documentation-gaps.md](documentation-gaps.md)                 | User documentation written against fixed behavior; each stale statement is corrected as its fix lands, and the usage guide comes last. |
+| 9    | [ci-and-release.md](ci-and-release.md)                         | Cross-repository CI and the version backstop, with the first tagged release.                                                           |
 
-Steps 1 to 5 are correctness fixes and should ship together as the first
-release, since steps 4 and 5 change the wire format and nothing should pin
-bytes before them. The Lune size tier of step 10 needs no Roblox process
-and can be built alongside steps 4 and 5 as the byte-regression check for
-them; only the speed tier waits for the harness proper.
+The Lune size tier of step 5 needs no Roblox process and can be built now
+that the wire format is frozen; only the speed tier waits for the harness
+proper.
 
 ## Deferred indefinitely
 

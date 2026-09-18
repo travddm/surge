@@ -7,6 +7,14 @@
 // `buffer.writebits`/`readbits` already address an arbitrary bit offset
 // directly.
 //
+// The transformer only emits calls into `unpackBit` now: the write side
+// computes a whole packed byte from all its bits at once (one `writeu8`
+// per byte) instead of one `packBit` call per bit, since a bit-at-a-time
+// write left any unused high bits holding whatever an earlier `serialize()`
+// call left in the reused scratch buffer. `packBit` is kept as a public
+// primitive for hand-written callers -- it is otherwise unused by
+// generated code.
+//
 // The `CFrame` axis-aligned-rotation / zero-vector packed size optimization
 // described in transformer.md is not implemented here: `Packed<T>` CFrame
 // fields currently fall back to the same 6xf32 encoding used outside

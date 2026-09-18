@@ -20,10 +20,10 @@ executed against them yet.
 | 2    | Encode and decode values/second   | Real Roblox via `run-in-roblox` | Per Benchmarking strategy in [testing.md](../testing.md), only the real engine's timings count.                                                                  |
 | 3    | Wire cost (`Stats.DataSendKbps`)  | Real Roblox, client and server  | Optional. Blink's own benchmark method; the only tier that includes remote overhead and batching, so networking libraries and bare serializers meet on one axis. |
 
-Tier 1 can be built any time; its numbers only become stable once the
-wire-format fixes in
-[wire-format-determinism.md](wire-format-determinism.md) and
-[enum-encoding.md](enum-encoding.md) land.
+Tier 1 can be built any time; its numbers were only unstable before the
+wire-format determinism fixes (literal/guardedUnion ordering, packed
+padding, discriminant choice) and the enum index-width fix landed — see
+Transformer Design §3 in [transformer.md](../transformer.md).
 
 ### One fixture catalog, one adapter per library
 

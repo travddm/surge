@@ -37,6 +37,35 @@ interface TreeNode {
 }
 const treeSerializer = createBinarySerializer<TreeNode>();
 
+// walk-type-identity.md: two instantiations of one generic interface must
+// classify independently (keyed by `ts.Type`, not the shared declaration
+// symbol) instead of one silently reusing the other's `Field`.
+interface Box<T> {
+	v: T;
+}
+interface WithGenerics {
+	a: Box<number>;
+	b: Box<string>;
+}
+const genericsSerializer = createBinarySerializer<WithGenerics>();
+
+// recursive-union-types.md: a recursive discriminated union used to crash
+// the whole `rbxtsc` build with an uncaught stack overflow instead of
+// compiling to a recursion helper.
+type Expr = { kind: "num"; v: number } | { kind: "add"; l: Expr; r: Expr };
+const exprSerializer = createBinarySerializer<Expr>();
+
+// enum-encoding.md's `Enum.KeyCode` width/O(1)-table fixture intentionally
+// does not live here: the generated `{[EnumItem]: index}`/`EnumItem[]`
+// tables are module constants built from *every* member up front (matching
+// real Roblox and Transformer Design's own "How, briefly"), and this
+// suite's headless Lune harness (see testing.md) doesn't implement every
+// real `Enum.KeyCode` member (confirmed missing at least `ButtonBack`), so
+// simply loading such a module here throws before any test body runs.
+// Covered instead at the transformer level -- `emit.test.ts` pins the u16
+// width and table-lookup codegen, and `golden.test.mjs` asserts the same
+// against this suite's own real compiled `coverage.spec.luau`.
+
 class CoverageTest {
 	@Fact
 	public roundTripsCollections(): void {
@@ -109,6 +138,44 @@ class CoverageTest {
 		const result = treeSerializer.deserialize(buffer, blobs);
 		Assert.equal(value.value, result.value);
 		Assert.equal(value.children[0].value, result.children[0].value);
+	}
+
+	@Fact
+	public roundTripsTwoInstantiationsOfOneGeneric(): void {
+		const value: WithGenerics = { a: { v: 7 }, b: { v: "seven" } };
+		const { buffer, blobs } = genericsSerializer.serialize(value);
+		const result = genericsSerializer.deserialize(buffer, blobs);
+		// Asserts both instantiations decode with their own type, not `b`
+		// silently sharing `a`'s `f64` field classification.
+		Assert.equal(value.a.v, result.a.v);
+		Assert.equal(value.b.v, result.b.v);
+	}
+
+	@Fact
+	public roundTripsRecursiveDiscriminatedUnion(): void {
+		const value: Expr = { kind: "add", l: { kind: "num", v: 1 }, r: { kind: "num", v: 2 } };
+		const { buffer, blobs } = exprSerializer.serialize(value);
+		const result = exprSerializer.deserialize(buffer, blobs);
+		Assert.equal(value.kind, result.kind);
+		if (value.kind === "add" && result.kind === "add") {
+			Assert.equal(value.l.kind, result.l.kind);
+			Assert.equal(value.r.kind, result.r.kind);
+		}
+	}
+
+	@Fact
+	public roundTripsPackedBooleansAfterALargerPriorPayload(): void {
+		// Regression for wire-format-determinism.md: the packed byte is now
+		// computed from all its bits at once, so any bits unused by this
+		// payload's field count must come back zero even when the shared
+		// scratch buffer still holds a larger previous payload's bytes here.
+		flagsSerializer.serialize({ a: true, b: true, c: true });
+		const { buffer: buf, blobs } = flagsSerializer.serialize({ a: true, b: false, c: false });
+		Assert.equal(1, buffer.readu8(buf, 0));
+		const result = flagsSerializer.deserialize(buf, blobs);
+		Assert.true(result.a);
+		Assert.false(result.b);
+		Assert.false(result.c);
 	}
 }
 

@@ -16,6 +16,20 @@ considered so far is compiled and consumed from the same build. Out of
 scope unless a concrete need for it shows up (e.g. rolling deploys where
 client and server briefly run different builds against the same shape).
 
+## Version coupling this design already has
+
+Not schema evolution, but relevant to it: an `enum` field's wire index is
+assigned by sorting the enum's members (see enum-encoding.md and
+Transformer Design §3 in [transformer.md](../transformer.md)), and that
+member list comes from whichever `@rbxts/types` version is installed when
+`rbxtsc` runs. When Roblox adds a new member to an existing `Enum.*` that
+sorts before an existing member, every index after it shifts, which is a
+silent wire-format change carried entirely by a `@rbxts/types` version
+bump — the same class of problem this document is about, but triggered by
+a dependency update rather than an edit to the shape's own declaration.
+No mitigation exists yet; whatever direction is picked for schema
+evolution above should account for it.
+
 ## How, briefly
 
 Not designed — two directions worth considering when this is picked up,

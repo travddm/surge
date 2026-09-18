@@ -52,9 +52,7 @@ Zap's emitted code does. On the read side the input buffer never changes
 during a call, so a single `readAlloc(totalFixedBytes)` per
 fixed-size run, or a local cursor with no helper call at all, is possible.
 
-**Smaller items.** Strings evaluate `s.size()` twice; packed booleans issue
-one `packBit` call per bit (see
-[wire-format-determinism.md](wire-format-determinism.md)); `finishWrite`
+**Smaller items.** Strings evaluate `s.size()` twice; `finishWrite`
 copies the payload (inherent to the shared scratch design); the scratch
 buffer only grows, so one large payload pins its memory for the module's
 lifetime.

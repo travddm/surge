@@ -42,8 +42,7 @@ Kinds and features with no round-trip fixture at all:
   `math.huge`, integer widths at their bounds and beyond).
 - Byte-level assertions: the packed-boolean fact is the only one that
   checks `buffer.len`. No fixture pins the exact bytes of a shape, so a
-  wire-format change goes unnoticed (see
-  [wire-format-determinism.md](wire-format-determinism.md)).
+  wire-format change goes unnoticed.
 - Cross-call-site agreement: two `createBinarySerializer<T>()` calls for
   the same `T` in two files producing byte-identical output, the property
   Transformer Design §3 exists for.

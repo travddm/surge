@@ -20,9 +20,6 @@ READMEs point at design docs instead.
 
 - [transformer.md](../transformer.md) opens with "This is the
   `transformer/` package"; it is a separate repository.
-- Type Coverage in transformer.md: enums use "a compile-time-computed
-  `{[EnumItem]: index}` lookup table emitted as a module constant"; the
-  emitter produces a ternary chain (see [enum-encoding.md](enum-encoding.md)).
 - Type Coverage in transformer.md says `Packed<T>` bit-packs `optional`
   and applies the `CFrame` optimization; the Risks section of the same
   document says neither is implemented. The table and the `Packed<T>`
@@ -35,16 +32,11 @@ READMEs point at design docs instead.
   noted in transformer.md)" for packed `CFrame`. That follow-up is Tier A
   item 3 of [type-coverage-parity.md](type-coverage-parity.md); the
   comment should name it.
-- `rbxts-transformer-surge/src/field.ts` says the emitter is
-  `emit-write.ts`/`emit-read.ts`; it is `emit.ts`.
 - Risks in transformer.md: "a flat sequence of hundreds of
   `buffer.writeXX` calls with no local declarations does not approach"
   the 200-locals limit; the emitter declares two locals per field and
   fails at 100 (see
   [generated-code-performance.md](generated-code-performance.md)).
-- Transformer Design §3 claims order is independent of file and iteration
-  state; literal and guarded unions are not (see
-  [wire-format-determinism.md](wire-format-determinism.md)).
 - Type Coverage in transformer.md lists `Instance` as `blob`; it is
   walked structurally (see [blob-classification.md](blob-classification.md)).
 - The last paragraph of transformer.md lists "the lack of automated
