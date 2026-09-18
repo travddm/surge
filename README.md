@@ -1,5 +1,7 @@
 # @rbxts/surge
 
+[![CI](https://github.com/travddm/surge/actions/workflows/ci.yml/badge.svg)](https://github.com/travddm/surge/actions/workflows/ci.yml)
+
 A drop-in-ergonomic alternative to
 [flamework-binary-serializer](https://github.com/Fireboltofdeath/flamework-binary-serializer),
 generating specialized serialize/deserialize code per shape at TypeScript
