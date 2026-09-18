@@ -147,12 +147,17 @@ _plus_ one `tsconfig.json` edit, not import-path-only.
 
 ### Editing both repos together
 
-`../surge.code-workspace` (one level above both repos, which sit as
-siblings under it) is a VS Code multi-root workspace covering both at
-once, for exactly the "developed against each other as if they were one
-project" reason above — opening just one repo's folder loses the other's
-code navigation and task list while working across the boundary between
-them.
+`surge.code-workspace`, checked into this repo's root, is a VS Code
+multi-root workspace covering both repos at once (its second folder entry
+is `../rbxts-transformer-surge`, so it still expects the sibling-checkout
+layout from Repository layout above), for exactly the "developed against
+each other as if they were one project" reason above — opening just one
+repo's folder loses the other's code navigation and task list while
+working across the boundary between them. It's checked in specifically so
+contributors don't have to hand-reconstruct its settings (task buttons,
+the shared TS SDK path, icon associations) themselves; it's also entirely
+optional — nothing here depends on it, and a contributor not using VS
+Code, or using it on one repo at a time, never needs it.
 
 Multi-root workspaces have a real settings-scope gotcha, confirmed
 against each extension's own `package.json` (its

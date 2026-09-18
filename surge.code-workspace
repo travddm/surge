@@ -1,0 +1,92 @@
+{
+	"folders": [
+		{ "name": "surge (@rbxts/surge)", "path": "." },
+		{ "name": "rbxts-transformer-surge", "path": "../rbxts-transformer-surge" }
+	],
+	// Window-scoped settings (task buttons, icon theme associations, the TS SDK picker) are
+	// filtered out of a folder's own .vscode/settings.json when that folder is part of a
+	// multi-root workspace like this one -- VS Code only applies resource-scoped settings at
+	// the folder level here. They still work from each folder's settings.json when that folder
+	// is opened standalone; this block is what makes them work in this combined workspace.
+	"settings": {
+		// Both repos pin the identical TypeScript version (5.5.3), so it doesn't matter which
+		// one's local install backs the single, window-wide TS server -- picking surge's. This
+		// path is relative to the first workspace folder (surge itself), not to this file's own
+		// directory -- confirmed by a doubled surge/surge path in the TS server's own "falling
+		// back to bundled TypeScript" log before this fix.
+		"js/ts.tsdk.path": "node_modules/typescript/lib",
+		"js/ts.tsdk.promptToUseWorkspaceVersion": true,
+		"material-icon-theme.files.associations": {
+			"coding-standards.md": "bibliography",
+			"testing.md": "todo"
+		},
+		"VsCodeTaskButtons.showCounter": false,
+		// vscode-task-buttons can't disambiguate two folders' tasks sharing one label (verified
+		// against its own docs), which is why each repo's tasks.json labels are prefixed
+		// (`surge: ...` / `transformer: ...`) rather than both using the bare `mise: ...` labels
+		// the per-folder settings.json below still uses for standalone-open buttons.
+		"VsCodeTaskButtons.tasks": [
+			{
+				"label": "$(gear) Compile",
+				"tooltip": "Compile both packages",
+				"tasks": [
+					{ "label": "surge", "task": "surge: compile", "description": "mise run compile (surge)" },
+					{
+						"label": "transformer",
+						"task": "transformer: compile",
+						"description": "mise run compile (rbxts-transformer-surge)"
+					}
+				]
+			},
+			{
+				"label": "$(wrench) Fix",
+				"tooltip": "Apply lint and formatting fixes",
+				"tasks": [
+					{ "label": "surge: lint", "task": "surge: lint:fix", "description": "mise run lint:fix (surge)" },
+					{
+						"label": "surge: format",
+						"task": "surge: format:fix",
+						"description": "mise run format:fix (surge)"
+					},
+					{
+						"label": "transformer: lint",
+						"task": "transformer: lint:fix",
+						"description": "mise run lint:fix (rbxts-transformer-surge)"
+					},
+					{
+						"label": "transformer: format",
+						"task": "transformer: format:fix",
+						"description": "mise run format:fix (rbxts-transformer-surge)"
+					}
+				]
+			},
+			{
+				"label": "$(beaker) CI",
+				"tooltip": "Run all CI checks or a single step",
+				"tasks": [
+					{ "label": "surge: all", "task": "surge: ci", "description": "mise run ci (surge)" },
+					{
+						"label": "surge: round-trip tests",
+						"task": "surge: tests:test",
+						"description": "mise run tests:test (surge)"
+					},
+					{
+						"label": "surge: golden-Luau tests",
+						"task": "surge: test",
+						"description": "mise run test (surge)"
+					},
+					{
+						"label": "transformer: all",
+						"task": "transformer: ci",
+						"description": "mise run ci (rbxts-transformer-surge)"
+					},
+					{
+						"label": "transformer: test",
+						"task": "transformer: test",
+						"description": "mise run test (rbxts-transformer-surge)"
+					}
+				]
+			}
+		]
+	}
+}
