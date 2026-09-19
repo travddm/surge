@@ -163,19 +163,17 @@ byte saving, and serio's has an index collision bug).
 
 ## Why deferred
 
-The walker fixes that Tier A waited on have landed, so Tier A is
-unblocked. The byte-pinning fixtures it waited on have landed
-(`bytes.spec.ts`), so each new encoding that moves a pinned buffer fails
-there; pin each new datatype's bytes with its encoding. Tier B is API design that
-should be decided once, with the benchmark harness in
+Tier A has landed; its list above is kept as the record of what each
+item became. Tier B is API design that should be decided once, with the benchmark harness in
 [benchmark-tooling.md](benchmark-tooling.md) available to show what each
 bound actually saves; it is a separate, later step for that reason.
 
 ## How, briefly
 
-- Tier A first, one datatype per commit with a round-trip fixture and a
-  byte-size assertion each. The nominal-key fallback they build on has
-  landed.
+- A new fixed-size datatype is one row of `FIXED_DATATYPES` in the
+  transformer's `datatypes.ts`, with a round-trip fixture in
+  `roblox.spec.ts` and a pin in `bytes.spec.ts`. The transformer's tests
+  run over every row.
 - Tier B as one design note deciding the `DataType.*` names and defaults,
   then length-typed containers first, since they dominate the size
   comparison, then vectors and `AlignedCFrame`, then ranges.
