@@ -7,8 +7,7 @@ import { hex } from "../support";
 // wire format fails here and must be made on purpose. Each expected string is
 // worked out from Type Coverage in transformer.md, not copied from the output.
 // All integers and floats are little-endian. Not pinned, because an open
-// future-work item changes their bytes: a tagged union inside `Packed<T>`, and
-// a union with an enum member.
+// future-work item changes their bytes: a union with an enum member.
 
 // Declared out of name order: fields are written sorted by name.
 interface Primitives {
@@ -81,6 +80,10 @@ const packedOptionalsSerializer =
 	>();
 const stampSerializer = createBinarySerializer<DateTime>();
 const packedPlacementSerializer = createBinarySerializer<DataType.Packed<CFrame>>();
+const packedTagSerializer =
+	createBinarySerializer<
+		DataType.Packed<{ first: { mode: "off" } | { mode: "on"; level: DataType.u8 }; flag: boolean }>
+	>();
 
 class BytesTest {
 	@Fact
@@ -269,6 +272,15 @@ class BytesTest {
 		Assert.equal("00" + "0000803f" + "00000040" + "00004040", header(new CFrame(1, 2, 3)));
 		// A half turn about Y: X along -X (code 1), Y along +Y (rank 0), so rotation 1 * 4 + 0.
 		Assert.equal("24", header(CFrame.Angles(0, math.pi, 0)));
+	}
+
+	@Fact
+	public pinsAPackedTagBit(): void {
+		// Region bits in name order: the tag of `first` (set for "on", the second variant), then `flag`.
+		const on = packedTagSerializer.serialize({ first: { mode: "on", level: 7 }, flag: false });
+		Assert.equal("01" + "07", hex(on.buffer));
+		const off = packedTagSerializer.serialize({ first: { mode: "off" }, flag: true });
+		Assert.equal("02", hex(off.buffer));
 	}
 }
 

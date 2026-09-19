@@ -42,6 +42,19 @@ interface Profile {
 }
 const profileSerializer = createBinarySerializer<DataType.Packed<Profile>>();
 
+// A packed tagged union with two variants, as a direct property: one tag bit.
+type Toggle = { mode: "off" } | { mode: "on"; level: DataType.u8 };
+interface Device {
+	name: string;
+	primary: Toggle;
+	secondary: Toggle;
+	// Three variants: the tag stays an index byte.
+	source: { from: "battery" } | { from: "mains" } | { from: "solar"; watts: number };
+}
+const deviceSerializer = createBinarySerializer<DataType.Packed<Device>>();
+// At the root there is no enclosing object, so the tag stays an index byte.
+const toggleSerializer = createBinarySerializer<DataType.Packed<Toggle>>();
+
 const packedCFrameSerializer = createBinarySerializer<DataType.Packed<CFrame>>();
 const packedCFramesSerializer = createBinarySerializer<DataType.Packed<{ list: CFrame[]; maybe?: CFrame }>>();
 
@@ -198,6 +211,48 @@ class PackedTest {
 			Assert.equal(list.size(), result.list.size());
 			list.forEach((expected, i) => assertCFramesMatch(expected, result.list[i], 1e-4));
 			Assert.equal(value.maybe === undefined, result.maybe === undefined);
+		}
+	}
+
+	@Fact
+	public packsTheTagOfATwoVariantUnionIntoOneBit(): void {
+		const value: Device = {
+			name: "",
+			primary: { mode: "off" },
+			secondary: { mode: "on", level: 9 },
+			source: { from: "mains" },
+		};
+		const { buffer: buf, blobs } = deviceSerializer.serialize(value);
+		// The packed region (2 tag bits), `name`, the level of `secondary`, and the index byte of `source`.
+		Assert.equal(1 + 4 + 1 + 1, buffer.len(buf));
+		// Bit 0 is `primary` (off, the first variant), bit 1 is `secondary` (on, the second).
+		Assert.equal(2, buffer.readu8(buf, 0));
+		Assert.equal(undefined, difference(value, deviceSerializer.deserialize(buf, blobs)));
+		// One index byte and nothing else.
+		Assert.equal(1, buffer.len(toggleSerializer.serialize({ mode: "off" }).buffer));
+	}
+
+	@Fact
+	public roundTripsRandomPackedTaggedUnions(): void {
+		const rng = new Rng(18);
+		const toggle = (): Toggle => (rng.bool() ? { mode: "off" } : { mode: "on", level: rng.int(0, 255) });
+		for (const _ of $range(1, 100)) {
+			const choice = rng.int(0, 2);
+			const value: Device = {
+				name: rng.str(),
+				primary: toggle(),
+				secondary: toggle(),
+				source:
+					choice === 0
+						? { from: "battery" }
+						: choice === 1
+							? { from: "mains" }
+							: { from: "solar", watts: rng.f64() },
+			};
+			const { buffer, blobs } = deviceSerializer.serialize(value);
+			Assert.equal(undefined, difference(value, deviceSerializer.deserialize(buffer, blobs)));
+			const alone = toggleSerializer.serialize(value.primary);
+			Assert.equal(undefined, difference(value.primary, toggleSerializer.deserialize(alone.buffer, alone.blobs)));
 		}
 	}
 }

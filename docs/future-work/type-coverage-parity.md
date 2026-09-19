@@ -41,7 +41,7 @@ buffer bytes.
 | object / struct        | name-sorted fields, no header         | emit-order fields (unstable, issue #16) | emit-order fields (unverified)                     | declaration order                                 | declaration order                            |
 | literal union          | u8/u16 index (canonical value order)  | u8/u16 index                            | u8/u16 index                                       | unit `enum`: u8                                   | unit `enum`: bits or index                   |
 | single literal         | 0 bytes                               | 0 bytes                                 | 0 bytes                                            | n/a                                               | 1 variant: 0 bytes                           |
-| discriminated union    | u8/u16 tag (sorted by tag)            | u8/u16 tag; 1 bit if 2-way packed       | same as fbs                                        | tagged `enum`: u8                                 | tagged `enum`: bits or index                 |
+| discriminated union    | u8/u16 tag; 1 bit if 2-way packed     | u8/u16 tag; 1 bit if 2-way packed       | same as fbs                                        | tagged `enum`: u8                                 | tagged `enum`: bits or index                 |
 | other unions           | `typeIs` for primitives + 1 table     | Flamework guards, last match wins       | Flamework guards, last match wins                  | none                                              | `typeof` dispatch, one type per runtime type |
 | recursive types        | named helpers, including unions       | none                                    | none (depth cap 32, untested)                      | not supported                                     | bounded only, via `write_X`/`read_X`         |
 | `EnumItem`             | u8/u16 by name-sorted index           | u8 by `.Value`                          | u8 by `.Value`, throws >255                        | n/a                                               | n/a                                          |
@@ -118,12 +118,11 @@ mishandles or drops.
       is variable length, so it is not a table row.
 2. ~~`Instance` and subclasses to the side table.~~ Landed with the
    nominal-brand fallback in item 1.
-3. `Packed<T>` for 2-way tagged-union tags (fbs and serio both pack
-   these). `optional` presence bits and the packed `CFrame` have landed;
-   see `Packed<T>` in [transformer.md](../transformer.md). The tag bit
-   needs the union to take its tag from the enclosing object's packed
-   region, and a `Packed` union at the root has no enclosing region, so
-   its tag stays a byte.
+3. ~~`Packed<T>` for `optional` presence bits, 2-way tagged-union tags,
+   and the packed `CFrame`.~~ All landed; see `Packed<T>` in
+   [transformer.md](../transformer.md). A `Packed` union at the root, or
+   anywhere that is not a direct property of an object, has no packed
+   region to hold its tag bit, so its tag stays a byte.
 4. ~~`NumberSequence` Envelope.~~ Landed: one more f32 per keypoint. fbs
    drops the envelope; serio keeps it.
 5. ~~Recursive unions, generic instantiations, enum width, literal-union
