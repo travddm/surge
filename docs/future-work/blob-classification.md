@@ -21,18 +21,18 @@ one name-matching spot this design already had; it's now gated on the same
 Vector3 { foo: string }` no longer misclassifies as the Roblox scalar.
 
 The other silent misclassifications are fixed with a diagnostic (the
-walker's existing `report()`/`WalkDiagnostic` mechanism, not the `tsc`-style
-surfacing tracked in [walker-emitter-robustness.md](walker-emitter-robustness.md))
-instead of a silent `blob`: function types (detected via
+walker's `report()`/`WalkDiagnostic` mechanism, surfaced as a
+`ts.Diagnostic`; see Transformer Design §8 in
+[transformer.md](../transformer.md)) instead of a silent `blob`: function types (detected via
 `checker.getSignaturesOfType`, covering both plain function-typed fields
 and methods), `symbol`, `bigint`, `null`, template literal types, and a
 type with both declared properties and an index signature. Each points the
 caller at `unknown` as the explicit opt-in. A union where every constituent
 resolves to `blob` (for example `BasePart | Model`, which share the
 inherited `_nominal_Instance` brand) collapses to one `blob` instead of a
-`guardedUnion`, which would otherwise hit `guardFor`'s missing `"blob"`
-case — walker-emitter-robustness.md's gap, made reachable by this fix, so
-narrowly closed here rather than left as a new regression.
+`guardedUnion`. A `blob` next to any other variant (`Instance | string`)
+is rejected with a diagnostic, because an opaque value has no runtime type
+for the write side to check.
 
 Tests: `test/walk.test.ts` in the transformer repo covers `Instance`, an
 `Instance` subclass, an `Instance`-subclass union, an uncovered datatype
@@ -72,9 +72,8 @@ as a global before this doc; added alongside `CFrame`/`Vector3`/`Color3` in
 `lune-test-runner.luau`, following its own "cast because Lune 0.10.5's type
 definitions omit these constructors" pattern) round-tripping through the
 blob side channel with an asserted zero-byte buffer. No `Instance` fixture:
-the Lune runner's `Instance.new` shim only builds `BindableEvent`
-([walker-emitter-robustness.md](walker-emitter-robustness.md) territory,
-not this doc's), so no fixture can construct a real `Instance` there.
+the Lune runner's `Instance.new` shim only builds `BindableEvent`, so no
+fixture can construct a real `Instance` there.
 
 ## Why deferred
 

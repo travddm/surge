@@ -32,11 +32,6 @@ READMEs point at design docs instead.
   noted in transformer.md)" for packed `CFrame`. That follow-up is Tier A
   item 3 of [type-coverage-parity.md](type-coverage-parity.md); the
   comment should name it.
-- Risks in transformer.md: "a flat sequence of hundreds of
-  `buffer.writeXX` calls with no local declarations does not approach"
-  the 200-locals limit; the emitter declares two locals per field and
-  fails at 100 (see
-  [generated-code-performance.md](generated-code-performance.md)).
 - Type Coverage in transformer.md describes `blob` as "`unknown`,
   `Instance` (and subclasses), any other type this design can't
   structurally encode". The catch-all is wrong since
@@ -91,11 +86,11 @@ the tooling description, no statement of which Roblox, roblox-ts, and
 
 User documentation should be written against fixed behavior, so
 `docs/usage.md` comes late in [README.md](README.md)'s order. The
-stale-statement checklist does not need to wait. Two entries are resolved
-by code and not by prose: the `Packed<T>` `optional`/`CFrame` statements
-(Tier A item 3 of [type-coverage-parity.md](type-coverage-parity.md)) and
-the local-register ceiling. Until those land, the prose must state the
-implemented behavior. Every other entry describes behavior that is already
+stale-statement checklist does not need to wait. One group of entries is
+resolved by code and not by prose: the `Packed<T>` `optional`/`CFrame`
+statements (Tier A item 3 of
+[type-coverage-parity.md](type-coverage-parity.md)). Until that lands, the
+prose must state the implemented behavior. Every other entry describes behavior that is already
 final.
 
 ## How, briefly
