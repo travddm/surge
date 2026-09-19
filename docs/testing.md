@@ -147,7 +147,11 @@ the runner file itself):
   shim; it's a native Luau global Lune ships without help. Add the same
   pattern for any datatype a future fixture needs that isn't listed here
   (`UDim2`, ...). Lune does not provide `Random`, so the fuzz loops use
-  the seeded `Rng` in `tests/src/support.ts`.
+  the seeded `Rng` in `tests/src/support.ts`. Lune has no `DateTime`
+  either, so the runner defines a stand-in with the two members the
+  generated code uses (`UnixTimestampMillis`,
+  `DateTime.fromUnixTimestampMillis`). `typeof` reports the stand-in as a
+  table, so no fixture uses a `DateTime` as a union member.
 - **Service stubs**: most services auto-vivify as inert stubs the first
   time `GetService` is asked for them. `RunService` gets a real stub
   (`IsRunning`/`IsClient`/`IsServer`/`IsStudio`/a dead `Heartbeat.Connect`)

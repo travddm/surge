@@ -7,7 +7,8 @@ Part of the [surge](../architecture.md) design.
 The correctness bug is fixed: `Instance` and its subclasses, `unknown`,
 and every other Roblox datatype not already in the walker's scalar-kind
 table or in `FIXED_DATATYPES` (`Vector2int16`, `Region3`, `TweenInfo`,
-`Font`, `Ray`, `DateTime`, ...) now classify as `blob` instead of being walked structurally
+`Font`, `Ray`, ...) now classify as `blob` instead of being walked
+structurally
 (`unknown` and `any` as `optional(blob)`, because they can hold
 `undefined`; see Blob / passthrough channel in
 [transformer.md](../transformer.md)). The fix
@@ -41,17 +42,14 @@ Tests: `test/walk.test.ts` in the transformer repo covers `Instance`, an
 (`Vector2`), `unknown`, the `Vector3`-name-collision case, and one
 diagnostic fixture per silently-misclassified kind above.
 
-Two items from the original review remain open:
+One item from the original review remains open (the other, real
+encodings for the cheap datatypes, has landed):
 
-- **Real encodings for the cheap datatypes**, per
-  [type-coverage-parity.md](type-coverage-parity.md) Tier A. `Vector2`
-  (2×f32) has landed, its own `ROBLOX_SCALAR_KINDS` entry alongside
-  `Vector3`/`CFrame`/etc. The fixed-size types are rows of
-  `FIXED_DATATYPES` (see Type Coverage in
-  [transformer.md](../transformer.md)); item 1 of Tier A lists which have
-  landed and which are open. The open ones round-trip
-  correctly today via the side channel; this is a wire-size optimization,
-  not a correctness fix.
+- ~~**Real encodings for the cheap datatypes**~~, per
+  [type-coverage-parity.md](type-coverage-parity.md) Tier A. Landed:
+  `Vector2` has its own kind, the fixed-size types are rows of
+  `FIXED_DATATYPES`, and `buffer` has its own kind (see Type Coverage in
+  [transformer.md](../transformer.md)).
 - **An empty object type (`{}`, `interface Empty {}`) still classifies as
   `blob`** instead of a zero-byte object. Deferred, not merely unimplemented:
   `@rbxts/compiler-types` declares `type defined = {}`, so a bare structural
@@ -80,21 +78,12 @@ an optional `Part`, and an `unknown`.
 
 ## Why deferred
 
-The two remaining items don't need the identity-based classification this
-doc was blocked on; they're independent, smaller pieces of work now that
-the identity check exists. [README.md](README.md) schedules the datatype
-encodings with Tier A of [type-coverage-parity.md](type-coverage-parity.md),
-after the byte-pinning fixtures in `bytes.spec.ts`, which have landed. The
-empty-object case has no step; it waits on the `defined` decision below.
+The empty-object case doesn't need the identity-based classification this
+doc was blocked on. It has no step in [README.md](README.md); it waits on
+the `defined` decision below.
 
 ## How, briefly
 
-- `DateTime` is one row of `FIXED_DATATYPES` (f64 `UnixTimestampMillis`,
-  rebuilt with `DateTime.fromUnixTimestampMillis`), but `roblox.DateTime`
-  is `nil` in `@lune/roblox` 0.10.5, so it cannot get the round-trip
-  fixture and byte pin every other row has. Decide first whether to ship
-  it with the transformer's type check and snapshot only, or with a
-  stand-in `DateTime` global in the Lune runner.
 - Decide the `defined`-vs-`{}` distinction (declaration-origin check on the
   alias symbol, or leave `defined` as a documented exception) before adding
   the zero-byte empty-object encoding.

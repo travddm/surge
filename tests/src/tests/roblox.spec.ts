@@ -53,6 +53,8 @@ interface WithFixedDatatypes {
 	spanOrLabel: NumberRange | string;
 	bounds: Rect;
 	boundsOrLabel: Rect | string;
+	// Not a union member: the Lune runner's `DateTime` is a stand-in that `typeof` reports as a table.
+	stamp: DateTime;
 }
 const fixedDatatypesSerializer = createBinarySerializer<WithFixedDatatypes>();
 
@@ -163,10 +165,12 @@ class RobloxTest {
 			const paint = new BrickColor(rng.pick([1, 21, 194, 1004, 1032]));
 			const span = new NumberRange(-rng.int(0, 1000) / 8, rng.int(0, 1000) / 8);
 			const bounds = new Rect(rng.f32(), rng.f32(), rng.f32(), rng.f32());
+			const stamp = DateTime.fromUnixTimestampMillis(rng.int(0, 4102444800000));
 			const value: WithFixedDatatypes = {
 				cell,
 				cellOrLabel: rng.bool() ? cell : rng.str(),
 				maybeCell: rng.bool() ? cell : undefined,
+				stamp,
 				bounds,
 				boundsOrLabel: rng.bool() ? bounds : rng.str(),
 				span,
