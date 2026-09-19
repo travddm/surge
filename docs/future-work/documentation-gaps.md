@@ -20,18 +20,11 @@ READMEs point at design docs instead.
 
 - [transformer.md](../transformer.md) opens with "This is the
   `transformer/` package"; it is a separate repository.
-- Type Coverage in transformer.md says `Packed<T>` bit-packs `optional`
-  and applies the `CFrame` optimization; the Risks section of the same
-  document says neither is implemented. The table and the `Packed<T>`
-  subsection should state the implemented behavior.
-- `surge/src/data-type.ts`'s JSDoc for `Packed<T>` (the one users see in
-  their editor) says "`boolean`/`optional` fields inside collapse to 1 bit
-  each"; only `boolean` does.
-- `surge/src/pack.ts`'s header comment says the same ("`boolean`/`optional`
-  fields"), and it refers readers to "docs/future-work/ (or the follow-up
-  noted in transformer.md)" for packed `CFrame`. That follow-up is Tier A
-  item 3 of [type-coverage-parity.md](type-coverage-parity.md); the
-  comment should name it.
+- Type Coverage in transformer.md says `CFrame` gets a size optimization
+  inside `Packed<T>`; the Risks section of the same document says it is
+  not implemented. The table row should state the implemented behavior.
+  (The `optional` half of this entry is resolved: packed `optional` has
+  landed, and `DataType.Packed`'s JSDoc is now accurate.)
 - Type Coverage in transformer.md describes `blob` as "`unknown`,
   `Instance` (and subclasses), any other type this design can't
   structurally encode". The catch-all is wrong since
@@ -85,11 +78,11 @@ the tooling description, no statement of which Roblox, roblox-ts, and
 User documentation should be written against fixed behavior, so
 `docs/usage.md` comes late in [README.md](README.md)'s order. The
 stale-statement checklist does not need to wait. One group of entries is
-resolved by code and not by prose: the `Packed<T>` `optional`/`CFrame`
-statements (Tier A item 3 of
+resolved by code and not by prose: the packed `CFrame` statement (Tier A
+item 3 of
 [type-coverage-parity.md](type-coverage-parity.md)). Until that lands, the
-prose must state the implemented behavior. Every other entry describes behavior that is already
-final.
+prose must state the implemented behavior. Every other entry describes
+behavior that is already final.
 
 ## How, briefly
 

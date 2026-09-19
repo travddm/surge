@@ -7,8 +7,8 @@ import { hex } from "../support";
 // wire format fails here and must be made on purpose. Each expected string is
 // worked out from Type Coverage in transformer.md, not copied from the output.
 // All integers and floats are little-endian. Not pinned, because an open
-// future-work item changes their bytes: anything inside `Packed<T>` except
-// booleans, and a union with an enum member.
+// future-work item changes their bytes: a tagged union or a `CFrame` inside
+// `Packed<T>`, and a union with an enum member.
 
 // Declared out of name order: fields are written sorted by name.
 interface Primitives {
@@ -75,6 +75,10 @@ const rawSerializer = createBinarySerializer<buffer>();
 const sequencesSerializer = createBinarySerializer<{ colors: ColorSequence; numbers: NumberSequence }>();
 const mediumSerializer = createBinarySerializer<{ signed: DataType.i24; unsigned: DataType.u24 }>();
 const placementSerializer = createBinarySerializer<CFrame>();
+const packedOptionalsSerializer =
+	createBinarySerializer<
+		DataType.Packed<{ count?: DataType.u8; flag: boolean; maybeFlag?: boolean; text: string }>
+	>();
 
 class BytesTest {
 	@Fact
@@ -232,6 +236,18 @@ class BytesTest {
 		// rotation. A rotation is not pinned: its axis-angle form is not exact.
 		const position = "0000803f" + "00000040" + "00004040";
 		Assert.equal(position + string.rep("00", 12), hex(placementSerializer.serialize(new CFrame(1, 2, 3)).buffer));
+	}
+
+	@Fact
+	public pinsPackedOptionals(): void {
+		// The packed region is first. Bits in name order: count present, flag,
+		// maybeFlag present, maybeFlag value. Then count: u8, and text.
+		const present = packedOptionalsSerializer.serialize({ count: 9, flag: true, maybeFlag: false, text: "a" });
+		Assert.equal("07" + "09" + "01000000" + "61", hex(present.buffer));
+		const absent = packedOptionalsSerializer.serialize({ flag: false, text: "" });
+		Assert.equal("00" + "00000000", hex(absent.buffer));
+		const flagged = packedOptionalsSerializer.serialize({ flag: false, maybeFlag: true, text: "" });
+		Assert.equal("0c" + "00000000", hex(flagged.buffer));
 	}
 }
 

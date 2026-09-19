@@ -18,9 +18,8 @@
 // The `CFrame` axis-aligned-rotation / zero-vector packed size optimization
 // described in transformer.md is not implemented here: `Packed<T>` CFrame
 // fields currently fall back to the same 6xf32 encoding used outside
-// `Packed<T>`. See docs/future-work/ (or the follow-up noted in
-// transformer.md) before relying on packed CFrames being smaller than
-// unpacked ones.
+// `Packed<T>`. See Tier A item 3 of docs/future-work/type-coverage-parity.md
+// before relying on packed CFrames being smaller than unpacked ones.
 
 /** Writes a single packed bit at `byteOffset * 8 + bitIndex`. */
 export function packBit(buf: buffer, byteOffset: number, bitIndex: number, value: boolean): void {
