@@ -137,7 +137,7 @@ the runner file itself):
   not derived from a sourcemap or a built `.rbxl`. Scanning must happen
   eagerly, never lazily inside `__index`: Lune's `fs` functions yield
   internally, and Luau forbids yielding across a metamethod boundary.
-- **Datatype globals**: `Vector3`/`Vector2`/`Vector3int16`/`Vector2int16`/`CFrame`/
+- **Datatype globals**: `Vector3`/`Vector2`/`Vector3int16`/`Vector2int16`/`UDim`/`CFrame`/
   `Color3`/`ColorSequence`/`NumberSequence` (and the two keypoint
   types)/`Enum` are bound as
   bare globals from `@lune/roblox`'s namespaced equivalents

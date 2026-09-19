@@ -6,9 +6,8 @@ Part of the [surge](../architecture.md) design.
 
 The correctness bug is fixed: `Instance` and its subclasses, `unknown`,
 and every other Roblox datatype not already in the walker's scalar-kind
-table (`UDim`, `UDim2`, `BrickColor`, `NumberRange`, `Rect`,
-`Vector2int16`, `Region3`, `TweenInfo`, `Font`, `Ray`, `DateTime`, `buffer`,
-...) now classify as `blob` instead of being walked structurally
+table or in `FIXED_DATATYPES` (`Vector2int16`, `Region3`, `TweenInfo`,
+`Font`, `Ray`, `DateTime`, `buffer`, ...) now classify as `blob` instead of being walked structurally
 (`unknown` and `any` as `optional(blob)`, because they can hold
 `undefined`; see Blob / passthrough channel in
 [transformer.md](../transformer.md)). The fix
@@ -47,12 +46,10 @@ Two items from the original review remain open:
 - **Real encodings for the cheap datatypes**, per
   [type-coverage-parity.md](type-coverage-parity.md) Tier A. `Vector2`
   (2×f32) has landed, its own `ROBLOX_SCALAR_KINDS` entry alongside
-  `Vector3`/`CFrame`/etc. `Vector3int16` (3×i16) has landed as the first
-  row of `FIXED_DATATYPES` (see Type Coverage in
-  [transformer.md](../transformer.md)). Still open: `UDim`
-  (f32 + i32 or i16), `UDim2` (2×`UDim`), `BrickColor` (u16 `.Number`),
-  `NumberRange` (2×f32), `Rect` (4×f32), `DateTime` (f64
-  `UnixTimestampMillis`), raw `buffer` (u32 len + bytes). They round-trip
+  `Vector3`/`CFrame`/etc. The fixed-size types are rows of
+  `FIXED_DATATYPES` (see Type Coverage in
+  [transformer.md](../transformer.md)); item 1 of Tier A lists which have
+  landed and which are open. The open ones round-trip
   correctly today via the side channel; this is a wire-size optimization,
   not a correctness fix.
 - **An empty object type (`{}`, `interface Empty {}`) still classifies as
