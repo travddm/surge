@@ -65,24 +65,29 @@ function randomVector3(rng: Rng): Vector3 {
 class RobloxTest {
 	@Fact
 	public roundTripsSequences(): void {
-		// Every time and value is exact in an f32, and every channel is a
-		// multiple of 1/255. Each envelope is 0: the encoding does not carry
-		// the envelope yet (type-coverage-parity.md Tier A).
+		// Every time, value, and envelope is exact in an f32, and every
+		// channel is a multiple of 1/255.
 		const value: WithSequences = {
 			colors: new ColorSequence([
 				new ColorSequenceKeypoint(0, new Color3(1, 0, 0)),
 				new ColorSequenceKeypoint(0.5, new Color3(0, 1, 0)),
 				new ColorSequenceKeypoint(1, new Color3(0, 0, 1)),
 			]),
-			numbers: new NumberSequence([new NumberSequenceKeypoint(0, 0.25), new NumberSequenceKeypoint(1, 8)]),
+			numbers: new NumberSequence([
+				new NumberSequenceKeypoint(0, 0.25, 0.125),
+				new NumberSequenceKeypoint(1, 8, 0.5),
+			]),
 		};
 		const { buffer: buf, blobs } = sequencesSerializer.serialize(value);
-		// u8 count + 3 x (f32 time + 3 x u8), then u8 count + 2 x (f32 time + f32 value).
-		Assert.equal(1 + 3 * 7 + 1 + 2 * 8, buffer.len(buf));
+		// u8 count + 3 x (f32 time + 3 x u8), then u8 count + 2 x (f32 time + f32 value + f32 envelope).
+		Assert.equal(1 + 3 * 7 + 1 + 2 * 12, buffer.len(buf));
 		Assert.empty(blobs);
 		const result = sequencesSerializer.deserialize(buf, blobs);
 		Assert.equal(value.colors, result.colors);
 		Assert.equal(value.numbers, result.numbers);
+		// Asserted on its own, in case `==` on a sequence ignores the envelope.
+		Assert.equal(0.125, result.numbers.Keypoints[0].Envelope);
+		Assert.equal(0.5, result.numbers.Keypoints[1].Envelope);
 	}
 
 	@Fact

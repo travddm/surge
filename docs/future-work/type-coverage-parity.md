@@ -52,7 +52,7 @@ buffer bytes.
 | `Color3`               | 3×u8                                 | 3×u8                                    | 3×u8                                               | 3×u8                                              | 3×u8                                         |
 | `BrickColor`           | u16 `.Number`                        | side                                    | side                                               | u16 `.Number`                                     | u16 `.Number`                                |
 | `ColorSequence`        | u8 count + 7 B/keypoint              | same                                    | u8 count + u16 time + 3 B                          | none                                              | none                                         |
-| `NumberSequence`       | u8 count + 8 B; **Envelope dropped** | same, Envelope dropped                  | u8 count + 3×u16 incl. Envelope (values in [0, 1]) | none                                              | none                                         |
+| `NumberSequence`       | u8 count + 12 B incl. Envelope       | same, Envelope dropped                  | u8 count + 3×u16 incl. Envelope (values in [0, 1]) | none                                              | none                                         |
 | `UDim` / `UDim2`       | f32 + i32 per `UDim` (8 B / 16 B)    | side                                    | `ScaleOffset`/`ScaleOffset2`; packed common table  | none                                              | none                                         |
 | `NumberRange` / `Rect` | 2×f32 / 4×f32                        | side                                    | side                                               | none                                              | none                                         |
 | `DateTime`             | side                                 | side                                    | side                                               | f64 seconds or millis                             | f64 seconds or millis                        |
@@ -112,8 +112,8 @@ mishandles or drops.
    `optional.packed`; the emitter never reads it and always writes a
    presence byte. `DataType.Packed`'s JSDoc promises the `optional` bit
    today (see [documentation-gaps.md](documentation-gaps.md)).
-4. `NumberSequence` Envelope. fbs drops it too; serio keeps it. Dropping a
-   field of the value is data loss, so keep it (one more f32 per keypoint).
+4. ~~`NumberSequence` Envelope.~~ Landed: one more f32 per keypoint. fbs
+   drops the envelope; serio keeps it.
 5. ~~Recursive unions, generic instantiations, enum width, literal-union
    order.~~ All landed; see [README.md](README.md).
 6. Wider and narrower numeric widths from serio: u24/i24 are cheap

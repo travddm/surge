@@ -59,12 +59,12 @@ little, compare the whole value with `difference` from
 `tests/src/support.ts`.
 `bytes.spec.ts` pins the exact bytes of the shapes whose encoding is
 final, so an encoding change in step 1 that moves one of them fails there.
-It does not pin `CFrame`, `NumberSequence`, anything inside `Packed<T>`
-except booleans, or a union with an enum member, because an open document
-changes those bytes. Two cases have no round-trip fixture: an `Enum` with
-more than 256 members (see [enum-encoding.md](enum-encoding.md)), and an
-integer outside its `DataType` width, for which the design states no
-result. The new fixtures found five shapes whose generated code failed
+It does not pin `CFrame`, anything inside `Packed<T>` except booleans, or
+a union with an enum member, because an open document changes those
+bytes. Two cases have no round-trip fixture: an `Enum` with more than 256
+members (see [enum-encoding.md](enum-encoding.md)), and an integer outside
+its `DataType` width, for which the design states no result. The new
+fixtures found five shapes whose generated code failed
 the type check, so the build failed: a tuple whose rest element type
 differs from a fixed element, an optional property, an optional literal
 union, and a tuple property inside a recursion helper, and a required
