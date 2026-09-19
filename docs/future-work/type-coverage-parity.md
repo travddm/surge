@@ -32,7 +32,7 @@ buffer bytes.
 | fixed widths           | u8..u32, i8..i32 (incl. 24), f32, f64 | same                                    | same plus u12/u24/i12/i24/f8/f16/f24 (software)    | same plus f16 (software)                          | same                                         |
 | numeric ranges         | none                                  | none                                    | brand-range asserts, NaN rejected                  | validation only, no narrowing                     | asserts only (`write_checks`), no narrowing  |
 | boolean                | 1 byte; 1 bit in `Packed`             | 1 byte; 1 bit in `Packed`               | 1 byte; 1 bit in `Packed`                          | 1 byte, never packed                              | **1 bit always** (per-scope mask)            |
-| optional               | 1 byte; not packed (gap)              | 1 byte; 1 bit in `Packed`               | 1 byte; 1 bit in `Packed`                          | 1 byte                                            | 1 bit                                        |
+| optional               | 1 byte; 1 bit in `Packed`             | 1 byte; 1 bit in `Packed`               | 1 byte; 1 bit in `Packed`                          | 1 byte                                            | 1 bit                                        |
 | string                 | u32 len + bytes                       | u32 len + bytes                         | len width from `String<L>` (default u32)           | u8/u16/u32 by bound (default u16); exact: no len  | same as Blink; utf8 vs binary; exact: no len |
 | array                  | u32 count                             | u32 count                               | `List<T, L>` (default u32)                         | u8/u16/u32 by bound (default u16); exact unrolled | same; exact unrolled                         |
 | tuple                  | fixed inline; trailing rest u32       | fixed inline; rest u32 (written first)  | fixed inline; rest **broken** (u16 write/u32 read) | event tuples only                                 | n/a                                          |
@@ -74,7 +74,7 @@ These differences are design choices, not bugs, and should stay:
 - surge sorts enum members by name; fbs and serio sort by `.Value`. Either
   is stable per `@rbxts/types` version; surge is not wire-compatible with
   either library and does not need to be.
-- surge's packed bits live in a trailing region per object; fbs and serio
+- surge's packed bits live in a leading region per object; fbs and serio
   write one bit stream as a prefix of the whole buffer. Per-object regions
   are what keep the generated code flat, which is the design's point.
 - Blink and Zap batch events per frame and frame each with an id byte.
@@ -105,13 +105,16 @@ mishandles or drops.
       is variable length, so it is not a table row.
 2. ~~`Instance` and subclasses to the side table.~~ Landed with the
    nominal-brand fallback in item 1.
-3. `Packed<T>` for `optional` presence bits and 2-way tagged-union tags
-   (fbs and serio both pack these), and the packed `CFrame` axis-aligned
-   and zero/one-position table (fbs and serio share the same 24-entry
-   layout, which is a ready-made spec). The walker already sets
-   `optional.packed`; the emitter never reads it and always writes a
-   presence byte. `DataType.Packed`'s JSDoc promises the `optional` bit
-   today (see [documentation-gaps.md](documentation-gaps.md)).
+3. `Packed<T>` for 2-way tagged-union tags (fbs and serio both pack
+   these), and the packed `CFrame` axis-aligned and zero/one-position table
+   (fbs and serio share the same 24-entry layout, which is a ready-made
+   spec). `optional` presence bits have landed: the packed region moved to
+   the head of each object so that the read side has a presence bit before
+   it reaches the value. The tag bit needs the union to take its tag from
+   the enclosing object's region, and a `Packed` union at the root has no
+   enclosing region, so its tag stays a byte. Read fbs's axis-aligned test
+   before writing the `CFrame` table: `CFrame.Angles(math.pi / 2, 0, 0)`
+   has components of `6e-17`, not `0`, so the tolerance rule matters.
 4. ~~`NumberSequence` Envelope.~~ Landed: one more f32 per keypoint. fbs
    drops the envelope; serio keeps it.
 5. ~~Recursive unions, generic instantiations, enum width, literal-union

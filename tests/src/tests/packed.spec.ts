@@ -30,6 +30,18 @@ interface WithPackedSubtree {
 }
 const subtreeSerializer = createBinarySerializer<WithPackedSubtree>();
 
+// Packed optionals: a presence bit each, and no flag byte. `muted` is a
+// presence bit and a value bit, with no byte of its own.
+interface Profile {
+	name: string;
+	nickname?: string;
+	level?: DataType.u8;
+	verified: boolean;
+	muted?: boolean;
+	extra?: unknown;
+}
+const profileSerializer = createBinarySerializer<DataType.Packed<Profile>>();
+
 const FLAG_NAMES = ["f0", "f1", "f2", "f3", "f4", "f5", "f6", "f7", "f8", "f9"] as const;
 
 class PackedTest {
@@ -73,6 +85,35 @@ class PackedTest {
 			};
 			const { buffer, blobs } = subtreeSerializer.serialize(value);
 			Assert.equal(undefined, difference(value, subtreeSerializer.deserialize(buffer, blobs)));
+		}
+	}
+
+	@Fact
+	public packsEachOptionalPresenceIntoOneBit(): void {
+		const value: Profile = { name: "ab", verified: true };
+		const { buffer: buf, blobs } = profileSerializer.serialize(value);
+		// The packed region (6 bits), then `name`. No absent optional costs a byte.
+		Assert.equal(1 + 4 + 2, buffer.len(buf));
+		// `verified` is the last of the bits, which are in name order: extra,
+		// level, muted (present, value), nickname, verified.
+		Assert.equal(32, buffer.readu8(buf, 0));
+		Assert.equal(undefined, difference(value, profileSerializer.deserialize(buf, blobs)));
+	}
+
+	@Fact
+	public roundTripsRandomPackedOptionals(): void {
+		const rng = new Rng(16);
+		for (const _ of $range(1, 200)) {
+			const value: Profile = {
+				name: rng.str(),
+				nickname: rng.bool() ? rng.str() : undefined,
+				level: rng.bool() ? rng.int(0, 255) : undefined,
+				verified: rng.bool(),
+				muted: rng.bool() ? rng.bool() : undefined,
+				extra: rng.bool() ? rng.str() : undefined,
+			};
+			const { buffer, blobs } = profileSerializer.serialize(value);
+			Assert.equal(undefined, difference(value, profileSerializer.deserialize(buffer, blobs)));
 		}
 	}
 }

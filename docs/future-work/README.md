@@ -116,10 +116,8 @@ time:
   `guardedUnion` variant order. `bytes.spec.ts` pins no union with an
   enum or opaque member, so they move no pinned buffer today.
 - The stale-statement checklist in
-  [documentation-gaps.md](documentation-gaps.md). All but two entries
-  describe behavior that is already final; that document names the two.
-  `DataType.Packed`'s JSDoc is the most visible entry, because a user reads
-  it in the editor and it promises packing that `optional` does not get.
+  [documentation-gaps.md](documentation-gaps.md). Every entry but the
+  packed `CFrame` one describes behavior that is already final.
 - The CI items in [ci-and-release.md](ci-and-release.md): the transformer
   workflow running the integration suite, the pinned sibling ref, `npm ci`,
   and the Windows job. Step 1 changes the transformer, and its CI
