@@ -258,7 +258,7 @@ class BytesTest {
 	@Fact
 	public pinsDateTime(): void {
 		// f64 `UnixTimestampMillis`
-		Assert.equal("000000000000f83f", hex(stampSerializer.serialize(DateTime.fromUnixTimestampMillis(1.5)).buffer));
+		Assert.equal("0000000000408f40", hex(stampSerializer.serialize(DateTime.fromUnixTimestampMillis(1000)).buffer));
 	}
 
 	@Fact

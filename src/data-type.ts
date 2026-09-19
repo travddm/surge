@@ -20,9 +20,13 @@ export namespace DataType {
 	export type i32 = number & { readonly _surge_i32?: never };
 
 	/**
-	 * Opts a subtree into bit-packing: `boolean`/`optional` fields inside
-	 * collapse to 1 bit each instead of the default byte-aligned encoding
-	 * (see Type Coverage -> Packed<T> in transformer.md).
+	 * Opts a subtree into the smaller encodings. As a direct property of an
+	 * object inside it, a `boolean`, an `optional`'s presence, and the tag of
+	 * a two-variant tagged union are 1 bit each, not 1 byte. A `CFrame`
+	 * anywhere inside it is 1 byte when its rotation is axis-aligned and its
+	 * position is zero or one, 13 bytes with one of the two, and 25 bytes
+	 * (1 more than outside) with neither. See Type Coverage -> Packed<T> in
+	 * transformer.md.
 	 */
 	export type Packed<T> = T & { readonly _surge_packed?: [T] };
 }
