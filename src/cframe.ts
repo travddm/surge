@@ -19,8 +19,10 @@ const POSITION_ZERO = 1;
 const POSITION_ONE = 3;
 
 // A CFrame stores f32 components, so `CFrame.Angles(math.pi / 2, 0, 0)` has a
-// component of -4.4e-8 where the exact rotation has 0. Snapping a component
-// this small changes the rotation by less than the f32 axis-angle form does.
+// component of -4.4e-8 where the exact rotation has 0. The tolerance is about
+// 20 times that drift. Snapping moves a rotation by at most 1e-6, which is
+// about 5 times the error of the f32 axis-angle form and far below a
+// deliberate offset.
 const ALIGNED_TOLERANCE = 1e-6;
 
 /**

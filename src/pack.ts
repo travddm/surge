@@ -1,5 +1,6 @@
-// Bit-packing for `boolean`/`optional` fields inside a `DataType.Packed<T>`
-// subtree (Type Coverage -> Packed<T> in transformer.md). The transformer
+// Bit-packing for `boolean` values, `optional` presence, and two-variant
+// tagged-union tags inside a `DataType.Packed<T>` subtree (Type Coverage ->
+// Packed<T> in transformer.md). The transformer
 // knows at compile time exactly how many packed bits a subtree needs, so it
 // `alloc()`s that many bytes once (like any other fixed-size field) and
 // passes the resulting buffer/byte-offset here with a compile-time-known bit
