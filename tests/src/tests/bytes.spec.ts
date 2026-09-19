@@ -73,6 +73,7 @@ const spanSerializer = createBinarySerializer<NumberRange>();
 const boundsSerializer = createBinarySerializer<Rect>();
 const rawSerializer = createBinarySerializer<buffer>();
 const sequencesSerializer = createBinarySerializer<{ colors: ColorSequence; numbers: NumberSequence }>();
+const mediumSerializer = createBinarySerializer<{ signed: DataType.i24; unsigned: DataType.u24 }>();
 
 class BytesTest {
 	@Fact
@@ -216,6 +217,12 @@ class BytesTest {
 		// u8 count, then f32 time + f32 value + f32 envelope per keypoint.
 		const numbers = "02" + "00000000" + "00000040" + "0000003f" + "0000803f" + "0000003f" + "00000000";
 		Assert.equal(colors + numbers, hex(buffer));
+	}
+
+	@Fact
+	public pinsThe24BitWidths(): void {
+		// signed: -2 in two's complement | unsigned: 0x010203, low byte first
+		Assert.equal("feffff" + "030201", hex(mediumSerializer.serialize({ signed: -2, unsigned: 0x010203 }).buffer));
 	}
 }
 
