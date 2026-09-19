@@ -8,7 +8,10 @@ The correctness bug is fixed: `Instance` and its subclasses, `unknown`,
 and every other Roblox datatype not already in the walker's scalar-kind
 table (`UDim`, `UDim2`, `BrickColor`, `NumberRange`, `Rect`,
 `Vector3int16`, `Region3`, `TweenInfo`, `Font`, `Ray`, `DateTime`, `buffer`,
-...) now classify as `blob` instead of being walked structurally. The fix
+...) now classify as `blob` instead of being walked structurally
+(`unknown` and `any` as `optional(blob)`, because they can hold
+`undefined`; see Blob / passthrough channel in
+[transformer.md](../transformer.md)). The fix
 is identity-based, not name-matching: `@rbxts/types` brands `Instance`
 (and every subclass) and every datatype interface with its own uniquely
 named `_nominal_<TypeName>: unique symbol` property (`isRobloxNominalType`

@@ -64,20 +64,28 @@ except booleans, or a union with an enum member, because an open document
 changes those bytes. Two cases have no round-trip fixture: an `Enum` with
 more than 256 members (see [enum-encoding.md](enum-encoding.md)), and an
 integer outside its `DataType` width, for which the design states no
-result. The new fixtures found four shapes whose generated code failed
+result. The new fixtures found five shapes whose generated code failed
 the type check, so the build failed: a tuple whose rest element type
-differs from a fixed element, an optional property and a tuple property
-inside a recursion helper, and a required property of type `unknown`. All
-four are fixed, and `transform.test.ts` now type-checks generated code in
+differs from a fixed element, an optional property, an optional literal
+union, and a tuple property inside a recursion helper, and a required
+property of type `unknown`. All five are fixed, and `transform.test.ts` now type-checks generated code in
 a second program, as roblox-ts does. See Testing strategy in
 [testing.md](../testing.md).
+
+The same work found that an `unknown` property that is absent or
+`undefined` (`a?: unknown`) shifted every later blob into the wrong field
+with no error. That is fixed, and its document is removed: `unknown` and
+`any` now walk as `optional(blob)`, which adds a presence byte to each
+such field. See Blob / passthrough channel in
+[transformer.md](../transformer.md).
 
 Every claim in this directory was checked against both repositories at
 `surge` `7cce55e` and `rbxts-transformer-surge` `0e7c10d`. The order below
 changed as a result; each row states why. The robustness work described
 above landed after those commits, in `rbxts-transformer-surge` `4067844`,
 and the round-trip coverage work after that, with its emitter fixes in
-`rbxts-transformer-surge` `e74935d`.
+`rbxts-transformer-surge` `e74935d`. The `unknown` presence flag and the
+two-enum diagnostic are in `rbxts-transformer-surge` `5e6c2d7`.
 
 ## Order
 
@@ -96,15 +104,10 @@ and the round-trip coverage work after that, with its emitter fixes in
 These are small, have no dependency on the order above, and can land at any
 time:
 
-- [blob-channel-undefined-values.md](blob-channel-undefined-values.md).
-  Land it first. An `unknown` property that is absent or `undefined`
-  (`a?: unknown`) shifts every later blob into the wrong field with no
-  error. The fix adds a presence byte to every `unknown` field, so it
-  changes the wire format; no pinned buffer in `bytes.spec.ts` has one.
 - [enum-and-opaque-union-members.md](enum-and-opaque-union-members.md).
-  Land its stage 1 next: a union of items from two enums that share a
-  member name is the other known case where a valid type produces a wrong
-  value with no error. The later stages add support for `Enum.X | string`
+  Its stage 1 has landed: a union of items from two enums is a diagnostic,
+  where two items of the same name used to produce a wrong value with no
+  error. The later stages add support for `Enum.X | string`
   and `Instance | string`, which are diagnostics today; they change
   `guardedUnion` variant order. `bytes.spec.ts` pins no union with an
   enum or opaque member, so they move no pinned buffer today.
