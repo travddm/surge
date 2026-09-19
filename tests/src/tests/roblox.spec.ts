@@ -45,6 +45,8 @@ interface WithFixedDatatypes {
 	maybeCell?: Vector3int16;
 	inset: UDim;
 	insetOrLabel: UDim | string;
+	size: UDim2;
+	sizeOrLabel: UDim2 | string;
 }
 const fixedDatatypesSerializer = createBinarySerializer<WithFixedDatatypes>();
 
@@ -141,10 +143,18 @@ class RobloxTest {
 		for (const _ of $range(1, 100)) {
 			const cell = new Vector3int16(rng.int(-32768, 32767), rng.int(-32768, 32767), rng.int(-32768, 32767));
 			const inset = new UDim(rng.f32(), rng.int(-2147483648, 2147483647));
+			const size = new UDim2(
+				rng.f32(),
+				rng.int(-2147483648, 2147483647),
+				rng.f32(),
+				rng.int(-2147483648, 2147483647),
+			);
 			const value: WithFixedDatatypes = {
 				cell,
 				cellOrLabel: rng.bool() ? cell : rng.str(),
 				maybeCell: rng.bool() ? cell : undefined,
+				size,
+				sizeOrLabel: rng.bool() ? size : rng.str(),
 				inset,
 				insetOrLabel: rng.bool() ? inset : rng.str(),
 			};

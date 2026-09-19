@@ -53,7 +53,7 @@ buffer bytes.
 | `BrickColor`           | side                                 | side                                    | side                                               | u16 `.Number`                                     | u16 `.Number`                                |
 | `ColorSequence`        | u8 count + 7 B/keypoint              | same                                    | u8 count + u16 time + 3 B                          | none                                              | none                                         |
 | `NumberSequence`       | u8 count + 8 B; **Envelope dropped** | same, Envelope dropped                  | u8 count + 3×u16 incl. Envelope (values in [0, 1]) | none                                              | none                                         |
-| `UDim` / `UDim2`       | `UDim` 8 B; `UDim2` side             | side                                    | `ScaleOffset`/`ScaleOffset2`; packed common table  | none                                              | none                                         |
+| `UDim` / `UDim2`       | f32 + i32 per `UDim` (8 B / 16 B)    | side                                    | `ScaleOffset`/`ScaleOffset2`; packed common table  | none                                              | none                                         |
 | `NumberRange` / `Rect` | side                                 | side                                    | side                                               | none                                              | none                                         |
 | `DateTime`             | side                                 | side                                    | side                                               | f64 seconds or millis                             | f64 seconds or millis                        |
 | `buffer`               | side                                 | side                                    | side                                               | len + raw bytes; exact: no len                    | len + raw bytes; exact: no len               |
@@ -95,7 +95,7 @@ mishandles or drops.
    in the transformer's `datatypes.ts`).
     - Landed: `Vector3int16` (3×i16).
     - Landed: `UDim` (f32 scale + i32 offset).
-    - Open: `UDim2` (2×`UDim`).
+    - Landed: `UDim2` (2 x UDim: f32 + i32 for X, then for Y).
     - Open: `BrickColor` (u16 `.Number`).
     - Open: `NumberRange` (2×f32).
     - Open: `Rect` (4×f32).
