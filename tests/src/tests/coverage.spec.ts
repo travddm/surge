@@ -18,6 +18,15 @@ interface WithRobloxTypes {
 }
 const robloxSerializer = createBinarySerializer<WithRobloxTypes>();
 
+// blob-classification.md: a Roblox datatype with no dedicated scalar-kind
+// encoding (unlike Vector3/CFrame/Color3 above) must still round-trip, via
+// its `_nominal_Vector2` brand routing it to the blob passthrough channel
+// instead of being walked structurally.
+interface WithUnencodedDatatype {
+	offset: Vector2;
+}
+const unencodedDatatypeSerializer = createBinarySerializer<WithUnencodedDatatype>();
+
 type Shape = { kind: "circle"; radius: number } | { kind: "rect"; width: number; height: number };
 const shapeSerializer = createBinarySerializer<Shape>();
 
@@ -97,6 +106,19 @@ class CoverageTest {
 		const result = robloxSerializer.deserialize(buffer, blobs);
 		Assert.fuzzyEqual(value.position.X, result.position.X, 0.001);
 		Assert.equal(value.rig, result.rig);
+	}
+
+	@Fact
+	public roundTripsUnencodedDatatypeAsAnOpaqueBlob(): void {
+		const value: WithUnencodedDatatype = { offset: new Vector2(4, 5) };
+		const { buffer: buf, blobs } = unencodedDatatypeSerializer.serialize(value);
+		// Nothing is written into the buffer for a blob field -- this is the
+		// whole point of the passthrough channel, and a real byte-size
+		// assertion (not just round-trip equality) is what would have caught
+		// the walker recursing into Vector2's declared properties instead.
+		Assert.equal(0, buffer.len(buf));
+		const result = unencodedDatatypeSerializer.deserialize(buf, blobs);
+		Assert.equal(value.offset, result.offset);
 	}
 
 	@Fact

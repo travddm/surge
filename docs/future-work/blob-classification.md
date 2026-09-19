@@ -1,83 +1,87 @@
 # Future work: blob classification of Instances and opaque types
 
-Part of the [surge](../architecture.md) design. **This is a correctness bug
-in shipped behavior:** `Instance` fields are not passed through the blob
-channel as documented; they are walked structurally.
+Part of the [surge](../architecture.md) design.
 
 ## What
 
-Type Coverage in [transformer.md](../transformer.md) lists `unknown`,
-`Instance` and its subclasses, and "any other type this design can't
-structurally encode" as `blob`. The walker (`walk.ts`) only classifies a
-type as `blob` when it has zero properties and no index signature.
-`Instance` has hundreds of properties, so it is walked as an object.
+The correctness bug is fixed: `Instance` and its subclasses, `unknown`,
+and every other Roblox datatype not already in the walker's scalar-kind
+table (`Vector2`, `UDim`, `UDim2`, `BrickColor`, `NumberRange`, `Rect`,
+`Vector3int16`, `Region3`, `TweenInfo`, `Font`, `Ray`, `DateTime`, `buffer`,
+...) now classify as `blob` instead of being walked structurally. The fix
+is identity-based, not name-matching: `@rbxts/types` brands `Instance`
+(and every subclass) and every datatype interface with its own uniquely
+named `_nominal_<TypeName>: unique symbol` property (`isRobloxNominalType`
+in `detect.ts`), and the walker routes any type carrying one, declared in
+`@rbxts/types`, to `blob` before any structural check can reach its
+declared properties (`walk.ts`). `ROBLOX_SCALAR_KINDS` (`Vector3`, `CFrame`,
+`Color3`, `ColorSequence`, `NumberSequence`) was the one name-matching spot
+this design already had; it's now gated on the same `@rbxts/types`
+declaration-origin check, so a user-declared `interface Vector3 { foo:
+string }` no longer misclassifies as the Roblox scalar.
 
-Confirmed by executing the compiled walker with `@rbxts/types` loaded:
+The other silent misclassifications are fixed with a diagnostic (the
+walker's existing `report()`/`WalkDiagnostic` mechanism, not the `tsc`-style
+surfacing tracked in [walker-emitter-robustness.md](walker-emitter-robustness.md))
+instead of a silent `blob`: function types (detected via
+`checker.getSignaturesOfType`, covering both plain function-typed fields
+and methods), `symbol`, `bigint`, `null`, template literal types, and a
+type with both declared properties and an index signature. Each points the
+caller at `unknown` as the explicit opt-in. A union where every constituent
+resolves to `blob` (for example `BasePart | Model`, which share the
+inherited `_nominal_Instance` brand) collapses to one `blob` instead of a
+`guardedUnion`, which would otherwise hit `guardFor`'s missing `"blob"`
+case — walker-emitter-robustness.md's gap, made reachable by this fix, so
+narrowly closed here rather than left as a new regression.
 
-- `interface T { inst: Instance; part: BasePart }` produces roughly 35 KB
-  of IR: two recursion helpers (`surge_Instance_*`, `surge_BasePart_*`),
-  `Archivable` as a `bool`, every event as an object of blob-typed
-  `Connect`/`Once`/`Wait` fields, and every method as a `blob`. At runtime
-  `serialize` would push dozens of functions into `blobs` and
-  `deserialize` would return a plain table, not an Instance.
-- `Vector2`, `UDim2`, and `BrickColor` are walked structurally the same
-  way (`BrickColor.Name` becomes a literal union of every brick color
-  name; `Vector2.Unit` makes `Vector2` recursive). The same applies to
-  every other Roblox datatype not in `ROBLOX_SCALAR_KINDS` (`UDim`,
-  `Rect`, `NumberRange`, `Region3`, `Vector3int16`, `TweenInfo`, `Font`,
-  `Ray`, `DateTime`, ...).
-- A template literal string type (`` `id-${number}` ``) is walked as the
-  apparent members of `String` (blobs for every method); `symbol` is walked
-  the same way through `Symbol`. `bigint` and `null` become blobs.
-- `ROBLOX_SCALAR_KINDS` matches by symbol _name_: a user-declared
-  `interface Vector3 { foo: string }` classifies as `vector3`. This is the
-  name-matching Transformer Design §1 rejects for factory detection.
+Tests: `test/walk.test.ts` in the transformer repo covers `Instance`, an
+`Instance` subclass, an `Instance`-subclass union, an uncovered datatype
+(`Vector2`), `unknown`, the `Vector3`-name-collision case, and one
+diagnostic fixture per silently-misclassified kind above.
 
-Silent-but-wrong classifications that are not crashes:
+Two items from the original review remain open:
 
-- Function-typed properties and methods become `blob` with no warning. In
-  process that round-trips a function reference; over a `RemoteEvent` it is
-  meaningless.
-- An empty object type (`{}`, `interface Empty {}`) becomes a `blob`
-  instead of a zero-byte object.
-- A type with declared properties _and_ an index signature
-  (`{ a: number; [k: string]: number }`) drops the index signature.
+- **Real encodings for the cheap datatypes**, per
+  [type-coverage-parity.md](type-coverage-parity.md) Tier A: `Vector2`
+  (2×f32), `Vector3int16` (3×i16), `UDim` (f32 + i32 or i16), `UDim2`
+  (2×`UDim`), `BrickColor` (u16 `.Number`), `NumberRange` (2×f32), `Rect`
+  (4×f32), `DateTime` (f64 `UnixTimestampMillis`), raw `buffer` (u32 len +
+  bytes). They round-trip correctly today via the side channel; this is a
+  wire-size optimization, not a correctness fix.
+- **An empty object type (`{}`, `interface Empty {}`) still classifies as
+  `blob`** instead of a zero-byte object. Deferred, not merely unimplemented:
+  `@rbxts/compiler-types` declares `type defined = {}`, so a bare structural
+  check can't tell "the user meant an empty object" from "the user meant
+  `defined`, i.e. any non-nil value" — and encoding the latter as a
+  zero-byte object would deserialize a `defined` field holding a primitive
+  (`5`, `"str"`) back as `{}`, silently discarding it. Needs a way to
+  distinguish the two (for example gating on `aliasSymbol.name === "defined"`
+  declared in `@rbxts/compiler-types`, mirroring the `@rbxts/types`
+  declaration-origin checks above) before it's safe to implement.
 
-Test coverage is minimal. `test/walk.test.ts` has one `Instance` walker
-fixture, and it pins the current structural walk, not the documented
-blob. There is no `unknown` or function-typed walker fixture, no blob
-round-trip fixture in `tests/`, and the Lune runner's `Instance.new` shim
-builds only `BindableEvent`, so no fixture can construct an `Instance`
-there.
+`tests/`'s own `coverage.spec.ts` now has an end-to-end fixture,
+`roundTripsUnencodedDatatypeAsAnOpaqueBlob`: a real Lune `Vector2` (the
+Lune runner didn't expose it as a global before this doc; added alongside
+`CFrame`/`Vector3`/`Color3` in `lune-test-runner.luau`, following its own
+"cast because Lune 0.10.5's type definitions omit these constructors"
+pattern) round-trips through the blob side channel with an asserted
+zero-byte buffer, confirmed against the real compiled transformer output
+(`npm run tests:compile && npm run tests:test`), not just the transformer
+repo's own unit tests. No `Instance` fixture: the Lune runner's
+`Instance.new` shim only builds `BindableEvent`
+([walker-emitter-robustness.md](walker-emitter-robustness.md) territory,
+not this doc's), so no fixture can construct a real `Instance` there.
 
 ## Why deferred
 
-Needs an identity-based notion of "Roblox class" and "Roblox datatype"
-(resolved through the checker against `@rbxts/types`' own declarations),
-plus a decision on which unsupported types are diagnostics and which are
-implicit blobs. That is a design change to the walk, not a patch.
+The two remaining items don't need the identity-based classification this
+doc was blocked on; they're independent, smaller pieces of work now that
+the identity check exists.
 
 ## How, briefly
 
-- Simplest fix first, the one fbs and serio both use: route any type
-  carrying a `_nominal_*` property (the brand `@rbxts/types` puts on every
-  datatype and on `Instance`) to the side table. That covers every
-  structural row in [type-coverage-parity.md](type-coverage-parity.md) at
-  once; real encodings for the cheap datatypes can follow one at a time.
-- Alternatively classify a type as `blob` when it is assignable to
-  `@rbxts/types`' `Instance` (via `checker.isTypeAssignableTo` against
-  the resolved `Instance` type), or is `unknown`/`any`/`defined`.
-- Detect datatypes by declaration origin (nearest `package.json` is
-  `@rbxts/types`, reusing `nearestPackageName` from `detect.ts`) and
-  declared name, not by bare symbol name. Add the common missing ones
-  (`Vector2`, `UDim`, `UDim2`, `NumberRange`, `Rect`, `Vector3int16`,
-  `BrickColor` as `u16`) and report a diagnostic for the rest.
-- Report a diagnostic, not a silent blob, for functions, `symbol`,
-  `bigint`, `null`, template literal types, and property-plus-index
-  signature objects, pointing at `unknown` as the explicit opt-in.
-- Encode an empty object as zero bytes.
-- Tests: walker fixtures for each line above (update the existing
-  `Instance` fixture to expect `blob`); a blob round-trip fixture
-  in `coverage.spec.ts` (an `unknown` field holding a table is enough
-  under Lune; an `Instance` fixture needs the runner to expose a fake
-  Instance class).
+- One datatype's real encoding per commit, each with a round-trip fixture
+  and a byte-size assertion, per type-coverage-parity.md's own sequencing.
+- Decide the `defined`-vs-`{}` distinction (declaration-origin check on the
+  alias symbol, or leave `defined` as a documented exception) before adding
+  the zero-byte empty-object encoding.

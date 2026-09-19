@@ -23,11 +23,21 @@ for the current, corrected behavior. One narrow, non-correctness item from
 the enum-encoding review is still open: see
 [enum-encoding.md](enum-encoding.md).
 
+The current step 1, [blob-classification.md](blob-classification.md), has
+also landed its correctness half: `Instance` (and subclasses) and every
+Roblox datatype now route to the blob passthrough channel via an
+identity-based `_nominal_*` brand check instead of being walked
+structurally, and the previously-silent function/`symbol`/`bigint`/`null`/
+template-literal/index-signature misclassifications now report a
+diagnostic. Two smaller, independent items remain open there: real
+per-datatype encodings (Tier A in [type-coverage-parity.md](type-coverage-parity.md))
+and the empty-object-as-zero-bytes case.
+
 ## Order
 
 | Step | Document                                                       | Why here                                                                                                                               |
 | ---- | -------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
-| 1    | [blob-classification.md](blob-classification.md)               | `Instance` passthrough does not work as documented; needs an identity-based notion of Roblox classes and datatypes.                    |
+| 1    | [blob-classification.md](blob-classification.md)               | Identity-based `Instance`/datatype classification has landed; real per-datatype encodings and the empty-object case remain.            |
 | 2    | [walker-emitter-robustness.md](walker-emitter-robustness.md)   | Defines the diagnostic model once and applies it to the remaining crash and invalid-output cases.                                      |
 | 3    | [type-coverage-parity.md](type-coverage-parity.md)             | With the walk correct and the diagnostic model in place, close the type-coverage gaps against fbs, serio, Blink, and Zap.              |
 | 4    | [round-trip-test-coverage.md](round-trip-test-coverage.md)     | Full round-trip and byte-pinning suites over the now-complete type surface; the fuzz loops testing.md promises.                        |

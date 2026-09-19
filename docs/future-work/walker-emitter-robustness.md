@@ -13,15 +13,13 @@ by executing the compiled walker and emitter unless marked otherwise.
   in whatever file holds the call with an error that does not mention the
   transformer. The emitter uses `createPropertyAccessExpression` and
   `createPropertyAssignment` with the raw name everywhere.
-- **Type symbols named after `Object.prototype` members.** `walk.ts`
-  tests `symbolName in ROBLOX_SCALAR_KINDS` on a plain object literal, so
-  a type whose symbol is `toString`, `valueOf`, `constructor`, or
-  `hasOwnProperty` (for example a method `toString(): string`, whose
-  function type's symbol is `toString`) matches through the prototype and
-  yields a `Field` whose `kind` is the inherited function (for example
-  `Object.prototype.toString`). No emitter case matches it, so `readField`
-  returns `undefined` and the emitter then throws
-  `Cannot read properties of undefined (reading 'kind')`.
+- ~~Type symbols named after `Object.prototype` members.~~ Fixed as a side
+  effect of [blob-classification.md](blob-classification.md): the
+  `symbolName in ROBLOX_SCALAR_KINDS` lookup that matched through the
+  prototype chain is now also gated on the symbol's declaration resolving
+  to `@rbxts/types`, so a user's own `toString(): string`-shaped method
+  falls through to that fix's function-type diagnostic instead. See the
+  regression test in `test/walk.test.ts`.
 - **Tuples with a leading or middle rest element.**
   `[...number[], string]` walks as fixed `[str]` plus rest `num`, so the
   write reads `tup[0]` as the string. Only a trailing rest is supported;
@@ -70,8 +68,6 @@ decided once and applied consistently rather than case by case.
 
 - Use element access and string-literal property names whenever the name
   is not a valid identifier; treat numeric keys as numbers.
-- Replace the `in` check with a `Map` or `Object.prototype.hasOwnProperty`
-  (`Object.hasOwn` is ES2022; the transformer compiles against ES2019).
 - Reject non-trailing rest tuples with a diagnostic.
 - Extend `guardFor` with `typeIs(value, "Vector3")`-style checks for the
   userdata kinds and make `classifyUnion` reject what `guardFor` cannot

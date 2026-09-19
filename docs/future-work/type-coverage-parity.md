@@ -15,8 +15,11 @@ it:
 
 surge's own column comes from the walker probes recorded in the sibling
 documents (executed). "Structural" below means surge walks the type's
-declared properties as an object, which is wrong for every Roblox datatype
-(see [blob-classification.md](blob-classification.md)).
+declared properties as an object, which was wrong for every Roblox
+datatype; the identity-based `_nominal_*` brand fix in
+[blob-classification.md](blob-classification.md) has landed, so these now
+route to `side` uniformly. Real per-datatype encodings (the rest of Tier A
+below) are still open.
 
 ## Coverage matrix
 
@@ -44,21 +47,21 @@ buffer bytes.
 | recursive types        | named helpers (unions crash, bug)    | none                                    | none (depth cap 32, untested)                      | not supported                                     | bounded only, via `write_X`/`read_X`         |
 | `EnumItem`             | u8 by **name** (>256 overflows, bug) | u8 by `.Value`                          | u8 by `.Value`, throws >255                        | n/a                                               | n/a                                          |
 | `Vector3`              | 3×f32                                | 3×f32                                   | `Vector<X, Y, Z>` widths; packed common table      | `vector<T>` widths                                | 3×f32; `vector(x, y, z)` widths              |
-| `Vector2`              | **structural**                       | side                                    | side                                               | none                                              | 2×f32 (decodes as Vector3)                   |
-| `Vector3int16`         | **structural**                       | side                                    | side                                               | none                                              | none                                         |
+| `Vector2`              | side                                 | side                                    | side                                               | none                                              | 2×f32 (decodes as Vector3)                   |
+| `Vector3int16`         | side                                 | side                                    | side                                               | none                                              | none                                         |
 | `CFrame`               | 24 B axis-angle                      | 24 B axis-angle; packed aligned table   | **18 B quantized** (lossy, ~0.05); packed aligned  | 24 B Euler (`ToOrientation`)                      | 24 B axis-angle; `AlignedCFrame` 13 B        |
 | `Color3`               | 3×u8                                 | 3×u8                                    | 3×u8                                               | 3×u8                                              | 3×u8                                         |
-| `BrickColor`           | **structural**                       | side                                    | side                                               | u16 `.Number`                                     | u16 `.Number`                                |
+| `BrickColor`           | side                                 | side                                    | side                                               | u16 `.Number`                                     | u16 `.Number`                                |
 | `ColorSequence`        | u8 count + 7 B/keypoint              | same                                    | u8 count + u16 time + 3 B                          | none                                              | none                                         |
 | `NumberSequence`       | u8 count + 8 B; **Envelope dropped** | same, Envelope dropped                  | u8 count + 3×u16 incl. Envelope (values in [0, 1]) | none                                              | none                                         |
-| `UDim` / `UDim2`       | **structural**                       | side                                    | `ScaleOffset`/`ScaleOffset2`; packed common table  | none                                              | none                                         |
-| `NumberRange` / `Rect` | **structural**                       | side                                    | side                                               | none                                              | none                                         |
-| `DateTime`             | **structural**                       | side                                    | side                                               | f64 seconds or millis                             | f64 seconds or millis                        |
-| `buffer`               | **structural**                       | side                                    | side                                               | len + raw bytes; exact: no len                    | len + raw bytes; exact: no len               |
-| `Instance`             | **structural** (documented as side)  | side                                    | side                                               | side; `Instance(Class)` checked                   | side; `Instance.Class` checked               |
+| `UDim` / `UDim2`       | side                                 | side                                    | `ScaleOffset`/`ScaleOffset2`; packed common table  | none                                              | none                                         |
+| `NumberRange` / `Rect` | side                                 | side                                    | side                                               | none                                              | none                                         |
+| `DateTime`             | side                                 | side                                    | side                                               | f64 seconds or millis                             | f64 seconds or millis                        |
+| `buffer`               | side                                 | side                                    | side                                               | len + raw bytes; exact: no len                    | len + raw bytes; exact: no len               |
+| `Instance`             | side                                 | side                                    | side                                               | side; `Instance(Class)` checked                   | side; `Instance.Class` checked               |
 | `unknown` / `any`      | side                                 | optional side                           | side                                               | side (not optional)                               | side (not optional)                          |
-| functions, `null`      | side, silently                       | side                                    | side                                               | n/a                                               | n/a                                          |
-| `symbol`               | **structural**                       | side                                    | side                                               | n/a                                               | n/a                                          |
+| functions, `null`      | side, with a diagnostic              | side                                    | side                                               | n/a                                               | n/a                                          |
+| `symbol`               | side, with a diagnostic              | side                                    | side                                               | n/a                                               | n/a                                          |
 | generics               | **collide** (bug)                    | yes                                     | yes                                                | struct/map/enum generics                          | none                                         |
 | write-side validation  | none                                 | none                                    | range and NaN on every number                      | `option WriteValidations`                         | `write_checks` (default on)                  |
 | read-side checks       | none                                 | none                                    | none                                               | bounds validated                                  | server always, client optional               |

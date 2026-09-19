@@ -253,6 +253,7 @@ gameRoot._children.Players = players
 -- future fixture needs a datatype not listed here (e.g. ColorSequence, NumberSequence).
 CFrame = (roblox :: any).CFrame
 Vector3 = (roblox :: any).Vector3
+Vector2 = (roblox :: any).Vector2
 Color3 = (roblox :: any).Color3
 Enum = (roblox :: any).Enum
 task = luneTask
