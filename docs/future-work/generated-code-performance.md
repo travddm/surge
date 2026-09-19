@@ -62,7 +62,12 @@ write/read code is mostly what native codegen helps most — straight-line
 `buffer.writeXX`/`readXX` calls, count-driven loops for `array`/`dict`, and
 recursive helper calls — so a user adding the pragma to a file that calls
 `createBinarySerializer`/`createSerializer`/`createDeserializer` today is
-plausible free performance. surge doesn't add it automatically: the
+plausible free performance: a `//!native` comment as the first line of the
+`.ts` file compiles straight through roblox-ts's ordinary comment handling
+to `--!native` as line 1 of the emitted `.luau` (confirmed empirically —
+it lands ahead of roblox-ts's own "Compiled with roblox-ts" banner, which
+is what makes Luau actually honor it as a file pragma). surge doesn't add
+it automatically: the
 generated code is inlined into the call site's own file (Transformer
 Design §2, "call site is transformed independently"), not emitted as a
 separate module, so a file-level `--!native` would also force native
