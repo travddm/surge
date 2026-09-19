@@ -73,6 +73,13 @@ above landed after those commits, in `rbxts-transformer-surge` `4067844`.
 These are small, have no dependency on the order above, and can land at any
 time:
 
+- [enum-and-opaque-union-members.md](enum-and-opaque-union-members.md).
+  Land its stage 1 first: a union of items from two enums that share a
+  member name is the only known case where a valid type produces a wrong
+  value with no error. The later stages add support for `Enum.X | string`
+  and `Instance | string`, which are diagnostics today; they change
+  `guardedUnion` variant order, so land them before step 1 pins bytes for
+  those shapes.
 - The stale-statement checklist in
   [documentation-gaps.md](documentation-gaps.md). All but two entries
   describe behavior that is already final; that document names the two.
