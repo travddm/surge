@@ -26,6 +26,11 @@ client/server/shared "realm" split.
 `lint:check`/`lint:fix` run both ESLint and markdownlint (`lint:eslint`
 and `lint:md` individually, if only one is needed).
 
+Run `lint:fix` and `format:fix` (in whichever repo was touched) before
+treating a change as finished, not just the `check` variants `mise run ci`
+gates on — catching auto-fixable issues locally is cheaper than leaving
+them for CI or the next contributor to trip over.
+
 Each repository keeps its own copy of all four configs — there is no
 longer a single shared root, since the two repos don't share a
 `node_modules` or a checkout — trimmed to what that repo actually needs

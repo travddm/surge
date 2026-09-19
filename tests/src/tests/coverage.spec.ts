@@ -18,12 +18,19 @@ interface WithRobloxTypes {
 }
 const robloxSerializer = createBinarySerializer<WithRobloxTypes>();
 
-// blob-classification.md: a Roblox datatype with no dedicated scalar-kind
-// encoding (unlike Vector3/CFrame/Color3 above) must still round-trip, via
-// its `_nominal_Vector2` brand routing it to the blob passthrough channel
-// instead of being walked structurally.
-interface WithUnencodedDatatype {
+// type-coverage-parity.md Tier A: Vector2 gets its own real 2xf32 encoding
+// instead of routing through the blob side channel.
+interface WithVector2 {
 	offset: Vector2;
+}
+const vector2Serializer = createBinarySerializer<WithVector2>();
+
+// blob-classification.md: a Roblox datatype with no dedicated scalar-kind
+// encoding (unlike Vector2/Vector3/CFrame/Color3 above) must still round-trip,
+// via its `_nominal_Vector3int16` brand routing it to the blob passthrough
+// channel instead of being walked structurally.
+interface WithUnencodedDatatype {
+	offset: Vector3int16;
 }
 const unencodedDatatypeSerializer = createBinarySerializer<WithUnencodedDatatype>();
 
@@ -109,13 +116,25 @@ class CoverageTest {
 	}
 
 	@Fact
+	public roundTripsVector2(): void {
+		const value: WithVector2 = { offset: new Vector2(4, 5) };
+		const { buffer: buf, blobs } = vector2Serializer.serialize(value);
+		// 2xf32, not the 0-byte blob side channel -- this is the real encoding
+		// from type-coverage-parity.md Tier A, not the passthrough fallback.
+		Assert.equal(8, buffer.len(buf));
+		const result = vector2Serializer.deserialize(buf, blobs);
+		Assert.fuzzyEqual(value.offset.X, result.offset.X, 0.001);
+		Assert.fuzzyEqual(value.offset.Y, result.offset.Y, 0.001);
+	}
+
+	@Fact
 	public roundTripsUnencodedDatatypeAsAnOpaqueBlob(): void {
-		const value: WithUnencodedDatatype = { offset: new Vector2(4, 5) };
+		const value: WithUnencodedDatatype = { offset: new Vector3int16(4, 5, 6) };
 		const { buffer: buf, blobs } = unencodedDatatypeSerializer.serialize(value);
 		// Nothing is written into the buffer for a blob field -- this is the
 		// whole point of the passthrough channel, and a real byte-size
 		// assertion (not just round-trip equality) is what would have caught
-		// the walker recursing into Vector2's declared properties instead.
+		// the walker recursing into Vector3int16's declared properties instead.
 		Assert.equal(0, buffer.len(buf));
 		const result = unencodedDatatypeSerializer.deserialize(buf, blobs);
 		Assert.equal(value.offset, result.offset);

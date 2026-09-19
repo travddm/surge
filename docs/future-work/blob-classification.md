@@ -6,7 +6,7 @@ Part of the [surge](../architecture.md) design.
 
 The correctness bug is fixed: `Instance` and its subclasses, `unknown`,
 and every other Roblox datatype not already in the walker's scalar-kind
-table (`Vector2`, `UDim`, `UDim2`, `BrickColor`, `NumberRange`, `Rect`,
+table (`UDim`, `UDim2`, `BrickColor`, `NumberRange`, `Rect`,
 `Vector3int16`, `Region3`, `TweenInfo`, `Font`, `Ray`, `DateTime`, `buffer`,
 ...) now classify as `blob` instead of being walked structurally. The fix
 is identity-based, not name-matching: `@rbxts/types` brands `Instance`
@@ -14,11 +14,11 @@ is identity-based, not name-matching: `@rbxts/types` brands `Instance`
 named `_nominal_<TypeName>: unique symbol` property (`isRobloxNominalType`
 in `detect.ts`), and the walker routes any type carrying one, declared in
 `@rbxts/types`, to `blob` before any structural check can reach its
-declared properties (`walk.ts`). `ROBLOX_SCALAR_KINDS` (`Vector3`, `CFrame`,
-`Color3`, `ColorSequence`, `NumberSequence`) was the one name-matching spot
-this design already had; it's now gated on the same `@rbxts/types`
-declaration-origin check, so a user-declared `interface Vector3 { foo:
-string }` no longer misclassifies as the Roblox scalar.
+declared properties (`walk.ts`). `ROBLOX_SCALAR_KINDS` (`Vector2`,
+`Vector3`, `CFrame`, `Color3`, `ColorSequence`, `NumberSequence`) was the
+one name-matching spot this design already had; it's now gated on the same
+`@rbxts/types` declaration-origin check, so a user-declared `interface
+Vector3 { foo: string }` no longer misclassifies as the Roblox scalar.
 
 The other silent misclassifications are fixed with a diagnostic (the
 walker's existing `report()`/`WalkDiagnostic` mechanism, not the `tsc`-style
@@ -42,12 +42,14 @@ diagnostic fixture per silently-misclassified kind above.
 Two items from the original review remain open:
 
 - **Real encodings for the cheap datatypes**, per
-  [type-coverage-parity.md](type-coverage-parity.md) Tier A: `Vector2`
-  (2×f32), `Vector3int16` (3×i16), `UDim` (f32 + i32 or i16), `UDim2`
-  (2×`UDim`), `BrickColor` (u16 `.Number`), `NumberRange` (2×f32), `Rect`
-  (4×f32), `DateTime` (f64 `UnixTimestampMillis`), raw `buffer` (u32 len +
-  bytes). They round-trip correctly today via the side channel; this is a
-  wire-size optimization, not a correctness fix.
+  [type-coverage-parity.md](type-coverage-parity.md) Tier A. `Vector2`
+  (2×f32) has landed, its own `ROBLOX_SCALAR_KINDS` entry alongside
+  `Vector3`/`CFrame`/etc. Still open: `Vector3int16` (3×i16), `UDim`
+  (f32 + i32 or i16), `UDim2` (2×`UDim`), `BrickColor` (u16 `.Number`),
+  `NumberRange` (2×f32), `Rect` (4×f32), `DateTime` (f64
+  `UnixTimestampMillis`), raw `buffer` (u32 len + bytes). They round-trip
+  correctly today via the side channel; this is a wire-size optimization,
+  not a correctness fix.
 - **An empty object type (`{}`, `interface Empty {}`) still classifies as
   `blob`** instead of a zero-byte object. Deferred, not merely unimplemented:
   `@rbxts/compiler-types` declares `type defined = {}`, so a bare structural
@@ -59,16 +61,18 @@ Two items from the original review remain open:
   declared in `@rbxts/compiler-types`, mirroring the `@rbxts/types`
   declaration-origin checks above) before it's safe to implement.
 
-`tests/`'s own `coverage.spec.ts` now has an end-to-end fixture,
-`roundTripsUnencodedDatatypeAsAnOpaqueBlob`: a real Lune `Vector2` (the
-Lune runner didn't expose it as a global before this doc; added alongside
-`CFrame`/`Vector3`/`Color3` in `lune-test-runner.luau`, following its own
-"cast because Lune 0.10.5's type definitions omit these constructors"
-pattern) round-trips through the blob side channel with an asserted
-zero-byte buffer, confirmed against the real compiled transformer output
-(`npm run tests:compile && npm run tests:test`), not just the transformer
-repo's own unit tests. No `Instance` fixture: the Lune runner's
-`Instance.new` shim only builds `BindableEvent`
+`tests/`'s own `coverage.spec.ts` now has two end-to-end fixtures.
+`roundTripsVector2` round-trips a real Lune `Vector2` through the new
+`vector2` scalar kind with an asserted 8-byte (2×f32) buffer, confirmed
+against the real compiled transformer output (`npm run tests:compile &&
+npm run tests:test`), not just the transformer repo's own unit tests.
+`roundTripsUnencodedDatatypeAsAnOpaqueBlob` covers the still-unencoded case
+with a real Lune `Vector3int16` (the Lune runner didn't expose either type
+as a global before this doc; added alongside `CFrame`/`Vector3`/`Color3` in
+`lune-test-runner.luau`, following its own "cast because Lune 0.10.5's type
+definitions omit these constructors" pattern) round-tripping through the
+blob side channel with an asserted zero-byte buffer. No `Instance` fixture:
+the Lune runner's `Instance.new` shim only builds `BindableEvent`
 ([walker-emitter-robustness.md](walker-emitter-robustness.md) territory,
 not this doc's), so no fixture can construct a real `Instance` there.
 
@@ -82,6 +86,15 @@ the identity check exists.
 
 - One datatype's real encoding per commit, each with a round-trip fixture
   and a byte-size assertion, per type-coverage-parity.md's own sequencing.
+  Confirmed empirically (`@lune/roblox` 0.10.5, probed via a throwaway
+  Lune script): `Vector3int16`, `UDim`, `UDim2`, `BrickColor`,
+  `NumberRange`, and `Rect` are all available as globals the same way
+  `Vector2`/`Vector3`/`CFrame`/`Color3` are, so each gets the same
+  round-trip-fixture-plus-byte-size-assertion treatment. `DateTime` is
+  not — `roblox.DateTime` is `nil` in that version — so its commit will
+  need either a different fixture approach (Lune's own non-Roblox
+  `@lune/datetime`, or a construction path this hasn't checked yet) or a
+  documented gap in the Lune coverage instead of a matching fixture.
 - Decide the `defined`-vs-`{}` distinction (declaration-origin check on the
   alias symbol, or leave `defined` as a documented exception) before adding
   the zero-byte empty-object encoding.

@@ -26,14 +26,21 @@ by executing the compiled walker and emitter unless marked otherwise.
   nothing rejects the other forms. (Optional trailing elements,
   `[number, string?]`, do work.)
 - **Non-table, non-primitive union members.** `guardFor` in `emit.ts`
-  throws a plain `Error` for a `vector3`/`cframe`/`enum`/`optional`
-  variant, and `classifyUnion` does not count these as table-shaped, so
-  `Vector3 | CFrame` reaches the emitter and crashes with a stack trace
-  instead of a diagnostic. `Vector3 | string` only works because the
-  userdata variant happens to come last in the checker's constituent
-  order and the last variant is never guarded. (Both walks were executed:
-  `Vector3 | CFrame` produces a `guardedUnion` of `vector3` then `cframe`,
-  which `guardFor` rejects; the emitter throw itself is from code reading.)
+  throws a plain `Error` for a `vector2`/`vector3`/`cframe`/`enum`/
+  `optional` variant, and `classifyUnion` does not count these as
+  table-shaped, so `Vector3 | CFrame` reaches the emitter and crashes with
+  a stack trace instead of a diagnostic. `Vector3 | string` only works
+  because the userdata variant happens to come last in the checker's
+  constituent order and the last variant is never guarded. (Both walks
+  were executed: `Vector3 | CFrame` produces a `guardedUnion` of `vector3`
+  then `cframe`, which `guardFor` rejects; the emitter throw itself is
+  from code reading.) `Vector2` joined this gap once
+  [blob-classification.md](blob-classification.md)'s Tier A gave it a real
+  `vector2` scalar kind instead of collapsing into `blob`: a
+  `Vector2 | Instance`-shaped union used to collapse to a single `blob`
+  (every constituent routing to `blob`) and now reaches this same
+  `guardFor` gap instead, identical to how `Vector3 | Instance` already
+  behaved before this fix.
 - **Re-aliased `Packed<T>`.** `type PackedFlags = DataType.Packed<Flags>`
   is not recognized: the alias symbol is `PackedFlags`, so
   `getPackedInnerType` returns nothing and the intersection is walked
@@ -69,9 +76,9 @@ decided once and applied consistently rather than case by case.
 - Use element access and string-literal property names whenever the name
   is not a valid identifier; treat numeric keys as numbers.
 - Reject non-trailing rest tuples with a diagnostic.
-- Extend `guardFor` with `typeIs(value, "Vector3")`-style checks for the
-  userdata kinds and make `classifyUnion` reject what `guardFor` cannot
-  guard, as a diagnostic.
+- Extend `guardFor` with `typeIs(value, "Vector3")`/`"Vector2"`-style
+  checks for the userdata kinds and make `classifyUnion` reject what
+  `guardFor` cannot guard, as a diagnostic.
 - Detect `Packed` through alias chains (walk `aliasSymbol`'s declared
   type) or by the `_surge_packed` brand property's declaring package.
 - Transform contextually typed factory calls too (read the contextual type
