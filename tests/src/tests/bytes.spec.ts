@@ -7,8 +7,8 @@ import { hex } from "../support";
 // wire format fails here and must be made on purpose. Each expected string is
 // worked out from Type Coverage in transformer.md, not copied from the output.
 // All integers and floats are little-endian. Not pinned, because an open
-// future-work item changes their bytes: `CFrame`, `NumberSequence`, anything
-// inside `Packed<T>` except booleans, and a union with an enum member.
+// future-work item changes their bytes: `CFrame`, anything inside `Packed<T>`
+// except booleans, and a union with an enum member.
 
 // Declared out of name order: fields are written sorted by name.
 interface Primitives {
@@ -72,6 +72,7 @@ const paintSerializer = createBinarySerializer<BrickColor>();
 const spanSerializer = createBinarySerializer<NumberRange>();
 const boundsSerializer = createBinarySerializer<Rect>();
 const rawSerializer = createBinarySerializer<buffer>();
+const sequencesSerializer = createBinarySerializer<{ colors: ColorSequence; numbers: NumberSequence }>();
 
 class BytesTest {
 	@Fact
@@ -202,6 +203,19 @@ class BytesTest {
 			"03000000" + "0102ff",
 			hex(rawSerializer.serialize(buffer.fromstring(string.char(1, 2, 255))).buffer),
 		);
+	}
+
+	@Fact
+	public pinsSequences(): void {
+		const { buffer } = sequencesSerializer.serialize({
+			colors: new ColorSequence(Color3.fromRGB(255, 0, 128)),
+			numbers: new NumberSequence([new NumberSequenceKeypoint(0, 2, 0.5), new NumberSequenceKeypoint(1, 0.5, 0)]),
+		});
+		// u8 count, then f32 time + 3 x u8 per keypoint. One color makes two keypoints, at 0 and 1.
+		const colors = "02" + "00000000" + "ff0080" + "0000803f" + "ff0080";
+		// u8 count, then f32 time + f32 value + f32 envelope per keypoint.
+		const numbers = "02" + "00000000" + "00000040" + "0000003f" + "0000803f" + "0000003f" + "00000000";
+		Assert.equal(colors + numbers, hex(buffer));
 	}
 }
 
