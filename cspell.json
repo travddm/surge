@@ -54,6 +54,7 @@
 		"rbxtsc",
 		"readstring",
 		"reflex",
+		"repr",
 		"rojo",
 		"runit",
 		"serde",

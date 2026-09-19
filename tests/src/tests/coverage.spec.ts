@@ -1,6 +1,8 @@
 import { Assert, Fact } from "@rbxts/runit";
 import { DataType, createBinarySerializer } from "@rbxts/surge";
 
+import { difference } from "../support";
+
 interface WithCollections {
 	items: number[];
 	pair: [string, number];
@@ -136,12 +138,7 @@ class CoverageTest {
 			set: new Set<string>(["p", "q"]),
 		};
 		const { buffer, blobs } = collectionsSerializer.serialize(value);
-		const result = collectionsSerializer.deserialize(buffer, blobs);
-		Assert.equal(value.items.size(), result.items.size());
-		Assert.equal(value.pair[1], result.pair[1]);
-		Assert.equal(value.record.x, result.record.x);
-		Assert.equal(value.map.get("k"), result.map.get("k"));
-		Assert.true(result.set.has("p"));
+		Assert.equal(undefined, difference(value, collectionsSerializer.deserialize(buffer, blobs)));
 	}
 
 	@Fact
@@ -149,13 +146,14 @@ class CoverageTest {
 		const value: WithRobloxTypes = {
 			position: new Vector3(1, 2, 3),
 			orientation: new CFrame(1, 2, 3),
-			tint: new Color3(0.5, 0.25, 0.75),
+			// A multiple of 1/255 per channel: a `Color3` is stored as 3 x u8.
+			tint: Color3.fromRGB(128, 64, 191),
 			rig: Enum.HumanoidRigType.R15,
 		};
 		const { buffer, blobs } = robloxSerializer.serialize(value);
-		const result = robloxSerializer.deserialize(buffer, blobs);
-		Assert.fuzzyEqual(value.position.X, result.position.X, 0.001);
-		Assert.equal(value.rig, result.rig);
+		// Every component above is exact in an f32, so each datatype compares
+		// equal. `roblox.spec.ts` covers a `CFrame` with a rotation.
+		Assert.equal(undefined, difference(value, robloxSerializer.deserialize(buffer, blobs)));
 	}
 
 	@Fact
@@ -185,10 +183,13 @@ class CoverageTest {
 
 	@Fact
 	public roundTripsTaggedUnion(): void {
-		const value: Shape = { kind: "rect", width: 2, height: 3 };
-		const { buffer, blobs } = shapeSerializer.serialize(value);
-		const result = shapeSerializer.deserialize(buffer, blobs);
-		Assert.equal(value.kind, result.kind);
+		for (const value of [
+			{ kind: "rect", width: 2, height: 3 },
+			{ kind: "circle", radius: 1.5 },
+		] as Shape[]) {
+			const { buffer, blobs } = shapeSerializer.serialize(value);
+			Assert.equal(undefined, difference(value, shapeSerializer.deserialize(buffer, blobs)));
+		}
 	}
 
 	@Fact

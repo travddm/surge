@@ -137,23 +137,28 @@ the runner file itself):
   not derived from a sourcemap or a built `.rbxl`. Scanning must happen
   eagerly, never lazily inside `__index`: Lune's `fs` functions yield
   internally, and Luau forbids yielding across a metamethod boundary.
-- **Datatype globals**: `Vector3`/`CFrame`/`Color3`/`Enum` are bound as
+- **Datatype globals**: `Vector3`/`Vector2`/`Vector3int16`/`CFrame`/
+  `Color3`/`ColorSequence`/`NumberSequence` (and the two keypoint
+  types)/`Enum` are bound as
   bare globals from `@lune/roblox`'s namespaced equivalents
   (`(roblox :: any).Vector3`, etc. — the `:: any` cast works around
   Lune 0.10.5's `@lune/roblox` type definitions omitting these
   constructors even though they exist at runtime). `buffer` needs no
   shim; it's a native Luau global Lune ships without help. Add the same
   pattern for any datatype a future fixture needs that isn't listed here
-  (`ColorSequence`, `NumberSequence`, ...).
+  (`UDim2`, ...). Lune does not provide `Random`, so the fuzz loops use
+  the seeded `Rng` in `tests/src/support.ts`.
 - **Service stubs**: most services auto-vivify as inert stubs the first
   time `GetService` is asked for them. `RunService` gets a real stub
   (`IsRunning`/`IsClient`/`IsServer`/`IsStudio`/a dead `Heartbeat.Connect`)
   because `@flamework/core` (which `@rbxts/runit` depends on) calls these
   directly at module load, not just checks they exist; `Players` gets
-  `LocalPlayer = nil`. `Instance.new` supports only `"BindableEvent"`,
-  with real `Connect`/`Fire` dispatch — `@flamework/core`'s `Modding`
-  module constructs one via `@rbxts/signal` unconditionally at module
-  load, and needs it to actually work, not just exist.
+  `LocalPlayer = nil`. `Instance.new("BindableEvent")` returns a
+  stand-in with real `Connect`/`Fire` dispatch — `@flamework/core`'s
+  `Modding` module constructs one via `@rbxts/signal` unconditionally at
+  module load, and needs it to actually work, not just exist. Every other
+  class is a Lune data-model instance, which is enough for a fixture that
+  passes an `Instance` through the blob channel.
 - **Two separate roots, not one**: `src/tests/*.spec.ts` (correctness)
   and `src/bench/*.bench.spec.ts` (benchmarks) are siblings, not nested —
   `src/index.ts`'s `main()` only ever passes `script.tests` to
@@ -280,13 +285,41 @@ The concrete plan for everything else:
   "Round-trip tests run under Lune" above) as part of `mise run ci`: for
   each supported `Field` kind and representative combination
   (nested objects, arrays of unions, optional chains, recursive types,
-  `Packed<T>` subtrees, `Record`/`Map`/`Set`), a `@Theory` with
-  `@InlineData`-provided fixed cases plus at least one `@Fact` per shape
-  that loops over many locally-generated random values (`runit` has no
-  built-in property-based fuzzing or shrinking, unlike Lync's custom
-  harness — an ordinary seeded loop inside the test method reproduces the
-  same coverage without needing a new framework feature), asserting
-  `Assert.equal` between the original and the round-tripped value.
+  `Packed<T>` subtrees, `Record`/`Map`/`Set`), fixed cases plus at least
+  one `@Fact` per shape that loops over many locally-generated random
+  values (`runit` has no built-in property-based fuzzing or shrinking,
+  unlike Lync's custom harness — an ordinary seeded loop inside the test
+  method reproduces the same coverage without needing a new framework
+  feature). One suite per area: `numbers`, `strings`, `collections`,
+  `literals`, `unions`, `recursion`, `packed`, `roblox`, and `factories`,
+  next to the older `basic` and `coverage` regression suites.
+    - Fixed cases are a `@Theory` with `@InlineData` where the cases are
+      plain values (numbers, strings, literals), and a `@Fact` over a list
+      where a case is a table or a datatype, which a decorator argument
+      cannot express well.
+    - `tests/src/support.ts` (next to `bench/`, so that `src/tests/` holds
+      suites only) holds `difference`, which compares two whole
+      values and returns the path of the first difference, the seeded
+      `Rng`, and `hex`. `difference` treats `NaN` as equal to `NaN` and `0`
+      as different from `-0`, which `==` gets wrong for a round-trip
+      check. Every fact of the suites above asserts
+      `difference(value, result) === undefined` (`basic` and most of
+      `coverage` still compare selected fields);
+      `support.spec.ts` tests `difference` itself, because a `difference`
+      that reports nothing would pass every other suite.
+    - A generator produces values that survive their encoding exactly
+      (`Rng.f32` for an `f32`, `Color3.fromRGB` for the 3×`u8` `Color3`),
+      so the comparison stays exact. The one exception is a `CFrame` with
+      a rotation, which is compared per component within `0.0001`.
+    - `bytes.spec.ts` pins the exact bytes of shapes whose encoding is
+      final. Each expected string is derived by hand from Type Coverage in
+      [transformer.md](transformer.md), not copied from the output, so it
+      also checks that document.
+    - `@rbxts/repr` is pinned to `1.0.2` in `tests/package.json`. `1.0.3`
+      changed its module to return `{ default = repr }`, and
+      `@rbxts/runit` `1.4.8` calls the module itself when it formats the
+      arguments of a `@Theory`, so every `@Theory` fails with `1.0.3`
+      (`attempt to call a table value`).
 - **Malformed-input scope**: per the no-bounds-checking decision in
   Transformer Design §7 in [transformer.md](transformer.md),
   `deserialize()` has unspecified behavior on malformed input — so these

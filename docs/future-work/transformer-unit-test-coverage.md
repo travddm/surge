@@ -38,7 +38,11 @@ coverage is still far from complete:
   declarations instead of crashing the transform, a walk diagnostic
   surfacing as a `ts.Diagnostic` at the offending property, a factory call
   without a type argument, and a user declaration named after an injected
-  import.
+  import. `transform.test.ts` also type-checks the transformed file in a
+  second program, as roblox-ts does before it emits: one case per shape
+  whose generated code used to fail that check, and one shape that holds
+  every common kind. The stub `@rbxts/surge` declares the runtime exports
+  for this (`test/fixtures/rbxts-surge/runtime.ts`).
 - **Diagnostics** from before the union, tuple, and position work are
   still asserted only as `length > 0` (nine assertions in `walk.test.ts`,
   none on message text or the node), so one of those can regress to a

@@ -30,7 +30,7 @@ brand check instead of being walked structurally, and the previously-silent
 function/`symbol`/`bigint`/`null`/template-literal/index-signature
 misclassifications now report a diagnostic. `Vector2` has a real encoding.
 The document no longer has a step of its own. Its two remaining items are
-the rest of the per-datatype encodings, which step 2 delivers, and the
+the rest of the per-datatype encodings, which step 1 delivers, and the
 empty-object-as-zero-bytes case, which waits on a design decision recorded
 there.
 
@@ -50,36 +50,64 @@ Transformer Design §8 and §9, Type Coverage, and Risks in
 [transformer.md](../transformer.md). Regression tests are in the
 transformer repo's `test/` and round-trip fixtures in `coverage.spec.ts`.
 
+The round-trip test coverage work that used to be step 1 has also landed,
+and its document is removed. `tests/src/tests/` has one suite per area of
+Type Coverage, each with fixed cases (`@Theory` with `@InlineData` where
+the cases are plain values) and a seeded fuzz `@Fact`. Every fact in
+those suites, and the three facts of `coverage.spec.ts` that compared too
+little, compare the whole value with `difference` from
+`tests/src/support.ts`.
+`bytes.spec.ts` pins the exact bytes of the shapes whose encoding is
+final, so an encoding change in step 1 that moves one of them fails there.
+It does not pin `CFrame`, `NumberSequence`, anything inside `Packed<T>`
+except booleans, or a union with an enum member, because an open document
+changes those bytes. Two cases have no round-trip fixture: an `Enum` with
+more than 256 members (see [enum-encoding.md](enum-encoding.md)), and an
+integer outside its `DataType` width, for which the design states no
+result. The new fixtures found four shapes whose generated code failed
+the type check, so the build failed: a tuple whose rest element type
+differs from a fixed element, an optional property and a tuple property
+inside a recursion helper, and a required property of type `unknown`. All
+four are fixed, and `transform.test.ts` now type-checks generated code in
+a second program, as roblox-ts does. See Testing strategy in
+[testing.md](../testing.md).
+
 Every claim in this directory was checked against both repositories at
 `surge` `7cce55e` and `rbxts-transformer-surge` `0e7c10d`. The order below
 changed as a result; each row states why. The robustness work described
-above landed after those commits, in `rbxts-transformer-surge` `4067844`.
+above landed after those commits, in `rbxts-transformer-surge` `4067844`,
+and the round-trip coverage work after that, with its emitter fixes in
+`rbxts-transformer-surge` `e74935d`.
 
 ## Order
 
-| Step | Document                                                                                                                              | Why here                                                                                                                                                                                        |
-| ---- | ------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1    | [round-trip-test-coverage.md](round-trip-test-coverage.md)                                                                            | No longer blocked: the bugs its fixtures could not pass under have landed. Pinning exact bytes and whole-value equality now makes every encoding change in step 2 a visible, deliberate diff.   |
-| 2    | [type-coverage-parity.md](type-coverage-parity.md) Tier A, with the datatype list in [blob-classification.md](blob-classification.md) | Real encodings for the cheap datatypes, `NumberSequence` Envelope (data loss today), packed `optional`/tag/`CFrame`, and u24/i24/f16. One datatype per commit, each pinned by a step 1 fixture. |
-| 3    | [benchmark-tooling.md](benchmark-tooling.md)                                                                                          | The size and speed comparison harness against the four libraries. Follows step 2 so that rows containing a Tier A datatype do not move after they are recorded.                                 |
-| 4    | [generated-code-performance.md](generated-code-performance.md)                                                                        | Every remaining item is measurement-driven, so it follows the harness.                                                                                                                          |
-| 5    | [type-coverage-parity.md](type-coverage-parity.md) Tier B                                                                             | New `DataType.*` surface (length-typed containers, per-component widths, ranges). That document asks for the harness first, to show what each bound saves. Split from Tier A for that reason.   |
-| 6    | [deserialize-hardening.md](deserialize-hardening.md)                                                                                  | Opt-in checks; needed before the networking layer, not before.                                                                                                                                  |
-| 7    | [documentation-gaps.md](documentation-gaps.md): `docs/usage.md`                                                                       | User documentation written against fixed behavior. The stale-statement sweep in the same document does not wait; see below.                                                                     |
-| 8    | [ci-and-release.md](ci-and-release.md): version backstop and first tagged release                                                     | The backstop lands with the release it protects. The CI-only items do not wait; see below.                                                                                                      |
+| Step | Document                                                                                                                              | Why here                                                                                                                                                                                                 |
+| ---- | ------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1    | [type-coverage-parity.md](type-coverage-parity.md) Tier A, with the datatype list in [blob-classification.md](blob-classification.md) | Real encodings for the cheap datatypes, `NumberSequence` Envelope (data loss today), packed `optional`/tag/`CFrame`, and u24/i24/f16. One datatype per commit, each pinned by a `bytes.spec.ts` fixture. |
+| 2    | [benchmark-tooling.md](benchmark-tooling.md)                                                                                          | The size and speed comparison harness against the four libraries. Follows step 1 so that rows containing a Tier A datatype do not move after they are recorded.                                          |
+| 3    | [generated-code-performance.md](generated-code-performance.md)                                                                        | Every remaining item is measurement-driven, so it follows the harness.                                                                                                                                   |
+| 4    | [type-coverage-parity.md](type-coverage-parity.md) Tier B                                                                             | New `DataType.*` surface (length-typed containers, per-component widths, ranges). That document asks for the harness first, to show what each bound saves. Split from Tier A for that reason.            |
+| 5    | [deserialize-hardening.md](deserialize-hardening.md)                                                                                  | Opt-in checks; needed before the networking layer, not before.                                                                                                                                           |
+| 6    | [documentation-gaps.md](documentation-gaps.md): `docs/usage.md`                                                                       | User documentation written against fixed behavior. The stale-statement sweep in the same document does not wait; see below.                                                                              |
+| 7    | [ci-and-release.md](ci-and-release.md): version backstop and first tagged release                                                     | The backstop lands with the release it protects. The CI-only items do not wait; see below.                                                                                                               |
 
 ## No step of its own
 
 These are small, have no dependency on the order above, and can land at any
 time:
 
+- [blob-channel-undefined-values.md](blob-channel-undefined-values.md).
+  Land it first. An `unknown` property that is absent or `undefined`
+  (`a?: unknown`) shifts every later blob into the wrong field with no
+  error. The fix adds a presence byte to every `unknown` field, so it
+  changes the wire format; no pinned buffer in `bytes.spec.ts` has one.
 - [enum-and-opaque-union-members.md](enum-and-opaque-union-members.md).
-  Land its stage 1 first: a union of items from two enums that share a
-  member name is the only known case where a valid type produces a wrong
+  Land its stage 1 next: a union of items from two enums that share a
+  member name is the other known case where a valid type produces a wrong
   value with no error. The later stages add support for `Enum.X | string`
   and `Instance | string`, which are diagnostics today; they change
-  `guardedUnion` variant order, so land them before step 1 pins bytes for
-  those shapes.
+  `guardedUnion` variant order. `bytes.spec.ts` pins no union with an
+  enum or opaque member, so they move no pinned buffer today.
 - The stale-statement checklist in
   [documentation-gaps.md](documentation-gaps.md). All but two entries
   describe behavior that is already final; that document names the two.
@@ -87,12 +115,12 @@ time:
   it in the editor and it promises packing that `optional` does not get.
 - The CI items in [ci-and-release.md](ci-and-release.md): the transformer
   workflow running the integration suite, the pinned sibling ref, `npm ci`,
-  and the Windows job. Step 2 changes the transformer, and its CI
+  and the Windows job. Step 1 changes the transformer, and its CI
   cannot see a broken serializer today.
 - The Lune size tier of [benchmark-tooling.md](benchmark-tooling.md) needs no
   Roblox process. The wire format is deterministic now, but it is not frozen:
-  each step 2 encoding changes the bytes of its datatype, so record numbers
-  for those rows after step 2.
+  each step 1 encoding changes the bytes of its datatype, so record numbers
+  for those rows after step 1.
 - [transformer-unit-test-coverage.md](transformer-unit-test-coverage.md):
   each remaining case lands with the fix or fixture it pins.
 - [enum-encoding.md](enum-encoding.md): a one-byte saving that needs an IR

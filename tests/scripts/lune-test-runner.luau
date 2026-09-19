@@ -250,12 +250,16 @@ gameRoot._children.Players = players
 
 -- Casts because Lune 0.10.5's @lune/roblox type definitions omit these datatype constructors
 -- even though they exist at runtime. Extend this same pattern (`(roblox :: any).SomeType`) if a
--- future fixture needs a datatype not listed here (e.g. ColorSequence, NumberSequence).
+-- future fixture needs a datatype not listed here (e.g. UDim2).
 CFrame = (roblox :: any).CFrame
 Vector3 = (roblox :: any).Vector3
 Vector2 = (roblox :: any).Vector2
 Vector3int16 = (roblox :: any).Vector3int16
 Color3 = (roblox :: any).Color3
+ColorSequence = (roblox :: any).ColorSequence
+ColorSequenceKeypoint = (roblox :: any).ColorSequenceKeypoint
+NumberSequence = (roblox :: any).NumberSequence
+NumberSequenceKeypoint = (roblox :: any).NumberSequenceKeypoint
 Enum = (roblox :: any).Enum
 task = luneTask
 
@@ -263,7 +267,9 @@ task = luneTask
 -- constructs at module load, via `Signal.new()`) builds a real Instance.new("BindableEvent").
 -- Lune's own Instance.new only builds data-model instances with no live event dispatch, so
 -- BindableEvent needs an actually-functional stand-in -- Flamework's decorator/reflection
--- registration depends on it firing for real, not just existing.
+-- registration depends on it firing for real, not just existing. Every other class is a
+-- data-model instance from Lune, which is enough for a fixture that passes an `Instance` through
+-- the blob channel.
 Instance = {
 	new = function(className)
 		if className == "BindableEvent" then
@@ -283,7 +289,7 @@ Instance = {
 				Destroy = function() end,
 			}
 		end
-		error("Instance.new: unsupported class in the Lune test shim: " .. tostring(className), 0)
+		return (roblox :: any).Instance.new(className)
 	end,
 }
 
