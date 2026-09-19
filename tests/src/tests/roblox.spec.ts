@@ -47,6 +47,8 @@ interface WithFixedDatatypes {
 	insetOrLabel: UDim | string;
 	size: UDim2;
 	sizeOrLabel: UDim2 | string;
+	paint: BrickColor;
+	paintOrLabel: BrickColor | string;
 }
 const fixedDatatypesSerializer = createBinarySerializer<WithFixedDatatypes>();
 
@@ -149,10 +151,13 @@ class RobloxTest {
 				rng.f32(),
 				rng.int(-2147483648, 2147483647),
 			);
+			const paint = new BrickColor(rng.pick([1, 21, 194, 1004, 1032]));
 			const value: WithFixedDatatypes = {
 				cell,
 				cellOrLabel: rng.bool() ? cell : rng.str(),
 				maybeCell: rng.bool() ? cell : undefined,
+				paint,
+				paintOrLabel: rng.bool() ? paint : rng.str(),
 				size,
 				sizeOrLabel: rng.bool() ? size : rng.str(),
 				inset,
