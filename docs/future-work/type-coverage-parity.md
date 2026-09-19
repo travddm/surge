@@ -54,7 +54,7 @@ buffer bytes.
 | `ColorSequence`        | u8 count + 7 B/keypoint              | same                                    | u8 count + u16 time + 3 B                          | none                                              | none                                         |
 | `NumberSequence`       | u8 count + 8 B; **Envelope dropped** | same, Envelope dropped                  | u8 count + 3×u16 incl. Envelope (values in [0, 1]) | none                                              | none                                         |
 | `UDim` / `UDim2`       | f32 + i32 per `UDim` (8 B / 16 B)    | side                                    | `ScaleOffset`/`ScaleOffset2`; packed common table  | none                                              | none                                         |
-| `NumberRange` / `Rect` | `NumberRange` 2×f32; `Rect` side     | side                                    | side                                               | none                                              | none                                         |
+| `NumberRange` / `Rect` | 2×f32 / 4×f32                        | side                                    | side                                               | none                                              | none                                         |
 | `DateTime`             | side                                 | side                                    | side                                               | f64 seconds or millis                             | f64 seconds or millis                        |
 | `buffer`               | side                                 | side                                    | side                                               | len + raw bytes; exact: no len                    | len + raw bytes; exact: no len               |
 | `Instance`             | side                                 | side                                    | side                                               | side; `Instance(Class)` checked                   | side; `Instance.Class` checked               |
@@ -98,7 +98,7 @@ mishandles or drops.
     - Landed: `UDim2` (2 x UDim: f32 + i32 for X, then for Y).
     - Landed: `BrickColor` (u16 `.Number`).
     - Landed: `NumberRange` (2 x f32: Min, Max).
-    - Open: `Rect` (4×f32).
+    - Landed: `Rect` (4 x f32: Min.X, Min.Y, Max.X, Max.Y).
     - Open: `DateTime` (f64 `UnixTimestampMillis`). Lune 0.10.5 has no
       `DateTime`, so it cannot have a round-trip fixture.
     - Open: raw `buffer` (u32 len + bytes). Variable length, so it needs

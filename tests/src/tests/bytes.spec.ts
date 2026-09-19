@@ -70,6 +70,7 @@ const insetSerializer = createBinarySerializer<UDim>();
 const sizeSerializer = createBinarySerializer<UDim2>();
 const paintSerializer = createBinarySerializer<BrickColor>();
 const spanSerializer = createBinarySerializer<NumberRange>();
+const boundsSerializer = createBinarySerializer<Rect>();
 
 class BytesTest {
 	@Fact
@@ -182,6 +183,15 @@ class BytesTest {
 	public pinsNumberRange(): void {
 		// 2 x f32: Min, Max
 		Assert.equal("0000803f" + "00002040", hex(spanSerializer.serialize(new NumberRange(1, 2.5)).buffer));
+	}
+
+	@Fact
+	public pinsRect(): void {
+		// 4 x f32: Min.X, Min.Y, Max.X, Max.Y
+		Assert.equal(
+			"00000000" + "000020c0" + "00000040" + "0000803f",
+			hex(boundsSerializer.serialize(new Rect(0, -2.5, 2, 1)).buffer),
+		);
 	}
 }
 
