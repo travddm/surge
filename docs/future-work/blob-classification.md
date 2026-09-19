@@ -7,7 +7,7 @@ Part of the [surge](../architecture.md) design.
 The correctness bug is fixed: `Instance` and its subclasses, `unknown`,
 and every other Roblox datatype not already in the walker's scalar-kind
 table or in `FIXED_DATATYPES` (`Vector2int16`, `Region3`, `TweenInfo`,
-`Font`, `Ray`, `DateTime`, `buffer`, ...) now classify as `blob` instead of being walked structurally
+`Font`, `Ray`, `DateTime`, ...) now classify as `blob` instead of being walked structurally
 (`unknown` and `any` as `optional(blob)`, because they can hold
 `undefined`; see Blob / passthrough channel in
 [transformer.md](../transformer.md)). The fix

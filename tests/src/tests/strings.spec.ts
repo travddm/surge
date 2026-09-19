@@ -10,6 +10,15 @@ interface WithStrings {
 }
 const stringsSerializer = createBinarySerializer<WithStrings>();
 
+// A `buffer` is encoded like a string: a u32 length, then the bytes.
+interface WithBuffers {
+	raw: buffer;
+	rawOrText: buffer | string;
+	maybeRaw?: buffer;
+	list: buffer[];
+}
+const buffersSerializer = createBinarySerializer<WithBuffers>();
+
 const FUZZ_ITERATIONS = 100;
 
 class StringsTest {
@@ -38,6 +47,36 @@ class StringsTest {
 		// Fields in name order: byName (u32 count), list (u32 count), single (u32 length + 2 bytes of UTF-8).
 		Assert.equal(4 + 4 + 4 + 2, buffer.len(buf));
 		Assert.equal(2, buffer.readu32(buf, 8));
+	}
+
+	@Fact
+	public roundTripsBuffers(): void {
+		const value: WithBuffers = {
+			raw: buffer.create(0),
+			rawOrText: buffer.fromstring("bytes\0"),
+			list: [buffer.fromstring("a"), buffer.create(0)],
+		};
+		const { buffer: buf, blobs } = buffersSerializer.serialize(value);
+		Assert.empty(blobs);
+		const result = buffersSerializer.deserialize(buf, blobs);
+		Assert.equal(undefined, difference(value, result));
+		// A copy, not a view of the payload or the original.
+		Assert.notEqual(value.rawOrText, result.rawOrText);
+	}
+
+	@Fact
+	public roundTripsRandomBuffers(): void {
+		const rng = new Rng(15);
+		for (const _ of $range(1, FUZZ_ITERATIONS)) {
+			const value: WithBuffers = {
+				raw: buffer.fromstring(rng.str(300)),
+				rawOrText: rng.bool() ? buffer.fromstring(rng.str()) : rng.str(),
+				maybeRaw: rng.bool() ? buffer.fromstring(rng.str()) : undefined,
+				list: [buffer.fromstring(rng.str()), buffer.fromstring(rng.str())],
+			};
+			const { buffer: buf, blobs } = buffersSerializer.serialize(value);
+			Assert.equal(undefined, difference(value, buffersSerializer.deserialize(buf, blobs)));
+		}
 	}
 
 	@Fact

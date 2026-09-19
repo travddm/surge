@@ -71,6 +71,7 @@ const sizeSerializer = createBinarySerializer<UDim2>();
 const paintSerializer = createBinarySerializer<BrickColor>();
 const spanSerializer = createBinarySerializer<NumberRange>();
 const boundsSerializer = createBinarySerializer<Rect>();
+const rawSerializer = createBinarySerializer<buffer>();
 
 class BytesTest {
 	@Fact
@@ -191,6 +192,15 @@ class BytesTest {
 		Assert.equal(
 			"00000000" + "000020c0" + "00000040" + "0000803f",
 			hex(boundsSerializer.serialize(new Rect(0, -2.5, 2, 1)).buffer),
+		);
+	}
+
+	@Fact
+	public pinsABuffer(): void {
+		// u32 length + bytes
+		Assert.equal(
+			"03000000" + "0102ff",
+			hex(rawSerializer.serialize(buffer.fromstring(string.char(1, 2, 255))).buffer),
 		);
 	}
 }

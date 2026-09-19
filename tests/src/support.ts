@@ -9,9 +9,9 @@ function describe(value: unknown): string {
 /**
  * Returns the path and values of the first difference between two values, or
  * `undefined` when they are equal. Compares tables by content (arrays,
- * objects, `Map`, `Set`; keys by identity) and every other value with `==`,
- * except that `NaN` equals `NaN` and `0` does not equal `-0`, which `==` gets
- * wrong for a round-trip check.
+ * objects, `Map`, `Set`; keys by identity), buffers by their bytes, and every
+ * other value with `==`, except that `NaN` equals `NaN` and `0` does not equal
+ * `-0`, which `==` gets wrong for a round-trip check.
  */
 export function difference(expected: unknown, actual: unknown, path = "value"): string | undefined {
 	if (typeIs(expected, "number") && typeIs(actual, "number")) {
@@ -20,6 +20,11 @@ export function difference(expected: unknown, actual: unknown, path = "value"): 
 		return bothNaN || (expected === actual && sameSign)
 			? undefined
 			: `${path}: expected ${describe(expected)}, got ${describe(actual)}`;
+	}
+	if (typeIs(expected, "buffer") && typeIs(actual, "buffer")) {
+		return buffer.tostring(expected) === buffer.tostring(actual)
+			? undefined
+			: `${path}: expected the bytes ${hex(expected)}, got ${hex(actual)}`;
 	}
 	if (typeIs(expected, "table") && typeIs(actual, "table")) {
 		const expectedTable = expected as Map<unknown, unknown>;
