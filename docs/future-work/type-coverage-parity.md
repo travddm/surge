@@ -53,7 +53,7 @@ buffer bytes.
 | `BrickColor`           | side                                 | side                                    | side                                               | u16 `.Number`                                     | u16 `.Number`                                |
 | `ColorSequence`        | u8 count + 7 B/keypoint              | same                                    | u8 count + u16 time + 3 B                          | none                                              | none                                         |
 | `NumberSequence`       | u8 count + 8 B; **Envelope dropped** | same, Envelope dropped                  | u8 count + 3×u16 incl. Envelope (values in [0, 1]) | none                                              | none                                         |
-| `UDim` / `UDim2`       | side                                 | side                                    | `ScaleOffset`/`ScaleOffset2`; packed common table  | none                                              | none                                         |
+| `UDim` / `UDim2`       | `UDim` 8 B; `UDim2` side             | side                                    | `ScaleOffset`/`ScaleOffset2`; packed common table  | none                                              | none                                         |
 | `NumberRange` / `Rect` | side                                 | side                                    | side                                               | none                                              | none                                         |
 | `DateTime`             | side                                 | side                                    | side                                               | f64 seconds or millis                             | f64 seconds or millis                        |
 | `buffer`               | side                                 | side                                    | side                                               | len + raw bytes; exact: no len                    | len + raw bytes; exact: no len               |
@@ -90,14 +90,19 @@ mishandles or drops.
    serio both use the `_nominal_*` brand key `@rbxts/types` puts on every
    datatype to route them to the side table. surge now does the same as
    the fallback; what remains is real encodings for the cheap ones.
-   `Vector2` (2×f32) has
-   landed, and so has `Vector3int16` (3×i16), as the first row of the
-   table-driven `datatype` kind (`FIXED_DATATYPES` in the transformer's
-   `datatypes.ts`); each of the fixed-size types below is one more row.
-   Still open: `UDim` (f32 + i32 or i16),
-   `UDim2` (2×`UDim`), `BrickColor` (u16 `.Number`), `NumberRange` (2×f32),
-   `Rect` (4×f32), `DateTime` (f64 `UnixTimestampMillis`), raw `buffer`
-   (u32 len + bytes).
+   `Vector2` (2×f32) has landed as its own kind. Each fixed-size type
+   below is one row of the table-driven `datatype` kind (`FIXED_DATATYPES`
+   in the transformer's `datatypes.ts`).
+    - Landed: `Vector3int16` (3×i16).
+    - Landed: `UDim` (f32 scale + i32 offset).
+    - Open: `UDim2` (2×`UDim`).
+    - Open: `BrickColor` (u16 `.Number`).
+    - Open: `NumberRange` (2×f32).
+    - Open: `Rect` (4×f32).
+    - Open: `DateTime` (f64 `UnixTimestampMillis`). Lune 0.10.5 has no
+      `DateTime`, so it cannot have a round-trip fixture.
+    - Open: raw `buffer` (u32 len + bytes). Variable length, so it needs
+      its own kind, not a table row.
 2. ~~`Instance` and subclasses to the side table.~~ Landed with the
    nominal-brand fallback in item 1.
 3. `Packed<T>` for `optional` presence bits and 2-way tagged-union tags

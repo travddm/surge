@@ -66,6 +66,7 @@ const datatypesSerializer = createBinarySerializer<Datatypes>();
 
 // One fact per row of `FIXED_DATATYPES` in the transformer.
 const vector3int16Serializer = createBinarySerializer<Vector3int16>();
+const insetSerializer = createBinarySerializer<UDim>();
 
 class BytesTest {
 	@Fact
@@ -151,6 +152,12 @@ class BytesTest {
 			"0100" + "feff" + "0300",
 			hex(vector3int16Serializer.serialize(new Vector3int16(1, -2, 3)).buffer),
 		);
+	}
+
+	@Fact
+	public pinsUDim(): void {
+		// f32 scale + i32 offset
+		Assert.equal("0000003f" + "f9ffffff", hex(insetSerializer.serialize(new UDim(0.5, -7)).buffer));
 	}
 }
 
