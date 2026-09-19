@@ -48,7 +48,7 @@ buffer bytes.
 | `Vector3`              | 3×f32                                 | 3×f32                                   | `Vector<X, Y, Z>` widths; packed common table      | `vector<T>` widths                                | 3×f32; `vector(x, y, z)` widths              |
 | `Vector2`              | 2×f32                                 | side                                    | side                                               | none                                              | 2×f32 (decodes as Vector3)                   |
 | `Vector3int16`         | 3×i16                                 | side                                    | side                                               | none                                              | none                                         |
-| `CFrame`               | 24 B axis-angle                       | 24 B axis-angle; packed aligned table   | **18 B quantized** (lossy, ~0.05); packed aligned  | 24 B Euler (`ToOrientation`)                      | 24 B axis-angle; `AlignedCFrame` 13 B        |
+| `CFrame`               | 24 B axis-angle; packed 1/13/25 B     | 24 B axis-angle; packed aligned table   | **18 B quantized** (lossy, ~0.05); packed aligned  | 24 B Euler (`ToOrientation`)                      | 24 B axis-angle; `AlignedCFrame` 13 B        |
 | `Color3`               | 3×u8                                  | 3×u8                                    | 3×u8                                               | 3×u8                                              | 3×u8                                         |
 | `BrickColor`           | u16 `.Number`                         | side                                    | side                                               | u16 `.Number`                                     | u16 `.Number`                                |
 | `ColorSequence`        | u8 count + 7 B/keypoint               | same                                    | u8 count + u16 time + 3 B                          | none                                              | none                                         |
@@ -119,15 +119,11 @@ mishandles or drops.
 2. ~~`Instance` and subclasses to the side table.~~ Landed with the
    nominal-brand fallback in item 1.
 3. `Packed<T>` for 2-way tagged-union tags (fbs and serio both pack
-   these), and the packed `CFrame` axis-aligned and zero/one-position table
-   (fbs and serio share the same 24-entry layout, which is a ready-made
-   spec). `optional` presence bits have landed: the packed region moved to
-   the head of each object so that the read side has a presence bit before
-   it reaches the value. The tag bit needs the union to take its tag from
-   the enclosing object's region, and a `Packed` union at the root has no
-   enclosing region, so its tag stays a byte. Read fbs's axis-aligned test
-   before writing the `CFrame` table: `CFrame.Angles(math.pi / 2, 0, 0)`
-   has components of `6e-17`, not `0`, so the tolerance rule matters.
+   these). `optional` presence bits and the packed `CFrame` have landed;
+   see `Packed<T>` in [transformer.md](../transformer.md). The tag bit
+   needs the union to take its tag from the enclosing object's packed
+   region, and a `Packed` union at the root has no enclosing region, so
+   its tag stays a byte.
 4. ~~`NumberSequence` Envelope.~~ Landed: one more f32 per keypoint. fbs
    drops the envelope; serio keeps it.
 5. ~~Recursive unions, generic instantiations, enum width, literal-union

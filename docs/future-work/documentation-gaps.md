@@ -20,11 +20,6 @@ READMEs point at design docs instead.
 
 - [transformer.md](../transformer.md) opens with "This is the
   `transformer/` package"; it is a separate repository.
-- Type Coverage in transformer.md says `CFrame` gets a size optimization
-  inside `Packed<T>`; the Risks section of the same document says it is
-  not implemented. The table row should state the implemented behavior.
-  (The `optional` half of this entry is resolved: packed `optional` has
-  landed, and `DataType.Packed`'s JSDoc is now accurate.)
 - Type Coverage in transformer.md describes `blob` as "`unknown`,
   `Instance` (and subclasses), any other type this design can't
   structurally encode". The catch-all is wrong since
@@ -77,11 +72,7 @@ the tooling description, no statement of which Roblox, roblox-ts, and
 
 User documentation should be written against fixed behavior, so
 `docs/usage.md` comes late in [README.md](README.md)'s order. The
-stale-statement checklist does not need to wait. One group of entries is
-resolved by code and not by prose: the packed `CFrame` statement (Tier A
-item 3 of
-[type-coverage-parity.md](type-coverage-parity.md)). Until that lands, the
-prose must state the implemented behavior. Every other entry describes
+stale-statement checklist does not need to wait: every entry describes
 behavior that is already final.
 
 ## How, briefly
