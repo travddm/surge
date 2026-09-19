@@ -68,9 +68,9 @@ result. The new fixtures found five shapes whose generated code failed
 the type check, so the build failed: a tuple whose rest element type
 differs from a fixed element, an optional property, an optional literal
 union, and a tuple property inside a recursion helper, and a required
-property of type `unknown`. All five are fixed, and `transform.test.ts` now type-checks generated code in
-a second program, as roblox-ts does. See Testing strategy in
-[testing.md](../testing.md).
+property of type `unknown`. All five are fixed, and `transform.test.ts`
+now type-checks generated code in a second program, as roblox-ts does. See
+Testing strategy in [testing.md](../testing.md).
 
 The same work found that an `unknown` property that is absent or
 `undefined` (`a?: unknown`) shifted every later blob into the wrong field
