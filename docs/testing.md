@@ -231,13 +231,16 @@ The concrete plan for everything else:
     package's dependency list. `tests/` is not an npm workspace member of
     this repo — it's its own standalone project with its own
     `node_modules`, installed with `npm run tests:install` from the repo
-    root (a thin `--prefix tests` wrapper) — see Repository layout in
+    root (a `--prefix tests` wrapper) — see Repository layout in
     [architecture.md](architecture.md) for why. `tests/.npmrc` sets
     `install-links=true` so its `file:` dependencies on `@rbxts/surge` and
     `rbxts-transformer-surge` are packed and copied, not symlinked (see
     architecture.md for why a symlink would cycle) — which means
-    `tests/node_modules/` holds a **snapshot**, not a live view: after
-    editing this package's `src/` or the transformer's source, rerun
+    `tests/node_modules/` holds a **snapshot**, not a live view. A plain
+    `npm install` reports the snapshot as up to date while the version
+    number is unchanged, so `npm run tests:install` first deletes both
+    snapshots (`tests/scripts/clear-file-deps.mjs`) to force a fresh copy.
+    After editing this package's `src/` or the transformer's source, rerun
     `npm run tests:install` before `npm run tests:compile` (or
     `mise run tests:compile:watch`, which watches `tests/src/` only, never
     the dependency snapshot) to pick the change up.
