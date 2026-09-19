@@ -146,9 +146,9 @@ byte saving, and serio's has an index collision bug).
 ## Why deferred
 
 The walker fixes that Tier A waited on have landed, so Tier A is
-unblocked. [README.md](README.md) places it after
-[round-trip-test-coverage.md](round-trip-test-coverage.md) so that each
-new encoding is a change to a pinned buffer. Tier B is API design that
+unblocked. The byte-pinning fixtures it waited on have landed
+(`bytes.spec.ts`), so each new encoding that moves a pinned buffer fails
+there; pin each new datatype's bytes with its encoding. Tier B is API design that
 should be decided once, with the benchmark harness in
 [benchmark-tooling.md](benchmark-tooling.md) available to show what each
 bound actually saves; it is a separate, later step for that reason.

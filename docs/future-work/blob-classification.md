@@ -71,9 +71,9 @@ with a real Lune `Vector3int16` (the Lune runner didn't expose either type
 as a global before this doc; added alongside `CFrame`/`Vector3`/`Color3` in
 `lune-test-runner.luau`, following its own "cast because Lune 0.10.5's type
 definitions omit these constructors" pattern) round-tripping through the
-blob side channel with an asserted zero-byte buffer. No `Instance` fixture:
-the Lune runner's `Instance.new` shim only builds `BindableEvent`, so no
-fixture can construct a real `Instance` there.
+blob side channel with an asserted zero-byte buffer. `roblox.spec.ts`
+passes a Lune data-model `Part` through the blob channel as an `Instance`,
+an optional `Part`, and an `unknown`.
 
 ## Why deferred
 
@@ -81,8 +81,7 @@ The two remaining items don't need the identity-based classification this
 doc was blocked on; they're independent, smaller pieces of work now that
 the identity check exists. [README.md](README.md) schedules the datatype
 encodings with Tier A of [type-coverage-parity.md](type-coverage-parity.md),
-after the byte-pinning fixtures in
-[round-trip-test-coverage.md](round-trip-test-coverage.md). The
+after the byte-pinning fixtures in `bytes.spec.ts`, which have landed. The
 empty-object case has no step; it waits on the `defined` decision below.
 
 ## How, briefly

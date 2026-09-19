@@ -64,9 +64,8 @@ recorded, not fixed, when that work landed. The first item is the only
 known case where a valid type produces a wrong value; its diagnostic form
 is small and should land first. Full support for the first three items
 changes the `guardedUnion` variant order, which is part of the wire
-format, so it should land before
-[round-trip-test-coverage.md](round-trip-test-coverage.md) pins bytes for
-those shapes, or as a deliberate change to them.
+format. `bytes.spec.ts` pins no union with an enum or opaque member, so
+these stages move no pinned buffer; pin the new shapes when they land.
 
 ## How, briefly
 
@@ -103,9 +102,9 @@ those shapes, or as a deliberate change to them.
   one variant (they all write and read through `pushBlob`/`nextBlob`), and
   drop the "opaque variant" rejection. `Instance | string` then costs one
   index byte, with the string in the buffer and the `Instance` in the blob
-  channel. Round-trip fixture: `Vector3int16 | string`, because the Lune
-  runner cannot construct a real `Instance` (see
-  [blob-classification.md](blob-classification.md)).
+  channel. Round-trip fixtures: `Vector3int16 | string`, and
+  `Instance | string` with a Lune data-model `Part` (as `roblox.spec.ts`
+  builds one).
 - **Cascading diagnostic.** In `classifyUnion`, record
   `this.diagnostics.length` before walking the constituents and return
   `{ kind: "blob" }` without further checks when it grew.

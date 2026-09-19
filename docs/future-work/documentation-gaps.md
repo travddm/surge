@@ -47,11 +47,9 @@ READMEs point at design docs instead.
   runtime CI" as an open item; the round-trip suite runs in CI under Lune,
   and only benchmark automation is open (see
   [headless-ci.md](headless-ci.md)).
-- [testing.md](../testing.md) describes `@Theory`/`@InlineData` cases and
-  seeded fuzz loops per shape; none exist (see
-  [round-trip-test-coverage.md](round-trip-test-coverage.md)). It also
-  says golden checks cover "a curated set of representative shapes"; there
-  are six tests (eight assertions) over two files.
+- [testing.md](../testing.md) says golden checks cover "a curated set of
+  representative shapes"; there are six tests (eight assertions) over two
+  files.
 - [serde.md](../serde.md) says the factories are "declared here as
   ambient generics" with "no real runtime body"; they have a body that
   throws.
