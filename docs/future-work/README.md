@@ -31,7 +31,7 @@ function/`symbol`/`bigint`/`null`/template-literal/index-signature
 misclassifications now report a diagnostic. `Vector2` has a real encoding.
 The document no longer has a step of its own. Its one remaining item is
 the empty-object-as-zero-bytes case, which waits on a design decision
-recorded there; step 1 has delivered the per-datatype encodings.
+recorded there; Tier A has delivered the per-datatype encodings.
 
 The walker and emitter robustness work that used to be step 1 has landed,
 with the local-register ceiling from
@@ -57,10 +57,10 @@ those suites, and the three facts of `coverage.spec.ts` that compared too
 little, compare the whole value with `difference` from
 `tests/src/support.ts`.
 `bytes.spec.ts` pins the exact bytes of the shapes whose encoding is
-final, so an encoding change in step 1 that moves one of them fails there.
-It does not pin anything inside `Packed<T>` except booleans, or a union
-with an enum member, because an open document changes those bytes, or a
-`CFrame` with a rotation, whose axis-angle form is not exact. Two cases
+final, so an encoding change that moves one of them fails there.
+It does not pin a union with an enum member, because an open document
+changes those bytes, or a `CFrame` with a rotation that is not
+axis-aligned, whose axis-angle form is not exact. Two cases
 have no round-trip fixture: an `Enum` with more than 256 members (see
 [enum-encoding.md](enum-encoding.md)), and an integer outside its
 `DataType` width, for which the design states no result. The new fixtures
@@ -79,28 +79,46 @@ with no error. That is fixed, and its document is removed: `unknown` and
 such field. See Blob / passthrough channel in
 [transformer.md](../transformer.md).
 
+Tier A of [type-coverage-parity.md](type-coverage-parity.md), which used
+to be step 1, has landed; that document keeps Tier B.
+
+- `Vector3int16`, `UDim`, `UDim2`, `BrickColor`, `NumberRange`, `Rect`,
+  and `DateTime` each have their own encoding, as rows of one
+  table-driven `datatype` kind, and `buffer` has its own kind.
+- The `NumberSequence` Envelope is kept.
+- `DataType.u24` and `DataType.i24` exist. f16 is decided against;
+  Deliberate non-gaps in that document records why.
+- Inside `Packed<T>`, an `optional`'s presence and the tag of a
+  two-variant tagged union are each one bit, and a `CFrame` has a 1, 13,
+  or 25 byte form. The packed region moved from the end of each object to
+  its head.
+- Every encoding is pinned in `bytes.spec.ts`. `DateTime` uses a stand-in
+  global in the Lune runner, because Lune has none.
+- The work found a sixth shape whose generated code failed the type check
+  (a `Record` inside a recursion helper or a block-split object), fixed in
+  `rbxts-transformer-surge` `671439f`.
+
+See Type Coverage and `Packed<T>` in [transformer.md](../transformer.md).
+
 Every claim in this directory was checked against both repositories at
 `surge` `7cce55e` and `rbxts-transformer-surge` `0e7c10d`. The order below
 changed as a result; each row states why. The robustness work described
 above landed after those commits, in `rbxts-transformer-surge` `4067844`,
 and the round-trip coverage work after that, with its emitter fixes in
 `rbxts-transformer-surge` `e74935d`. The `unknown` presence flag and the
-two-enum diagnostic are in `rbxts-transformer-surge` `5e6c2d7`, and the
-Tier A work so far ends at `rbxts-transformer-surge` `02a3513`. That work
-found a sixth shape whose generated code failed the type check (a `Record`
-inside a recursion helper or a block-split object), fixed in `671439f`.
+two-enum diagnostic are in `rbxts-transformer-surge` `5e6c2d7`, and Tier A
+ends at `rbxts-transformer-surge` `aa59c4a`.
 
 ## Order
 
-| Step | Document                                                                                                                              | Why here                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
-| ---- | ------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1    | [type-coverage-parity.md](type-coverage-parity.md) Tier A, with the datatype list in [blob-classification.md](blob-classification.md) | In progress. Landed: `Vector3int16`, `UDim`, `UDim2`, `BrickColor`, `NumberRange`, `Rect`, and `buffer` encodings, the `NumberSequence` Envelope, and u24/i24, each pinned in `bytes.spec.ts`. Packed `optional` presence bits have also landed (the packed region moved to the head of each object). Open: the packed 2-way tag bit and the packed `CFrame` table (the rest of item 3). `DateTime` has landed with a stand-in global in the Lune runner, and f16 is decided against (Deliberate non-gaps in that document). |
-| 2    | [benchmark-tooling.md](benchmark-tooling.md)                                                                                          | The size and speed comparison harness against the four libraries. Follows step 1 so that rows containing a Tier A datatype do not move after they are recorded.                                                                                                                                                                                                                                                                                                                                                              |
-| 3    | [generated-code-performance.md](generated-code-performance.md)                                                                        | Every remaining item is measurement-driven, so it follows the harness.                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
-| 4    | [type-coverage-parity.md](type-coverage-parity.md) Tier B                                                                             | New `DataType.*` surface (length-typed containers, per-component widths, ranges). That document asks for the harness first, to show what each bound saves. Split from Tier A for that reason.                                                                                                                                                                                                                                                                                                                                |
-| 5    | [deserialize-hardening.md](deserialize-hardening.md)                                                                                  | Opt-in checks; needed before the networking layer, not before.                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
-| 6    | [documentation-gaps.md](documentation-gaps.md): `docs/usage.md`                                                                       | User documentation written against fixed behavior. The stale-statement sweep in the same document does not wait; see below.                                                                                                                                                                                                                                                                                                                                                                                                  |
-| 7    | [ci-and-release.md](ci-and-release.md): version backstop and first tagged release                                                     | The backstop lands with the release it protects. The CI-only items do not wait; see below.                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| Step | Document                                                                          | Why here                                                                                                                                                                                                         |
+| ---- | --------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1    | [benchmark-tooling.md](benchmark-tooling.md)                                      | The size and speed comparison harness against the four libraries. Tier A has landed, so a row that contains one of its datatypes does not move after it is recorded.                                             |
+| 2    | [generated-code-performance.md](generated-code-performance.md)                    | Every remaining item is measurement-driven, so it follows the harness.                                                                                                                                           |
+| 3    | [type-coverage-parity.md](type-coverage-parity.md) Tier B                         | New `DataType.*` surface (length-typed containers, per-component widths, ranges). That document asks for the harness first, to show what each bound saves. Split from Tier A, which has landed, for that reason. |
+| 4    | [deserialize-hardening.md](deserialize-hardening.md)                              | Opt-in checks; needed before the networking layer, not before.                                                                                                                                                   |
+| 5    | [documentation-gaps.md](documentation-gaps.md): `docs/usage.md`                   | User documentation written against fixed behavior. The stale-statement sweep in the same document does not wait; see below.                                                                                      |
+| 6    | [ci-and-release.md](ci-and-release.md): version backstop and first tagged release | The backstop lands with the release it protects. The CI-only items do not wait; see below.                                                                                                                       |
 
 ## No step of its own
 
@@ -119,12 +137,11 @@ time:
   behavior that is already final.
 - The CI items in [ci-and-release.md](ci-and-release.md): the transformer
   workflow running the integration suite, the pinned sibling ref, `npm ci`,
-  and the Windows job. Step 1 changes the transformer, and its CI
-  cannot see a broken serializer today.
+  and the Windows job. The transformer's CI cannot see a broken
+  serializer today.
 - The Lune size tier of [benchmark-tooling.md](benchmark-tooling.md) needs no
-  Roblox process. The wire format is deterministic now, but it is not frozen:
-  each step 1 encoding changes the bytes of its datatype, so record numbers
-  for those rows after step 1.
+  Roblox process. The wire format is deterministic, and no open step
+  changes the bytes of an existing encoding.
 - [transformer-unit-test-coverage.md](transformer-unit-test-coverage.md):
   each remaining case lands with the fix or fixture it pins.
 - [enum-encoding.md](enum-encoding.md): a one-byte saving that needs an IR
