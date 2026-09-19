@@ -1,4 +1,5 @@
 export { alloc, backpatchU32, beginRead, beginWrite, finishWrite, readAlloc } from "./alloc";
+export { readPackedCFrame, writePackedCFrame } from "./cframe";
 export { beginReadBlobs, beginWriteBlobs, finishWriteBlobs, nextBlob, pushBlob } from "./blobs";
 export { DataType } from "./data-type";
 export { packBit, unpackBit } from "./pack";

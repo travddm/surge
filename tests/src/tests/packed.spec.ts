@@ -42,6 +42,26 @@ interface Profile {
 }
 const profileSerializer = createBinarySerializer<DataType.Packed<Profile>>();
 
+const packedCFrameSerializer = createBinarySerializer<DataType.Packed<CFrame>>();
+const packedCFramesSerializer = createBinarySerializer<DataType.Packed<{ list: CFrame[]; maybe?: CFrame }>>();
+
+// Every product of quarter turns about X, Y, and Z: 64 products, which are the
+// 24 axis-aligned rotations. `CFrame.Angles` leaves components of about 4e-8
+// where the exact rotation has 0, so these also cover the tolerance.
+function quarterTurns(x: number, y: number, z: number): CFrame {
+	return CFrame.Angles(math.rad(90 * x), 0, 0)
+		.mul(CFrame.Angles(0, math.rad(90 * y), 0))
+		.mul(CFrame.Angles(0, 0, math.rad(90 * z)));
+}
+
+function assertCFramesMatch(expected: CFrame, actual: CFrame, epsilon: number): void {
+	const expectedComponents = [...expected.GetComponents()];
+	const actualComponents = [...actual.GetComponents()];
+	for (const i of $range(0, 11)) {
+		Assert.fuzzyEqual(expectedComponents[i], actualComponents[i], epsilon);
+	}
+}
+
 const FLAG_NAMES = ["f0", "f1", "f2", "f3", "f4", "f5", "f6", "f7", "f8", "f9"] as const;
 
 class PackedTest {
@@ -114,6 +134,70 @@ class PackedTest {
 			};
 			const { buffer, blobs } = profileSerializer.serialize(value);
 			Assert.equal(undefined, difference(value, profileSerializer.deserialize(buffer, blobs)));
+		}
+	}
+
+	@Fact
+	public packsEachAxisAlignedRotationIntoItsOwnHeaderByte(): void {
+		const headers = new Set<number>();
+		for (const x of $range(0, 3)) {
+			for (const y of $range(0, 3)) {
+				for (const z of $range(0, 3)) {
+					const value = quarterTurns(x, y, z);
+					const { buffer: buf, blobs } = packedCFrameSerializer.serialize(value);
+					Assert.equal(1, buffer.len(buf));
+					headers.add(buffer.readu8(buf, 0));
+					assertCFramesMatch(value, packedCFrameSerializer.deserialize(buf, blobs), 1e-6);
+				}
+			}
+		}
+		Assert.equal(24, headers.size());
+	}
+
+	@Fact
+	public writesOnlyThePartsOfACFrameThatTheHeaderDoesNotGive(): void {
+		const aligned = CFrame.Angles(0, math.rad(90), 0);
+		const tilted = CFrame.Angles(0.3, -1.1, 2);
+		const cases: Array<[CFrame, number]> = [
+			[aligned, 1],
+			[aligned.add(Vector3.one), 1],
+			[aligned.add(new Vector3(1, 2, 3)), 1 + 12],
+			[tilted, 1 + 12],
+			[tilted.add(new Vector3(1, 2, 3)), 1 + 12 + 12],
+		];
+		for (const [value, size] of cases) {
+			const { buffer: buf, blobs } = packedCFrameSerializer.serialize(value);
+			Assert.equal(size, buffer.len(buf));
+			assertCFramesMatch(value, packedCFrameSerializer.deserialize(buf, blobs), 1e-4);
+		}
+	}
+
+	@Fact
+	public doesNotSnapARotationThatIsOnlyNearlyAxisAligned(): void {
+		const value = CFrame.Angles(0, math.rad(90) + 1e-4, 0);
+		const { buffer: buf, blobs } = packedCFrameSerializer.serialize(value);
+		Assert.equal(1 + 12, buffer.len(buf));
+		// Snapping would move a component by 1e-4.
+		assertCFramesMatch(value, packedCFrameSerializer.deserialize(buf, blobs), 1e-5);
+	}
+
+	@Fact
+	public roundTripsRandomPackedCFrames(): void {
+		const rng = new Rng(17);
+		for (const _ of $range(1, 100)) {
+			const list = new Array<CFrame>();
+			for (const __ of $range(1, rng.int(0, 4))) {
+				const rotation = rng.bool()
+					? quarterTurns(rng.int(0, 3), rng.int(0, 3), rng.int(0, 3))
+					: CFrame.Angles(rng.next() * 6 - 3, rng.next() * 6 - 3, rng.next() * 6 - 3);
+				list.push(rng.bool() ? rotation : rotation.add(new Vector3(rng.f32(), rng.f32(), rng.f32())));
+			}
+			const value = { list, maybe: rng.bool() ? list[0] : undefined };
+			const { buffer, blobs } = packedCFramesSerializer.serialize(value);
+			const result = packedCFramesSerializer.deserialize(buffer, blobs);
+			Assert.equal(list.size(), result.list.size());
+			list.forEach((expected, i) => assertCFramesMatch(expected, result.list[i], 1e-4));
+			Assert.equal(value.maybe === undefined, result.maybe === undefined);
 		}
 	}
 }
