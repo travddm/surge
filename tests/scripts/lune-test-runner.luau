@@ -269,6 +269,21 @@ NumberSequenceKeypoint = (roblox :: any).NumberSequenceKeypoint
 Enum = (roblox :: any).Enum
 task = luneTask
 
+-- @lune/roblox 0.10.5 has no DateTime, so this is a stand-in with the two members the generated
+-- code uses (`UnixTimestampMillis` and `DateTime.fromUnixTimestampMillis`). It tests the generated
+-- code, not Roblox's DateTime. `typeof` reports it as "table", and neither `__type` nor a
+-- replacement `typeof` global changes that for a compiled module (both tried), so no fixture uses
+-- a DateTime as a union member: that guard compiles to `typeof(value) == "DateTime"`.
+DateTime = {
+	fromUnixTimestampMillis = function(millis)
+		return setmetatable({ UnixTimestampMillis = millis }, {
+			__eq = function(a, b)
+				return a.UnixTimestampMillis == b.UnixTimestampMillis
+			end,
+		})
+	end,
+}
+
 -- @rbxts/signal (a hand-written, non-roblox-ts package @flamework/core's `Modding` module
 -- constructs at module load, via `Signal.new()`) builds a real Instance.new("BindableEvent").
 -- Lune's own Instance.new only builds data-model instances with no live event dispatch, so

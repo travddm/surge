@@ -55,7 +55,7 @@ buffer bytes.
 | `NumberSequence`       | u8 count + 12 B incl. Envelope        | same, Envelope dropped                  | u8 count + 3×u16 incl. Envelope (values in [0, 1]) | none                                              | none                                         |
 | `UDim` / `UDim2`       | f32 + i32 per `UDim` (8 B / 16 B)     | side                                    | `ScaleOffset`/`ScaleOffset2`; packed common table  | none                                              | none                                         |
 | `NumberRange` / `Rect` | 2×f32 / 4×f32                         | side                                    | side                                               | none                                              | none                                         |
-| `DateTime`             | side                                  | side                                    | side                                               | f64 seconds or millis                             | f64 seconds or millis                        |
+| `DateTime`             | f64 millis                            | side                                    | side                                               | f64 seconds or millis                             | f64 seconds or millis                        |
 | `buffer`               | u32 len + bytes                       | side                                    | side                                               | len + raw bytes; exact: no len                    | len + raw bytes; exact: no len               |
 | `Instance`             | side                                  | side                                    | side                                               | side; `Instance(Class)` checked                   | side; `Instance.Class` checked               |
 | `unknown` / `any`      | optional side                         | optional side                           | side                                               | side (not optional)                               | side (not optional)                          |
@@ -77,6 +77,18 @@ These differences are design choices, not bugs, and should stay:
 - surge's packed bits live in a leading region per object; fbs and serio
   write one bit stream as a prefix of the whole buffer. Per-object regions
   are what keep the generated code flat, which is the design's point.
+- No f16. Luau's `buffer` has no half-float call, so every library that
+  has one (serio, Blink) converts in software, with a branch for zero,
+  subnormal, infinite, and `NaN` values, on every read and write; Blink's
+  own documentation calls its f16 slow. That is the opposite of this
+  design's point, which is flat generated code with no per-value
+  branching, and it would be the only numeric width that needs a runtime
+  helper in `@rbxts/surge`. It saves 2 bytes over `DataType.f32` and keeps
+  about 3 significant digits. A value that can accept that loss is better
+  served by a scaled integer (`DataType.i16` of the value times 100),
+  which is exact in its range and costs one multiplication. No u12/i12
+  either: a 12-bit width only saves space next to another 12-bit value,
+  which is a `Packed<T>` layout question, and nothing has asked for it.
 - Blink and Zap batch events per frame and frame each with an id byte.
   That is [networking.md](networking.md), not the serializer.
 
@@ -99,8 +111,9 @@ mishandles or drops.
     - Landed: `BrickColor` (u16 `.Number`).
     - Landed: `NumberRange` (2 x f32: Min, Max).
     - Landed: `Rect` (4 x f32: Min.X, Min.Y, Max.X, Max.Y).
-    - Open: `DateTime` (f64 `UnixTimestampMillis`). Lune 0.10.5 has no
-      `DateTime`, so it cannot have a round-trip fixture.
+    - Landed: `DateTime` (f64 `UnixTimestampMillis`). Lune 0.10.5 has no
+      `DateTime`, so its fixtures use a stand-in global in the Lune runner
+      and do not cover it as a union member.
     - Landed: raw `buffer` (u32 len + bytes), as its own `buffer` kind: it
       is variable length, so it is not a table row.
 2. ~~`Instance` and subclasses to the side table.~~ Landed with the
@@ -119,12 +132,9 @@ mishandles or drops.
    drops the envelope; serio keeps it.
 5. ~~Recursive unions, generic instantiations, enum width, literal-union
    order.~~ All landed; see [README.md](README.md).
-6. Wider and narrower numeric widths from serio. `DataType.u24`/`i24`
-   (3 bytes) have landed. Still open: f16, which is a software conversion
-   in every library that has it and is slow (Blink says so); it needs a
-   runtime helper in `@rbxts/surge`, so decide that it is wanted before
-   adding it. u12/i12 only make sense inside `Packed`; skip them unless
-   asked for.
+6. ~~Wider and narrower numeric widths from serio.~~ `DataType.u24`/`i24`
+   (3 bytes) have landed. f16 and u12/i12 are decided against; see
+   Deliberate non-gaps.
 
 **Tier B: new `DataType.*` surface, needed before the IDL features can
 exist in a type-driven design.** Blink and Zap get their size advantage

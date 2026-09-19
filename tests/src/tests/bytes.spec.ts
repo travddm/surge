@@ -79,6 +79,7 @@ const packedOptionalsSerializer =
 	createBinarySerializer<
 		DataType.Packed<{ count?: DataType.u8; flag: boolean; maybeFlag?: boolean; text: string }>
 	>();
+const stampSerializer = createBinarySerializer<DateTime>();
 
 class BytesTest {
 	@Fact
@@ -248,6 +249,12 @@ class BytesTest {
 		Assert.equal("00" + "00000000", hex(absent.buffer));
 		const flagged = packedOptionalsSerializer.serialize({ flag: false, maybeFlag: true, text: "" });
 		Assert.equal("0c" + "00000000", hex(flagged.buffer));
+	}
+
+	@Fact
+	public pinsDateTime(): void {
+		// f64 `UnixTimestampMillis`
+		Assert.equal("000000000000f83f", hex(stampSerializer.serialize(DateTime.fromUnixTimestampMillis(1.5)).buffer));
 	}
 }
 
