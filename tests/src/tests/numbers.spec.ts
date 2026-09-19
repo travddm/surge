@@ -10,6 +10,8 @@ interface Integers {
 	i8: DataType.i8;
 	i16: DataType.i16;
 	i32: DataType.i32;
+	u24: DataType.u24;
+	i24: DataType.i24;
 }
 const integersSerializer = createBinarySerializer<Integers>();
 
@@ -26,9 +28,10 @@ class NumbersTest {
 	// The bounds of each width. A value outside its width is not covered: the
 	// design states no result for it.
 	@Theory
-	@InlineData(0, 0, 0, 0, 0, 0)
-	@InlineData(255, 65535, 4294967295, 127, 32767, 2147483647)
-	@InlineData(1, 256, 65536, -128, -32768, -2147483648)
+	@InlineData(0, 0, 0, 0, 0, 0, 0, 0)
+	@InlineData(255, 65535, 4294967295, 127, 32767, 2147483647, 16777215, 8388607)
+	@InlineData(1, 256, 65536, -128, -32768, -2147483648, 65536, -8388608)
+	@InlineData(1, 1, 1, -1, -1, -1, 65535, -1)
 	public roundTripsIntegerWidthsAtTheirBounds(
 		u8: number,
 		u16: number,
@@ -36,10 +39,12 @@ class NumbersTest {
 		i8: number,
 		i16: number,
 		i32: number,
+		u24: number,
+		i24: number,
 	): void {
-		const value: Integers = { u8, u16, u32, i8, i16, i32 };
+		const value: Integers = { u8, u16, u32, i8, i16, i32, u24, i24 };
 		const { buffer: buf, blobs } = integersSerializer.serialize(value);
-		Assert.equal(1 + 2 + 4 + 1 + 2 + 4, buffer.len(buf));
+		Assert.equal(1 + 2 + 4 + 1 + 2 + 4 + 3 + 3, buffer.len(buf));
 		Assert.equal(undefined, difference(value, integersSerializer.deserialize(buf, blobs)));
 	}
 
@@ -76,6 +81,8 @@ class NumbersTest {
 				i8: rng.int(-128, 127),
 				i16: rng.int(-32768, 32767),
 				i32: rng.int(-2147483648, 2147483647),
+				u24: rng.int(0, 16777215),
+				i24: rng.int(-8388608, 8388607),
 			};
 			const { buffer: buf, blobs } = integersSerializer.serialize(value);
 			Assert.equal(undefined, difference(value, integersSerializer.deserialize(buf, blobs)));
