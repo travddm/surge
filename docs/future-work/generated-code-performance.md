@@ -1,27 +1,13 @@
-# Future work: generated code performance and the local-register ceiling
+# Future work: generated code performance
 
 Part of the [surge](../architecture.md) design. The performance goal is the
 project's reason to exist, and nothing has measured it yet (see
 [benchmark-tooling.md](benchmark-tooling.md)). This records what the
-compiled output already shows, before any measurement.
+compiled output already shows, before any measurement. The local-register
+ceiling that this document used to record has landed; see Risks in
+[transformer.md](../transformer.md).
 
 ## What
-
-**Local-register ceiling (confirmed).** Risks in
-[transformer.md](../transformer.md) says a flat sequence of hundreds of
-`buffer.writeXX` calls "with no local declarations does not approach"
-Luau's 200-locals-per-function limit. The emitter declares two locals per
-field (`const [bufN, posN] = alloc(n)`), plus temporaries for strings,
-optionals, arrays, dicts, and unions. Compiling the emitted pattern with
-Lune's `luau.compile`: 99 fixed-size fields compile; 100 fail with
-`Out of local registers when trying to allocate pos100: exceeded limit 200`
-(with the `value` parameter, 100 fields need 201 registers). A struct
-with about 100 numeric fields, or fewer with strings, is not
-"pathologically large", and the failure is a Luau syntax error in the
-user's build. The emitter keeps no count of the locals it declares, and it
-splits a body into helper functions only for a recursive type
-(`ensureHelper`), never for size. [README.md](README.md) schedules this
-item with step 1, ahead of the rest of this document.
 
 **Read loops lower to a flag loop.** Every count-driven read
 (`array`, `tuple` rest, `dict`, sequences) is emitted as
@@ -56,7 +42,10 @@ fixed-size run, or a local cursor with no helper call at all, is possible.
 **Smaller items.** Strings evaluate `s.size()` twice; `finishWrite`
 copies the payload (inherent to the shared scratch design); the scratch
 buffer only grows, so one large payload pins its memory for the module's
-lifetime.
+lifetime. An object large enough to be emitted in blocks (the
+local-register fix) is read as `const result = {}` plus one assignment per
+field, so its table grows by rehashing instead of being sized once by a
+table constructor.
 
 **Native code generation (`--!native`/`//!native`).** The generated
 write/read code is mostly what native codegen helps most — straight-line
@@ -85,8 +74,7 @@ path (a synthetic leading comment) always renders as a real `--` comment
 
 All of these are measurement-driven: the hand-written baseline in
 Benchmarking strategy ([testing.md](../testing.md)) exists precisely to
-show which of them matter. The local-register ceiling is the exception and
-is a correctness limit, not a tuning question. Native codegen has a second
+show which of them matter. Native codegen has a second
 open question even once measured: making it automatic needs a way to
 verify a file is safe to mark file-wide native (only surge's generated
 exports, nothing else) before surge could inject the pragma itself, and no
@@ -94,9 +82,6 @@ such check exists yet.
 
 ## How, briefly
 
-- Split large object bodies into helper functions once the projected
-  local count nears the limit (the emitter knows every local it declares),
-  and correct the Risks paragraph to state the real ceiling.
 - Emit `for (const i of $range(1, count))`, or an equivalent roblox-ts
   numeric-loop pattern, for count-driven reads.
 - Put the tag directly in the variant literal instead of spreading.

@@ -71,6 +71,49 @@ const genericsSerializer = createBinarySerializer<WithGenerics>();
 type Expr = { kind: "num"; v: number } | { kind: "add"; l: Expr; r: Expr };
 const exprSerializer = createBinarySerializer<Expr>();
 
+// walker-emitter-robustness.md: property names that are not identifiers
+// used to emit `value.my-key`/`value.0`, which is invalid TypeScript.
+interface WithOddKeys {
+	"my-key": number;
+	0: string;
+	// A different table key from `1` in Luau, so the generated code must quote it as well.
+	"1": string;
+	plain: boolean;
+}
+const oddKeysSerializer = createBinarySerializer<WithOddKeys>();
+
+// walker-emitter-robustness.md: a Roblox datatype as a bare union member used
+// to crash the emitter (`guardFor` had no case for it).
+type PlacementOrLabel = CFrame | Vector2 | string;
+const datatypeUnionSerializer = createBinarySerializer<PlacementOrLabel>();
+
+// walker-emitter-robustness.md: so did a recursive object type as a bare
+// union member.
+interface Chain {
+	label: string;
+	next: Chain | string;
+}
+const chainSerializer = createBinarySerializer<Chain>();
+
+// walker-emitter-robustness.md: a re-aliased `Packed<T>` used to be walked
+// structurally, leaving the booleans byte-aligned and serializing the
+// `_surge_packed` brand property as an extra field.
+type PackedPair = DataType.Packed<{ first: boolean; second: boolean }>;
+const packedPairSerializer = createBinarySerializer<PackedPair>();
+
+// generated-code-performance.md: 100 fixed-size fields in one function used to
+// exceed Luau's 200 registers, which fails when the module loads.
+type Digit = "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9";
+type Wide = { [K in `f${"0" | "1"}${Digit}${Digit}`]: number };
+const WIDE_FIELD_COUNT = 200;
+const wideSerializer = createBinarySerializer<Wide>();
+
+// walker-emitter-robustness.md: a user declaration named after an injected
+// `@rbxts/surge` import used to collide with it.
+function alloc(): string {
+	return "the user's own alloc";
+}
+
 // enum-encoding.md's `Enum.KeyCode` width/O(1)-table fixture intentionally
 // does not live here: the generated `{[EnumItem]: index}`/`EnumItem[]`
 // tables are module constants built from *every* member up front (matching
@@ -217,6 +260,76 @@ class CoverageTest {
 		Assert.true(result.a);
 		Assert.false(result.b);
 		Assert.false(result.c);
+	}
+	@Fact
+	public roundTripsPropertyNamesThatAreNotIdentifiers(): void {
+		const value: WithOddKeys = { "my-key": 7, 0: "zero", "1": "one", plain: true };
+		const { buffer, blobs } = oddKeysSerializer.serialize(value);
+		const result = oddKeysSerializer.deserialize(buffer, blobs);
+		Assert.equal(value["my-key"], result["my-key"]);
+		Assert.equal(value[0], result[0]);
+		Assert.equal(value["1"], result["1"]);
+		Assert.equal(value.plain, result.plain);
+	}
+
+	@Fact
+	public roundTripsRobloxDatatypesAsUnionMembers(): void {
+		const label: PlacementOrLabel = "spawn";
+		const { buffer: buf1, blobs: blobs1 } = datatypeUnionSerializer.serialize(label);
+		Assert.equal(label, datatypeUnionSerializer.deserialize(buf1, blobs1));
+
+		const { buffer: buf2, blobs: blobs2 } = datatypeUnionSerializer.serialize(new Vector2(4, 5));
+		const offset = datatypeUnionSerializer.deserialize(buf2, blobs2);
+		Assert.true(typeIs(offset, "Vector2"));
+		Assert.fuzzyEqual(5, (offset as Vector2).Y, 0.001);
+
+		const { buffer: buf3, blobs: blobs3 } = datatypeUnionSerializer.serialize(new CFrame(1, 2, 3));
+		const placement = datatypeUnionSerializer.deserialize(buf3, blobs3);
+		Assert.true(typeIs(placement, "CFrame"));
+		Assert.fuzzyEqual(3, (placement as CFrame).Position.Z, 0.001);
+	}
+
+	@Fact
+	public roundTripsARecursiveTypeAsAUnionMember(): void {
+		const value: Chain = { label: "a", next: { label: "b", next: "end" } };
+		const { buffer, blobs } = chainSerializer.serialize(value);
+		const result = chainSerializer.deserialize(buffer, blobs);
+		const nextLink = result.next;
+		Assert.true(typeIs(nextLink, "table"));
+		if (typeIs(nextLink, "table")) {
+			Assert.equal("b", nextLink.label);
+			Assert.equal("end", nextLink.next);
+		}
+	}
+
+	@Fact
+	public roundTripsAReAliasedPacked(): void {
+		const value: PackedPair = { first: true, second: false };
+		const { buffer: buf, blobs } = packedPairSerializer.serialize(value);
+		// One byte: both booleans packed, and no presence byte for the brand property.
+		Assert.equal(1, buffer.len(buf));
+		const result = packedPairSerializer.deserialize(buf, blobs);
+		Assert.true(result.first);
+		Assert.false(result.second);
+	}
+
+	@Fact
+	public roundTripsAnObjectWiderThanTheLocalRegisterLimit(): void {
+		const fields = {} as Record<string, number>;
+		for (const i of $range(0, WIDE_FIELD_COUNT - 1)) {
+			fields[string.format("f%03d", i)] = i;
+		}
+		const { buffer: buf, blobs } = wideSerializer.serialize(fields as Wide);
+		Assert.equal(WIDE_FIELD_COUNT * 8, buffer.len(buf));
+		const result = wideSerializer.deserialize(buf, blobs) as Record<string, number>;
+		for (const i of $range(0, WIDE_FIELD_COUNT - 1)) {
+			Assert.equal(i, result[string.format("f%03d", i)]);
+		}
+	}
+
+	@Fact
+	public leavesAUserDeclarationNamedAfterAnInjectedImportAlone(): void {
+		Assert.equal("the user's own alloc", alloc());
 	}
 }
 

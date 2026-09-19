@@ -76,10 +76,8 @@ members stays pinned by the transformer's unit tests and
 ## Why deferred
 
 This work was blocked while several fixtures could not pass. The walker
-and emitter fixes have landed, so the only fixtures still blocked are the
-union and tuple cases in
-[walker-emitter-robustness.md](walker-emitter-robustness.md), which land
-with their fixes. [README.md](README.md) places this work ahead of the
+and emitter fixes have landed, including the union and tuple cases, so no
+fixture is blocked. [README.md](README.md) places this work ahead of the
 Tier A encodings so that each encoding change is a deliberate change to a
 pinned buffer.
 

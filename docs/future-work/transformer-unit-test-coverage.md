@@ -21,32 +21,40 @@ coverage is still far from complete:
 - **`emit.ts`:** one printed-output snapshot per `Field` kind (write and
   read statements), plus dedicated cases for the read-order fix (a
   helper-object/blob field followed by a field whose read needs a
-  statement), packed-boolean padding, and enum index width/table lookup.
-  Still open: the invalid output for non-identifier names in
-  [walker-emitter-robustness.md](walker-emitter-robustness.md) (not
-  covered by any of the current per-kind fixtures).
+  statement), packed-boolean padding, enum index width/table lookup,
+  non-identifier property names, the `typeIs` guard of each datatype,
+  enum, and recursive-object union variant, and the block splitting for
+  the local-register limit (object and tuple).
 - **`detect.ts`:** factory detection through a direct call, an
   alias/re-export, and rejection of a same-named local are covered, as are
-  `DataType.*` brand detection and `Packed<T>` unwrapping. `nearestPackageName`
+  `DataType.*` brand detection and `Packed<T>` unwrapping (direct and
+  re-aliased). `nearestPackageName`
   caching is still untested (would need `fs` mocking; the function is not
   exported).
 - **`index.ts`:** one end-to-end test per case: `createBinarySerializer`'s
   IIFE and injected import, `createSerializer`'s function-only result,
   multiple call sites sharing one injected import, a same-named local left
-  untouched, and a recursive discriminated union compiling to helper
-  declarations instead of crashing the transform.
-- **Diagnostics** are still asserted only as `length > 0` (nine
-  assertions in `walk.test.ts`, none on message text or the node), so a
-  diagnostic can regress to a misleading message with every test passing.
+  untouched, a recursive discriminated union compiling to helper
+  declarations instead of crashing the transform, a walk diagnostic
+  surfacing as a `ts.Diagnostic` at the offending property, a factory call
+  without a type argument, and a user declaration named after an injected
+  import.
+- **Diagnostics** from before the union, tuple, and position work are
+  still asserted only as `length > 0` (nine assertions in `walk.test.ts`,
+  none on message text or the node), so one of those can regress to a
+  misleading message with every test passing. The newer cases assert the
+  message text, and one asserts the node.
 - **Missing walker cases:** `Record<number, V>`, `ReadonlyMap`/
-  `ReadonlySet`, tuple rest and optional elements (`emit.test.ts` covers a
-  rest element only through a hand-built `Field`), literal union width
+  `ReadonlySet`, literal union width
   (the u8→u16 switch above 256 values — only the value _order_ is pinned
   now; the enum width switch is covered), TypeScript `enum`s, optional
   brands (no `DataType.u8`-style brand appears in `test/` at all), empty
   objects, and a non-function property named `toString`. Covered since
   [blob-classification.md](blob-classification.md) landed: index signature
-  plus properties, function properties, and a `toString` method.
+  plus properties, function properties, and a `toString` method. Covered
+  since the walker and emitter robustness fixes landed: tuple rest
+  (trailing, leading, middle) and optional elements, numeric and quoted
+  property names, and the accepted and rejected union shapes.
 
 ## Why deferred
 
@@ -59,6 +67,5 @@ best added alongside the fix they pin, per the implementation order in
 - Add each remaining walker case to `test/walk.test.ts` (with `{ roblox,
 surge }` fixtures where needed) alongside its corresponding fix.
 - Assert diagnostic messages and positions, not only counts.
-- Add an `emit.test.ts`/`transform.test.ts` case alongside each emitter fix
-  (walker-emitter-robustness.md) rather than trying to anticipate them
-  here.
+- Add an `emit.test.ts`/`transform.test.ts` case alongside each emitter
+  fix rather than trying to anticipate them here.
