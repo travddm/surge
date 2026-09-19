@@ -7,8 +7,8 @@ import { hex } from "../support";
 // wire format fails here and must be made on purpose. Each expected string is
 // worked out from Type Coverage in transformer.md, not copied from the output.
 // All integers and floats are little-endian. Not pinned, because an open
-// future-work item changes their bytes: `CFrame`, anything inside `Packed<T>`
-// except booleans, and a union with an enum member.
+// future-work item changes their bytes: anything inside `Packed<T>` except
+// booleans, and a union with an enum member.
 
 // Declared out of name order: fields are written sorted by name.
 interface Primitives {
@@ -74,6 +74,7 @@ const boundsSerializer = createBinarySerializer<Rect>();
 const rawSerializer = createBinarySerializer<buffer>();
 const sequencesSerializer = createBinarySerializer<{ colors: ColorSequence; numbers: NumberSequence }>();
 const mediumSerializer = createBinarySerializer<{ signed: DataType.i24; unsigned: DataType.u24 }>();
+const placementSerializer = createBinarySerializer<CFrame>();
 
 class BytesTest {
 	@Fact
@@ -223,6 +224,14 @@ class BytesTest {
 	public pinsThe24BitWidths(): void {
 		// signed: -2 in two's complement | unsigned: 0x010203, low byte first
 		Assert.equal("feffff" + "030201", hex(mediumSerializer.serialize({ signed: -2, unsigned: 0x010203 }).buffer));
+	}
+
+	@Fact
+	public pinsACFrameWithNoRotation(): void {
+		// 3 x f32 position, then 3 x f32 axis * angle, which is zero with no
+		// rotation. A rotation is not pinned: its axis-angle form is not exact.
+		const position = "0000803f" + "00000040" + "00004040";
+		Assert.equal(position + string.rep("00", 12), hex(placementSerializer.serialize(new CFrame(1, 2, 3)).buffer));
 	}
 }
 
