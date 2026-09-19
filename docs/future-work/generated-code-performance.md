@@ -57,12 +57,34 @@ copies the payload (inherent to the shared scratch design); the scratch
 buffer only grows, so one large payload pins its memory for the module's
 lifetime.
 
+**Native code generation (`--!native`/`//!native`).** The generated
+write/read code is mostly what native codegen helps most — straight-line
+`buffer.writeXX`/`readXX` calls, count-driven loops for `array`/`dict`, and
+recursive helper calls — so a user adding the pragma to a file that calls
+`createBinarySerializer`/`createSerializer`/`createDeserializer` today is
+plausible free performance. surge doesn't add it automatically: the
+generated code is inlined into the call site's own file (Transformer
+Design §2, "call site is transformed independently"), not emitted as a
+separate module, so a file-level `--!native` would also force native
+compilation of whatever unrelated code the user's file happens to contain
+— a blast radius surge can't reason about or promise is safe. Luau's
+narrower per-function `@native` attribute isn't reachable as a fix: it has
+no `ts.factory` representation, and the transformer's only text-injection
+path (a synthetic leading comment) always renders as a real `--` comment
+(confirmed against `@roblox-ts/luau-ast`'s `renderComment.js` and
+`renderFunctionDeclaration.js`), so `@native` would come out as an inert
+`--@native` rather than a live attribute.
+
 ## Why deferred
 
 All of these are measurement-driven: the hand-written baseline in
 Benchmarking strategy ([testing.md](../testing.md)) exists precisely to
 show which of them matter. The local-register ceiling is the exception and
-is a correctness limit, not a tuning question.
+is a correctness limit, not a tuning question. Native codegen has a second
+open question even once measured: making it automatic needs a way to
+verify a file is safe to mark file-wide native (only surge's generated
+exports, nothing else) before surge could inject the pragma itself, and no
+such check exists yet.
 
 ## How, briefly
 
@@ -75,3 +97,11 @@ is a correctness limit, not a tuning question.
 - Coalesce consecutive fixed-size fields into one `alloc`/`readAlloc`.
 - Golden checks in `test/golden.test.mjs` for each: no `_shouldIncrement`,
   no `table.clone` in a tagged-union read, one `alloc` per fixed-size run.
+- Document `--!native`/`//!native` as a manual opt-in in
+  [documentation-gaps.md](documentation-gaps.md)'s `docs/usage.md` once
+  that exists; note it here in the meantime.
+- If pursued as an automatic default: design a "this file is safe to mark
+  file-wide native" check (for example, restrict it to a mode where the
+  whole file is one `createBinarySerializer`-style call and its export,
+  nothing else) before surge injects the pragma itself, since there's no
+  way to scope it to just the generated functions.

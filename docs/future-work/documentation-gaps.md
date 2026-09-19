@@ -81,7 +81,9 @@ prose, so the docs pass belongs after those fixes.
 ## How, briefly
 
 - `docs/usage.md` (install, plugin entry, example, supported types, wire
-  format, errors, non-guarantees), linked from both READMEs.
+  format, errors, non-guarantees, the `--!native`/`//!native` opt-in noted
+  in [generated-code-performance.md](generated-code-performance.md)),
+  linked from both READMEs.
 - Correct each stale statement in place as its fix lands; the list above
   is the checklist.
 - `CHANGELOG.md` and a short release section in serde.md (tag both
