@@ -16,11 +16,12 @@ naming now (all from code reading, none executed):
   count ends in a Luau `buffer` out-of-bounds error after a few
   iterations. For elements that consume no bytes, the loop runs the full
   count: `Array<"x">` (a `literalConst`), an array of objects made only of
-  literal constants, or `Array<Instance>`/`Array<unknown>` (blobs, once
-  blob classification works). A 4-byte payload declaring 2^32 elements
+  literal constants, or `Array<Instance>`/`Array<unknown>` (blobs; live since
+  [blob-classification.md](blob-classification.md) landed). A 4-byte payload declaring 2^32 elements
   makes the server push billions of entries. Denial of service.
 - **`nextBlob()` past the end** returns `undefined` silently; a field
-  typed `Instance` then holds `nil` with no error.
+  typed `Instance` then holds `nil` with no error. `nextBlob()` throws
+  only when no `inputBlobs` array was passed at all (`blobs.ts`).
 - **Errors are raw Luau errors.** A truncated buffer surfaces as
   `buffer access out of bounds` from inside generated code. Nothing
   documents that callers must `pcall`, and nothing distinguishes a

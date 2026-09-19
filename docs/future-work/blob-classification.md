@@ -80,7 +80,11 @@ not this doc's), so no fixture can construct a real `Instance` there.
 
 The two remaining items don't need the identity-based classification this
 doc was blocked on; they're independent, smaller pieces of work now that
-the identity check exists.
+the identity check exists. [README.md](README.md) schedules the datatype
+encodings with Tier A of [type-coverage-parity.md](type-coverage-parity.md),
+after the byte-pinning fixtures in
+[round-trip-test-coverage.md](round-trip-test-coverage.md). The
+empty-object case has no step; it waits on the `defined` decision below.
 
 ## How, briefly
 

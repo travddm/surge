@@ -37,8 +37,17 @@ READMEs point at design docs instead.
   the 200-locals limit; the emitter declares two locals per field and
   fails at 100 (see
   [generated-code-performance.md](generated-code-performance.md)).
-- Type Coverage in transformer.md lists `Instance` as `blob`; it is
-  walked structurally (see [blob-classification.md](blob-classification.md)).
+- Type Coverage in transformer.md describes `blob` as "`unknown`,
+  `Instance` (and subclasses), any other type this design can't
+  structurally encode". The catch-all is wrong since
+  [blob-classification.md](blob-classification.md) landed: function,
+  `symbol`, `bigint`, `null`, template-literal, and
+  index-signature-plus-properties types are rejected with a diagnostic, and
+  transformer.md does not mention those diagnostics.
+- The `guardedUnion` row of the same table says a union of two or more
+  table-shaped variants gets "generated structural guards". Risks in the
+  same document says the transformer reports a build-time error instead,
+  which is what `classifyUnion` does.
 - The last paragraph of transformer.md lists "the lack of automated
   runtime CI" as an open item; the round-trip suite runs in CI under Lune,
   and only benchmark automation is open (see
@@ -47,10 +56,16 @@ READMEs point at design docs instead.
   seeded fuzz loops per shape; none exist (see
   [round-trip-test-coverage.md](round-trip-test-coverage.md)). It also
   says golden checks cover "a curated set of representative shapes"; there
-  are three tests (four regex assertions) over two files.
+  are six tests (eight assertions) over two files.
 - [serde.md](../serde.md) says the factories are "declared here as
   ambient generics" with "no real runtime body"; they have a body that
   throws.
+- Comments name future-work documents that were deleted when their fixes
+  landed: `test/golden.test.mjs` (`recursive-union-types.md`,
+  `wire-format-determinism.md`) and `tests/src/tests/coverage.spec.ts`
+  (`walk-type-identity.md`, `recursive-union-types.md`,
+  `wire-format-determinism.md`). Each should name Transformer Design in
+  transformer.md, which now describes the corrected behavior.
 - `rbxts-transformer-surge/README.md` and Static verification in
   [testing.md](../testing.md) tell VS Code users to run the `mise: ci`
   task; the tasks are labeled `transformer: ci` and `surge: ci` (renamed
@@ -74,9 +89,14 @@ the tooling description, no statement of which Roblox, roblox-ts, and
 
 ## Why deferred
 
-User documentation should be written against fixed behavior; several of
-the contradictions above are resolved by fixing the code rather than the
-prose, so the docs pass belongs after those fixes.
+User documentation should be written against fixed behavior, so
+`docs/usage.md` comes late in [README.md](README.md)'s order. The
+stale-statement checklist does not need to wait. Two entries are resolved
+by code and not by prose: the `Packed<T>` `optional`/`CFrame` statements
+(Tier A item 3 of [type-coverage-parity.md](type-coverage-parity.md)) and
+the local-register ceiling. Until those land, the prose must state the
+implemented behavior. Every other entry describes behavior that is already
+final.
 
 ## How, briefly
 

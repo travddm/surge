@@ -28,21 +28,25 @@ coverage is still far from complete:
 - **`detect.ts`:** factory detection through a direct call, an
   alias/re-export, and rejection of a same-named local are covered, as are
   `DataType.*` brand detection and `Packed<T>` unwrapping. `nearestPackageName`
-  caching is still untested (would need `fs` mocking).
+  caching is still untested (would need `fs` mocking; the function is not
+  exported).
 - **`index.ts`:** one end-to-end test per case: `createBinarySerializer`'s
   IIFE and injected import, `createSerializer`'s function-only result,
   multiple call sites sharing one injected import, a same-named local left
   untouched, and a recursive discriminated union compiling to helper
   declarations instead of crashing the transform.
-- **Diagnostics** are still asserted only as `length > 0`; message text and
-  the node they point at are not (the new bare-`EnumItem` diagnostic
-  follows the same existing convention).
+- **Diagnostics** are still asserted only as `length > 0` (nine
+  assertions in `walk.test.ts`, none on message text or the node), so a
+  diagnostic can regress to a misleading message with every test passing.
 - **Missing walker cases:** `Record<number, V>`, `ReadonlyMap`/
-  `ReadonlySet`, tuple rest and optional elements, literal union width
+  `ReadonlySet`, tuple rest and optional elements (`emit.test.ts` covers a
+  rest element only through a hand-built `Field`), literal union width
   (the u8→u16 switch above 256 values — only the value _order_ is pinned
-  now), TypeScript `enum`s, optional brands, index signature plus
-  properties, empty objects, function properties, `toString`-named
-  symbols.
+  now; the enum width switch is covered), TypeScript `enum`s, optional
+  brands (no `DataType.u8`-style brand appears in `test/` at all), empty
+  objects, and a non-function property named `toString`. Covered since
+  [blob-classification.md](blob-classification.md) landed: index signature
+  plus properties, function properties, and a `toString` method.
 
 ## Why deferred
 

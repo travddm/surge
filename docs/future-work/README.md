@@ -23,33 +23,57 @@ for the current, corrected behavior. One narrow, non-correctness item from
 the enum-encoding review is still open: see
 [enum-encoding.md](enum-encoding.md).
 
-The current step 1, [blob-classification.md](blob-classification.md), has
-also landed its correctness half: `Instance` (and subclasses) and every
-Roblox datatype now route to the blob passthrough channel via an
-identity-based `_nominal_*` brand check instead of being walked
-structurally, and the previously-silent function/`symbol`/`bigint`/`null`/
-template-literal/index-signature misclassifications now report a
-diagnostic. Two smaller, independent items remain open there: real
-per-datatype encodings (Tier A in [type-coverage-parity.md](type-coverage-parity.md))
-and the empty-object-as-zero-bytes case.
+[blob-classification.md](blob-classification.md) has also landed its
+correctness half: `Instance` (and subclasses) and every Roblox datatype now
+route to the blob passthrough channel via an identity-based `_nominal_*`
+brand check instead of being walked structurally, and the previously-silent
+function/`symbol`/`bigint`/`null`/template-literal/index-signature
+misclassifications now report a diagnostic. `Vector2` has a real encoding.
+The document no longer has a step of its own. Its two remaining items are
+the rest of the per-datatype encodings, which step 3 delivers, and the
+empty-object-as-zero-bytes case, which waits on a design decision recorded
+there.
+
+Every claim in this directory was checked against both repositories at
+`surge` `7cce55e` and `rbxts-transformer-surge` `0e7c10d`. The order below
+changed as a result; each row states why.
 
 ## Order
 
-| Step | Document                                                       | Why here                                                                                                                               |
-| ---- | -------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
-| 1    | [blob-classification.md](blob-classification.md)               | Identity-based `Instance`/datatype classification has landed; real per-datatype encodings and the empty-object case remain.            |
-| 2    | [walker-emitter-robustness.md](walker-emitter-robustness.md)   | Defines the diagnostic model once and applies it to the remaining crash and invalid-output cases.                                      |
-| 3    | [type-coverage-parity.md](type-coverage-parity.md)             | With the walk correct and the diagnostic model in place, close the type-coverage gaps against fbs, serio, Blink, and Zap.              |
-| 4    | [round-trip-test-coverage.md](round-trip-test-coverage.md)     | Full round-trip and byte-pinning suites over the now-complete type surface; the fuzz loops testing.md promises.                        |
-| 5    | [benchmark-tooling.md](benchmark-tooling.md)                   | The size and speed comparison harness against the four libraries. The wire format is now frozen, so numbers stay comparable.           |
-| 6    | [generated-code-performance.md](generated-code-performance.md) | Every item is measurement-driven, so it follows the harness. The local-register ceiling is the exception and can be fixed any time.    |
-| 7    | [deserialize-hardening.md](deserialize-hardening.md)           | Opt-in checks; needed before the networking layer, not before.                                                                         |
-| 8    | [documentation-gaps.md](documentation-gaps.md)                 | User documentation written against fixed behavior; each stale statement is corrected as its fix lands, and the usage guide comes last. |
-| 9    | [ci-and-release.md](ci-and-release.md)                         | Cross-repository CI and the version backstop, with the first tagged release.                                                           |
+| Step | Document                                                                                                                                                        | Why here                                                                                                                                                                                                                                                                                                                                                                                                      |
+| ---- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1    | [walker-emitter-robustness.md](walker-emitter-robustness.md), plus the local-register ceiling in [generated-code-performance.md](generated-code-performance.md) | The only remaining work where a valid type produces a compiler crash, invalid generated code, or a wrong encoding. The `blob` and `vector2` kinds widened the gap for unions that `guardFor` cannot guard (`Instance \| string` and `CFrame \| string` both crash the emitter). The ceiling is a build failure at 100 fields, not a tuning question, so it moves ahead of the rest of that document (step 5). |
+| 2    | [round-trip-test-coverage.md](round-trip-test-coverage.md)                                                                                                      | No longer blocked: the bugs its fixtures could not pass under have landed. Pinning exact bytes and whole-value equality now makes every encoding change in step 3 a visible, deliberate diff.                                                                                                                                                                                                                 |
+| 3    | [type-coverage-parity.md](type-coverage-parity.md) Tier A, with the datatype list in [blob-classification.md](blob-classification.md)                           | Real encodings for the cheap datatypes, `NumberSequence` Envelope (data loss today), packed `optional`/tag/`CFrame`, and u24/i24/f16. One datatype per commit, each pinned by a step 2 fixture.                                                                                                                                                                                                               |
+| 4    | [benchmark-tooling.md](benchmark-tooling.md)                                                                                                                    | The size and speed comparison harness against the four libraries. Follows step 3 so that rows containing a Tier A datatype do not move after they are recorded.                                                                                                                                                                                                                                               |
+| 5    | [generated-code-performance.md](generated-code-performance.md)                                                                                                  | Every remaining item is measurement-driven, so it follows the harness.                                                                                                                                                                                                                                                                                                                                        |
+| 6    | [type-coverage-parity.md](type-coverage-parity.md) Tier B                                                                                                       | New `DataType.*` surface (length-typed containers, per-component widths, ranges). That document asks for the harness first, to show what each bound saves. Split from Tier A for that reason.                                                                                                                                                                                                                 |
+| 7    | [deserialize-hardening.md](deserialize-hardening.md)                                                                                                            | Opt-in checks; needed before the networking layer, not before.                                                                                                                                                                                                                                                                                                                                                |
+| 8    | [documentation-gaps.md](documentation-gaps.md): `docs/usage.md`                                                                                                 | User documentation written against fixed behavior. The stale-statement sweep in the same document does not wait; see below.                                                                                                                                                                                                                                                                                   |
+| 9    | [ci-and-release.md](ci-and-release.md): version backstop and first tagged release                                                                               | The backstop lands with the release it protects. The CI-only items do not wait; see below.                                                                                                                                                                                                                                                                                                                    |
 
-The Lune size tier of step 5 needs no Roblox process and can be built now
-that the wire format is frozen; only the speed tier waits for the harness
-proper.
+## No step of its own
+
+These are small, have no dependency on the order above, and can land at any
+time:
+
+- The stale-statement checklist in
+  [documentation-gaps.md](documentation-gaps.md). All but two entries
+  describe behavior that is already final; that document names the two.
+  `DataType.Packed`'s JSDoc is the most visible entry, because a user reads
+  it in the editor and it promises packing that `optional` does not get.
+- The CI items in [ci-and-release.md](ci-and-release.md): the transformer
+  workflow running the integration suite, the pinned sibling ref, `npm ci`,
+  and the Windows job. Steps 1 and 3 both change the transformer, and its CI
+  cannot see a broken serializer today.
+- The Lune size tier of [benchmark-tooling.md](benchmark-tooling.md) needs no
+  Roblox process. The wire format is deterministic now, but it is not frozen:
+  each step 3 encoding changes the bytes of its datatype, so record numbers
+  for those rows after step 3.
+- [transformer-unit-test-coverage.md](transformer-unit-test-coverage.md):
+  each remaining case lands with the fix or fixture it pins.
+- [enum-encoding.md](enum-encoding.md): a one-byte saving that needs an IR
+  change. Do it with a broader `literalConst` cleanup, not alone.
 
 ## Deferred indefinitely
 
