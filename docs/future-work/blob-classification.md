@@ -89,17 +89,12 @@ empty-object case has no step; it waits on the `defined` decision below.
 
 ## How, briefly
 
-- One datatype's real encoding per commit, each with a round-trip fixture
-  and a byte-size assertion, per type-coverage-parity.md's own sequencing.
-  Confirmed empirically (`@lune/roblox` 0.10.5, probed via a throwaway
-  Lune script): `Vector3int16`, `UDim`, `UDim2`, `BrickColor`,
-  `NumberRange`, and `Rect` are all available as globals the same way
-  `Vector2`/`Vector3`/`CFrame`/`Color3` are, so each gets the same
-  round-trip-fixture-plus-byte-size-assertion treatment. `DateTime` is
-  not — `roblox.DateTime` is `nil` in that version — so its commit will
-  need either a different fixture approach (Lune's own non-Roblox
-  `@lune/datetime`, or a construction path this hasn't checked yet) or a
-  documented gap in the Lune coverage instead of a matching fixture.
+- `DateTime` is one row of `FIXED_DATATYPES` (f64 `UnixTimestampMillis`,
+  rebuilt with `DateTime.fromUnixTimestampMillis`), but `roblox.DateTime`
+  is `nil` in `@lune/roblox` 0.10.5, so it cannot get the round-trip
+  fixture and byte pin every other row has. Decide first whether to ship
+  it with the transformer's type check and snapshot only, or with a
+  stand-in `DateTime` global in the Lune runner.
 - Decide the `defined`-vs-`{}` distinction (declaration-origin check on the
   alias symbol, or leave `defined` as a documented exception) before adding
   the zero-byte empty-object encoding.
