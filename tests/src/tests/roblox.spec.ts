@@ -17,6 +17,16 @@ interface WithBlobs {
 }
 const blobsSerializer = createBinarySerializer<WithBlobs>();
 
+// An `unknown` that is `undefined` used to push no blob, so every later blob
+// was read one position early (Blob / passthrough channel in transformer.md).
+interface WithAbsentUnknowns {
+	first?: unknown;
+	second: unknown;
+	third: unknown;
+	list: unknown[];
+}
+const absentUnknownsSerializer = createBinarySerializer<WithAbsentUnknowns>();
+
 interface WithDatatypes {
 	position: Vector3;
 	offset: Vector2;
@@ -63,8 +73,8 @@ class RobloxTest {
 		const part = new Instance("Part");
 		const value: WithBlobs = { anything, part, maybePart: part, count: 3 };
 		const { buffer: buf, blobs } = blobsSerializer.serialize(value);
-		// `count`, and the presence byte of `maybePart`. A blob writes nothing into the buffer.
-		Assert.equal(8 + 1, buffer.len(buf));
+		// `count`, and the presence bytes of `anything` and `maybePart`. A blob writes nothing into the buffer.
+		Assert.equal(8 + 1 + 1, buffer.len(buf));
 		Assert.equal(3, blobs.size());
 		const result = blobsSerializer.deserialize(buf, blobs);
 		// By identity: a blob is passed through, not copied.
@@ -72,6 +82,16 @@ class RobloxTest {
 		Assert.equal(part, result.part);
 		Assert.equal(part, result.maybePart);
 		Assert.equal(3, result.count);
+	}
+
+	@Fact
+	public keepsLaterBlobsInPlaceWhenAnUnknownIsUndefined(): void {
+		const value: WithAbsentUnknowns = { second: undefined, third: "third", list: ["a", 2] };
+		const { buffer: buf, blobs } = absentUnknownsSerializer.serialize(value);
+		// Three presence bytes, then the u32 count and one presence byte per element of `list`.
+		Assert.equal(3 + 4 + 2, buffer.len(buf));
+		Assert.equal(3, blobs.size());
+		Assert.equal(undefined, difference(value, absentUnknownsSerializer.deserialize(buf, blobs)));
 	}
 
 	@Fact
