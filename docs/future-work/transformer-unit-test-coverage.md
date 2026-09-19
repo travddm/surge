@@ -39,7 +39,7 @@ coverage is still far from complete:
   follows the same existing convention).
 - **Missing walker cases:** `Record<number, V>`, `ReadonlyMap`/
   `ReadonlySet`, tuple rest and optional elements, literal union width
-  (the u8→u16 switch above 256 values — only the value *order* is pinned
+  (the u8→u16 switch above 256 values — only the value _order_ is pinned
   now), TypeScript `enum`s, optional brands, index signature plus
   properties, empty objects, function properties, `toString`-named
   symbols.

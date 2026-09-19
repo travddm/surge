@@ -254,6 +254,7 @@ gameRoot._children.Players = players
 CFrame = (roblox :: any).CFrame
 Vector3 = (roblox :: any).Vector3
 Vector2 = (roblox :: any).Vector2
+Vector3int16 = (roblox :: any).Vector3int16
 Color3 = (roblox :: any).Color3
 Enum = (roblox :: any).Enum
 task = luneTask

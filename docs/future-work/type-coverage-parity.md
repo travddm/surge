@@ -47,7 +47,7 @@ buffer bytes.
 | recursive types        | named helpers (unions crash, bug)    | none                                    | none (depth cap 32, untested)                      | not supported                                     | bounded only, via `write_X`/`read_X`         |
 | `EnumItem`             | u8 by **name** (>256 overflows, bug) | u8 by `.Value`                          | u8 by `.Value`, throws >255                        | n/a                                               | n/a                                          |
 | `Vector3`              | 3×f32                                | 3×f32                                   | `Vector<X, Y, Z>` widths; packed common table      | `vector<T>` widths                                | 3×f32; `vector(x, y, z)` widths              |
-| `Vector2`              | side                                 | side                                    | side                                               | none                                              | 2×f32 (decodes as Vector3)                   |
+| `Vector2`              | 2×f32                                | side                                    | side                                               | none                                              | 2×f32 (decodes as Vector3)                   |
 | `Vector3int16`         | side                                 | side                                    | side                                               | none                                              | none                                         |
 | `CFrame`               | 24 B axis-angle                      | 24 B axis-angle; packed aligned table   | **18 B quantized** (lossy, ~0.05); packed aligned  | 24 B Euler (`ToOrientation`)                      | 24 B axis-angle; `AlignedCFrame` 13 B        |
 | `Color3`               | 3×u8                                 | 3×u8                                    | 3×u8                                               | 3×u8                                              | 3×u8                                         |
@@ -91,10 +91,11 @@ mishandles or drops.
    the `_nominal_*` brand key `@rbxts/types` puts on every datatype
    (confirmed present on `buffer` and `Instance` in `@rbxts/types`) to
    route them to the side table; surge can do the same as the fallback,
-   then add real encodings for the cheap ones: `Vector2` (2×f32),
-   `Vector3int16` (3×i16), `UDim` (f32 + i32 or i16), `UDim2` (2×`UDim`),
-   `BrickColor` (u16 `.Number`), `NumberRange` (2×f32), `Rect` (4×f32),
-   `DateTime` (f64 `UnixTimestampMillis`), raw `buffer` (u32 len + bytes).
+   then add real encodings for the cheap ones. `Vector2` (2×f32) has
+   landed. Still open: `Vector3int16` (3×i16), `UDim` (f32 + i32 or i16),
+   `UDim2` (2×`UDim`), `BrickColor` (u16 `.Number`), `NumberRange` (2×f32),
+   `Rect` (4×f32), `DateTime` (f64 `UnixTimestampMillis`), raw `buffer`
+   (u32 len + bytes).
 2. `Instance` and subclasses to the side table (the documented behavior).
 3. `Packed<T>` for `optional` presence bits and 2-way tagged-union tags
    (fbs and serio both pack these), and the packed `CFrame` axis-aligned
