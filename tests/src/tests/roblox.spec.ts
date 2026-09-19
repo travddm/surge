@@ -38,6 +38,14 @@ interface WithDatatypes {
 }
 const datatypesSerializer = createBinarySerializer<WithDatatypes>();
 
+// The datatypes of `FIXED_DATATYPES` in the transformer: a fixed list of numbers each.
+interface WithFixedDatatypes {
+	cell: Vector3int16;
+	cellOrLabel: Vector3int16 | string;
+	maybeCell?: Vector3int16;
+}
+const fixedDatatypesSerializer = createBinarySerializer<WithFixedDatatypes>();
+
 const RIGS: ReadonlyArray<Enum.HumanoidRigType> = [Enum.HumanoidRigType.R6, Enum.HumanoidRigType.R15];
 
 function randomVector3(rng: Rng): Vector3 {
@@ -122,6 +130,22 @@ class RobloxTest {
 			};
 			const { buffer, blobs } = datatypesSerializer.serialize(value);
 			Assert.equal(undefined, difference(value, datatypesSerializer.deserialize(buffer, blobs)));
+		}
+	}
+
+	@Fact
+	public roundTripsRandomFixedDatatypes(): void {
+		const rng = new Rng(14);
+		for (const _ of $range(1, 100)) {
+			const cell = new Vector3int16(rng.int(-32768, 32767), rng.int(-32768, 32767), rng.int(-32768, 32767));
+			const value: WithFixedDatatypes = {
+				cell,
+				cellOrLabel: rng.bool() ? cell : rng.str(),
+				maybeCell: rng.bool() ? cell : undefined,
+			};
+			const { buffer, blobs } = fixedDatatypesSerializer.serialize(value);
+			Assert.empty(blobs);
+			Assert.equal(undefined, difference(value, fixedDatatypesSerializer.deserialize(buffer, blobs)));
 		}
 	}
 

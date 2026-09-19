@@ -64,6 +64,9 @@ interface Datatypes {
 }
 const datatypesSerializer = createBinarySerializer<Datatypes>();
 
+// One fact per row of `FIXED_DATATYPES` in the transformer.
+const vector3int16Serializer = createBinarySerializer<Vector3int16>();
+
 class BytesTest {
 	@Fact
 	public pinsPrimitivesInNameOrder(): void {
@@ -139,6 +142,15 @@ class BytesTest {
 		const offset = "0000803f" + "000000c0";
 		const position = "0000003f" + "00000000" + "00000040";
 		Assert.equal(offset + position + "ff8000", hex(buffer));
+	}
+
+	@Fact
+	public pinsVector3int16(): void {
+		// 3 x i16
+		Assert.equal(
+			"0100" + "feff" + "0300",
+			hex(vector3int16Serializer.serialize(new Vector3int16(1, -2, 3)).buffer),
+		);
 	}
 }
 

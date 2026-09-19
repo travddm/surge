@@ -26,7 +26,7 @@ otherwise.
   (`Enum.SortOrder | undefined`) both work. This is a diagnostic, not a
   wrong encoding: before the robustness fixes it crashed the emitter.
 - **An opaque value next to another type is rejected.** `Instance | string`
-  and `Vector3int16 | string` report the "opaque variant" diagnostic, and
+  and `Vector2int16 | string` report the "opaque variant" diagnostic, and
   the user must type the whole field as `unknown`, which also moves the
   `string` to the blob channel. `unknown | string` is not affected:
   TypeScript reduces it to `unknown`. The rejection was the option
@@ -78,7 +78,7 @@ these stages move no pinned buffer; pin the new shapes when they land.
   one variant (they all write and read through `pushBlob`/`nextBlob`), and
   drop the "opaque variant" rejection. `Instance | string` then costs one
   index byte, with the string in the buffer and the `Instance` in the blob
-  channel. Round-trip fixtures: `Vector3int16 | string`, and
+  channel. Round-trip fixtures: `Vector2int16 | string`, and
   `Instance | string` with a Lune data-model `Part` (as `roblox.spec.ts`
   builds one).
 - **Cascading diagnostic.** In `classifyUnion`, record

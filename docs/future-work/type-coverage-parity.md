@@ -47,7 +47,7 @@ buffer bytes.
 | `EnumItem`             | u8/u16 by name-sorted index          | u8 by `.Value`                          | u8 by `.Value`, throws >255                        | n/a                                               | n/a                                          |
 | `Vector3`              | 3×f32                                | 3×f32                                   | `Vector<X, Y, Z>` widths; packed common table      | `vector<T>` widths                                | 3×f32; `vector(x, y, z)` widths              |
 | `Vector2`              | 2×f32                                | side                                    | side                                               | none                                              | 2×f32 (decodes as Vector3)                   |
-| `Vector3int16`         | side                                 | side                                    | side                                               | none                                              | none                                         |
+| `Vector3int16`         | 3×i16                                | side                                    | side                                               | none                                              | none                                         |
 | `CFrame`               | 24 B axis-angle                      | 24 B axis-angle; packed aligned table   | **18 B quantized** (lossy, ~0.05); packed aligned  | 24 B Euler (`ToOrientation`)                      | 24 B axis-angle; `AlignedCFrame` 13 B        |
 | `Color3`               | 3×u8                                 | 3×u8                                    | 3×u8                                               | 3×u8                                              | 3×u8                                         |
 | `BrickColor`           | side                                 | side                                    | side                                               | u16 `.Number`                                     | u16 `.Number`                                |
@@ -91,7 +91,10 @@ mishandles or drops.
    datatype to route them to the side table. surge now does the same as
    the fallback; what remains is real encodings for the cheap ones.
    `Vector2` (2×f32) has
-   landed. Still open: `Vector3int16` (3×i16), `UDim` (f32 + i32 or i16),
+   landed, and so has `Vector3int16` (3×i16), as the first row of the
+   table-driven `datatype` kind (`FIXED_DATATYPES` in the transformer's
+   `datatypes.ts`); each of the fixed-size types below is one more row.
+   Still open: `UDim` (f32 + i32 or i16),
    `UDim2` (2×`UDim`), `BrickColor` (u16 `.Number`), `NumberRange` (2×f32),
    `Rect` (4×f32), `DateTime` (f64 `UnixTimestampMillis`), raw `buffer`
    (u32 len + bytes).

@@ -7,7 +7,7 @@ Part of the [surge](../architecture.md) design.
 The correctness bug is fixed: `Instance` and its subclasses, `unknown`,
 and every other Roblox datatype not already in the walker's scalar-kind
 table (`UDim`, `UDim2`, `BrickColor`, `NumberRange`, `Rect`,
-`Vector3int16`, `Region3`, `TweenInfo`, `Font`, `Ray`, `DateTime`, `buffer`,
+`Vector2int16`, `Region3`, `TweenInfo`, `Font`, `Ray`, `DateTime`, `buffer`,
 ...) now classify as `blob` instead of being walked structurally
 (`unknown` and `any` as `optional(blob)`, because they can hold
 `undefined`; see Blob / passthrough channel in
@@ -47,7 +47,9 @@ Two items from the original review remain open:
 - **Real encodings for the cheap datatypes**, per
   [type-coverage-parity.md](type-coverage-parity.md) Tier A. `Vector2`
   (2×f32) has landed, its own `ROBLOX_SCALAR_KINDS` entry alongside
-  `Vector3`/`CFrame`/etc. Still open: `Vector3int16` (3×i16), `UDim`
+  `Vector3`/`CFrame`/etc. `Vector3int16` (3×i16) has landed as the first
+  row of `FIXED_DATATYPES` (see Type Coverage in
+  [transformer.md](../transformer.md)). Still open: `UDim`
   (f32 + i32 or i16), `UDim2` (2×`UDim`), `BrickColor` (u16 `.Number`),
   `NumberRange` (2×f32), `Rect` (4×f32), `DateTime` (f64
   `UnixTimestampMillis`), raw `buffer` (u32 len + bytes). They round-trip
@@ -70,7 +72,8 @@ Two items from the original review remain open:
 against the real compiled transformer output (`npm run tests:compile &&
 npm run tests:test`), not just the transformer repo's own unit tests.
 `roundTripsUnencodedDatatypeAsAnOpaqueBlob` covers the still-unencoded case
-with a real Lune `Vector3int16` (the Lune runner didn't expose either type
+with a real Lune `Vector2int16` (`Vector3int16` until that type got its
+own encoding; the Lune runner didn't expose either type
 as a global before this doc; added alongside `CFrame`/`Vector3`/`Color3` in
 `lune-test-runner.luau`, following its own "cast because Lune 0.10.5's type
 definitions omit these constructors" pattern) round-tripping through the
