@@ -26,21 +26,34 @@ by executing the compiled walker and emitter unless marked otherwise.
   nothing rejects the other forms. (Optional trailing elements,
   `[number, string?]`, do work.)
 - **Non-table, non-primitive union members.** `guardFor` in `emit.ts`
-  throws a plain `Error` for a `vector2`/`vector3`/`cframe`/`enum`/
-  `optional` variant, and `classifyUnion` does not count these as
-  table-shaped, so `Vector3 | CFrame` reaches the emitter and crashes with
-  a stack trace instead of a diagnostic. `Vector3 | string` only works
-  because the userdata variant happens to come last in the checker's
-  constituent order and the last variant is never guarded. (Both walks
-  were executed: `Vector3 | CFrame` produces a `guardedUnion` of `vector3`
-  then `cframe`, which `guardFor` rejects; the emitter throw itself is
-  from code reading.) `Vector2` joined this gap once
+  handles `num`, `str`, `bool`, `literalConst`, and the four table kinds
+  (`object`/`array`/`tuple`/`dict`), and throws a plain `Error` for every
+  other kind. `classifyUnion` reports a diagnostic only for two or more
+  table-shaped variants, so the other kinds reach the emitter and crash it
+  with a stack trace. The kinds reachable as a bare union member are
+  `vector2`, `vector3`, `cframe`, `color3`, `colorSequence`,
+  `numberSequence`, `enum`, `blob`, and `recursiveRef`. `classifyUnion`
+  sorts the variants by kind name and `writeGuardedUnion` never guards the
+  last one, so the crash depends on alphabetical position:
+  `Vector3 | string` sorts to `str`, `vector3` and works, while
+  `CFrame | string`, `Instance | string` (`blob` sorts first), and
+  `interface Node { next: Node | string }` (`recursiveRef`) all throw. A
+  `recursiveRef` to an object is a table at runtime, so
+  `typeIs(value, "table")` would guard it. (From code reading of
+  `guardFor`, `writeGuardedUnion`, and the sort in `classifyUnion`; the
+  `Vector3 | CFrame` walk was executed.) `Vector2` joined this gap once
   [blob-classification.md](blob-classification.md)'s Tier A gave it a real
   `vector2` scalar kind instead of collapsing into `blob`: a
   `Vector2 | Instance`-shaped union used to collapse to a single `blob`
   (every constituent routing to `blob`) and now reaches this same
   `guardFor` gap instead, identical to how `Vector3 | Instance` already
   behaved before this fix.
+- **`Packed<T>` applies to object properties only.** The emitter honors
+  the `packed` flag only when it collects the `bool` properties of an
+  object (`writeObjectInline`/`readObjectInline`). A packed `boolean` as an
+  array element, a tuple element, or the root type is written as a full
+  byte with no diagnostic. `isPackable` in `field.ts` has no caller. From
+  code reading.
 - **Re-aliased `Packed<T>`.** `type PackedFlags = DataType.Packed<Flags>`
   is not recognized: the alias symbol is `PackedFlags`, so
   `getPackedInnerType` returns nothing and the intersection is walked
@@ -56,7 +69,10 @@ by executing the compiled walker and emitter unless marked otherwise.
 - **Walk diagnostics are thrown as a plain `Error`** from `index.ts`, so
   the user sees a Node stack trace instead of a `tsc`-style diagnostic
   with a file and position. The `WalkDiagnostic.node` is collected but
-  never used.
+  never used, and it is always the factory call expression: `walk()`
+  passes the same `node` to every recursive call, so a surfaced diagnostic
+  would point at `createBinarySerializer<T>()`, not at the offending
+  property.
 - **Injected import name collisions.** The transformer adds
   `import { alloc, beginWrite, ... } from "@rbxts/surge"` at the top of the
   file, and the generated IIFE refers to those names unqualified. A user
@@ -77,8 +93,14 @@ decided once and applied consistently rather than case by case.
   is not a valid identifier; treat numeric keys as numbers.
 - Reject non-trailing rest tuples with a diagnostic.
 - Extend `guardFor` with `typeIs(value, "Vector3")`/`"Vector2"`-style
-  checks for the userdata kinds and make `classifyUnion` reject what
-  `guardFor` cannot guard, as a diagnostic.
+  checks for the userdata kinds and `typeIs(value, "table")` for a
+  `recursiveRef` to a table shape, and make `classifyUnion` reject what
+  `guardFor` cannot guard (a `blob` next to a non-`blob` variant, two
+  variants with the same runtime type), as a diagnostic.
+- Thread the declaration of the property or element being walked into
+  `report()`, so a surfaced diagnostic points at it.
+- Report a diagnostic for `Packed<T>` on a `boolean` outside an object
+  property, or pack it.
 - Detect `Packed` through alias chains (walk `aliasSymbol`'s declared
   type) or by the `_surge_packed` brand property's declaring package.
 - Transform contextually typed factory calls too (read the contextual type

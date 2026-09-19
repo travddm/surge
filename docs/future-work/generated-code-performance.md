@@ -18,7 +18,10 @@ Lune's `luau.compile`: 99 fixed-size fields compile; 100 fail with
 (with the `value` parameter, 100 fields need 201 registers). A struct
 with about 100 numeric fields, or fewer with strings, is not
 "pathologically large", and the failure is a Luau syntax error in the
-user's build.
+user's build. The emitter keeps no count of the locals it declares, and it
+splits a body into helper functions only for a recursive type
+(`ensureHelper`), never for size. [README.md](README.md) schedules this
+item with step 1, ahead of the rest of this document.
 
 **Read loops lower to a flag loop.** Every count-driven read
 (`array`, `tuple` rest, `dict`, sequences) is emitted as
@@ -41,8 +44,6 @@ instead of a numeric `for`. Every element read pays that branching.
 variant literal, then spreads it to add the tag, which roblox-ts lowers to
 `table.clone` plus `setmetatable(_object, nil)` plus one assignment per
 variant read.
-
-**Enum lookups are linear.** See [enum-encoding.md](enum-encoding.md).
 
 **One helper call per field.** Each field, however small, calls `alloc`
 or `readAlloc` and destructures a multi-return. A vector3 already shows

@@ -14,12 +14,11 @@ it:
 | Zap (`red-blox/zap`)                       | 0.6.29  | `8cd17ab` | Rust IDL compiler; networking layer included; no standalone codec |
 
 surge's own column comes from the walker probes recorded in the sibling
-documents (executed). "Structural" below means surge walks the type's
-declared properties as an object, which was wrong for every Roblox
-datatype; the identity-based `_nominal_*` brand fix in
-[blob-classification.md](blob-classification.md) has landed, so these now
-route to `side` uniformly. Real per-datatype encodings (the rest of Tier A
-below) are still open.
+documents (executed). surge used to walk every Roblox datatype's declared
+properties as an object. The identity-based `_nominal_*` brand fix in
+[blob-classification.md](blob-classification.md) has landed, so a datatype
+without its own encoding now routes to `side`. Real per-datatype encodings
+(the rest of Tier A below) are still open.
 
 ## Coverage matrix
 
@@ -40,12 +39,12 @@ buffer bytes.
 | map                    | u32 count                            | u32 count                               | `HashMap<K, V, L>` (default u32)                   | u16 count, unvalidated                            | 1 presence bit + `count-1` at key width      |
 | set                    | u32 count                            | u32 count                               | `HashSet<T, L>` (default u32)                      | **bit-packed flag set** (fixed members)           | as map, keys only                            |
 | object / struct        | name-sorted fields, no header        | emit-order fields (unstable, issue #16) | emit-order fields (unverified)                     | declaration order                                 | declaration order                            |
-| literal union          | u8/u16 index (order unstable, bug)   | u8/u16 index                            | u8/u16 index                                       | unit `enum`: u8                                   | unit `enum`: bits or index                   |
+| literal union          | u8/u16 index (canonical value order) | u8/u16 index                            | u8/u16 index                                       | unit `enum`: u8                                   | unit `enum`: bits or index                   |
 | single literal         | 0 bytes                              | 0 bytes                                 | 0 bytes                                            | n/a                                               | 1 variant: 0 bytes                           |
 | discriminated union    | u8/u16 tag (sorted by tag)           | u8/u16 tag; 1 bit if 2-way packed       | same as fbs                                        | tagged `enum`: u8                                 | tagged `enum`: bits or index                 |
 | other unions           | `typeIs` for primitives + 1 table    | Flamework guards, last match wins       | Flamework guards, last match wins                  | none                                              | `typeof` dispatch, one type per runtime type |
-| recursive types        | named helpers (unions crash, bug)    | none                                    | none (depth cap 32, untested)                      | not supported                                     | bounded only, via `write_X`/`read_X`         |
-| `EnumItem`             | u8 by **name** (>256 overflows, bug) | u8 by `.Value`                          | u8 by `.Value`, throws >255                        | n/a                                               | n/a                                          |
+| recursive types        | named helpers, including unions      | none                                    | none (depth cap 32, untested)                      | not supported                                     | bounded only, via `write_X`/`read_X`         |
+| `EnumItem`             | u8/u16 by name-sorted index          | u8 by `.Value`                          | u8 by `.Value`, throws >255                        | n/a                                               | n/a                                          |
 | `Vector3`              | 3×f32                                | 3×f32                                   | `Vector<X, Y, Z>` widths; packed common table      | `vector<T>` widths                                | 3×f32; `vector(x, y, z)` widths              |
 | `Vector2`              | 2×f32                                | side                                    | side                                               | none                                              | 2×f32 (decodes as Vector3)                   |
 | `Vector3int16`         | side                                 | side                                    | side                                               | none                                              | none                                         |
@@ -60,9 +59,9 @@ buffer bytes.
 | `buffer`               | side                                 | side                                    | side                                               | len + raw bytes; exact: no len                    | len + raw bytes; exact: no len               |
 | `Instance`             | side                                 | side                                    | side                                               | side; `Instance(Class)` checked                   | side; `Instance.Class` checked               |
 | `unknown` / `any`      | side                                 | optional side                           | side                                               | side (not optional)                               | side (not optional)                          |
-| functions, `null`      | side, with a diagnostic              | side                                    | side                                               | n/a                                               | n/a                                          |
-| `symbol`               | side, with a diagnostic              | side                                    | side                                               | n/a                                               | n/a                                          |
-| generics               | **collide** (bug)                    | yes                                     | yes                                                | struct/map/enum generics                          | none                                         |
+| functions, `null`      | rejected with a diagnostic           | side                                    | side                                               | n/a                                               | n/a                                          |
+| `symbol`               | rejected with a diagnostic           | side                                    | side                                               | n/a                                               | n/a                                          |
+| generics               | yes (keyed by type identity)         | yes                                     | yes                                                | struct/map/enum generics                          | none                                         |
 | write-side validation  | none                                 | none                                    | range and NaN on every number                      | `option WriteValidations`                         | `write_checks` (default on)                  |
 | read-side checks       | none                                 | none                                    | none                                               | bounds validated                                  | server always, client optional               |
 
@@ -87,24 +86,28 @@ These differences are design choices, not bugs, and should stay:
 are TypeScript types fbs or serio already handle and surge currently
 mishandles or drops.
 
-1. Every Roblox datatype above marked structural. fbs and serio both use
-   the `_nominal_*` brand key `@rbxts/types` puts on every datatype
-   (confirmed present on `buffer` and `Instance` in `@rbxts/types`) to
-   route them to the side table; surge can do the same as the fallback,
-   then add real encodings for the cheap ones. `Vector2` (2×f32) has
+1. Every Roblox datatype that surge's column above marks `side`. fbs and
+   serio both use the `_nominal_*` brand key `@rbxts/types` puts on every
+   datatype to route them to the side table. surge now does the same as
+   the fallback; what remains is real encodings for the cheap ones.
+   `Vector2` (2×f32) has
    landed. Still open: `Vector3int16` (3×i16), `UDim` (f32 + i32 or i16),
    `UDim2` (2×`UDim`), `BrickColor` (u16 `.Number`), `NumberRange` (2×f32),
    `Rect` (4×f32), `DateTime` (f64 `UnixTimestampMillis`), raw `buffer`
    (u32 len + bytes).
-2. `Instance` and subclasses to the side table (the documented behavior).
+2. ~~`Instance` and subclasses to the side table.~~ Landed with the
+   nominal-brand fallback in item 1.
 3. `Packed<T>` for `optional` presence bits and 2-way tagged-union tags
    (fbs and serio both pack these), and the packed `CFrame` axis-aligned
    and zero/one-position table (fbs and serio share the same 24-entry
-   layout, which is a ready-made spec).
+   layout, which is a ready-made spec). The walker already sets
+   `optional.packed`; the emitter never reads it and always writes a
+   presence byte. `DataType.Packed`'s JSDoc promises the `optional` bit
+   today (see [documentation-gaps.md](documentation-gaps.md)).
 4. `NumberSequence` Envelope. fbs drops it too; serio keeps it. Dropping a
    field of the value is data loss, so keep it (one more f32 per keypoint).
-5. Recursive unions, generic instantiations, enum width, literal-union
-   order: already recorded in the sibling documents.
+5. ~~Recursive unions, generic instantiations, enum width, literal-union
+   order.~~ All landed; see [README.md](README.md).
 6. Wider and narrower numeric widths from serio: u24/i24 are cheap
    (3 bytes); f16 is a software conversion in every library that has it
    and is slow (Blink says so); u12/i12 only make sense inside `Packed`.
@@ -142,15 +145,19 @@ byte saving, and serio's has an index collision bug).
 
 ## Why deferred
 
-Tier A follows the walker fixes in the sibling documents; Tier B is API
-design that should be decided once, with the benchmark harness in
+The walker fixes that Tier A waited on have landed, so Tier A is
+unblocked. [README.md](README.md) places it after
+[round-trip-test-coverage.md](round-trip-test-coverage.md) so that each
+new encoding is a change to a pinned buffer. Tier B is API design that
+should be decided once, with the benchmark harness in
 [benchmark-tooling.md](benchmark-tooling.md) available to show what each
-bound actually saves.
+bound actually saves; it is a separate, later step for that reason.
 
 ## How, briefly
 
 - Tier A first, one datatype per commit with a round-trip fixture and a
-  byte-size assertion each; nominal-key fallback before any of them.
+  byte-size assertion each. The nominal-key fallback they build on has
+  landed.
 - Tier B as one design note deciding the `DataType.*` names and defaults,
   then length-typed containers first, since they dominate the size
   comparison, then vectors and `AlignedCFrame`, then ranges.

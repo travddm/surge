@@ -20,10 +20,12 @@ Part of the [surge](../architecture.md) design.
   to identify the package; reading its `version` too and reporting a
   diagnostic when it differs from the transformer's own version is a
   small, cheap backstop. Neither repository has a tag yet, both are
-  `0.1.0`, and there is no documented tagging step.
+  `0.1.0`, and there is no documented tagging step. The transformer's
+  `package.json` is also `"private": true`.
 - **`npm install`, not `npm ci`.** Both workflows install with
   `npm install` (the transformer's through the mise `postinstall` hook),
-  and `surge`'s `mise run ci` runs `npm install --prefix tests`. That
+  and `surge`'s `mise run ci` runs `npm run tests:install`, which ends in
+  `npm install --prefix tests`. That
   can update the lockfile silently; CI does not fail
   on lockfile drift, and the `restore-keys` prefix match restores a stale
   `node_modules` before installing on top of it.
@@ -39,7 +41,10 @@ Part of the [surge](../architecture.md) design.
 
 Each item is a workflow change rather than a code change; the version
 backstop is the only one that touches the transformer, and it should land
-with the first tagged release it would protect.
+with the first tagged release it would protect. The workflow items have
+no such dependency. [README.md](README.md) lists them as work that can
+land at any time: the transformer changes scheduled before the release are
+what the missing integration job would catch.
 
 ## How, briefly
 
