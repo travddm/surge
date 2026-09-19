@@ -21,6 +21,13 @@ class SupportTest {
 	}
 
 	@Fact
+	public comparesBuffersByTheirBytes(): void {
+		Assert.undefined(difference(buffer.fromstring("ab"), buffer.fromstring("ab")));
+		Assert.defined(difference(buffer.fromstring("ab"), buffer.fromstring("ac")));
+		Assert.defined(difference(buffer.fromstring("ab"), buffer.fromstring("abc")));
+	}
+
+	@Fact
 	public tellsZeroFromNegativeZero(): void {
 		Assert.defined(difference(0, -0));
 		Assert.undefined(difference(-0, -0));

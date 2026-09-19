@@ -56,7 +56,7 @@ buffer bytes.
 | `UDim` / `UDim2`       | f32 + i32 per `UDim` (8 B / 16 B)    | side                                    | `ScaleOffset`/`ScaleOffset2`; packed common table  | none                                              | none                                         |
 | `NumberRange` / `Rect` | 2×f32 / 4×f32                        | side                                    | side                                               | none                                              | none                                         |
 | `DateTime`             | side                                 | side                                    | side                                               | f64 seconds or millis                             | f64 seconds or millis                        |
-| `buffer`               | side                                 | side                                    | side                                               | len + raw bytes; exact: no len                    | len + raw bytes; exact: no len               |
+| `buffer`               | u32 len + bytes                      | side                                    | side                                               | len + raw bytes; exact: no len                    | len + raw bytes; exact: no len               |
 | `Instance`             | side                                 | side                                    | side                                               | side; `Instance(Class)` checked                   | side; `Instance.Class` checked               |
 | `unknown` / `any`      | optional side                        | optional side                           | side                                               | side (not optional)                               | side (not optional)                          |
 | functions, `null`      | rejected with a diagnostic           | side                                    | side                                               | n/a                                               | n/a                                          |
@@ -101,8 +101,8 @@ mishandles or drops.
     - Landed: `Rect` (4 x f32: Min.X, Min.Y, Max.X, Max.Y).
     - Open: `DateTime` (f64 `UnixTimestampMillis`). Lune 0.10.5 has no
       `DateTime`, so it cannot have a round-trip fixture.
-    - Open: raw `buffer` (u32 len + bytes). Variable length, so it needs
-      its own kind, not a table row.
+    - Landed: raw `buffer` (u32 len + bytes), as its own `buffer` kind: it
+      is variable length, so it is not a table row.
 2. ~~`Instance` and subclasses to the side table.~~ Landed with the
    nominal-brand fallback in item 1.
 3. `Packed<T>` for `optional` presence bits and 2-way tagged-union tags
