@@ -256,6 +256,7 @@ Vector3 = (roblox :: any).Vector3
 Vector2 = (roblox :: any).Vector2
 Vector3int16 = (roblox :: any).Vector3int16
 Vector2int16 = (roblox :: any).Vector2int16
+BrickColor = (roblox :: any).BrickColor
 UDim2 = (roblox :: any).UDim2
 UDim = (roblox :: any).UDim
 Color3 = (roblox :: any).Color3

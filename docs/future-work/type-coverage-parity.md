@@ -50,7 +50,7 @@ buffer bytes.
 | `Vector3int16`         | 3×i16                                | side                                    | side                                               | none                                              | none                                         |
 | `CFrame`               | 24 B axis-angle                      | 24 B axis-angle; packed aligned table   | **18 B quantized** (lossy, ~0.05); packed aligned  | 24 B Euler (`ToOrientation`)                      | 24 B axis-angle; `AlignedCFrame` 13 B        |
 | `Color3`               | 3×u8                                 | 3×u8                                    | 3×u8                                               | 3×u8                                              | 3×u8                                         |
-| `BrickColor`           | side                                 | side                                    | side                                               | u16 `.Number`                                     | u16 `.Number`                                |
+| `BrickColor`           | u16 `.Number`                        | side                                    | side                                               | u16 `.Number`                                     | u16 `.Number`                                |
 | `ColorSequence`        | u8 count + 7 B/keypoint              | same                                    | u8 count + u16 time + 3 B                          | none                                              | none                                         |
 | `NumberSequence`       | u8 count + 8 B; **Envelope dropped** | same, Envelope dropped                  | u8 count + 3×u16 incl. Envelope (values in [0, 1]) | none                                              | none                                         |
 | `UDim` / `UDim2`       | f32 + i32 per `UDim` (8 B / 16 B)    | side                                    | `ScaleOffset`/`ScaleOffset2`; packed common table  | none                                              | none                                         |
@@ -96,7 +96,7 @@ mishandles or drops.
     - Landed: `Vector3int16` (3×i16).
     - Landed: `UDim` (f32 scale + i32 offset).
     - Landed: `UDim2` (2 x UDim: f32 + i32 for X, then for Y).
-    - Open: `BrickColor` (u16 `.Number`).
+    - Landed: `BrickColor` (u16 `.Number`).
     - Open: `NumberRange` (2×f32).
     - Open: `Rect` (4×f32).
     - Open: `DateTime` (f64 `UnixTimestampMillis`). Lune 0.10.5 has no
