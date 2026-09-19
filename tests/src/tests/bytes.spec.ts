@@ -69,6 +69,7 @@ const vector3int16Serializer = createBinarySerializer<Vector3int16>();
 const insetSerializer = createBinarySerializer<UDim>();
 const sizeSerializer = createBinarySerializer<UDim2>();
 const paintSerializer = createBinarySerializer<BrickColor>();
+const spanSerializer = createBinarySerializer<NumberRange>();
 
 class BytesTest {
 	@Fact
@@ -175,6 +176,12 @@ class BytesTest {
 	public pinsBrickColor(): void {
 		// u16 `.Number`
 		Assert.equal("ec03", hex(paintSerializer.serialize(new BrickColor(1004)).buffer));
+	}
+
+	@Fact
+	public pinsNumberRange(): void {
+		// 2 x f32: Min, Max
+		Assert.equal("0000803f" + "00002040", hex(spanSerializer.serialize(new NumberRange(1, 2.5)).buffer));
 	}
 }
 
