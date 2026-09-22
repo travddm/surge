@@ -276,9 +276,10 @@ the subject of the next section. Four mechanical facts come first.
 **A `//!native` on a transformed file is inert today, and so is a
 `//!optimize 2`.** A Luau hot comment is honoured anywhere ahead of the first
 line of code, and not only on line 1: the parser keeps its hot-comment header
-flag set until the first non-comment lexeme (`Ast/src/Parser.cpp`). That is
-why Blink's generated module carries `--!strict` on line 1 and `--!native` on
-line 2 with both in effect, and why surge's own modules can carry two.
+flag set until the first non-comment token (`Ast/src/Parser.cpp`). By that
+rule Blink's generated module has `--!strict` on line 1 and `--!native` on
+line 2 with both in effect, and surge's own modules can carry two. The rule is
+read off the parser; what was measured is the other end of it.
 Comments above a directive are harmless. Code above it is not: in a file that
 calls `createBinarySerializer`, the injected `local __surge_*` imports are
 emitted above the directive, which lands around line 12 behind a
@@ -314,7 +315,7 @@ transformer can rewrite the `.luau` file after roblox-ts has written it.
 it reads what it needs out of the TypeScript checker and works out the output
 path from `outDir` and `rootDir`, then watches the output directory and
 rewrites the emitted text — prepending `--!strict` and `--!optimize N`,
-hoisting every `--!` line to the top of the preamble, annotating
+hoisting a `--!` line out of the preamble to the top of it, annotating
 `local function` signatures from the checker's types, promoting locals that
 are never reassigned to `const`, and wrapping `TS.import` in a dead `require`
 branch so that luau-lsp can infer the imported module's type. So "not

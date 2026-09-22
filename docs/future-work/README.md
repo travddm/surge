@@ -266,8 +266,9 @@ live. surge's four hot modules carry `//!optimize 2` next to `//!native` now,
 and the generated code should carry it once the emission fix lets a directive
 through. And type annotations and the per-function `@native` are not blocked
 on reachability after all: `rbxts-transform-luau` reaches both by rewriting
-the `.luau` file after roblox-ts has written it, which is prior art for a
-route surge's emitter does not have. They stay deferred — 1.09× on top of
+the `.luau` file after roblox-ts has written it — the same pass that would
+lift a directive out of the preamble — which is prior art for a route surge's
+emitter does not have. They stay deferred — 1.09× on top of
 `--!native` and nothing without it — but as unmeasured work behind the
 emission fix, not as something that cannot be done. The same pass corrected
 two statements of fact: a Luau hot comment is honoured anywhere ahead of the
