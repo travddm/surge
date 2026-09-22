@@ -275,11 +275,12 @@ From [benchmarks/size.md](../benchmarks/size.md), which the run writes:
 And from [benchmarks/speed.md](../benchmarks/speed.md), which the Tier 2 run
 writes:
 
-- Two of the five columns ran with Luau's `--!native` and `--!optimize 2`
-  and three ran without. fbs carries both on `createSerializer` and
-  `createDeserializer`, which is where its codec runs, and Blink's generated
-  module carries both; roblox-ts emits neither, so surge and serio have
-  neither, and the baseline drops them on purpose. Whether the process
+- Two of the five columns run with Luau's `--!native` and three without.
+  fbs carries it on `createSerializer` and `createDeserializer`, which is
+  where its codec runs, and Blink's generated module carries it; roblox-ts
+  emits neither directive, so surge's generated code, serio and the baseline
+  are interpreted. `--!optimize 2` is on every column but serio's now.
+  Whether the process
   honours them was measured rather than assumed: two modules built at run
   time from one source, differing only in the directives, ran the same tight
   buffer loop, and the one carrying `--!native` was 11.68 times faster in the
@@ -291,41 +292,41 @@ writes:
 - Everything this repository compiles has since taken `//!optimize 2`: the
   package, the fixtures, the adapters, and the hand-written baseline. Studio
   compiles at level 1 and a published place at level 2, so that is what makes
-  a run here a run of what ships. The checked-in table predates it, and is
-  therefore a level-1 measurement of surge, serio and the baseline against a
-  level-2 fbs, Blink and Zap. What that difference is worth is 1.00× on the
-  two loops the probe measured and unmeasured on the catalog, which is the
-  first thing the next run says. serio is the only column that still carries
-  no directive at all, since patching a dependency's modules is not worth the
-  drift.
+  a run here a run of what ships. serio is the only column without it, since
+  patching a dependency's modules is not worth the drift. What it was worth is
+  measured: nothing the catalog can see, with fbs and Blink flat at 1.000× as
+  the control and surge's encode at 1.004×. The table by column is in
+  [generated-code-performance.md](generated-code-performance.md).
 - The baseline is the column compiled the way surge's generated code is:
   `--!optimize 2` and no `--!native`.
-  surge is ahead of serio on all 32 of their measurements: by 1.29× to
-  16.00× on encode, and by 1.03× to 6.58× on decode.
+- surge is ahead of serio on all 32 of their measurements: by 1.27× to
+  14.29× on encode, and by 1.02× to 6.67× on decode.
 - The baseline is the result this tier was built for. It writes surge's exact
-  bytes, so none of its lead is format: it encodes between 2.12× and 2.82×
-  faster and decodes between 1.51× and 2.40× faster, over the three rows it
-  covers. That gap is what the emitted code costs against straight-line Luau,
-  and it is the measurement
+  bytes, so none of its lead is format: it encodes 2.87× faster and decodes
+  1.63× faster on the `CFrame` array, which is the one of its three rows
+  whose trials are quiet in both halves. The flat struct and the nested
+  object put the encode gap at 2.67× and 2.96× and the decode gap at 1.49×
+  and 2.41×, on trials spanning half their median or more. That gap is what
+  the emitted code costs against straight-line Luau, and it is the measurement
   [generated-code-performance.md](generated-code-performance.md) was waiting
   for.
-- Against fbs, which is compiled differently, surge is behind on 11 of the 16
-  encode rows and ahead on 10 of the 16 decode rows. It leads the five encode
+- Against fbs, which is compiled differently, surge is behind on 10 of the 16
+  encode rows and ahead on 10 of the 16 decode rows. It leads the six encode
   rows where an object has a run of fixed-size fields to share one
   reservation, or where `Packed<T>` or the guarded union is its own surface:
   fbs encodes Blink's `Entities` bench at 0.31× of surge's rate and the wide
-  struct at 0.64×. On decode the widest is the wide struct, at 0.17×.
+  struct at 0.65×. On decode the widest is the wide struct, at 0.16×.
 - `Packed<T>` is not only smaller, but it is much less of a speed win than it
-  was. The same shape encodes 1.24× faster packed than unpacked and decodes
-  at 0.45×, against 2.11× and 0.72× before the shared-reservation change: the
+  was. The same shape encodes 1.22× faster packed than unpacked and decodes
+  at 0.46×, against 2.11× and 0.72× before the shared-reservation change: the
   packed path is a bit region and shares nothing, so the unpacked path is
   what got faster. Read this as a snapshot of two paths that move
   independently, not as a property of `Packed<T>`; bit packing is Luau
   arithmetic, so native code generation would move it again.
 - Blink is ahead on every decode row and on 10 of its 11 encode rows, by as
-  much as 5.82× on its own `Booleans` bench. Its `Entities` bench used to be
-  a 23× lead and is now 4.84×, which is the shared-reservation change and
-  not Blink. The one row it loses is the 1000-element array, at 0.16×, where
+  much as 5.78× on its own `Booleans` bench. Its `Entities` bench used to be
+  a 23× lead and is now 4.86×, which is the shared-reservation change and
+  not Blink. The one row it loses is the 1000-element array, at 0.20×, where
   it is the slowest of the four columns.
   That cell is not a property of its encoder: measured alone, Blink encodes
   that row at 134k to 144k values per second, five times ahead of surge. See
@@ -346,14 +347,15 @@ writes:
   decode within a percent of their median in a full run and spread by 91%
   and 302% measured alone.
 - The noise is concentrated in encode on the rows that run fastest, where
-  10000 calls take a few milliseconds. Of the 124 cells, 24 spread more than
-  a tenth of their median between their slowest and fastest trial, 13 more
-  than three tenths, and four more than a whole median. All 13 sit on the
-  flat struct, the nested object, the wide struct, or the large array, and on
-  ten of them the median is nearer the slowest trial than the fastest —
-  the
-  shape of a cost most trials pay and one does not. What that cost is was not
-  established. Every row whose trials take longer is quiet.
+  10000 calls take a few milliseconds. Of the 124 cells, 27 spread more than
+  a tenth of their median between their slowest and fastest trial, 11 more
+  than three tenths, and four more than a whole median. All 11 sit on the
+  flat struct, the nested object, the wide struct, or the large array. Earlier
+  runs put the median nearer the slowest trial than the fastest on most of
+  them — the shape of a cost most trials pay and one does not — which this run
+  does not recheck, because the table keeps a spread and not the trials behind
+  it. What that cost is was not established. Every row whose trials take
+  longer is quiet.
 
 ### Methodology
 
@@ -362,7 +364,10 @@ writes:
   same value object reused across iterations; result buffers discarded.
   `speed.spec.ts` does this with 1000 warm-up calls and 5 trials of 10000,
   and prints the median with the lowest and highest trial, one line per
-  fixture and library.
+  fixture and library. `speed.md` keeps the median and the spread and not
+  the three numbers behind them, so a statistic over trials — whether a
+  median sits nearer its slowest trial than its fastest, for one — has to be
+  taken from the run's own output while it is still in hand.
 - Size: bytes of the returned buffer plus the count of side-table entries,
   per fixture and library, plus the ratio against surge.
 - Also per fixture and library: round-trip exactness, and, where a round

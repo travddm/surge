@@ -3,19 +3,22 @@
 Part of the [surge](../architecture.md) design. The performance goal is the
 project's reason to exist, and the harness in
 [benchmark-tooling.md](benchmark-tooling.md) has now measured it.
-[benchmarks/speed.md](../benchmarks/speed.md) puts surge between 2.12× and
-2.82× behind a hand-written codec that writes its exact bytes on encode, and
-between 1.51× and 2.40× behind it on decode. That is the size of what this
+[benchmarks/speed.md](../benchmarks/speed.md) puts surge 2.87× behind a
+hand-written codec that writes its exact bytes on encode and 1.63× behind it
+on decode, on the `CFrame` array — the one of the baseline's three rows whose
+trials are quiet enough to read. The other two put the encode gap at 2.67×
+and 2.96× on trials spanning half their median. That is the size of what this
 document is about. It does not say which item below accounts for what.
-Six things have since been measured on their own. Five are changes that
+Seven things have since been measured on their own. Six are changes that
 landed: the read loop, worth nothing; the tagged-union read's table copy,
 worth 1.39× on the one row that has one; a `CFrame`'s two reservations
 becoming one, worth 1.61× on encode; every run of consecutive fixed-size
-fields sharing one reservation, worth up to 4.70×; and the blob side channel
-no longer being emitted where it is unused, worth nothing. The sixth is a
-probe that was reverted: `finishWrite` without its copy, also worth nothing.
-Together they say that per-element cost is what matters and per-call cost is
-not. Every other entry here is still what the
+fields sharing one reservation, worth up to 4.70×; the blob side channel no
+longer being emitted where it is unused, worth nothing; and compiling every
+module at optimization level 2, worth nothing and kept for parity with what a
+published place runs. The seventh is a probe that was reverted: `finishWrite`
+without its copy, also worth nothing. Together they say that per-element cost
+is what matters and per-call cost is not. Every other entry here is still what the
 compiled output shows, not what was measured. The local-register ceiling that this
 document used to record has landed; see Risks in
 [transformer.md](../transformer.md).
@@ -92,7 +95,8 @@ encode cell is a control, and so is every other library on the same row. The
 drift between the two runs is 0.92× to 1.03× over the 76 cells that are
 quiet in both, with a median of 0.99×, and every cell above but the first is
 inside it. It moves the row's whole decode column: fbs read it at 0.91× of
-surge's rate and reads it at 0.65× now.
+surge's rate and read it at 0.65× after the change, 0.56× in the current
+table.
 
 Both runs are full runs, because the scoped protocol cannot read this row —
 its decode trials spread by 302% measured alone and by 1% in a full run. See
@@ -160,10 +164,11 @@ does not touch, and they did not move.
 
 It closes more of the distance to the hand-written baseline than anything
 else here. That row was surge's worst against the baseline on encode, 4.62×,
-and is now its best at 2.87×; on decode it went from 2.17× to 1.60×, which
-is the closest surge has been to straight-line Luau on any row. It also
-takes the row's decode past fbs, which read it at 1.08× of surge's rate and
-reads it at 0.81× now.
+and the change took it to 2.87×; on decode it went from 2.17× to 1.60×, the
+closest surge had been to straight-line Luau on any row. In the current table
+the flat struct is the closest, at 2.67× and 1.49×. It also takes this row's
+decode past fbs, which read it at 1.08× of surge's rate and reads it at 0.81×
+now.
 
 So one `alloc` call per element is worth 1.61× on encode where the element
 is 24 bytes of otherwise straight-line writes. That was the case for the
@@ -206,7 +211,7 @@ fields per level.
 What it costs elsewhere is worth recording. `Packed<T>` encoded 1.22× faster
 than the same shape unpacked in that run, against 2.11× before, and decoded
 at 0.48× against 0.72×: the packed path was not touched, and the unpacked one
-got much faster. The checked-in table reads 1.24× and 0.45×, one run later.
+got much faster. The checked-in table reads 1.22× and 0.46× two runs later.
 Against fbs, surge went from behind on 14 of the 16 encode rows to behind on 10.
 
 **The blob side channel was on every call, used or not.** Every
@@ -389,12 +394,39 @@ of what runs live. It is why fbs's two codec modules and Blink's generated
 module carry it, and it is now on everything this repository compiles, at a
 measured cost of nothing.
 
-One thing follows for every number in this document and in
-[benchmarks/speed.md](../benchmarks/speed.md) taken before that: surge, serio
-and the baseline were compiled at level 1 and fbs, Blink and Zap at level 2,
-so the columns differed in optimization level as well as in native code
-generation. What that was worth is 1.00× on the two loops the probe measured
-and unmeasured on the catalog, which is the first thing the next run says.
+Every number in this document and in
+[benchmarks/speed.md](../benchmarks/speed.md) taken before that was a level-1
+measurement of surge, serio and the baseline against a level-2 fbs, Blink and
+Zap: the columns differed in optimization level as well as in native code
+generation. What that was worth has now been measured on the catalog rather
+than on two loops.
+
+**Pinning level 2 cost nothing, and the split by column says why.** A full
+run with every module this repository compiles at level 2, against the table
+checked in through `8cdcbc5`, which is the run `9876097` recorded with none
+of them. The 84 cells quiet in both runs
+drift 0.97× to 1.10×, median 1.008×, and the medians of each column's quiet
+cells divide like this:
+
+| Column   | encode | decode | what changed level       |
+| -------- | ------ | ------ | ------------------------ |
+| fbs      | 1.000× | 1.000× | everything but its codec |
+| Blink    | 1.000× | 1.000× | everything but its codec |
+| serio    | 1.040× | 1.035× | everything but its codec |
+| surge    | 1.004× | 1.030× | its generated code too   |
+| baseline | 1.028× | 1.032× | its codec too            |
+
+fbs and Blink do not move at all, and they are the control: their codecs were
+already level 2 and only the harness and adapter around them changed. surge's
+encode is the cell that matters, because that is where the generated code
+does the work, and it is 1.004×. The generated code gained nothing, which is
+what the mechanism says it would. What did move is a few percent on the
+decode side — and serio moved by the same few percent with no codec change at
+all, so that is the harness and the adapters, not a codec. The baseline has
+one quiet cell per half, which makes its 1.03× the weakest row in the table.
+
+So the directive is what it was argued to be: free, and carried for parity
+with what a published place compiles rather than for speed.
 
 **What has to be native is where the work is.** surge's generated code lives
 in the consumer's file and calls into surge's package per field, so the two
@@ -581,7 +613,7 @@ these rests on a measured 1.00× against an interpreted total.
   Nothing to do about it, since all four hot modules already carry the
   directive, but "worth nothing" is not what it will mean.
 - `Packed<T>`'s advantage over the same shape unpacked, which
-  [benchmark-tooling.md](benchmark-tooling.md) records as 1.24× on encode.
+  [benchmark-tooling.md](benchmark-tooling.md) records as 1.22× on encode.
   It was 2.11× before the shared-reservation change, purely because the
   unpacked path got faster. Bit packing is Luau arithmetic, so native moves
   it again; which way is not worth guessing.
