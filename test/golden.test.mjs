@@ -92,3 +92,15 @@ test("an unpacked CFrame reserves its 24 bytes once, not 12 bytes twice", () => 
 	assert.match(luau, /buffer\.writef32\(buf\d+, pos\d+ \+ 20,/);
 	assert.match(luau, /buffer\.readf32\(buf\d+, pos\d+ \+ 20\)/);
 });
+
+// Regression check for the shared-reservation item in
+// docs/future-work/generated-code-performance.md.
+test("consecutive fixed-size fields share one reservation", () => {
+	const luau = readCompiledLuau("tests/basic.spec.luau");
+	// `Basic` starts with a `number` (f64, 8 bytes) and a `boolean` (1), so
+	// those two share one 9-byte reservation instead of taking one each.
+	assert.match(luau, /__surge_alloc\(9\)/);
+	assert.match(luau, /__surge_readAlloc\(9\)/);
+	// A position computed from the shared one, which is what a run looks like.
+	assert.match(luau, /local pos\d+ = pos\d+ \+ \d+/);
+});
