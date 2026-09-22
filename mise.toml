@@ -1,5 +1,5 @@
 [tools]
-node = "24.18.0"
+node = "24.21.0"
 "github:rojo-rbx/rojo" = "7.7.0-rc.1"
 # Runs the round-trip suite and the benchmark size tier headlessly (see testing.md) via the
 # fake-Instance shim in tests/scripts/lune-roblox-shim.luau -- Roblox Studio is reserved for the
