@@ -61,11 +61,11 @@ description = "Recompile the benchmark's Blink and Zap definitions into tests/sr
 run = "npm run bench:definitions"
 
 [tasks."bench:size"]
-description = "Measure the bytes each fixture costs under Lune and rewrite docs/benchmarks/size.md (Tier 1, see future-work/benchmark-tooling.md); not part of ci -- a byte change is read, not gated pass/fail"
+description = "Reinstall and recompile tests/, measure the bytes each fixture costs under Lune, and rewrite docs/benchmarks/size.md (Tier 1, see future-work/benchmark-tooling.md); not part of ci -- a byte change is read, not gated pass/fail"
 run = "npm run bench:size"
 
 [tasks."bench:speed"]
-description = "Build the tests place, run the speed suite in a real Roblox Studio process via run-in-roblox, and rewrite docs/benchmarks/speed.md (Tier 2, see testing.md); not part of ci -- a timing is read, not gated pass/fail, and it needs Roblox Studio installed"
+description = "Reinstall and recompile tests/, run the speed suite in a real Roblox Studio process via run-in-roblox, and rewrite docs/benchmarks/speed.md (Tier 2, see testing.md); not part of ci -- a timing is read, not gated pass/fail, and it needs Roblox Studio installed"
 run = "npm run bench:speed"
 
 [tasks."dev:tests"]

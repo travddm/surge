@@ -416,7 +416,9 @@ express, simply has no cell there. The full plan is
 
 ### Running the size tier under Lune
 
-`mise run bench:size` runs `tests/scripts/lune-size-runner.luau`, which
+`mise run bench:size` reinstalls and recompiles `tests/` first (see
+"Both benchmark tasks reinstall first" below), then runs
+`tests/scripts/lune-size-runner.luau`, which
 loads the compiled fixtures through the same fake-Instance shim the
 round-trip runner uses (`tests/scripts/lune-roblox-shim.luau`, shared by
 both), asks each fixture for every column's buffer size, side-table count,
@@ -456,9 +458,10 @@ encode for the same reason. In a Roblox process neither ever happens.
 
 ### Running the speed tier via run-in-roblox
 
-`mise run bench:speed` builds the `tests` place (`rojo build`) and
-runs it through [`run-in-roblox`](https://github.com/rojo-rbx/run-in-roblox)
-with `tests/scripts/run-in-roblox-benchmarks.luau` as the injected script
+`mise run bench:speed` reinstalls and recompiles `tests/`, builds the
+`tests` place (`rojo build`), and runs it through
+[`run-in-roblox`](https://github.com/rojo-rbx/run-in-roblox) with
+`tests/scripts/run-in-roblox-benchmarks.luau` as the injected script
 (`tests/scripts/ensure-dist.mjs` creates `dist/` first, since it's
 gitignored and `rojo build` doesn't create its own output directory).
 Confirmed empirically, not assumed:
@@ -486,6 +489,15 @@ part of `mise run ci` (see "No automated runtime CI for benchmarks"
 above). The run does carry the Lune runner's `RUNIT_RESULT:` idea under
 another name: `src/index.ts` prints `BENCH_RESULT:` with runit's verdict,
 and the recorder below writes no results file without it.
+
+**Both benchmark tasks reinstall first.** Each tier reads `tests/out` and
+`tests/node_modules`, and neither `rojo build` nor the Lune runner refreshes
+either, so both tasks run `tests:install` and `tests:compile` before
+measuring. The install is the part that matters and the part that is easy to
+miss: `tests/node_modules/@rbxts/surge` is a packed copy, not a symlink (see
+`install-links=true` above), so an edit under `src/` does not reach a
+benchmark run until `tests/` is installed again. Without it a run measures
+the previous build of the package and says nothing about it.
 
 **Both tiers write their own results file.** The size tier does it
 directly, exactly as Lync's committed baseline does and for the same
