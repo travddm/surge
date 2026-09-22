@@ -10,7 +10,9 @@ import { blinkAdapter } from "../adapters/blink";
 import { fbsAdapter } from "../adapters/fbs";
 import { serioAdapter } from "../adapters/serio";
 import { surgeAdapter } from "../adapters/surge";
+import { zapAdapter } from "../adapters/zap";
 import { LargeArray as blinkCodec } from "../blink/server";
+import { Large as zapEvent } from "../zap/server";
 
 const COUNT = 1000;
 
@@ -45,5 +47,6 @@ export const largeArray: Fixture = {
 		defineEntry<FbsLargeArray>("fbs", { values }, fbsAdapter(fbsSerializer)),
 		defineEntry<SerioLargeArray>("serio", { values }, serioAdapter(serioSerializer)),
 		defineEntry("blink", { values }, blinkAdapter(blinkCodec)),
+		defineEntry("zap", { values }, zapAdapter(zapEvent)),
 	],
 };

@@ -405,24 +405,8 @@ already prints to. Against these baselines:
    Zap artifact) — the closest honest stand-in for "how Zap would do it,"
    without claiming to run Zap itself.
 
-Representative shapes (a small flat struct, a deeply nested object, a
-large array/`Record`, a string-heavy shape, an enum-heavy shape — the
-concrete case where this design's O(1) lookup should beat fbs's `indexOf`
-scan — a union-heavy shape, a `Packed<T>` vs. unpacked variant, and one
-deliberately large shape to exercise the Luau function-size risk in
-practice) live one per module in `tests/src/bench/fixtures/`, each holding
-one sample value and its shape declared once per library — a width brand
-belongs to the library that declares it — listed in `catalog.ts`, and driven
-through one `Adapter<T>` per library (`tests/src/bench/adapters/`). Both
-tiers read that one catalog, so a size number and a speed number always
-describe the same value. The speed
-tier is its own `@rbxts/runit` suite (`speed.spec.ts`), separate from the
-correctness suites, so a benchmark failing to compile or run is never
-confused with a behavioral regression; the size tier is a plain function
-(`size.ts`) that returns rows, which is why it is not a `.spec` module.
-A library with no adapter for a row, such as Blink on a shape its IDL
-cannot express, simply has no cell there. The full plan, including Zap,
-which will have bytes but no encode timing, is
+A library with no adapter for a row, such as Blink on a shape its IDL cannot
+express, simply has no cell there. The full plan is
 [future-work/benchmark-tooling.md](future-work/benchmark-tooling.md).
 
 ### Running the size tier under Lune
@@ -445,17 +429,20 @@ round-trip suite. The generated table carries no date, machine, or commit,
 so it changes only when an encoding changes — which makes it a
 byte-regression gate as well as a result.
 
-Three limits of running this tier headlessly. Two are already known from
-the round-trip suite: Lune's Roblox database is missing members that
+Three limits of running this tier headlessly. Two are already known from the
+round-trip suite: Lune's Roblox database is missing members that
 `@rbxts/types` declares for every enum of more than 256 members
 (`Enum.KeyCode` included), so the catalog's enum row uses `Enum.Material`
 and the wide enum index is measured at the transformer level instead; and
 `DateTime` has a stand-in, so no fixture uses one. The third came with the
-Blink adapter: its generated module reaches for `Players.PlayerRemoving`,
-`RunService:IsServer()`, and `Instance.new("RemoteEvent")` when it loads,
-because its event layer is not separable from the `Write`/`Read` pair the
-benchmark drives, so the shim stubs all three. Nothing fires them — no
-benchmark sends an event.
+two IDL compilers: their generated modules are event layers that cannot be
+separated from the codec, so the shim pre-creates the remotes each looks for
+and reports a running server. Blink's `Write`/`Read` then work as pure
+functions, and Zap -- which has no codec to call at all -- is driven by
+firing one event at its mocked remote and measuring what `SendEvents` hands
+over. That mock is also why Zap has no speed number: the real Roblox process
+the speed tier runs in has neither a mocked remote nor a fake player to queue
+against, so `SIZE_ONLY` in `bench/adapter.ts` keeps the suite off it.
 
 ### Running the speed tier via run-in-roblox
 

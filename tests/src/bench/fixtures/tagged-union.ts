@@ -10,7 +10,9 @@ import { blinkAdapter } from "../adapters/blink";
 import { fbsAdapter } from "../adapters/fbs";
 import { serioAdapter } from "../adapters/serio";
 import { surgeAdapter } from "../adapters/surge";
+import { zapAdapter } from "../adapters/zap";
 import { TaggedUnion as blinkCodec } from "../blink/server";
+import { Tagged as zapEvent } from "../zap/server";
 
 const COUNT = 100;
 
@@ -64,6 +66,25 @@ for (const index of $range(1, COUNT)) {
 	}
 }
 
+/**
+ * Zap's generated writer reads a vector's components as `.x`, which Roblox's
+ * `Vector3` aliases and Lune's does not, and its decoder hands back Luau's
+ * native `vector`. So its entry carries the same events with native vectors:
+ * the same three f32 on the wire, and the form both halves of that library
+ * see in a real engine too.
+ */
+type ZapEvent =
+	| { kind: "spawn"; id: DataType.u32; at: vector }
+	| { kind: "damage"; id: DataType.u32; amount: DataType.u16 }
+	| { kind: "chat"; id: DataType.u32; text: string }
+	| { kind: "despawn"; id: DataType.u32 };
+
+const zapEvents = events.map<ZapEvent>((event) =>
+	event.kind === "spawn"
+		? { kind: "spawn", id: event.id, at: vector.create(event.at.X, event.at.Y, event.at.Z) }
+		: event,
+);
+
 export const taggedUnion: Fixture = {
 	name: "tagged union",
 	note: `${COUNT} events over four variants, discriminated by a literal field`,
@@ -72,5 +93,6 @@ export const taggedUnion: Fixture = {
 		defineEntry<FbsTaggedUnion>("fbs", { events }, fbsAdapter(fbsSerializer)),
 		defineEntry<SerioTaggedUnion>("serio", { events }, serioAdapter(serioSerializer)),
 		defineEntry("blink", { events }, blinkAdapter(blinkCodec)),
+		defineEntry("zap", { events: zapEvents }, zapAdapter(zapEvent)),
 	],
 };

@@ -243,7 +243,7 @@ nodeModules._children["@flamework"] = flameworkScope
 --  - Heartbeat never fires. Nothing in the suites schedules through it.
 local runService = newStub("RunService", "RunService", gameRoot, {
 	IsRunning = function()
-		return false
+		return true
 	end,
 	IsClient = function()
 		return false
@@ -266,15 +266,51 @@ local function inertConnection()
 	return { Disconnect = function() end }
 end
 
--- PlayerRemoving is here for Blink's generated server module, which connects to it at require
--- time to drop a leaving player's queued events. That module also reads RunService:IsServer()
--- and creates its own two RemoteEvents, both of which the stubs above and below already cover. Nothing fires it: the benchmark drives Blink
+-- PlayerRemoving is here for the generated Blink and Zap server modules, which both connect to
+-- it at require time to drop a leaving player's queued events. Neither ever fires: the
+-- benchmark drives Blink through the standalone Write/Read pair an `export`ed type generates,
+-- and Zap one event at a time into the mocked remote below. Nothing fires it: the benchmark drives Blink
 -- through the standalone Write/Read pair an `export`ed type generates, never through an event.
 local players = newStub("Players", "Players", gameRoot, {
 	LocalPlayer = nil,
 	PlayerRemoving = { Connect = inertConnection },
 })
 gameRoot._children.Players = players
+
+-- Blink and Zap each look their remotes up at require time and create the missing ones. They
+-- cannot create them here: Instance.new would hand back a real Lune instance, and a real
+-- instance cannot be parented into this fake tree. So both sets exist up front, and neither
+-- library reaches Instance.new.
+--
+-- Zap's is the one that does work. It exposes no encoder at all (see
+-- docs/future-work/benchmark-tooling.md), so the only way to read a size out of it is to fire
+-- one event and measure what SendEvents flushes: `FireClient` records that here as `LastSend`,
+-- which the benchmark's Zap adapter reads back. Nothing replicates, and no event is ever
+-- received.
+local function newRemote(name, className, parent)
+	local remote = newStub(name, className, parent, {
+		OnServerEvent = { Connect = inertConnection },
+		OnClientEvent = { Connect = inertConnection },
+	})
+	local function record(self, ...)
+		local arguments = { ... }
+		-- FireClient passes the player first; FireAllClients and FireServer do not.
+		local offset = if className == "RemoteEvent" and typeof(arguments[1]) ~= "buffer" then 1 else 0
+		self.LastSend = { buffer = arguments[offset + 1], instances = arguments[offset + 2] }
+	end
+	remote.FireClient = record
+	remote.FireAllClients = record
+	remote.FireServer = record
+	parent._children[name] = remote
+	return remote
+end
+
+newRemote("BLINK_RELIABLE_REMOTE", "RemoteEvent", replicatedStorage)
+newRemote("BLINK_UNRELIABLE_REMOTE", "UnreliableRemoteEvent", replicatedStorage)
+
+local zapFolder = newStub("ZAP", "Folder", replicatedStorage, {})
+replicatedStorage._children.ZAP = zapFolder
+newRemote("ZAP_RELIABLE", "RemoteEvent", zapFolder)
 
 -- Casts because Lune 0.10.5's @lune/roblox type definitions omit these datatype constructors
 -- even though they exist at runtime. Extend this same pattern (`(roblox :: any).SomeType`) if a
@@ -321,20 +357,6 @@ DateTime = {
 -- the blob channel.
 Instance = {
 	new = function(className)
-		-- A remote's events never fire here, but Blink's generated module connects to
-		-- OnServerEvent at require time, and Lune's own RemoteEvent instance has no events at
-		-- all. `.Name` and `.Parent` are plain fields on the stub, which is all the module
-		-- assigns to them.
-		if className == "RemoteEvent" or className == "UnreliableRemoteEvent" then
-			return {
-				ClassName = className,
-				Name = className,
-				Parent = nil,
-				OnServerEvent = { Connect = inertConnection },
-				OnClientEvent = { Connect = inertConnection },
-				Destroy = function() end,
-			}
-		end
 		if className == "BindableEvent" then
 			local callbacks = {}
 			local function connect(_, callback)

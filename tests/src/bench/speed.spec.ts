@@ -1,6 +1,7 @@
 import { Fact } from "@rbxts/runit";
 
 import type { Entry, Fixture } from "./adapter";
+import { SIZE_ONLY } from "./adapter";
 import { CATALOG } from "./catalog";
 
 /**
@@ -73,6 +74,9 @@ class SpeedBench {
 	public encodeThroughput(): void {
 		for (const fixture of CATALOG) {
 			for (const entry of fixture.entries) {
+				if (SIZE_ONLY.includes(entry.library)) {
+					continue;
+				}
 				report("encode", fixture, entry, measure(entry.encode));
 			}
 		}
@@ -82,6 +86,9 @@ class SpeedBench {
 	public decodeThroughput(): void {
 		for (const fixture of CATALOG) {
 			for (const entry of fixture.entries) {
+				if (SIZE_ONLY.includes(entry.library)) {
+					continue;
+				}
 				report("decode", fixture, entry, measure(entry.decode));
 			}
 		}

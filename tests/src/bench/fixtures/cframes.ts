@@ -10,7 +10,9 @@ import { blinkAdapter } from "../adapters/blink";
 import { fbsAdapter } from "../adapters/fbs";
 import { serioAdapter } from "../adapters/serio";
 import { surgeAdapter } from "../adapters/surge";
+import { zapAdapter } from "../adapters/zap";
 import { Transforms as blinkCodec } from "../blink/server";
+import { Frames as zapEvent } from "../zap/server";
 
 const COUNT = 50;
 
@@ -20,6 +22,12 @@ const COUNT = 50;
  * rotation quantized to about 0.05 radians per component, so its round trip
  * is inexact by design on every row here -- see the coverage matrix in
  * docs/future-work/type-coverage-parity.md.
+ *
+ * Neither packed row has a Zap cell: it has no packed mode, and its
+ * `AlignedCFrame`, which would answer the axis-aligned one, looks a rotation
+ * up by exact equality in a table built from `CFrame.Angles`, the same table
+ * fbs and serio miss on these rotations, and Zap asserts on a miss instead of
+ * falling back to a general form.
  */
 interface Transforms {
 	list: CFrame[];
@@ -72,6 +80,7 @@ export const cframeArray: Fixture = {
 		defineEntry<Transforms>("fbs", { list: arbitrary }, fbsAdapter(fbsSerializer)),
 		defineEntry<Transforms>("serio", { list: arbitrary }, serioAdapter(serioSerializer)),
 		defineEntry("blink", { list: arbitrary }, blinkAdapter(blinkCodec)),
+		defineEntry("zap", { list: arbitrary }, zapAdapter(zapEvent)),
 	],
 };
 

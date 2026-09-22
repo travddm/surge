@@ -14,6 +14,10 @@ node = "24.21.0"
 # version the coverage matrix in future-work/type-coverage-parity.md was read at, since the
 # bytes it emits are a result this repository checks in.
 "github:1Axen/blink" = "0.18.8"
+# Compiles the benchmark's Zap twins (tests/src/bench/definitions/catalog.zap) into the modules
+# the Zap adapter fires events at, via the same task. Pinned for the same reason as Blink: the
+# bytes it emits are a result this repository checks in.
+"github:red-blox/zap" = "0.6.29"
 
 [hooks]
 # Keeps node_modules in sync whenever `mise install` runs (e.g. after a [tools] version bump),
@@ -53,7 +57,7 @@ description = "Run the @rbxts/runit round-trip suite headlessly under Lune (see 
 run = "npm run tests:test"
 
 [tasks."bench:definitions"]
-description = "Recompile the benchmark's Blink definitions into tests/src/bench/blink/ (Tier 1 and 2 both read the result; the generated modules are checked in, so this only runs when a definition changes)"
+description = "Recompile the benchmark's Blink and Zap definitions into tests/src/bench/blink/ and tests/src/bench/zap/ (the generated modules are checked in, so this only runs when a definition changes)"
 run = "npm run bench:definitions"
 
 [tasks."bench:size"]

@@ -9,6 +9,8 @@ import { defineEntry } from "../adapter";
 import { fbsAdapter } from "../adapters/fbs";
 import { serioAdapter } from "../adapters/serio";
 import { surgeAdapter } from "../adapters/surge";
+import { zapAdapter } from "../adapters/zap";
+import { Guarded as zapEvent } from "../zap/server";
 
 const COUNT = 100;
 
@@ -53,5 +55,6 @@ export const guardedUnion: Fixture = {
 		defineEntry<GuardedUnion>("surge", { values }, surgeAdapter(serializer)),
 		defineEntry<GuardedUnion>("fbs", { values }, fbsAdapter(fbsSerializer)),
 		defineEntry<SerioGuardedUnion>("serio", { values }, serioAdapter(serioSerializer)),
+		defineEntry("zap", { values }, zapAdapter(zapEvent)),
 	],
 };

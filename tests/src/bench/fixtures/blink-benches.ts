@@ -10,7 +10,9 @@ import { blinkAdapter } from "../adapters/blink";
 import { fbsAdapter } from "../adapters/fbs";
 import { serioAdapter } from "../adapters/serio";
 import { surgeAdapter } from "../adapters/surge";
+import { zapAdapter } from "../adapters/zap";
 import { Booleans as blinkBooleansCodec, Entities as blinkEntitiesCodec } from "../blink/server";
+import { Bools as zapBooleansEvent, Ents as zapEntitiesEvent } from "../zap/server";
 
 const BOOLEAN_COUNT = 1000;
 const ENTITY_COUNT = 100;
@@ -80,6 +82,7 @@ export const blinkBooleans: Fixture = {
 		defineEntry<Booleans>("fbs", { values }, fbsAdapter(fbsBooleansSerializer)),
 		defineEntry<Booleans>("serio", { values }, serioAdapter(serioBooleansSerializer)),
 		defineEntry("blink", { values }, blinkAdapter(blinkBooleansCodec)),
+		defineEntry("zap", { values }, zapAdapter(zapBooleansEvent)),
 	],
 };
 
@@ -91,5 +94,6 @@ export const blinkEntities: Fixture = {
 		defineEntry<FbsEntities>("fbs", { entities }, fbsAdapter(fbsEntitiesSerializer)),
 		defineEntry<SerioEntities>("serio", { entities }, serioAdapter(serioEntitiesSerializer)),
 		defineEntry("blink", { entities }, blinkAdapter(blinkEntitiesCodec)),
+		defineEntry("zap", { entities }, zapAdapter(zapEntitiesEvent)),
 	],
 };

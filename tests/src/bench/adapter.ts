@@ -15,13 +15,23 @@ export interface Adapter<T> {
 }
 
 /** A library with an adapter. */
-export type Library = "surge" | "fbs" | "serio" | "blink";
+export type Library = "surge" | "fbs" | "serio" | "blink" | "zap";
 
 /**
  * Column order of `docs/benchmarks/size.md`. surge comes first: the other
  * columns carry their ratio against it.
  */
-export const LIBRARIES: ReadonlyArray<Library> = ["surge", "fbs", "serio", "blink"];
+export const LIBRARIES: ReadonlyArray<Library> = ["surge", "fbs", "serio", "blink", "zap"];
+
+/**
+ * Libraries the speed suite skips. Zap has no callable encoder: its bytes
+ * come from firing one event at the mocked RemoteEvent the Lune runner
+ * provides, which the real Roblox process the speed tier runs in does not
+ * have, and an encode timed through the event path would measure batching
+ * and the mock as much as the encoder. See
+ * docs/future-work/benchmark-tooling.md.
+ */
+export const SIZE_ONLY: ReadonlyArray<Library> = ["zap"];
 
 /** What one fixture costs under one library. */
 export interface Measurement {

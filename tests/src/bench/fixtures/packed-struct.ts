@@ -9,7 +9,9 @@ import { blinkAdapter } from "../adapters/blink";
 import { fbsAdapter } from "../adapters/fbs";
 import { serioAdapter } from "../adapters/serio";
 import { surgeAdapter } from "../adapters/surge";
+import { zapAdapter } from "../adapters/zap";
 import { Toggles as blinkCodec } from "../blink/server";
+import { Flags as zapEvent } from "../zap/server";
 
 /**
  * The same shape twice, so the two rows differ only in `Packed<T>`: ten
@@ -107,5 +109,6 @@ export const packedStruct: Fixture = {
 		defineEntry<DataType.Packed<Toggles>>("surge", value, surgeAdapter(packedSerializer)),
 		defineEntry<Fbs.Packed<FbsToggles>>("fbs", value, fbsAdapter(fbsPackedSerializer)),
 		defineEntry<Serio.Packed<SerioToggles>>("serio", value, serioAdapter(serioPackedSerializer)),
+		defineEntry("zap", value, zapAdapter(zapEvent)),
 	],
 };

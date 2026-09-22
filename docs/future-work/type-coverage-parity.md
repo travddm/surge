@@ -3,9 +3,9 @@
 Part of the [surge](../architecture.md) design. Compares what each library
 can express and what it costs on the wire, and lists the gaps surge should
 close to reach full coverage. Library facts come from reading each
-project's source at a pinned commit (September 2026), not from executing
-it, except for the cells the benchmark harness has since measured: the
-`CFrame` ones recorded under the matrix, and Blink's string, array, and map
+project's source at a pinned commit (September 2026), not from executing it,
+except for the cells the benchmark harness has since measured: the `CFrame`
+ones recorded under the matrix, and Blink's and Zap's string, array, and map
 lengths, whose u16 defaults the size table confirms row by row:
 
 | Library                                    | Version | Commit    | Kind                                                              |
@@ -67,7 +67,7 @@ buffer bytes.
 | write-side validation  | none                                  | none                                    | range and NaN on every number                      | `option WriteValidations`                         | `write_checks` (default on)                  |
 | read-side checks       | none                                  | none                                    | none                                               | bounds validated                                  | server always, client optional               |
 
-Two `CFrame` cells have since been measured rather than read, by the
+Some cells have since been measured rather than read, by the
 harness in [benchmark-tooling.md](benchmark-tooling.md):
 
 - Both libraries' packed aligned tables hold 24 rotations built from
@@ -75,7 +75,16 @@ harness in [benchmark-tooling.md](benchmark-tooling.md):
   (`table.find`), so a rotation built from unit axes almost never matches:
   3 of 50 did, measured over the benchmark's axis-aligned row. surge's
   own 1-byte form covers all 24 and is exact.
-- What the other 47 then cost is the two libraries' general rotation form:
+- Zap's `AlignedCFrame` reads that same `CFrame.Angles` table with the same
+  exact equality, and asserts on a miss instead of falling back, so the
+  benchmark's axis-aligned row has no Zap cell at all.
+- Zap's boolean row is narrower than "1 bit always": it packs the booleans
+  and optional presence of a struct into a per-scope mask, but an array of
+  booleans is a byte per element -- 1000 of them cost 1002 bytes, the same
+  as surge and Blink.
+- Zap's untagged union needs parentheses -- `(string.binary | f64 |
+boolean)` -- and dispatches with `typeof`, as the row says.
+- What the other 47 rotations then cost is the two libraries' general form:
   about 2e-7 for fbs's three f32 of axis × angle, and a lost rotation for
   serio's 6-byte quantized one — worst component 1.0 — where the axis is
   the X axis, on which the scale it maps the Y component onto,

@@ -9,7 +9,9 @@ import { blinkAdapter } from "../adapters/blink";
 import { fbsAdapter } from "../adapters/fbs";
 import { serioAdapter } from "../adapters/serio";
 import { surgeAdapter } from "../adapters/surge";
+import { zapAdapter } from "../adapters/zap";
 import { SmallFlatStruct as blinkCodec } from "../blink/server";
+import { SmallFlat as zapEvent } from "../zap/server";
 
 /**
  * Widths are explicit so a size delta reflects a format decision, not a
@@ -55,5 +57,6 @@ export const smallFlatStruct: Fixture = {
 		defineEntry<FbsSmallFlatStruct>("fbs", value, fbsAdapter(fbsSerializer)),
 		defineEntry<SerioSmallFlatStruct>("serio", value, serioAdapter(serioSerializer)),
 		defineEntry("blink", value, blinkAdapter(blinkCodec)),
+		defineEntry("zap", value, zapAdapter(zapEvent)),
 	],
 };

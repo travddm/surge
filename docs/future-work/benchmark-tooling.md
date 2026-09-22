@@ -5,39 +5,35 @@ benchmark-coverage note. The harness measures **bandwidth** (bytes per
 value) and **speed** (values per second) for surge and the comparison
 libraries over one shared fixture catalog.
 
-The harness and four of its adapters have landed: the catalog of 16 rows is
-in `tests/src/bench/fixtures/`, `catalog.ts` lists it, and
-`adapters/surge.ts`, `adapters/fbs.ts`, `adapters/serio.ts`, and
-`adapters/blink.ts` drive every row they can express — through
-`createBinarySerializer<T>()`, fbs's call of the same name, serio's
-`createSerializer<T>()`, and the `Write`/`Read` pair a Blink `export`
-generates. `mise run bench:size` writes
+The harness and all five adapters have landed: the catalog of 16 rows is in
+`tests/src/bench/fixtures/`, `catalog.ts` lists it, and `adapters/` drives
+every row each library can express — through `createBinarySerializer<T>()`,
+fbs's call of the same name, serio's `createSerializer<T>()`, the
+`Write`/`Read` pair a Blink `export` generates, and, for Zap, one event fired
+at a mocked RemoteEvent. `mise run bench:size` writes
 [benchmarks/size.md](../benchmarks/size.md) with each library's bytes, its
 ratio against surge, and how far its round trip moved the value; `mise run
 bench:speed` runs the speed suite in a real Roblox process. So the project's
-claims now have measured bytes for four libraries and no timings at all.
-What remains is Zap's size column, the hand-written baseline, and the speed
-tier's first real run: `speed.spec.ts` compiles and type-checks but has never
-been run, which needs a Roblox Studio process.
+claims now have measured bytes against every library it names, and no timings
+at all. What remains is the hand-written baseline and the speed tier's first
+real run: `speed.spec.ts` compiles and type-checks but has never been run,
+which needs a Roblox Studio process.
 
-**Zap is a size-only column, and it is next.** It has no callable
-encoder: its `types` table is module-local and only recursive declarations
-get `write_X`/`read_X`. Its bytes are still measurable honestly — fire one
-event into a mocked RemoteEvent and subtract the event-id byte — and its
-decode can be timed through the `opt tooling` decoder, which takes a buffer
-directly. Its **encode** throughput is not: the only path to it is the event
-path, which measures batching and the mock as much as the encoder, so Zap
-gets no encode number rather than a misleading one. Blink went first because
-the two share most of the cost — a compiler binary in the toolchain, IDL
-twins of the rows, a build step, and a mocked remote environment — and Blink
-is the one that also yields real timings, so it proved that scaffolding on a
-library whose numbers are comparable throughout. All of that now exists, so
-what is left for Zap is its own binary, its own twins, and reading a size
-off the mocked remote instead of off a returned buffer.
+**Zap is a size-only column.** It has no callable encoder: its `types` table
+is module-local and only recursive declarations get `write_X`/`read_X`. So
+its adapter fires one event at the mocked RemoteEvent the Lune shim provides,
+calls the `SendEvents` that `opt manual_event_loop` exposes, and measures
+what the remote was handed, minus the one event-id byte. The decode side is
+the `opt tooling` decoder, which does take a buffer, so the row still
+round-trips. Its **encode** throughput is not measurable honestly: the only
+path to it is that event path, which measures batching and the mock as much
+as the encoder, and the mock exists only under Lune. `SIZE_ONLY` in
+`bench/adapter.ts` is what keeps `speed.spec.ts` off it.
 
 Library facts below come from source reading at the commits pinned in
-[type-coverage-parity.md](type-coverage-parity.md). fbs, serio, and Blink
-have since been executed against the catalog; what that measured is under
+[type-coverage-parity.md](type-coverage-parity.md). All four comparison
+libraries have since been executed against the catalog; what that measured is
+under
 [What the run showed](#what-the-run-showed).
 
 ## What
@@ -129,41 +125,58 @@ published table stays approximate either way: that table reports
 length.
 
 Blink and Zap need IDL definitions for the same rows, kept next to the
-fixtures (`bench/definitions/*.blink`, `*.zap`) and compiled ahead of the
-run. Both compilers install through mise's `github:` backend, the same
-pattern `mise.toml` uses for rojo; Blink 0.18.8 is in `[tools]`, and
-`mise run bench:definitions` compiles `catalog.blink` into `bench/blink/` again.
-The generated modules are checked in, so a fresh checkout compiles and
-measures without running the compiler first, and a definition change shows
-up as a diff in them.
+fixtures (`bench/definitions/catalog.blink`, `catalog.zap`) and compiled
+ahead of the run. Both compilers install through mise's `github:` backend,
+the same pattern `mise.toml` uses for rojo; Blink 0.18.8 and Zap 0.6.29 are
+in `[tools]`, and `mise run bench:definitions` compiles both into
+`bench/blink/` and `bench/zap/`. The generated modules are checked in, so a
+fresh checkout compiles and measures without running either compiler first.
+Blink's output is byte-identical run to run, so a diff in it means a
+definition changed. Zap's is not: it emits its type declarations in a
+different order each time, which moves no bytes — the size table is
+identical across regenerations — but does mean a diff there proves nothing.
 
 One width rule keeps an IDL column honest: override a default only where the
 fixture brands a width. The fixtures brand element widths (`u8`, `u16`,
-`f32`), never length prefixes, so every string, array, and map in
-`catalog.blink` is unbounded and takes Blink's u16 count — a real format
-difference against surge's u32, which is what the table should show. The two
-Blink rows are the exception: they keep the `[0..1000]` bound their own
-definition carries, because matching it is their point.
+`f32`), never length prefixes, so every string, array, and map in both
+definition files is unbounded and takes the u16 count both compilers default
+to — a real format difference against surge's u32, which is what the table
+should show. The two Blink rows are the exception: they keep the `[0..1000]`
+bound their own definition carries, because matching it is their point. Zap
+also makes a string's kind explicit, and every one here is `string.binary`:
+the fixtures' strings are arbitrary bytes, not text.
 
 Neither can express every row, so their columns have gaps where the three
-TypeScript libraries have none. Blink has a cell on 11 of the 16 rows. It
-has no Roblox `EnumItem` — its `enum` is a set of names, which measures
-something else — so the enum-heavy row is empty; it has no untagged union,
-so the guarded-union row is empty; and it has no `Packed<T>`, so the three
-packed rows are empty rather than repeating an unpacked number under a
-heading about packing. A missing cell renders as an empty column entry:
-`collectSizeRows` emits a cell only for a library with an entry, since a
-Luau array cannot hold a hole.
+TypeScript libraries have none. A missing cell renders as an empty column
+entry: `collectSizeRows` emits a cell only for a library with an entry, since
+a Luau array cannot hold a hole.
+
+Blink has a cell on 11 of the 16 rows. It has no Roblox `EnumItem` — its
+`enum` is a set of names, which measures something else — so the enum-heavy
+row is empty; it has no untagged union, so the guarded-union row is empty;
+and it has no `Packed<T>`, so the three packed rows are empty rather than
+repeating an unpacked number under a heading about packing.
+
+Zap has a cell on 12, and the gaps differ. It has no Roblox `EnumItem`
+either. It does have untagged unions — `(string.binary | f64 | boolean)`,
+dispatched by `typeof` at runtime, and the parentheses are load bearing: Zap
+reads a bare `|` as the end of the declaration. Its bit packing is not
+opt-in, so the `Packed<T>` pair inverts: the packed row is the one it matches
+and the unpacked row is the empty one. Its packed `CFrame` rows are empty
+because `AlignedCFrame` looks a rotation up by exact equality in a table
+built from `CFrame.Angles` — the same table fbs and serio miss on the
+fixture's rotations — and asserts on a miss instead of falling back to a
+general form.
 
 ### How each library is driven (stated honestly)
 
-| Library | Drive                                                                                                                                                                                         | Caveat                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
-| ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| surge   | `createBinarySerializer<T>()`                                                                                                                                                                 | none                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
-| fbs     | `createBinarySerializer<T>()`; plain closures; needs `rbxts-transformer-flamework`, already in `tests/tsconfig.json`                                                                          | Its surface is the one surge is a drop-in alternative to, so its adapter is surge's with one import changed. Not reentrant.                                                                                                                                                                                                                                                                                                                                                                                       |
-| serio   | `createSerializer<T>()` (a default export); plain closures; explicitly supports Lune, with its own `IS_LUNE` branches                                                                         | `SerializedData.buf` is `undefined` at zero bytes and `blobs` at none, so a missing field is zero, not an error; plain `number` is f32 (fixtures pin widths anyway); `CFrame` is lossy, so the size table reports by how much.                                                                                                                                                                                                                                                                                    |
-| Blink   | `export struct X { ... }` generates `X.Write(value) -> buffer` and `X.Read(buffer)`; the adapter drives the server output, which creates its own RemoteEvents rather than waiting for them    | Its `option Typescript` output is unusable at 0.18.8: it declares each export with `declare const` and exports none of them, so `bench/blink/server.d.ts` is hand-written. The module takes `Players`, `RunService`, and `Instance.new` at require time, and errors on a second require under one `RemoteScope`, so the whole catalog is one definition file. `option ManualReplication` drops its `Heartbeat` connection. Exports exclude generics, `Instance`, and `unknown`. `Write` allocates twice per call. |
-| Zap     | **No encoder API.** Size: mock the RemoteEvent, fire one event, measure what `SendEvents` flushes, minus the event-id byte. Decode timing: the `opt tooling` decoder takes a buffer directly. | Encode timing is only reachable through the event path, which includes batching and the mock, so the column carries bytes and a decode rate and no encode rate.                                                                                                                                                                                                                                                                                                                                                   |
+| Library | Drive                                                                                                                                                                                                                                            | Caveat                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| surge   | `createBinarySerializer<T>()`                                                                                                                                                                                                                    | none                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| fbs     | `createBinarySerializer<T>()`; plain closures; needs `rbxts-transformer-flamework`, already in `tests/tsconfig.json`                                                                                                                             | Its surface is the one surge is a drop-in alternative to, so its adapter is surge's with one import changed. Not reentrant.                                                                                                                                                                                                                                                                                                                                                                                       |
+| serio   | `createSerializer<T>()` (a default export); plain closures; explicitly supports Lune, with its own `IS_LUNE` branches                                                                                                                            | `SerializedData.buf` is `undefined` at zero bytes and `blobs` at none, so a missing field is zero, not an error; plain `number` is f32 (fixtures pin widths anyway); `CFrame` is lossy, so the size table reports by how much.                                                                                                                                                                                                                                                                                    |
+| Blink   | `export struct X { ... }` generates `X.Write(value) -> buffer` and `X.Read(buffer)`; the adapter drives the server output, which creates its own RemoteEvents rather than waiting for them                                                       | Its `option Typescript` output is unusable at 0.18.8: it declares each export with `declare const` and exports none of them, so `bench/blink/server.d.ts` is hand-written. The module takes `Players`, `RunService`, and `Instance.new` at require time, and errors on a second require under one `RemoteScope`, so the whole catalog is one definition file. `option ManualReplication` drops its `Heartbeat` connection. Exports exclude generics, `Instance`, and `unknown`. `Write` allocates twice per call. |
+| Zap     | **No encoder API.** One `Fire` at the mocked RemoteEvent the Lune shim provides, then the `SendEvents` that `opt manual_event_loop` exposes; the bytes are what the remote was handed, minus the event-id byte. `opt tooling` decodes them back. | Size only, and only under Lune: the real engine has no mocked remote and no fake player to queue against. Its TypeScript output describes the event layer, so `bench/zap/*.d.ts` is hand-written. It emits its declarations in a different order on every run, which moves no bytes. `AlignedCFrame` asserts rather than falling back. Its writer reads a vector's components as `.x`, which Lune's `Vector3` does not answer to.                                                                                 |
 
 The hand-transcribed "ideal flat serializer" baseline from testing.md
 stays as a further column: it is what shows whether surge's output has
@@ -218,6 +231,28 @@ From [benchmarks/size.md](../benchmarks/size.md), which the run writes:
   Tier B of [type-coverage-parity.md](type-coverage-parity.md), and for
   nothing else. It is also the one comparison here that a bound would move:
   the fixtures brand element widths only, so Blink took its defaults.
+- Zap matches Blink byte for byte on every row both express, except the
+  large record, and for the same reason: it too defaults an unbounded
+  string, array, and map to a u16 count. Its saving against surge is a
+  length prefix every time — 66 bytes on the guarded union, for instance,
+  which is its array count plus one prefix for each of the 32 strings among
+  that row's 100 values. The large record is the exception, and only just:
+  Zap's map header is 3 bytes, a presence bit and a u16 count, against
+  surge's 4-byte u32 count and Blink's 2-byte u16 count.
+- Zap's bit packing is per scope, exactly as the coverage matrix's "per-scope
+  mask" says, and the catalog shows both sides of that. The booleans and
+  optional presence of a struct share a mask, which is why its `toggles` cell
+  (14 bytes) is surge's `Packed<T>` (16) less that row's one string prefix.
+  An array element is its own scope, so the 1000-boolean row costs it 1002,
+  exactly what surge and Blink pay.
+- Zap's `CFrame` row is 1202 bytes, 24 per rotation like surge's and fbs's,
+  but its round trip is the one result here that is an artifact of the
+  runner rather than the library. Zap rebuilds a rotation by handing the
+  unnormalized axis-angle vector to `CFrame.fromAxisAngle`, and Lune does
+  not normalize it, so the matrix comes back scaled. Its real client reader
+  does the same thing as its tooling decoder, so either the engine
+  normalizes or Zap's `CFrame` support is broken in production; surge and
+  fbs both pass `.Unit` and depend on neither. Not established here.
 
 ### Methodology
 
@@ -249,12 +284,11 @@ actual question.
 
 ## Why deferred
 
-fbs and serio are `tests/` dependencies now, pinned to the versions the
-coverage matrix reads, and Blink is in `[tools]` with its definitions and
-generated modules checked in. What is left needs the Zap binary, `.zap`
-twins of the rows it can express, and a mocked remote the size is read off
-rather than returned; the rest of that scaffolding the Blink step already
-built.
+Nothing about the libraries is deferred any more: fbs and serio are `tests/`
+dependencies, Blink and Zap are in `[tools]`, and all four have definitions,
+declarations, and checked-in generated modules where they need them. What is
+left is the hand-written baseline, which is this project's own code, and the
+speed tier's first run, which needs a Roblox Studio process.
 
 ## How, briefly
 
@@ -276,9 +310,11 @@ built.
    with it the missing-cell rendering the rows it cannot express need.~~
    Landed, with `bench:definitions` as the regeneration task, the generated
    modules checked in, and hand-written declarations for them.
-5. Add Zap's size column on that same scaffolding (mocked remote minus the
+5. ~~Add Zap's size column on that same scaffolding (mocked remote minus the
    event-id byte), plus its decode timing through the `opt tooling`
-   decoder. No encode number.
+   decoder. No encode number.~~ Landed, size only: the mocked remote its
+   encode path needs exists only under Lune, so there is no decode timing
+   either, and `SIZE_ONLY` keeps the speed suite off it.
 6. Add the hand-written baseline for the flat, nested, and `CFrame` rows.
 7. Run the speed tier for the first time, and record
    `docs/benchmarks/speed.md`.
