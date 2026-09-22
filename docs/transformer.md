@@ -548,16 +548,20 @@ number[]`) is the one union shape fbs handles by delegating to
   `CFrame` is not affected: its header is a byte of its own.
 - **Luau function-size limits: the register limit is handled, the
   instruction limit is not.** Luau allows 200 registers per function, and
-  every declared local holds one until its scope ends. The emitter declares
-  two locals per fixed-size field (`const [buf, pos] = alloc(n)`) and more
-  for strings, optionals, arrays, dicts, and unions, so 100 numeric fields
-  in one scope used to fail when the module loaded
+  every declared local holds one until its scope ends. The emitter used to
+  declare two locals per fixed-size field (`const [buf, pos] = alloc(n)`),
+  and more for strings, optionals, arrays, dicts, and unions, so 100
+  numeric fields in one scope failed when the module loaded
   (`Out of local registers ... exceeded limit 200`, confirmed with Lune's
-  `luau.compile`). The emitter now counts the locals it declares in each
-  generated function. Past 120 it wraps the fields of an object, or the
-  fixed elements of a tuple, in blocks: consecutive fields are grouped up
-  to 32 locals, and a single field with more locals than that gets a block
-  of its own. roblox-ts
+  `luau.compile`). A run of consecutive fixed-size fields now shares one
+  reservation, so it declares one local per field after the first rather
+  than two; the other kinds are unchanged. The emitter counts the locals it
+  declares in each generated function. Past 120 it wraps the fields of an
+  object, or the fixed elements of a tuple, in blocks: consecutive fields
+  are grouped up to 32 locals, and a single field with more locals than
+  that gets a block of its own. A run cannot be split across blocks,
+  because every field after the first reads the reservation's locals, so a
+  run stops at 31 fields — one block's worth. roblox-ts
   compiles a block to `do ... end`, and Luau frees a block's registers at
   its `end`, so this costs no function call. On the read side a block's
   locals cannot reach a later object literal, so an object emitted in
