@@ -249,9 +249,9 @@ measurement and one that does not rest on a measurement at all: the read
 loop, the blob channel, the two-pass exact-allocation design that
 Transformer Design §4 rejected for one traversal over two, surge's own
 package pragma, `Packed<T>`'s advantage over the unpacked path, and the
-absence of f16. What native would change in
+absence of f16. What native changed in
 [generated-code-performance.md](generated-code-performance.md) is the list,
-with what each one currently rests on.
+with what each one rests on.
 
 A second pass over the same document, this time over how the dismissals were
 argued rather than what they rest on, took two of them off that list
@@ -323,8 +323,8 @@ That left a question the same reasoning raises. Level 2 adds function inlining
 and loop unrolling, and neither reaches the generated code: only a local
 function can be inlined, and every per-field call goes into the package
 through `TS.import`; only a compile-time bound can be unrolled, and every
-generated loop is bounded by a count read out of the buffer. What native would
-change in
+generated loop is bounded by a count read out of the buffer. What native
+changed in
 [generated-code-performance.md](generated-code-performance.md) now carries the
 two routes that would change that — rolling the hot paths into the generated
 code, which also removes the cross-module call this document has measured as

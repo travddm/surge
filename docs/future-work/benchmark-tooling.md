@@ -277,15 +277,18 @@ writes:
 
 - Two of the five columns run with Luau's `--!native` and three without.
   fbs carries it on `createSerializer` and `createDeserializer`, which is
-  where its codec runs, and Blink's generated module carries it; roblox-ts
-  emits neither directive, so surge's generated code, serio and the baseline
-  are interpreted. `--!optimize 2` is on every column but serio's now.
+  where its codec runs, and Blink's generated module carries it; nothing puts
+  it on surge's generated code, serio or the baseline, so those three are
+  interpreted. `--!optimize 2` is on every column but serio's now.
   Whether the process
   honours them was measured rather than assumed: two modules built at run
   time from one source, differing only in the directives, ran the same tight
   buffer loop, and the one carrying `--!native` was 11.68 times faster in the
   same Studio build; on a loop shaped like a codec, with an allocation per
-  call and a string write, it was 2.25 times faster. `--!optimize 2` was
+  call and a string write, it was 2.25 times faster. What `--!native` is
+  worth on surge's own generated code is a third number and a much smaller one: 1.02×
+  across the catalog, from a throwaway build that marked the twelve fixture
+  modules and left every other column a control. `--!optimize 2` was
   worth nothing either way, for a mechanical reason recorded in
   [generated-code-performance.md](generated-code-performance.md), which
   carries this whole thread.
@@ -321,8 +324,10 @@ writes:
   at 0.46×, against 2.11× and 0.72× before the shared-reservation change: the
   packed path is a bit region and shares nothing, so the unpacked path is
   what got faster. Read this as a snapshot of two paths that move
-  independently, not as a property of `Packed<T>`; bit packing is Luau
-  arithmetic, so native code generation would move it again.
+  independently, not as a property of `Packed<T>`. Bit packing is Luau
+  arithmetic, so native code generation was the obvious thing that would move
+  it again; measured, it does not, and the encode ratio is 1.23× with the
+  generated code compiled natively.
 - Blink is ahead on every decode row and on 10 of its 11 encode rows, by as
   much as 5.78× on its own `Booleans` bench. Its `Entities` bench used to be
   a 23× lead and is now 4.86×, which is the shared-reservation change and
