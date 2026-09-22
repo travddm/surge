@@ -104,3 +104,18 @@ test("consecutive fixed-size fields share one reservation", () => {
 	// A position computed from the shared one, which is what a run looks like.
 	assert.match(luau, /local pos\d+ = pos\d+ \+ \d+/);
 });
+
+// Regression check for the blob side-channel item in
+// docs/future-work/generated-code-performance.md.
+test("a shape with no blob field pays nothing for the blob side channel", () => {
+	const luau = readCompiledLuau("tests/basic.spec.luau");
+	// `Basic` has no Instance, `unknown` or `any` field, so none of the three
+	// per-call blob entry points is emitted -- `beginWriteBlobs` allocates a
+	// table on every serialize.
+	for (const name of ["beginWriteBlobs", "finishWriteBlobs", "beginReadBlobs"]) {
+		assert.ok(!luau.includes(`__surge_${name}(`), `${name} should not be emitted for a blob-free shape`);
+	}
+	// A positive control: the shapes that do have one still carry it.
+	const withBlobs = readCompiledLuau("tests/roblox.spec.luau");
+	assert.match(withBlobs, /__surge_beginWriteBlobs\(/);
+});

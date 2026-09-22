@@ -3,16 +3,18 @@
 Part of the [surge](../architecture.md) design. The performance goal is the
 project's reason to exist, and the harness in
 [benchmark-tooling.md](benchmark-tooling.md) has now measured it.
-[benchmarks/speed.md](../benchmarks/speed.md) puts surge between 2.58× and
-3.20× behind a hand-written codec that writes its exact bytes on encode, and
-between 1.64× and 2.48× behind it on decode. That is the size of what this
+[benchmarks/speed.md](../benchmarks/speed.md) puts surge between 2.12× and
+2.82× behind a hand-written codec that writes its exact bytes on encode, and
+between 1.51× and 2.40× behind it on decode. That is the size of what this
 document is about. It does not say which item below accounts for what.
-Four changes have since been measured on their own — the read loop, worth
+Five changes have since been measured on their own — the read loop, worth
 nothing; the tagged-union read's table copy, worth 1.39× on the one row that
 has one; a `CFrame`'s two reservations becoming one, worth 1.61× on encode;
-and every run of consecutive fixed-size fields sharing one reservation,
-worth up to 4.70× — and every other entry here is still what the compiled
-output shows, not what was measured. The local-register ceiling that this
+every run of consecutive fixed-size fields sharing one reservation, worth up
+to 4.70×; and the blob side channel no longer being emitted where it is
+unused, worth nothing. Together they say that per-element cost is what
+matters and per-call cost is not. Every other entry here is still what the
+compiled output shows, not what was measured. The local-register ceiling that this
 document used to record has landed; see Risks in
 [transformer.md](../transformer.md).
 
@@ -204,6 +206,30 @@ faster than the same shape unpacked, against 2.11× before, and decodes at
 0.48× against 0.75×: the packed path was not touched, and the unpacked one
 got much faster. Against fbs, surge went from behind on 14 of the 16 encode
 rows to behind on 10.
+
+**The blob side channel was on every call, used or not.** Every
+`serialize()` called `beginWriteBlobs()`, which is a fresh table, and
+`finishWriteBlobs()`; every `deserialize()` called `beginReadBlobs()`. Not
+one of the benchmark catalog's 16 rows pushes a blob, and neither does most
+real code. The walker knows: the transformer emits the three entry points
+only when the emitted body actually reached `pushBlob` or `nextBlob`,
+including from inside a recursion helper, and returns `[] as Array<defined>`
+otherwise, since `Serializer<T>` still declares the property. The
+`inputBlobs` parameter stays, under a leading underscore so that nothing
+reads it and a consumer's `noUnusedParameters` stays quiet.
+
+It is worth nothing measurable, and that is the useful part. surge's 21
+quiet cells moved by a median of 0.997×, between 0.968× and 1.015×, while
+the untouched libraries drifted 0.96× to 1.02× with a median of 0.989×.
+Three cross-module calls and a table allocation per call are not a cost this
+catalog can see.
+
+Set against the 4.70× that removing one `alloc` call _per element_ was
+worth, that is the shape of the whole read/write cost: **per-call overhead
+does not matter and per-element overhead does.** It is the strongest
+evidence this document has for where to look next, and it argues against
+the rest of the per-call list — `finishWrite`'s copy included, except that
+the copy is the one per-call cost that scales with the payload.
 
 **Smaller items.** Strings evaluate `s.size()` twice; `finishWrite`
 copies the payload (inherent to the shared scratch design); the scratch
@@ -418,10 +444,11 @@ such check exists.
 - A golden check in `test/golden.test.mjs` for each. The read loop's, the
   tagged union's, the `CFrame`'s and the shared reservation's are there
   already.
-- Measure each one, and predict nothing from the compiled output. The four
-  measured so far came back at 1.00×, 1.39×, 1.61× and 4.70×, and neither
-  the shape of the code removed nor the size of the saving said which would
-  be which.
+- Measure each one, and predict nothing from the compiled output. The five
+  measured so far came back at 1.00×, 1.39×, 1.61×, 4.70× and 1.00×, and
+  neither the shape of the code removed nor the size of the saving said
+  which would be which. What did, in hindsight, is whether the cost was per
+  element or per call.
   Read only the cells whose trials span a few percent, and pick the protocol
   from the row: a scoped pair where its trials are quiet scoped, a full pair
   where they are not.
