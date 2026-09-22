@@ -31,6 +31,14 @@ const ROW_PREFIX = "BENCH_ROW:";
 const RESULT_PREFIX = "BENCH_RESULT:";
 
 const OUTPUT_PATH = "../docs/benchmarks/speed.md";
+/**
+ * The trials behind `OUTPUT_PATH`. That file carries a median and a spread, which is what a
+ * reader needs; a statistic over the trials themselves -- whether a median sits nearer its
+ * slowest trial than its fastest, say -- cannot be taken from it, and the run's console output
+ * is gone by the time anyone asks. Checked in beside the table so that a later run can be
+ * compared with this one at trial level and not only at its medians.
+ */
+const TRIALS_PATH = "../docs/benchmarks/speed-trials.tsv";
 const BASELINE = "surge";
 /** What a column reads where that library has no entry for the row. */
 const EMPTY = "—";
@@ -283,8 +291,37 @@ function report() {
 	console.log(["", "## Encode", "", ...table("encode"), "", "## Decode", "", ...table("decode")].join("\n"));
 }
 
+/**
+ * The same cells as the table, one row each, carrying the three numbers the run reported rather
+ * than the two the table derives from them. Tab-separated, because it is read by whatever is at
+ * hand rather than by a person, and it repeats the table's provenance lines so that a pair of
+ * files measured together can be told from a pair that was not.
+ */
+function writeTrials(facts) {
+	const lines = [
+		"# Trials behind speed.md. Written by `mise run bench:speed`; do not edit by hand.",
+		...facts.map(([label, value]) => `# ${label}: ${value}`),
+		["fixture", "library", "half", "median", "slowest", "fastest"].join("\t"),
+	];
+	let cells = 0;
+	for (const [name, byLibrary] of fixtures) {
+		for (const [library, halves] of byLibrary) {
+			for (const [half, cell] of halves) {
+				lines.push([name, library, half, cell.median, cell.lowest, cell.highest].join("\t"));
+				cells += 1;
+			}
+		}
+	}
+
+	mkdirSync(dirname(TRIALS_PATH), { recursive: true });
+	writeFileSync(TRIALS_PATH, `${lines.join("\n")}\n`, "utf8");
+	console.log(`wrote ${TRIALS_PATH} (${cells} cells)`);
+}
+
 function write() {
 	const method = environment.get("method") ?? "unknown";
+	// Once, so that the table and the trials beside it cannot disagree about the run they record.
+	const facts = runFacts();
 	const lines = [
 		"# Benchmark results: values per second",
 		"",
@@ -337,7 +374,7 @@ function write() {
 		"",
 		"The run:",
 		"",
-		...runFacts().map(([label, value]) => `- ${label}: ${value}`),
+		...facts.map(([label, value]) => `- ${label}: ${value}`),
 		"",
 		"## Encode",
 		"",
@@ -352,4 +389,5 @@ function write() {
 	mkdirSync(dirname(OUTPUT_PATH), { recursive: true });
 	writeFileSync(OUTPUT_PATH, lines.join("\n"), "utf8");
 	console.log(`\nwrote ${OUTPUT_PATH} (${fixtures.size} fixtures × ${libraries.length} libraries)`);
+	writeTrials(facts);
 }

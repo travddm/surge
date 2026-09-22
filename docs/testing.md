@@ -534,9 +534,11 @@ against the other columns of the same run and never against a number from
 another file, and a scoped run is a run of its own. Read one against another
 scoped run of the same patterns.
 
-A scoped run never writes either file. `size.md` is a byte-regression gate,
-and both files open with prose describing the whole catalog, so a file
-holding a few of its rows would read as a result about all of them. That is
+A scoped run writes none of the three. `size.md` is a byte-regression gate,
+and `size.md` and `speed.md` both open with prose describing the whole
+catalog, so a file holding a few of its rows would read as a result about all
+of them; `speed-trials.tsv` records the run `speed.md` records and goes
+where it goes. That is
 also why the flag is `--only` rather than "there are arguments": a
 `bench:*:only` task with no pattern stops instead of quietly doing a full run
 under a name that says otherwise. `run-in-roblox` passes no arguments into
@@ -555,10 +557,12 @@ no filesystem. So it leaves as printed output instead —
 `src/bench/speed.spec.ts` prints one `BENCH_ROW:` line per fixture,
 library, and half, and `tests/scripts/record-speed-benchmarks.mjs` wraps
 `run-in-roblox`, forwards every line it is handed, and turns the rows
-into [benchmarks/speed.md](benchmarks/speed.md). That file records the
-date, the machine, the engine version the process itself reports, and the
-commit or version of everything measured, because a timing is only true
-of one machine on one day, where a byte count is true everywhere. The
+into [benchmarks/speed.md](benchmarks/speed.md), and the three numbers
+behind each of its cells into `benchmarks/speed-trials.tsv` beside it.
+Both record the date, the machine, the engine version the process itself
+reports, and the commit or version of everything measured, because a
+timing is only true of one machine on one day, where a byte count is true
+everywhere. The
 recorder writes nothing unless the suite passed and every row came back in
 both halves, so an interrupted run leaves the last real table in place.
 It is still a deliberate benchmarking pass, not something every change

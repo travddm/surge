@@ -353,9 +353,9 @@ writes:
   flat struct, the nested object, the wide struct, or the large array. Earlier
   runs put the median nearer the slowest trial than the fastest on most of
   them — the shape of a cost most trials pay and one does not — which this run
-  does not recheck, because the table keeps a spread and not the trials behind
-  it. What that cost is was not established. Every row whose trials take
-  longer is quiet.
+  cannot recheck, having been measured before the trials were kept.
+  `speed-trials.tsv` carries them from the next run on. What that cost is was
+  not established. Every row whose trials take longer is quiet.
 
 ### Methodology
 
@@ -365,9 +365,12 @@ writes:
   `speed.spec.ts` does this with 1000 warm-up calls and 5 trials of 10000,
   and prints the median with the lowest and highest trial, one line per
   fixture and library. `speed.md` keeps the median and the spread and not
-  the three numbers behind them, so a statistic over trials — whether a
-  median sits nearer its slowest trial than its fastest, for one — has to be
-  taken from the run's own output while it is still in hand.
+  the three numbers behind them, so the run writes
+  `docs/benchmarks/speed-trials.tsv` beside it:
+  one line per cell, with the median and the slowest and fastest trial. A
+  statistic over the trials — whether a median sits nearer its slowest trial
+  than its fastest, for one — is taken from there, and two runs can be
+  compared at trial level rather than only at their medians.
 - Size: bytes of the returned buffer plus the count of side-table entries,
   per fixture and library, plus the ratio against surge.
 - Also per fixture and library: round-trip exactness, and, where a round
@@ -378,7 +381,8 @@ writes:
   rounding from an encoding that quantizes on purpose, which one shared
   `exact`/`inexact` column cannot do now that three libraries share it.
 - Output: `docs/benchmarks/size.md`, written by the Tier 1 run.
-  `docs/benchmarks/speed.md`, written by
+  `docs/benchmarks/speed.md` and `docs/benchmarks/speed-trials.tsv`,
+  written by
   `scripts/record-speed-benchmarks.mjs`, which wraps `run-in-roblox`, reads
   the `BENCH_ROW:` lines the suite prints, and records with them the date,
   the machine, the engine version the process reports, and the commit or

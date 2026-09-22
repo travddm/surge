@@ -678,6 +678,10 @@ native, not more.
       module or in its adapter, and a fixture module only builds its
       serializers, so marking those twelve makes surge's generated functions
       native and nothing else.
+    - Commit the markings before running. The recorder writes the commit of
+      each repository into both files and marks a tree that carries changes
+      that commit does not, so a run from a dirty tree records its own
+      provenance as unreproducible.
     - One full run against the table checked in at `85286e1`, full to full.
       fbs, Blink and serio change in neither, so their cells give the drift
       band; read only the cells whose trials span a few percent.
@@ -688,8 +692,9 @@ native, not more.
       native baseline this run establishes, because each is a per-call cost
       whose share of the total grows only once the Luau around it is 2× to 11×
       cheaper.
-    - Keep the run's console output, which is the only place a cell's three
-      trials exist; `speed.md` keeps the median and the spread.
+    - Commit `speed-trials.tsv` with the table. It carries each cell's
+      median and its slowest and fastest trial, which `speed.md` does not,
+      and the run before this pass is the last one without it.
 - Coalesce a tuple's consecutive fixed-size elements, the way an object's
   fields already are. The mechanism is `fixedBytes`, `allocRuns` and
   `withAllocRun`, unchanged; what is missing is a benchmark fixture that
