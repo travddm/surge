@@ -14,14 +14,18 @@ export interface Adapter<T> {
 	decode: (payload: unknown) => T;
 }
 
-/** A library with an adapter. */
-export type Library = "surge" | "fbs" | "serio" | "blink" | "zap";
+/**
+ * A column of the size table: the four comparison libraries, surge itself,
+ * and the hand-written baseline, which is not a library at all but is driven
+ * through the same interface (see Benchmarking strategy in docs/testing.md).
+ */
+export type Library = "surge" | "fbs" | "serio" | "blink" | "zap" | "baseline";
 
 /**
  * Column order of `docs/benchmarks/size.md`. surge comes first: the other
  * columns carry their ratio against it.
  */
-export const LIBRARIES: ReadonlyArray<Library> = ["surge", "fbs", "serio", "blink", "zap"];
+export const LIBRARIES: ReadonlyArray<Library> = ["surge", "fbs", "serio", "blink", "zap", "baseline"];
 
 /**
  * Libraries the speed suite skips. Zap has no callable encoder: its bytes

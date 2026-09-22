@@ -6,11 +6,13 @@ import { DataType, createBinarySerializer } from "@rbxts/surge";
 import { Rng } from "../../support";
 import type { Fixture } from "../adapter";
 import { defineEntry } from "../adapter";
+import { baselineAdapter } from "../adapters/baseline";
 import { blinkAdapter } from "../adapters/blink";
 import { fbsAdapter } from "../adapters/fbs";
 import { serioAdapter } from "../adapters/serio";
 import { surgeAdapter } from "../adapters/surge";
 import { zapAdapter } from "../adapters/zap";
+import { transforms as baselineCodec } from "../baseline/codecs";
 import { Transforms as blinkCodec } from "../blink/server";
 import { Frames as zapEvent } from "../zap/server";
 
@@ -81,6 +83,7 @@ export const cframeArray: Fixture = {
 		defineEntry<Transforms>("serio", { list: arbitrary }, serioAdapter(serioSerializer)),
 		defineEntry("blink", { list: arbitrary }, blinkAdapter(blinkCodec)),
 		defineEntry("zap", { list: arbitrary }, zapAdapter(zapEvent)),
+		defineEntry("baseline", { list: arbitrary }, baselineAdapter(baselineCodec)),
 	],
 };
 

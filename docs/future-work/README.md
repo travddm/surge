@@ -140,8 +140,14 @@ That mock exists only under Lune, so the speed suite skips it. Its bytes
 match Blink's on every row both express except the large record, where its
 map header is a byte wider, and for the same reason as Blink's: a u16 length
 prefix where surge writes u32. Its bit packing is per scope, so an array of
-1000 booleans costs it a byte each, exactly what the others pay. Still open there: the hand-written
-baseline, the first speed run, and the generated-Luau-size column.
+1000 booleans costs it a byte each, exactly what the others pay.
+
+The hand-written baseline is the sixth and last column, over the flat struct,
+the nested object, and the `CFrame` array. It is Luau, not TypeScript,
+because what it measures is what the Luau costs, and it writes surge's bytes
+exactly — 17, 24, and 1204 — so the speed tier will be comparing code and not
+formats. Only the speed run itself is still open there, and it needs a Roblox
+Studio process.
 
 The fbs, serio, Blink, and Zap adapters, and the per-library size table they
 produce, landed after everything above, in this repository's `tests/`,
@@ -159,14 +165,14 @@ ends at `rbxts-transformer-surge` `aa59c4a`.
 
 ## Order
 
-| Step | Document                                                                          | Why here                                                                                                                                                                                                         |
-| ---- | --------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1    | [benchmark-tooling.md](benchmark-tooling.md)                                      | The hand-written baseline and the first speed run. Every library column has landed; [benchmarks/size.md](../benchmarks/size.md) records their bytes, Blink's on the 11 rows it can express and Zap's on 12.      |
-| 2    | [generated-code-performance.md](generated-code-performance.md)                    | Every remaining item is measurement-driven, so it follows the harness.                                                                                                                                           |
-| 3    | [type-coverage-parity.md](type-coverage-parity.md) Tier B                         | New `DataType.*` surface (length-typed containers, per-component widths, ranges). That document asks for the harness first, to show what each bound saves. Split from Tier A, which has landed, for that reason. |
-| 4    | [deserialize-hardening.md](deserialize-hardening.md)                              | Opt-in checks; needed before the networking layer, not before.                                                                                                                                                   |
-| 5    | [documentation-gaps.md](documentation-gaps.md): `docs/usage.md`                   | User documentation written against fixed behavior. The stale-statement sweep in the same document does not wait; see below.                                                                                      |
-| 6    | [ci-and-release.md](ci-and-release.md): version backstop and first tagged release | The backstop lands with the release it protects. The CI-only items do not wait; see below.                                                                                                                       |
+| Step | Document                                                                          | Why here                                                                                                                                                                                                               |
+| ---- | --------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1    | [benchmark-tooling.md](benchmark-tooling.md)                                      | The first speed run, which needs Roblox Studio. Every column has landed; [benchmarks/size.md](../benchmarks/size.md) records their bytes, Blink's on the 11 rows it can express, Zap's on 12, and the baseline's on 3. |
+| 2    | [generated-code-performance.md](generated-code-performance.md)                    | Every remaining item is measurement-driven, so it follows the harness.                                                                                                                                                 |
+| 3    | [type-coverage-parity.md](type-coverage-parity.md) Tier B                         | New `DataType.*` surface (length-typed containers, per-component widths, ranges). That document asks for the harness first, to show what each bound saves. Split from Tier A, which has landed, for that reason.       |
+| 4    | [deserialize-hardening.md](deserialize-hardening.md)                              | Opt-in checks; needed before the networking layer, not before.                                                                                                                                                         |
+| 5    | [documentation-gaps.md](documentation-gaps.md): `docs/usage.md`                   | User documentation written against fixed behavior. The stale-statement sweep in the same document does not wait; see below.                                                                                            |
+| 6    | [ci-and-release.md](ci-and-release.md): version backstop and first tagged release | The backstop lands with the release it protects. The CI-only items do not wait; see below.                                                                                                                             |
 
 ## No step of its own
 

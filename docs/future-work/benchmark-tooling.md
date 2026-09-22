@@ -5,19 +5,20 @@ benchmark-coverage note. The harness measures **bandwidth** (bytes per
 value) and **speed** (values per second) for surge and the comparison
 libraries over one shared fixture catalog.
 
-The harness and all five adapters have landed: the catalog of 16 rows is in
+The harness and every adapter have now landed: the catalog of 16 rows is in
 `tests/src/bench/fixtures/`, `catalog.ts` lists it, and `adapters/` drives
 every row each library can express — through `createBinarySerializer<T>()`,
 fbs's call of the same name, serio's `createSerializer<T>()`, the
-`Write`/`Read` pair a Blink `export` generates, and, for Zap, one event fired
-at a mocked RemoteEvent. `mise run bench:size` writes
-[benchmarks/size.md](../benchmarks/size.md) with each library's bytes, its
+`Write`/`Read` pair a Blink `export` generates, one event fired at a mocked
+RemoteEvent for Zap, and, for the baseline column, a pair of hand-written
+Luau functions. `mise run bench:size` writes
+[benchmarks/size.md](../benchmarks/size.md) with each column's bytes, its
 ratio against surge, and how far its round trip moved the value; `mise run
 bench:speed` runs the speed suite in a real Roblox process. So the project's
 claims now have measured bytes against every library it names, and no timings
-at all. What remains is the hand-written baseline and the speed tier's first
-real run: `speed.spec.ts` compiles and type-checks but has never been run,
-which needs a Roblox Studio process.
+at all. What remains is the speed tier's first real run: `speed.spec.ts`
+compiles and type-checks but has never been run, which needs a Roblox Studio
+process.
 
 **Zap is a size-only column.** It has no callable encoder: its `types` table
 is module-local and only recursive declarations get `write_X`/`read_X`. So
@@ -178,9 +179,18 @@ general form.
 | Blink   | `export struct X { ... }` generates `X.Write(value) -> buffer` and `X.Read(buffer)`; the adapter drives the server output, which creates its own RemoteEvents rather than waiting for them                                                       | Its `option Typescript` output is unusable at 0.18.8: it declares each export with `declare const` and exports none of them, so `bench/blink/server.d.ts` is hand-written. The module takes `Players`, `RunService`, and `Instance.new` at require time, and errors on a second require under one `RemoteScope`, so the whole catalog is one definition file. `option ManualReplication` drops its `Heartbeat` connection. Exports exclude generics, `Instance`, and `unknown`. `Write` allocates twice per call. |
 | Zap     | **No encoder API.** One `Fire` at the mocked RemoteEvent the Lune shim provides, then the `SendEvents` that `opt manual_event_loop` exposes; the bytes are what the remote was handed, minus the event-id byte. `opt tooling` decodes them back. | Size only, and only under Lune: the real engine has no mocked remote and no fake player to queue against. Its TypeScript output describes the event layer, so `bench/zap/*.d.ts` is hand-written. It emits its declarations in a different order on every run, which moves no bytes. `AlignedCFrame` asserts rather than falling back. Its writer reads a vector's components as `.x`, which Lune's `Vector3` does not answer to.                                                                                 |
 
-The hand-transcribed "ideal flat serializer" baseline from testing.md
-stays as a further column: it is what shows whether surge's output has
-avoidable overhead, independent of any library.
+The "ideal flat serializer" baseline from testing.md is the sixth column,
+and the only one that is not a library. `bench/baseline/codecs.luau` is what
+a person would write by hand for one fixed shape: one allocation sized up
+front, then writes at constant offsets, with no schema and nothing to
+dispatch on. It covers the flat struct, the nested object, and the `CFrame`
+array — the three rows named in the plan — and it is written in Luau rather
+than TypeScript on purpose, since the question it answers is what the Luau
+costs, and roblox-ts's own loop and temporary idioms have no business being
+in that answer. It writes surge's bytes exactly, field for field in the same
+name-sorted order, which the size table is the check on: a baseline row that
+did not equal surge's would be measuring a different format, and its timing
+would mean nothing. All three match.
 
 ### What the run showed
 
@@ -253,6 +263,14 @@ From [benchmarks/size.md](../benchmarks/size.md), which the run writes:
   does the same thing as its tooling decoder, so either the engine
   normalizes or Zap's `CFrame` support is broken in production; surge and
   fbs both pass `.Unit` and depend on neither. Not established here.
+- The baseline writes 17, 24, and 1204 bytes, which is surge's number on all
+  three rows it covers. That is the point of it as a size row: it says the
+  two are encoding the same thing, so the speed tier's comparison between
+  them is about code and not about format. Its `CFrame` row is inexact by
+  the same 2e-07, for the same reason — it stores the same axis-angle triple
+  in f32, and on the decode side of that row both make the same
+  `CFrame.fromAxisAngle` call, which the format fixes, so what its decode
+  gap can show is loop and cursor overhead and nothing else.
 
 ### Methodology
 
@@ -284,11 +302,11 @@ actual question.
 
 ## Why deferred
 
-Nothing about the libraries is deferred any more: fbs and serio are `tests/`
-dependencies, Blink and Zap are in `[tools]`, and all four have definitions,
-declarations, and checked-in generated modules where they need them. What is
-left is the hand-written baseline, which is this project's own code, and the
-speed tier's first run, which needs a Roblox Studio process.
+Nothing is deferred any more except the numbers themselves: fbs and serio
+are `tests/` dependencies, Blink and Zap are in `[tools]`, all four have
+definitions, declarations, and checked-in generated modules where they need
+them, and the baseline is this project's own Luau. What is left is the speed
+tier's first run, which needs a Roblox Studio process.
 
 ## How, briefly
 
@@ -315,7 +333,10 @@ speed tier's first run, which needs a Roblox Studio process.
    decoder. No encode number.~~ Landed, size only: the mocked remote its
    encode path needs exists only under Lune, so there is no decode timing
    either, and `SIZE_ONLY` keeps the speed suite off it.
-6. Add the hand-written baseline for the flat, nested, and `CFrame` rows.
+6. ~~Add the hand-written baseline for the flat, nested, and `CFrame`
+   rows.~~ Landed as `bench/baseline/codecs.luau`, hand-written Luau with
+   declarations beside it, writing surge's bytes exactly so the timing is
+   like for like.
 7. Run the speed tier for the first time, and record
    `docs/benchmarks/speed.md`.
 8. Tier 3 last, only if wire cost with batching becomes a question the

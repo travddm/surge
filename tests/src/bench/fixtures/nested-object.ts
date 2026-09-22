@@ -5,11 +5,13 @@ import { DataType, createBinarySerializer } from "@rbxts/surge";
 
 import type { Fixture } from "../adapter";
 import { defineEntry } from "../adapter";
+import { baselineAdapter } from "../adapters/baseline";
 import { blinkAdapter } from "../adapters/blink";
 import { fbsAdapter } from "../adapters/fbs";
 import { serioAdapter } from "../adapters/serio";
 import { surgeAdapter } from "../adapters/surge";
 import { zapAdapter } from "../adapters/zap";
+import { nestedObject as baselineCodec } from "../baseline/codecs";
 import { NestedObject as blinkCodec } from "../blink/server";
 import { Nested as zapEvent } from "../zap/server";
 
@@ -82,5 +84,6 @@ export const nestedObject: Fixture = {
 		defineEntry<SerioNestedObject>("serio", value, serioAdapter(serioSerializer)),
 		defineEntry("blink", value, blinkAdapter(blinkCodec)),
 		defineEntry("zap", value, zapAdapter(zapEvent)),
+		defineEntry("baseline", value, baselineAdapter(baselineCodec)),
 	],
 };

@@ -392,18 +392,22 @@ already prints to. Against these baselines:
    an IDL compiler rather than a runtime schema interpreter, so it is the
    closest published comparison to what this transformer does, and the only
    one of the three libraries whose shapes are declared outside TypeScript.
-4. **A hand-written, non-generated "ideal" flat serializer** for a subset
-   of shapes — a manually written straight-line function doing the same
-   writes with no transformer involved. This measures whether the
+4. **A hand-written, non-generated "ideal" flat serializer** for a subset of
+   shapes — `tests/src/bench/baseline/codecs.luau`, a straight-line function
+   per shape with no transformer involved, covering the flat struct, the
+   nested object, and the `CFrame` array. This measures whether the
    transformer's emitted code actually reaches the flatness it claims, or
-   introduces avoidable overhead (extra temporaries, an unnecessary
-   function layer) beyond what the shape structurally requires — a check
-   the fbs comparison alone cannot catch. For shapes expressible in Zap's
-   schema DSL too, this same hand-written baseline can be built by
-   transcribing the flat write/read statement sequence Zap's `irgen` would
-   produce for that shape (extracted and re-hosted by hand, not a runnable
-   Zap artifact) — the closest honest stand-in for "how Zap would do it,"
-   without claiming to run Zap itself.
+   introduces avoidable overhead (extra temporaries, an unnecessary function
+   layer) beyond what the shape structurally requires — a check the fbs
+   comparison alone cannot catch. It is Luau rather than TypeScript for that
+   reason: roblox-ts's own idioms would otherwise be part of what is being
+   measured. It writes surge's bytes exactly, which the size table checks.
+
+    The variant this document used to propose — transcribing the statement
+    sequence Zap's `irgen` would produce, as a stand-in for "how Zap would do
+    it" — was not built. Zap's bytes are measured directly now (Tier 1), and a
+    transcription would still be the only route to a Zap-shaped _timing_,
+    which remains open rather than done.
 
 A library with no adapter for a row, such as Blink on a shape its IDL cannot
 express, simply has no cell there. The full plan is
@@ -414,7 +418,7 @@ express, simply has no cell there. The full plan is
 `mise run bench:size` runs `tests/scripts/lune-size-runner.luau`, which
 loads the compiled fixtures through the same fake-Instance shim the
 round-trip runner uses (`tests/scripts/lune-roblox-shim.luau`, shared by
-both), asks each fixture for every library's buffer size, side-table count,
+both), asks each fixture for every column's buffer size, side-table count,
 and round-trip error, and writes [benchmarks/size.md](benchmarks/size.md)
 with `@lune/fs`, one column per library. The task
 then reformats that file with Prettier, since every checked-in Markdown
