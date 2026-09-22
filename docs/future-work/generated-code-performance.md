@@ -3,20 +3,21 @@
 Part of the [surge](../architecture.md) design. The performance goal is the
 project's reason to exist, and the harness in
 [benchmark-tooling.md](benchmark-tooling.md) has now measured it.
-[benchmarks/speed.md](../benchmarks/speed.md) puts surge between 2.65× and
-4.58× behind a hand-written codec that writes its exact bytes on encode, and
-between 2.20× and 2.52× behind it on decode. That is the size of what this
-document is about. It does not say which item below accounts for what: every
-entry here is still what the compiled output shows, not what was measured one
-at a time. The local-register ceiling that this document used to record has
-landed; see Risks in [transformer.md](../transformer.md).
+[benchmarks/speed.md](../benchmarks/speed.md) puts surge between 2.81× and
+4.60× behind a hand-written codec that writes its exact bytes on encode, and
+between 2.18× and 2.79× behind it on decode. That is the size of what this
+document is about. It does not say which item below accounts for what. One
+item has since been measured on its own — the read loop, which turned out to
+be worth nothing — and every other entry here is still what the compiled
+output shows, not what was measured. The local-register ceiling that this
+document used to record has landed; see Risks in
+[transformer.md](../transformer.md).
 
 ## What
 
-**Read loops lower to a flag loop.** Every count-driven read
-(`array`, `tuple` rest, `dict`, sequences) is emitted as
-`for (let i = 0; i < count; i++)`, which roblox-ts lowers (see
-`tests/out/tests/coverage.spec.luau`) to:
+**Read loops lowered to a flag loop; they lower to a numeric `for` now.**
+Every count-driven read (`array`, `tuple` rest, `dict`, sequences) was
+emitted as `for (let i = 0; i < count; i++)`, which roblox-ts lowers to:
 
 ```lua
 local i55 = 0
@@ -28,7 +29,35 @@ while true do
 end
 ```
 
-instead of a numeric `for`. Every element read pays that branching.
+instead of a numeric `for`, so every element read paid that branching.
+roblox-ts does emit a numeric `for`, but only where it can prove the bound
+is an integer (`transformForStatement.js`'s `isProbablyInteger`), and a
+`buffer.readu32` result is just `number`. The emitter writes
+`for (const _i of $range(1, count))` instead — roblox-ts's numeric-for
+macro — which lowers to `for _i55 = 1, count53 do`. No compiled file under
+`tests/out` has a `_shouldIncrement` left, and `test/golden.test.mjs` pins
+that.
+
+**It was worth nothing measurable.** Two scoped speed runs, back to back on
+one machine over the six rows whose decode is quiet enough to read: the run
+before the change and the run after it. Only the read side changed, so
+surge's encode cells and every fbs, serio, Blink, and baseline cell are the
+control.
+
+| Cell                                                 | spread | change |
+| ---------------------------------------------------- | ------ | ------ |
+| surge, large array, decode                           | 0.5–1% | 0.98×  |
+| surge, large record, decode                          | 0.4–1% | 1.02×  |
+| surge, string-heavy, decode                          | 0.6–1% | 1.00×  |
+| surge, `CFrame` array, decode                        | 2–3%   | 1.02×  |
+| surge, `CFrame` array (packed, axis-aligned), decode | 1–3%   | 0.99×  |
+| surge, `CFrame` array (packed, arbitrary), decode    | 2%     | 1.00×  |
+
+The controls moved 0.97× to 1.02× between the same two runs, so every cell
+above is inside the drift. The large array is the strongest case the catalog
+has — one decode call runs that loop a thousand times — and it did not move
+either. So the flag loop is not what the read side spends its time on. The
+change stays for what the emitted code says, not for what it bought.
 
 **Tagged-union reads copy the object.** `readTaggedUnion` builds the
 variant literal, then spreads it to add the tag, which roblox-ts lowers to
@@ -228,24 +257,30 @@ All of these are measurement-driven, and the baseline in Benchmarking
 strategy ([testing.md](../testing.md)) has now given the total rather than
 the parts: the figures at the head of this document. Which item accounts for
 what still needs one change and one re-run each, which is the work this
-document orders. Native code generation looked like the exception and is
-not: measured, it reaches one row of the emitted code and leaves the rest,
-so it removes no item from that list. It keeps an open question of its own if it is ever made
-automatic, which needs a way to verify a file is safe to mark file-wide
-native (only surge's generated exports, nothing else) before surge could
-inject the pragma itself, and no such check exists.
+document orders. The read loop was the first item through that process and
+came back at 1.00×, which is a result about the read side and not only about
+that item: a thousand iterations of the flag loop cost nothing readable, so
+the per-element cost is somewhere else. Native code generation looked like
+the exception and is not either: measured, it reaches one row of the emitted
+code and leaves the rest, so it removes no item from that list. It keeps an
+open question of its own if it is ever made automatic, which needs a way to
+verify a file is safe to mark file-wide native (only surge's generated
+exports, nothing else) before surge could inject the pragma itself, and no
+such check exists.
 
 ## How, briefly
 
-- Emit `for (const i of $range(1, count))`, or an equivalent roblox-ts
-  numeric-loop pattern, for count-driven reads.
 - Put the tag directly in the variant literal instead of spreading.
 - Coalesce consecutive fixed-size fields into one `alloc`/`readAlloc`.
 - Measure a `finishWrite` that does not copy. On the numbers above it is the
   largest single cost in a small value's encode, which was not obvious when
   it was filed as a smaller item.
-- Golden checks in `test/golden.test.mjs` for each: no `_shouldIncrement`,
-  no `table.clone` in a tagged-union read, one `alloc` per fixed-size run.
+- Golden checks in `test/golden.test.mjs` for each: no `table.clone` in a
+  tagged-union read, one `alloc` per fixed-size run. The read loop's check
+  is there already.
+- Expect little. The one item measured on its own moved nothing, so treat a
+  change here as unproven until its own re-run says otherwise, and read only
+  the cells whose trials span a few percent.
 - Emit file directives ahead of the injected `__surge_*` imports, so that
   a `//!native` on a file that calls `createBinarySerializer` is honoured at
   all. Nothing below can be put to a user until this is fixed.

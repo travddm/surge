@@ -58,3 +58,13 @@ test("packed booleans never call a per-bit packBit helper in the compiled output
 	// `\b` excludes `unpackBit(`, which the read side still legitimately uses.
 	assert.doesNotMatch(luau, /\bpackBit\(/);
 });
+
+// Regression check for the read-loop item in
+// docs/future-work/generated-code-performance.md.
+test("a count-driven read is a numeric for loop, not a _shouldIncrement flag loop", () => {
+	const luau = readCompiledLuau("tests/coverage.spec.luau");
+	// The positive control: without it, the check below would also pass on a
+	// file that stopped emitting count-driven reads at all.
+	assert.match(luau, /for _i\d+ = 1, count\d+ do/);
+	assert.doesNotMatch(luau, /_shouldIncrement/);
+});

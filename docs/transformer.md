@@ -260,7 +260,13 @@ project's own small IR is written in TypeScript.
     - Variable-size fields (strings, dynamic arrays/maps/sets/records)
       additionally emit a length write/read followed by a loop, still
       inline in the same function, not delegated to a shared generic
-      loop-over-metadata helper.
+      loop-over-metadata helper. A count-driven read loop is emitted as
+      `for (const _i of $range(1, count))`, which roblox-ts lowers to a
+      Luau numeric `for`. A `for (let i = 0; i < count; i++)` does not:
+      roblox-ts only emits a numeric `for` when it can prove the bound is
+      an integer, and a `buffer.readu32` result is just `number`, so that
+      form lowers to a `while` loop with a `_shouldIncrement` flag that
+      every element read pays for.
     - Nested anonymous or non-recursive object/array/tuple element types are
       inlined recursively at transform time, same as Zap's Rust-side
       recursion for struct fields — no per-field function-call indirection.

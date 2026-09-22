@@ -148,8 +148,8 @@ because what it measures is what the Luau costs, and it writes surge's bytes
 exactly — 17, 24, and 1204 — so the speed tier compares code and not formats.
 The speed tier has since run, through `run-in-roblox`, and
 [benchmarks/speed.md](../benchmarks/speed.md) records it: surge encodes
-between 2.65× and 4.58× slower than that baseline and decodes between 2.20×
-and 2.52× slower, on identical bytes. Its columns are not all compiled alike,
+between 2.81× and 4.60× slower than that baseline and decodes between 2.18×
+and 2.79× slower, on identical bytes. Its columns are not all compiled alike,
 which that file states first — fbs and Blink carry `--!native` and
 `--!optimize 2` where roblox-ts emits neither.
 
@@ -157,6 +157,28 @@ The fbs, serio, Blink, and Zap adapters, and the per-library size table they
 produce, landed after everything above, in this repository's `tests/`,
 `docs/`, `mise.toml`, and root `package.json` only: no transformer or
 `@rbxts/surge` source changed with them.
+
+The first item of step 1 has since landed, and it is the first entry of
+[generated-code-performance.md](generated-code-performance.md) to be
+measured on its own. Count-driven reads (`array`, `tuple` rest, `dict`,
+sequences) are emitted as `for (const _i of $range(1, count))` now, so they
+lower to a Luau numeric `for` instead of the `while` loop with a
+`_shouldIncrement` flag that roblox-ts lowers a C-style `for` to; no
+compiled file under `tests/out` has one left, and a golden check pins that.
+Two scoped speed runs either side of the change put it at 1.00×, inside the
+drift of the libraries that did not change — including on the row whose one
+decode call runs that loop a thousand times. The change stays, because the
+emitted code is what the design says it should be, but it removes nothing
+from the list below except itself. That document records what it measured
+and what follows for the rest of the read side.
+
+The same work found that `mise run ci` and both benchmark tiers could read
+the previous transformer's output: `tests/tsconfig.json` sets `incremental`
+and the transformer is a tsconfig plugin, not an input file, so an
+`rbxtsc` run after a transformer-only change reused the previous emit.
+`tests:install` now deletes `tests/out/tsconfig.tsbuildinfo` alongside the
+two packed `file:` dependencies it already deleted, for the same reason. See
+Benchmarking strategy in [testing.md](../testing.md).
 
 Every claim in this directory was checked against both repositories at
 `surge` `7cce55e` and `rbxts-transformer-surge` `0e7c10d`. The order below
@@ -179,7 +201,7 @@ prefix. Nothing measured moved anything else.
 
 | Step | Document                                                                          | Why here                                                                                                                                                                                                                                                  |
 | ---- | --------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1    | [generated-code-performance.md](generated-code-performance.md)                    | The harness has run, and [benchmarks/speed.md](../benchmarks/speed.md) is the measurement every item here was waiting for: a hand-written codec writing surge's exact bytes encodes up to 4.58× faster.                                                   |
+| 1    | [generated-code-performance.md](generated-code-performance.md)                    | The harness has run, and [benchmarks/speed.md](../benchmarks/speed.md) is the measurement every item here was waiting for: a hand-written codec writing surge's exact bytes encodes up to 4.60× faster. Its first item has landed and closed none of it.  |
 | 2    | [type-coverage-parity.md](type-coverage-parity.md) Tier B                         | New `DataType.*` surface (length-typed containers, per-component widths, ranges). The harness has now shown what a bound is worth: every byte Blink and Zap save against surge is a length prefix, and nothing else. Split from Tier A, which has landed. |
 | 3    | [deserialize-hardening.md](deserialize-hardening.md)                              | Opt-in checks; needed before the networking layer, not before.                                                                                                                                                                                            |
 | 4    | [documentation-gaps.md](documentation-gaps.md): `docs/usage.md`                   | User documentation written against fixed behavior. The stale-statement sweep in the same document does not wait; see below.                                                                                                                               |

@@ -291,31 +291,37 @@ writes:
   carries this whole thread.
 - serio and the baseline are the two columns compiled the way surge is.
   surge is ahead of serio on all 32 of their measurements: by 1.25× to
-  15.25× on encode, and by 1.03× to 3.57× on decode.
+  15.40× on encode, and by 1.02× to 3.56× on decode.
 - The baseline is the result this tier was built for. It writes surge's exact
-  bytes, so none of its lead is format: it encodes between 2.65× and 4.58×
-  faster and decodes between 2.20× and 2.52× faster, over the three rows it
+  bytes, so none of its lead is format: it encodes between 2.81× and 4.60×
+  faster and decodes between 2.18× and 2.79× faster, over the three rows it
   covers. That gap is what the emitted code costs against straight-line Luau,
   and it is the measurement
   [generated-code-performance.md](generated-code-performance.md) was waiting
   for.
-- Against fbs, which is compiled differently, surge is behind on 14 of the 16
-  encode rows and ahead on 9 of the 16 decode rows. The two encode rows it
-  leads are both its own surface: on `Packed<T>` and on the guarded union,
-  fbs encodes at 0.59× and 0.66× of surge's rate.
-- `Packed<T>` is not only smaller. The same shape encodes 2.10× faster packed
-  than unpacked and decodes at 0.76×, so packing pays on the write and costs
+- Against fbs, which is compiled differently, surge is behind on 13 of the 16
+  encode rows and ahead on 9 of the 16 decode rows. Two of the three encode
+  rows it leads are its own surface: on `Packed<T>` and on the guarded union,
+  fbs encodes at 0.59× and 0.67× of surge's rate. The third is the small flat
+  struct at 0.98×, which is noise: both cells spread by more than 0.40 of
+  their median.
+- `Packed<T>` is not only smaller. The same shape encodes 2.18× faster packed
+  than unpacked and decodes at 0.74×, so packing pays on the write and costs
   on the read.
 - Blink is ahead on every decode row and on 10 of its 11 encode rows, by as
   much as 23× on its own `Entities` bench. The one row it loses is the
   1000-element array, at 0.15×, where it is the slowest of the four columns.
-  Nothing here says why.
+  That cell is an artifact of the run and not a property of its encoder: a
+  scoped run of that row alone puts Blink at 134k to 144k values per second,
+  five times ahead of surge, so what precedes it in a full run is what the
+  cell measures. What that is was not established, and no other cell moved
+  between a scoped run and a full one.
 - The noise is concentrated in encode on the rows that run fastest, where
-  10000 calls take a few milliseconds. Of the 124 cells, 22 spread more than
+  10000 calls take a few milliseconds. Of the 124 cells, 27 spread more than
   a tenth of their median between their slowest and fastest trial, 12 more
-  than three tenths, and three more than a whole median. All 12 sit on the
+  than three tenths, and two more than a whole median. All 12 sit on the
   flat struct, the nested object, the wide struct, or the large array, and on
-  nine of them the median is nearer the slowest trial than the fastest — the
+  ten of them the median is nearer the slowest trial than the fastest — the
   shape of a cost most trials pay and one does not. What that cost is was not
   established. Every row whose trials take longer is quiet.
 
