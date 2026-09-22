@@ -484,8 +484,81 @@ verify a file is safe to mark file-wide native (only surge's generated
 exports, nothing else) before surge could inject the pragma itself, and no
 such check exists.
 
+## What native would change
+
+Every measurement in this document was taken on interpreted code, because
+that is what roblox-ts emits and what a `//!native` cannot reach today. Some
+of the conclusions survive that and some do not, and the difference is
+mechanical: `--!native` makes Luau work 2.25× to 11.68× cheaper and leaves a
+C call, a cross-module call, and an allocation exactly where they were. A
+result that says "X is invisible against the total" is a result about that
+ratio, not about X.
+
+Three groups, and the emission fix below is what makes the first of them
+answerable.
+
+**Conditional — re-measure once generated code compiles natively.** Each of
+these rests on a measured 1.00× against an interpreted total.
+
+- The read loop, the blob side channel, and `finishWrite`'s copy. All three
+  landed or were probed at 1.00×; all three are per-call or per-branch costs
+  that native code generation cannot make cheaper while it makes everything
+  around them cheaper.
+- The two-pass exact-sizing design that Transformer Design §4 in
+  [transformer.md](../transformer.md) rejected, for one traversal of the
+  value instead of two. Native inverts that trade: the extra traversal is
+  Luau work that gets 2× to 11× cheaper, while the `buffer.copy` it removes
+  is a C call that does not. It is the clearest case in this list.
+- The package pragma, which this document records as worth nothing. That is
+  true of the configuration it was measured in and not of the one that
+  follows. The helper and caller table above has all four cells: marking
+  only the package is 0.04253s against 0.04233s, but once the caller is
+  native, marking the package as well takes 0.04278s to 0.02909s — 1.47×.
+  Nothing to do about it, since all four hot modules already carry the
+  directive, but "worth nothing" is not what it will mean.
+- `Packed<T>`'s advantage over the same shape unpacked, which
+  [benchmark-tooling.md](benchmark-tooling.md) records as 1.24× on encode.
+  It was 2.11× before the shared-reservation change, purely because the
+  unpacked path got faster. Bit packing is Luau arithmetic, so native moves
+  it again; which way is not worth guessing.
+- No f16, in [type-coverage-parity.md](type-coverage-parity.md). Half of
+  that argument is design — a software conversion with a branch per value is
+  the opposite of flat generated code — and half is what the branching
+  costs. Native only touches the second half.
+
+**Settled — already measured with `--!native`, and still dismissed.**
+
+- `--!optimize 2`. Measured alone and alongside `--!native`, both straddling
+  1.00×. Its result is a fact about that run rather than a general one, but
+  it is not a fact about interpreted code.
+- `const` against `local`. Measured at 1.00× with the directive and without,
+  and unreachable besides.
+
+**Blocked on reachability, not on value, and the value is native-only.**
+
+- Type annotations on the generated write and read functions, worth about
+  1.09× on top of `--!native` and nothing without it. They are dismissed
+  because `@roblox-ts/luau-ast` has no type node to emit, not because they
+  were measured as worthless — so if generated code ever compiles natively,
+  the right move is to reopen the reachability problem (a roblox-ts change,
+  or a text-injection path the emitter does not have today) rather than to
+  re-measure. The same is true of the per-function `@native` attribute.
+
+One inversion runs the other way, and is worth stating so it is not filed
+with the rest: the smaller items on this list are Luau work, not calls.
+Evaluating `s.size()` twice for a string gets _less_ worth fixing under
+native, not more.
+
 ## How, briefly
 
+- Emit file directives ahead of the injected `__surge_*` imports, first,
+  and not only because a `//!native` on a file that calls
+  `createBinarySerializer` is silently inert until it is. It is also what
+  makes the section above answerable: the benchmark fixtures had to have
+  the directive hoisted by hand before they compiled natively at all, which
+  is why no task repeats that run today. With the emission fixed, marking a
+  fixture native is a line of source, and the conditional list becomes a
+  measurement pass rather than a manual one.
 - Coalesce a tuple's consecutive fixed-size elements, the way an object's
   fields already are. The mechanism is `fixedBytes`, `allocRuns` and
   `withAllocRun`, unchanged; what is missing is a benchmark fixture that
@@ -501,14 +574,13 @@ such check exists.
   Read only the cells whose trials span a few percent, and pick the protocol
   from the row: a scoped pair where its trials are quiet scoped, a full pair
   where they are not.
-- Emit file directives ahead of the injected `__surge_*` imports, so that
-  a `//!native` on a file that calls `createBinarySerializer` is honoured at
-  all. Nothing below can be put to a user until this is fixed.
-- Do not document `--!native`/`//!native` as a manual opt-in yet. On this
-  measurement it reaches one row of the emitted code, so the advice would
-  cost a user the blast radius and return almost nothing. Revisit once the
-  items above land and the shape changes. Leave `//!optimize 2` out either way: it
-  changed nothing here, alone or alongside `--!native`.
+- Do not document `--!native`/`//!native` as a manual opt-in until the
+  emission fix has landed and the conditional list has been re-measured
+  through it. On the current measurement the directive reaches one row of
+  the emitted code, so the advice would cost a user the blast radius and
+  return almost nothing; what it is worth afterwards is the open question.
+  Leave `//!optimize 2` out either way: it changed nothing here, alone or
+  alongside `--!native`.
 - If pursued as an automatic default: design a "this file is safe to mark
   file-wide native" check (for example, restrict it to a mode where the
   whole file is one `createBinarySerializer`-style call and its export,

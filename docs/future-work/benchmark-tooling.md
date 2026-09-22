@@ -309,7 +309,9 @@ writes:
   was. The same shape encodes 1.24× faster packed than unpacked and decodes
   at 0.45×, against 2.11× and 0.72× before the shared-reservation change: the
   packed path is a bit region and shares nothing, so the unpacked path is
-  what got faster.
+  what got faster. Read this as a snapshot of two paths that move
+  independently, not as a property of `Packed<T>`; bit packing is Luau
+  arithmetic, so native code generation would move it again.
 - Blink is ahead on every decode row and on 10 of its 11 encode rows, by as
   much as 5.82× on its own `Booleans` bench. Its `Entities` bench used to be
   a 23× lead and is now 4.84×, which is the shared-reservation change and

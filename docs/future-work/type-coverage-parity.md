@@ -109,10 +109,14 @@ These differences are design choices, not bugs, and should stay:
   own documentation calls its f16 slow. That is the opposite of this
   design's point, which is flat generated code with no per-value
   branching, and it would be the only numeric width that needs a runtime
-  helper in `@rbxts/surge`. It saves 2 bytes over `DataType.f32` and keeps
-  about 3 significant digits. A value that can accept that loss is better
-  served by a scaled integer (`DataType.i16` of the value times 100),
-  which is exact in its range and costs one multiplication. No u12/i12
+  helper in `@rbxts/surge`. Half of that is a design argument and half is
+  what the branching costs; native code generation would touch only the
+  second half (see What native would change in
+  [generated-code-performance.md](generated-code-performance.md)). It saves
+  2 bytes over `DataType.f32` and keeps about 3 significant digits. A value
+  that can accept that loss is better served by a scaled integer
+  (`DataType.i16` of the value times 100), which is exact in its range and
+  costs one multiplication. No u12/i12
   either: a 12-bit width only saves space next to another 12-bit value,
   which is a `Packed<T>` layout question, and nothing has asked for it.
 - Blink and Zap batch events per frame and frame each with an id byte.

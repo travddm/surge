@@ -241,7 +241,11 @@ project's own small IR is written in TypeScript.
    exact-size result via `buffer.copy`. This was chosen over a two-pass
    exact-allocation design (a companion `size(value)` function generated
    per shape, sized first, written with no copy) because it needs one
-   traversal of the value instead of two, and because it reuses the same
+   traversal of the value instead of two — a trade that native code
+   generation would invert, since the extra traversal is Luau work and the
+   copy it removes is a C call (see What native would change in
+   [future-work/generated-code-performance.md](future-work/generated-code-performance.md))
+   — and because it reuses the same
    runtime helper regardless of whether a shape is all-fixed-size or has
    variable-length fields — the `Field` IR does not need to branch on that
    distinction when emitting the buffer-writing statements, only when it

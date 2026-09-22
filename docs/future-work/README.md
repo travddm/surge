@@ -242,6 +242,20 @@ caller a buffer surge reuses. The probe was reverted, not committed, and
 it measured, what it does not, and why none of these 1.00× results survives
 the generated code being compiled natively without being measured again.
 
+That last point is not only about `finishWrite`. Sweeping every dismissal in
+this directory against it found five more that rest on an interpreted
+measurement and one that does not rest on a measurement at all: the read
+loop, the blob channel, the two-pass exact-allocation design that
+Transformer Design §4 rejected for one traversal over two, surge's own
+package pragma, `Packed<T>`'s advantage over the unpacked path, and the
+absence of f16. Two dismissals survive untouched, because they were measured
+with `--!native` already — `--!optimize 2` and `const` against `local` — and
+one is blocked on reachability rather than on value, where the value is
+1.09× and native-only: type annotations on the generated functions. What
+native would change in
+[generated-code-performance.md](generated-code-performance.md) is the list,
+with what each one currently rests on.
+
 The same work found that `mise run ci` and both benchmark tiers could read
 the previous transformer's output: `tests/tsconfig.json` sets `incremental`
 and the transformer is a tsconfig plugin, not an input file, so an
@@ -261,21 +275,33 @@ ends at `rbxts-transformer-surge` `aa59c4a`.
 
 ## Order
 
-Both benchmark tiers have since run, and the order below was re-examined
-against what they measured. It stands.
-[generated-code-performance.md](generated-code-performance.md) is first
-because the hand-written baseline put a number on it, and Tier B of
-[type-coverage-parity.md](type-coverage-parity.md) is second because the size
-table showed that every byte Blink and Zap save against surge is a length
-prefix. Nothing measured moved anything else.
+The order below changed once more, and for a different reason than last
+time. [generated-code-performance.md](generated-code-performance.md) was
+first because the hand-written baseline had put a number on it. Its large
+items have since landed, and what keeps it first is now the `//!native`
+emission fix: a `//!native` on a file that calls `createBinarySerializer` is
+silently inert today, which is a defect on its own, and it is also the gate
+on six measurements that are only valid for interpreted code. What native
+would change in that document lists them. It is a cheap fix that unblocks a
+measurement pass, which is why it stays at the head rather than dropping
+below Tier B with the rest of its document.
 
-| Step | Document                                                                          | Why here                                                                                                                                                                                                                                                                                         |
-| ---- | --------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| 1    | [generated-code-performance.md](generated-code-performance.md)                    | The harness has run, and [benchmarks/speed.md](../benchmarks/speed.md) is the measurement every item here was waiting for: a hand-written codec writing surge's exact bytes encodes up to 2.82× faster. Five changes from it have landed, for 1.00×, 1.39×, 1.61×, up to 4.70×, and 1.00× again. |
-| 2    | [type-coverage-parity.md](type-coverage-parity.md) Tier B                         | New `DataType.*` surface (length-typed containers, per-component widths, ranges). The harness has now shown what a bound is worth: every byte Blink and Zap save against surge is a length prefix, and nothing else. Split from Tier A, which has landed.                                        |
-| 3    | [deserialize-hardening.md](deserialize-hardening.md)                              | Opt-in checks; needed before the networking layer, not before.                                                                                                                                                                                                                                   |
-| 4    | [documentation-gaps.md](documentation-gaps.md): `docs/usage.md`                   | User documentation written against fixed behavior. The stale-statement sweep in the same document does not wait; see below.                                                                                                                                                                      |
-| 5    | [ci-and-release.md](ci-and-release.md): version backstop and first tagged release | The backstop lands with the release it protects. The CI-only items do not wait; see below.                                                                                                                                                                                                       |
+The smaller items of that document moved down, to No step of its own: on the
+evidence they are the kind of per-call and Luau-side cost that measured at
+1.00×, and one of them gets _less_ worth fixing under native, not more.
+
+Tier B of [type-coverage-parity.md](type-coverage-parity.md) keeps second
+place, for the reason it had: the size table showed that every byte Blink and
+Zap save against surge is a length prefix. Nothing measured moved anything
+else.
+
+| Step | Document                                                                                                                         | Why here                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| ---- | -------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1    | [generated-code-performance.md](generated-code-performance.md): the `//!native` emission fix, and the re-measurement it unblocks | A `//!native` on a transformed file is inert, which is a defect in the emission and not a property of the pragma. Fixing it also turns What native would change from a list of open questions into one measurement pass, because a fixture can then be marked native in source instead of by hand. Five changes from this document have already landed, for 1.00×, 1.39×, 1.61×, up to 4.70×, and 1.00× again; a hand-written codec writing surge's exact bytes still encodes up to 2.82× faster. |
+| 2    | [type-coverage-parity.md](type-coverage-parity.md) Tier B                                                                        | New `DataType.*` surface (length-typed containers, per-component widths, ranges). The harness has now shown what a bound is worth: every byte Blink and Zap save against surge is a length prefix, and nothing else. Split from Tier A, which has landed.                                                                                                                                                                                                                                         |
+| 3    | [deserialize-hardening.md](deserialize-hardening.md)                                                                             | Opt-in checks; needed before the networking layer, not before.                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| 4    | [documentation-gaps.md](documentation-gaps.md): `docs/usage.md`                                                                  | User documentation written against fixed behavior. The stale-statement sweep in the same document does not wait; see below.                                                                                                                                                                                                                                                                                                                                                                       |
+| 5    | [ci-and-release.md](ci-and-release.md): version backstop and first tagged release                                                | The backstop lands with the release it protects. The CI-only items do not wait; see below.                                                                                                                                                                                                                                                                                                                                                                                                        |
 
 ## No step of its own
 
@@ -300,6 +326,13 @@ time:
   each remaining case lands with the fix or fixture it pins.
 - [enum-encoding.md](enum-encoding.md): a one-byte saving that needs an IR
   change. Do it with a broader `literalConst` cleanup, not alone.
+- The smaller items and the tuple elements in
+  [generated-code-performance.md](generated-code-performance.md). Every
+  per-call cost that document measured came back at 1.00×, and evaluating
+  `s.size()` twice is Luau work that native code generation would make
+  _cheaper_ to leave alone. A tuple's consecutive fixed-size elements are
+  the same mechanism an object's fields already use, and no fixture
+  serializes a tuple to measure it with.
 
 ## Deferred indefinitely
 
