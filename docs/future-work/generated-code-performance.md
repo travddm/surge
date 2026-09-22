@@ -3,13 +3,14 @@
 Part of the [surge](../architecture.md) design. The performance goal is the
 project's reason to exist, and the harness in
 [benchmark-tooling.md](benchmark-tooling.md) has now measured it.
-[benchmarks/speed.md](../benchmarks/speed.md) puts surge between 2.81× and
-4.60× behind a hand-written codec that writes its exact bytes on encode, and
-between 2.18× and 2.79× behind it on decode. That is the size of what this
-document is about. It does not say which item below accounts for what. One
-item has since been measured on its own — the read loop, which turned out to
-be worth nothing — and every other entry here is still what the compiled
-output shows, not what was measured. The local-register ceiling that this
+[benchmarks/speed.md](../benchmarks/speed.md) puts surge between 2.35× and
+4.62× behind a hand-written codec that writes its exact bytes on encode, and
+between 2.17× and 2.73× behind it on decode. That is the size of what this
+document is about. It does not say which item below accounts for what. Two
+items have since been measured on their own — the read loop, worth nothing,
+and the tagged-union read's table copy, worth 1.39× on the one row that has
+one — and every other entry here is still what the compiled output shows,
+not what was measured. The local-register ceiling that this
 document used to record has landed; see Risks in
 [transformer.md](../transformer.md).
 
@@ -59,10 +60,38 @@ has — one decode call runs that loop a thousand times — and it did not move
 either. So the flag loop is not what the read side spends its time on. The
 change stays for what the emitted code says, not for what it bought.
 
-**Tagged-union reads copy the object.** `readTaggedUnion` builds the
-variant literal, then spreads it to add the tag, which roblox-ts lowers to
-`table.clone` plus `setmetatable(_object, nil)` plus one assignment per
-variant read.
+**Tagged-union reads copied the object; they build the literal now.**
+`readTaggedUnion` built the variant literal, then spread it to add the tag,
+which roblox-ts lowers to `table.clone` plus `setmetatable(_object, nil)`
+plus one assignment. Every variant read allocated a table and then copied
+it. The tag is a property of the literal itself now, so the copy is gone.
+No compiled file under `tests/out` has a `table.clone` left, and
+`test/golden.test.mjs` pins that.
+
+**It is worth 1.39× on the row it touches.** The tagged union is the only
+row of the catalog with one, and it reads a hundred variants per decode
+call. Measured against the run checked in at `1b1ec9f`, which is the same
+catalog on the same machine with the spread still in place:
+
+| Cell                        | spread    | change |
+| --------------------------- | --------- | ------ |
+| surge, tagged union, decode | 1% → 0.7% | 1.39×  |
+| surge, tagged union, encode | 0.5% → 2% | 0.99×  |
+| fbs, tagged union, decode   | 1% → 2%   | 0.99×  |
+| serio, tagged union, decode | 2% → 0.5% | 0.99×  |
+| Blink, tagged union, decode | 2% → 0.8% | 0.98×  |
+
+6929 values per second to 9608. Only the read side changed, so surge's own
+encode cell is a control, and so is every other library on the same row. The
+drift between the two runs is 0.92× to 1.03× over the 76 cells that are
+quiet in both, with a median of 0.99×, and every cell above but the first is
+inside it. It moves the row's whole decode column: fbs read it at 0.91× of
+surge's rate and reads it at 0.65× now.
+
+Both runs are full runs, because the scoped protocol cannot read this row —
+its decode trials spread by 302% measured alone and by 1% in a full run. See
+the scoped-against-full entry in
+[benchmark-tooling.md](benchmark-tooling.md).
 
 **One helper call per field.** Each field, however small, calls `alloc`
 or `readAlloc` and destructures a multi-return. A vector3 already shows
@@ -257,10 +286,13 @@ All of these are measurement-driven, and the baseline in Benchmarking
 strategy ([testing.md](../testing.md)) has now given the total rather than
 the parts: the figures at the head of this document. Which item accounts for
 what still needs one change and one re-run each, which is the work this
-document orders. The read loop was the first item through that process and
-came back at 1.00×, which is a result about the read side and not only about
-that item: a thousand iterations of the flag loop cost nothing readable, so
-the per-element cost is somewhere else. Native code generation looked like
+document orders. Two items have been through it. The read loop came back at
+1.00×, which is a result about the read side and not only about that item: a
+thousand iterations of the flag loop cost nothing readable. The tagged
+union's table copy came back at 1.39× on the one row that has one. Together
+they say where the read side's time goes — not in branching, but in the
+tables and the calls each element costs — which is the case for taking the
+`alloc` coalescing next. Native code generation looked like
 the exception and is not either: measured, it reaches one row of the emitted
 code and leaves the rest, so it removes no item from that list. It keeps an
 open question of its own if it is ever made automatic, which needs a way to
@@ -270,17 +302,18 @@ such check exists.
 
 ## How, briefly
 
-- Put the tag directly in the variant literal instead of spreading.
 - Coalesce consecutive fixed-size fields into one `alloc`/`readAlloc`.
 - Measure a `finishWrite` that does not copy. On the numbers above it is the
   largest single cost in a small value's encode, which was not obvious when
   it was filed as a smaller item.
-- Golden checks in `test/golden.test.mjs` for each: no `table.clone` in a
-  tagged-union read, one `alloc` per fixed-size run. The read loop's check
-  is there already.
-- Expect little. The one item measured on its own moved nothing, so treat a
-  change here as unproven until its own re-run says otherwise, and read only
-  the cells whose trials span a few percent.
+- A golden check in `test/golden.test.mjs` for each: one `alloc` per
+  fixed-size run. The read loop's and the tagged union's are there already.
+- Measure each one, and predict nothing from the compiled output. The two
+  items measured so far came back at 1.00× and 1.39×, and neither the shape
+  of the code removed nor the size of the saving said which would be which.
+  Read only the cells whose trials span a few percent, and pick the protocol
+  from the row: a scoped pair where its trials are quiet scoped, a full pair
+  where they are not.
 - Emit file directives ahead of the injected `__surge_*` imports, so that
   a `//!native` on a file that calls `createBinarySerializer` is honoured at
   all. Nothing below can be put to a user until this is fixed.

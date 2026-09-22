@@ -291,37 +291,47 @@ writes:
   carries this whole thread.
 - serio and the baseline are the two columns compiled the way surge is.
   surge is ahead of serio on all 32 of their measurements: by 1.25× to
-  15.40× on encode, and by 1.02× to 3.56× on decode.
+  15.18× on encode, and by 1.01× to 3.57× on decode.
 - The baseline is the result this tier was built for. It writes surge's exact
-  bytes, so none of its lead is format: it encodes between 2.81× and 4.60×
-  faster and decodes between 2.18× and 2.79× faster, over the three rows it
+  bytes, so none of its lead is format: it encodes between 2.35× and 4.62×
+  faster and decodes between 2.17× and 2.73× faster, over the three rows it
   covers. That gap is what the emitted code costs against straight-line Luau,
   and it is the measurement
   [generated-code-performance.md](generated-code-performance.md) was waiting
   for.
-- Against fbs, which is compiled differently, surge is behind on 13 of the 16
-  encode rows and ahead on 9 of the 16 decode rows. Two of the three encode
-  rows it leads are its own surface: on `Packed<T>` and on the guarded union,
-  fbs encodes at 0.59× and 0.67× of surge's rate. The third is the small flat
-  struct at 0.98×, which is noise: both cells spread by more than 0.40 of
-  their median.
-- `Packed<T>` is not only smaller. The same shape encodes 2.18× faster packed
-  than unpacked and decodes at 0.74×, so packing pays on the write and costs
+- Against fbs, which is compiled differently, surge is behind on 14 of the 16
+  encode rows and ahead on 9 of the 16 decode rows. The two encode rows it
+  leads are both its own surface: on `Packed<T>` and on the guarded union,
+  fbs encodes at 0.60× and 0.66× of surge's rate.
+- `Packed<T>` is not only smaller. The same shape encodes 2.12× faster packed
+  than unpacked and decodes at 0.75×, so packing pays on the write and costs
   on the read.
 - Blink is ahead on every decode row and on 10 of its 11 encode rows, by as
-  much as 23× on its own `Entities` bench. The one row it loses is the
+  much as 22× on its own `Entities` bench. The one row it loses is the
   1000-element array, at 0.15×, where it is the slowest of the four columns.
-  That cell is an artifact of the run and not a property of its encoder: a
-  scoped run of that row alone puts Blink at 134k to 144k values per second,
-  five times ahead of surge, so what precedes it in a full run is what the
-  cell measures. What that is was not established, and no other cell moved
-  between a scoped run and a full one.
+  That cell is not a property of its encoder: measured alone, Blink encodes
+  that row at 134k to 144k values per second, five times ahead of surge. See
+  the next entry.
+- A scoped run and a full run do not agree on every cell, and where they
+  disagree it is by an order of magnitude. Encode on the two union rows is
+  13× and 14× faster measured alone than measured in a full run, and for all
+  four columns at once — surge, fbs, serio, and Blink together — and Blink's
+  1000-element array encode is 34× faster alone. Decode agrees on every row
+  tried, and both halves of the large array, the large record, the
+  string-heavy row, and the three `CFrame` rows agree but for that one Blink
+  cell. What separates a row that agrees from one that does not was not
+  established. This is why a scoped table is read only against another
+  scoped run of the same patterns, which "Either tier can be scoped to some
+  fixtures" below already requires. It also means a full run is the only
+  readable protocol for a row whose scoped trials are noisy: both union rows
+  decode within a percent of their median in a full run and spread by 91%
+  and 302% measured alone.
 - The noise is concentrated in encode on the rows that run fastest, where
-  10000 calls take a few milliseconds. Of the 124 cells, 27 spread more than
-  a tenth of their median between their slowest and fastest trial, 12 more
-  than three tenths, and two more than a whole median. All 12 sit on the
+  10000 calls take a few milliseconds. Of the 124 cells, 26 spread more than
+  a tenth of their median between their slowest and fastest trial, 11 more
+  than three tenths, and three more than a whole median. All 11 sit on the
   flat struct, the nested object, the wide struct, or the large array, and on
-  ten of them the median is nearer the slowest trial than the fastest — the
+  eight of them the median is nearer the slowest trial than the fastest — the
   shape of a cost most trials pay and one does not. What that cost is was not
   established. Every row whose trials take longer is quiet.
 

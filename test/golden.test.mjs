@@ -68,3 +68,14 @@ test("a count-driven read is a numeric for loop, not a _shouldIncrement flag loo
 	assert.match(luau, /for _i\d+ = 1, count\d+ do/);
 	assert.doesNotMatch(luau, /_shouldIncrement/);
 });
+
+// Regression check for the tagged-union item in
+// docs/future-work/generated-code-performance.md.
+test("a tagged-union read builds the variant literal with its tag, not a copy of it", () => {
+	const luau = readCompiledLuau("tests/coverage.spec.luau");
+	// The positive control: `Expr`'s `num` variant, whose discriminant is part
+	// of the literal the read assigns rather than spread in afterwards.
+	assert.match(luau, /result\d+ = \{\s*\n\s*kind = "num",/);
+	// A spread lowers to `table.clone` plus `setmetatable(_object, nil)`.
+	assert.doesNotMatch(luau, /table\.clone/);
+});
