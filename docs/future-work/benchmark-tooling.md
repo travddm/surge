@@ -302,40 +302,43 @@ writes:
   [generated-code-performance.md](generated-code-performance.md).
 - The baseline is the column compiled the way surge's generated code is:
   `--!optimize 2` and no `--!native`.
-- surge is ahead of serio on all 32 of their measurements: by 1.27× to
-  14.29× on encode, and by 1.02× to 6.67× on decode.
+- surge is ahead of serio on all 32 of their measurements: by 2.89× to
+  69.40× on encode, and by 1.99× to 8.35× on decode.
 - The baseline is the result this tier was built for. It writes surge's exact
-  bytes, so none of its lead is format: it encodes 2.87× faster and decodes
-  1.63× faster on the `CFrame` array, which is the one of its three rows
-  whose trials are quiet in both halves. The flat struct and the nested
-  object put the encode gap at 2.67× and 2.96× and the decode gap at 1.49×
-  and 2.41×, on trials spanning half their median or more. That gap is what
-  the emitted code costs against straight-line Luau, and it is the measurement
+  bytes, so none of its lead is format. It opened 2.87× faster on encode and
+  1.63× faster on decode on the `CFrame` array, which is the one of its three
+  rows whose trials are quiet in both halves; the flat struct and the nested
+  object put the encode gap at 2.67× and 2.96× on trials spanning half their
+  median or more. That gap is what the emitted code cost against straight-line
+  Luau, and it is the measurement
   [generated-code-performance.md](generated-code-performance.md) was waiting
-  for.
-- Against fbs, which is compiled differently, surge is behind on 10 of the 16
-  encode rows and ahead on 10 of the 16 decode rows. It leads the six encode
-  rows where an object has a run of fixed-size fields to share one
-  reservation, or where `Packed<T>` or the guarded union is its own surface:
-  fbs encodes Blink's `Entities` bench at 0.31× of surge's rate and the wide
-  struct at 0.65×. On decode the widest is the wide struct, at 0.16×.
-- `Packed<T>` is not only smaller, but it is much less of a speed win than it
-  was. The same shape encodes 1.22× faster packed than unpacked and decodes
-  at 0.46×, against 2.11× and 0.72× before the shared-reservation change: the
-  packed path is a bit region and shares nothing, so the unpacked path is
-  what got faster. Read this as a snapshot of two paths that move
-  independently, not as a property of `Packed<T>`. Bit packing is Luau
-  arithmetic, so native code generation was the obvious thing that would move
-  it again; measured, it does not, and the encode ratio is 1.23× with the
-  generated code compiled natively.
-- Blink is ahead on every decode row and on 10 of its 11 encode rows, by as
-  much as 5.78× on its own `Booleans` bench. Its `Entities` bench used to be
-  a 23× lead and is now 4.86×, which is the shared-reservation change and
-  not Blink. The one row it loses is the 1000-element array, at 0.20×, where
-  it is the slowest of the four columns.
-  That cell is not a property of its encoder: measured alone, Blink encodes
-  that row at 134k to 144k values per second, five times ahead of surge. See
-  the next entry.
+  for. It is 1.08× and 1.05× now, on the same row, and the encode figure is
+  inside the baseline cell's own spread.
+- Against fbs, which is compiled differently, surge is ahead on 15 of the 16
+  encode rows and all 16 decode rows. It was behind on 10 encode rows before
+  the inline reservation. The one it still loses is the 1000-element array, at
+  0.95×. The widest are the two union rows and `Blink: Entities`, where fbs
+  encodes at 0.08× to 0.14× of surge's rate.
+- `Packed<T>` is not only smaller, and what it is worth on speed keeps moving.
+  The same shape encodes 1.07× faster packed than unpacked and decodes at
+  0.25×, against 1.22× and 0.46× before the inline reservation and 2.11× and
+  0.72× before the shared-reservation change. Both `toggles` rows are noisy —
+  ±13% to ±28% — so read the direction and not the figures. The packed path is
+  a bit region and shares nothing, so each change to how bytes are reserved
+  moves the unpacked path and leaves it where it was. Read this as a snapshot
+  of two paths that move independently, not as a property of `Packed<T>`.
+- Blink is ahead on 6 of the 11 encode rows they share and 4 of the 11 decode
+  rows, where it used to lead every decode row and 10 of the 11 encode rows.
+  Its widest remaining lead is the 1000-element array, at 2.11× on encode. Its
+  `Entities` bench was a 23× lead, then 4.86× after the shared reservation,
+  and is 1.19× now. Blink's generated module carries `--!native` and surge's
+  does not, and nothing here separates how much of what is left is that.
+  The 1000-element array is also where a full run and a scoped run used to
+  disagree by an order of magnitude on Blink's encode: the full run put it at
+  0.20× of surge's rate on trials spanning 89%, where measuring it alone put
+  it five times ahead. The run after the inline reservation agrees with the
+  scoped one, at 143.5k values per second on ±3%, so that cell reads now. See
+  the next entry for the disagreement itself, which is not resolved.
 - A scoped run and a full run do not agree on every cell, and where they
   disagree it is by an order of magnitude. Measured against the run checked
   in at `1b1ec9f`, encode on the two union rows was 13× and 14× faster alone

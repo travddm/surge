@@ -273,14 +273,16 @@ results. The size tier runs under Lune and
 [benchmarks/size.md](benchmarks/size.md) carries six columns — surge, fbs,
 serio, Blink, Zap, and a hand-written baseline. The speed tier runs in a real
 Roblox process through `run-in-roblox`, and
-[benchmarks/speed.md](benchmarks/speed.md) records it. The timings do not
-flatter this design: surge encodes 2.87× slower than a hand-written codec
-writing its exact bytes on the one row of three whose trials can be read
-(2.67× and 2.96× on the two that cannot), and the two columns ahead of it on
-most rows are natively compiled where surge's generated code is not, which
-that file states before its tables. What the gap is made of is
+[benchmarks/speed.md](benchmarks/speed.md) records it. The timings opened
+unflattering: surge encoded 2.87× slower than a hand-written codec
+writing its exact bytes on the one row of three whose trials can be read, and
+the two columns ahead of it on most rows are natively compiled where surge's
+generated code is not, which that file states before its tables. What that gap
+was made of is
 [future-work/generated-code-performance.md](future-work/generated-code-performance.md),
-which the run moved to the head of the plan.
+which the run moved to the head of the plan and which has since closed it: the
+same row is 1.08× on encode and 1.05× on decode, after a change that reserves
+bytes inline in the generated code instead of calling into the package.
 
 0. This repo's `package.json` (the `@rbxts/surge` manifest itself), the
    `mise`-pinned toolchain (`node`, `rojo`), the `tests/` Rojo place and

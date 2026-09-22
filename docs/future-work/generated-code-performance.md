@@ -2,30 +2,35 @@
 
 Part of the [surge](../architecture.md) design. The performance goal is the
 project's reason to exist, and the harness in
-[benchmark-tooling.md](benchmark-tooling.md) has now measured it.
-[benchmarks/speed.md](../benchmarks/speed.md) puts surge 2.87× behind a
-hand-written codec that writes its exact bytes on encode and 1.63× behind it
-on decode, on the `CFrame` array — the one of the baseline's three rows whose
-trials are quiet enough to read. The other two put the encode gap at 2.67×
-and 2.96× on trials spanning half their median. That is the size of what this
-document is about. It does not say which item below accounts for what.
-Nine things have since been measured on their own. Six are changes that
+[benchmark-tooling.md](benchmark-tooling.md) measured it. When this document
+was written, [benchmarks/speed.md](../benchmarks/speed.md) put surge 2.87×
+behind a hand-written codec that writes its exact bytes on encode, and 1.63×
+behind it on decode, on the `CFrame` array — the one of the baseline's three
+rows whose trials are quiet enough to read. That gap is what the document was
+about. It is 1.08× and 1.05× now, and the encode figure sits inside the
+baseline cell's own 7% spread.
+
+Ten things were measured on their own to get there. Seven are changes that
 landed: the read loop, worth nothing; the tagged-union read's table copy,
 worth 1.39× on the one row that has one; a `CFrame`'s two reservations
 becoming one, worth 1.61× on encode; every run of consecutive fixed-size
 fields sharing one reservation, worth up to 4.70×; the blob side channel no
-longer being emitted where it is unused, worth nothing; and compiling every
+longer being emitted where it is unused, worth nothing; compiling every
 module at optimization level 2, worth nothing and kept for parity with what a
-published place runs. Three are probes that were reverted: `finishWrite`
-without its copy, worth nothing; the generated code compiled natively, worth
-1.02× on the catalog and 1.18× on one row; and the hot paths rolled into the
-generated code by hand, worth 2.64× on one row's decode, 2.51× on its encode,
-and 1.52× on another row's decode. Together they say that per-element cost is
-what matters, that per-call cost is not, and that what is left is a call into
-the package per field, which no optimizer reaches and which is the whole of
-the cost on the rows where a reservation cannot be shared. Every other entry here is still what the
-compiled output shows, not what was measured. The local-register ceiling that this
-document used to record has landed; see Risks in
+published place runs; and reserving bytes inline in the generated code rather
+than through a call into the package, worth 4.15× on encode and 2.48× on
+decode across the catalog, which is the largest result here and the last of
+the large ones. Three are probes that were reverted: `finishWrite` without its
+copy, worth nothing; the generated code compiled natively, worth 1.02× on the
+catalog and 1.18× on one row; and the hand-edited probe of the inline
+reservation, which the change that followed it replicated.
+
+Together they say that per-element cost is what matters and per-call cost is
+not, and that a cross-module call is a per-element cost wherever a shape has a
+field per element — which is the one thing in this document that no optimizer
+reached and the one that was worth the most. Every other entry here is still
+what the compiled output shows, not what was measured. The local-register
+ceiling that this document used to record has landed; see Risks in
 [transformer.md](../transformer.md).
 
 ## What
@@ -539,13 +544,14 @@ other direction. Both point at the same change, which is why the plan does
 not turn on it: rolling the hot paths into the generated code is what would
 tell them apart, by removing the crossing.
 
-It also puts a number on the ceiling. On the one row of the baseline whose
-trials are quiet, native generated code is still 2.80× behind a hand-written
-codec that is not native on encode and 1.46× behind it on decode, against
-2.87× and 1.63× without the directive. That is about a tenth of the decode
-gap, and part of the tenth is the baseline's own 0.99× drift in the same run.
-What is left is structural.
-
+It also put a number on the ceiling as it stood then. On the one row of the
+baseline whose trials are quiet, native generated code was still 2.80× behind
+a hand-written codec that is not native on encode and 1.46× behind it on
+decode, against 2.87× and 1.63× without the directive. That was about a tenth
+of the decode gap, and part of the tenth was the baseline's own 0.99× drift in
+the same run. What was left was structural, and it was the cross-module call:
+removing that took the same two figures to 1.08× and 1.05×, with no directive
+involved.
 **An earlier run said the same with fewer controls.** Two runs of the speed
 tier, back to back on one machine. The first marked only surge's
 package native; the second marked the fixture modules and
@@ -610,12 +616,12 @@ outright measured at 1.00×, recorded above. What the collapse shows is how
 little Luau work is left once native code generation has done its part, not
 how much the copy costs an interpreted writer.
 
-**What rolling the hot paths into the generated code is worth, measured on
-hand-edited output.** The one change this document has left for last is the
-call per field into the package. A probe put a number on it before the
-emitter is touched, because `npm run build` runs only Rojo: a hand edit of
-`tests/out` reaches the place without a recompile, so the generated code can
-be rewritten into the shape the emitter would produce and timed as it stands.
+**The probe that decided the inline reservation.** The last large change in
+this document was the call per field into the package. A probe put a number
+on it before the emitter was touched, because `npm run build` runs only Rojo:
+a hand edit of `tests/out` reaches the place without a recompile, so the
+generated code could be rewritten into the shape the emitter would produce
+and timed as it stood.
 
 Three compiled fixtures were rewritten -- `large-array.luau`, `cframes.luau`,
 and `small-flat-struct.luau`. In each, the serializer's own IIFE took the
@@ -699,6 +705,78 @@ rather than inherit: today one module-scoped buffer serves every serializer in
 a place, and a buffer per serializer is a different trade in memory and in what
 happens if two serializes ever overlap. Neither is measured here.
 
+**Reserving bytes inline, measured.** The change landed in
+`rbxts-transformer-surge` `7f46c81` and `surge` `91310ea`. A reservation is
+four instructions in the serializer's own closure and two on the read side,
+and the package owns no cursor at all: `alloc`, `readAlloc`, `beginWrite`,
+`beginRead` and `backpatchU32` are gone, `grow` runs once per doubling,
+`finishWrite` once per call, and the packed `CFrame` codec takes a buffer and
+an offset and reports the bytes it used. Transformer Design §4 in
+[transformer.md](../transformer.md) carries the design.
+
+A full run against the table `85286e1` recorded, with that change as the only
+difference. Medians of the cells whose trials are quiet in both runs:
+
+| Column | encode          | decode           |
+| ------ | --------------- | ---------------- |
+| surge  | 4.15× (9 cells) | 2.48× (10 cells) |
+| fbs    | 1.006×          | 0.992×           |
+| serio  | 0.998×          | 0.992×           |
+| Blink  | 0.996×          | 0.989×           |
+
+Three untouched columns sat between 0.97× and 1.02× on every readable cell,
+so the surge column is the whole of the effect. The baseline has one readable
+cell, at 0.97×. Where it is largest is where a shape has many small fields,
+which is where there were the most calls to remove:
+
+| Cell                                   | spread      | change |
+| -------------------------------------- | ----------- | ------ |
+| surge, tagged union, encode            | 0.9% → 4.5% | 7.35×  |
+| surge, guarded union, encode           | 0.4% → 4.4% | 6.56×  |
+| surge, Blink: Booleans, encode         | 0.5% → 1.2% | 5.56×  |
+| surge, string-heavy, encode            | 0.7% → 2.5% | 4.91×  |
+| surge, enum-heavy, encode              | 0.7% → 2.8% | 4.15×  |
+| surge, guarded union, decode           | 1.0% → 3.3% | 3.12×  |
+| surge, large record, decode            | 0.8% → 0.7% | 3.03×  |
+| surge, `CFrame` array, encode          | 2.0% → 0.5% | 2.67×  |
+| surge, large array, decode             | 0.5% → 1.1% | 2.56×  |
+| surge, large array, encode             | 0.6% → 3.7% | 2.52×  |
+| surge, `CFrame` array (packed), encode | 0.5% → 1.8% | 2.60×  |
+| surge, `CFrame` array (packed), decode | 1.0% → 3.3% | 2.10×  |
+| surge, `CFrame` array, decode          | 3.0% → 1.7% | 1.50×  |
+
+The two packed `CFrame` rows moved because the stateless codec dropped the two
+reservations each packed `CFrame` used to make inside the package -- they were
+a control in the probe and a treatment here, which is why the probe left them
+alone and this run does not.
+
+**The probe replicated.** Three cells were measured twice, once by hand on a
+throwaway build and once by the emitter:
+
+| Cell                   | probe | landed |
+| ---------------------- | ----- | ------ |
+| large array, encode    | 2.51× | 2.52×  |
+| large array, decode    | 2.64× | 2.56×  |
+| `CFrame` array, decode | 1.52× | 1.50×  |
+
+**What it closes.** On the `CFrame` array, the one baseline row quiet in both
+halves, a hand-written codec writing surge's exact bytes encoded 2.87× faster
+and decoded 1.63× faster. It encodes 1.08× faster now and decodes 1.05×
+faster, and the encode figure is inside that cell's own 7% spread, so the two
+columns are no longer separable there. Against the other libraries, surge
+leads fbs on 15 of 16 encode rows and all 16 decode rows, where it was behind
+on 10 encode rows; and it leads Blink on 7 of the 11 decode rows they share,
+where Blink led every one. Blink still leads the 1000-element array on both
+halves, and `Blink: Booleans` and the small flat struct on encode.
+
+**What it does not say.** Thirteen surge cells are too noisy to read in one
+run or the other, and they are the fast ones: the small flat struct, the
+deeply nested object, the wide struct, both `toggles` rows, and the large
+record, whose encode came out at 33× on trials spanning 27% and 60%. A value
+that encodes in a microsecond is what this harness measures worst. Nothing
+here separates how much of Blink's remaining lead is `--!native`, which its
+generated module carries and surge's does not.
+
 ## Why deferred
 
 All of these are measurement-driven, and the baseline in Benchmarking
@@ -731,13 +809,13 @@ The per-element results do not have that problem. A call out of a native
 region into a module that is not native costs more, not less, so removing
 one per field is worth at least what it was measured at.
 
-What remains, then, is rolling the hot paths into the generated code, the
-smaller items, and tuple elements. Only the first is the size of the items
-that have landed, and it is no longer an inference that it is worth doing:
-the hand-edited probe above puts one call per element at 2.64× on the row
-where it is read cleanly, on rows the shared reservation could not touch.
-Removing a cross-module call per field is also the one thing left that a
-compiler cannot do for us.
+What remains, then, is the smaller items and tuple elements. Rolling the hot
+paths into the generated code was the last of the large ones, and it landed:
+4.15× on encode and 2.48× on decode across the catalog, which closed the gap
+at the head of this document. Nothing of that size is left here. Removing a
+cross-module call per field was also the one thing a compiler could not do for
+us; the two directives had already been measured at 1.00× and 1.02× against
+exactly that cost.
 Native code generation looked like it might be the exception and is not —
 measured, it is worth 1.02× on the catalog — so it removes no item from that
 list and adds none. It keeps an
@@ -802,41 +880,31 @@ generation compiles.
   attribute. The route is real, and `rbxts-transform-luau` is proof of it;
   the value is not there.
 
-**What it leaves.** The cost that native code generation could not touch is
-the cost that is left: a cross-module call per field, and `buffer.create`
-plus `buffer.copy` per call. The first is what rolling the hot paths into the
-generated code removes, and this measurement makes that the only remaining
-item of size in the document — native is not an alternative to it, because
-native cannot make a cross-module call cheaper. That has since been measured
-directly, above: 2.64× on the one row where the call is all that was removed.
-The second is measured at
-1.00× and stays there. One inversion is worth keeping in view while the
-smaller items sit unfixed: evaluating `s.size()` twice is Luau work, so
-native makes it _less_ worth fixing, by two percent.
+**What it leaves.** The cost native code generation could not touch was the
+cost that was left: a cross-module call per field, and `buffer.create` plus
+`buffer.copy` per call. The first is gone — rolling the hot paths into the
+generated code removed it, at 4.15× on encode and 2.48× on decode, and native
+was never an alternative to that, because native cannot make a cross-module
+call cheaper. The second is measured at 1.00× and stays there. One inversion
+is worth keeping in view while the smaller items sit unfixed: evaluating
+`s.size()` twice is Luau work, so native makes it _less_ worth fixing, by two
+percent.
 
 ## How, briefly
 
-- Roll the hot paths into the generated code, so that `alloc`'s cursor bump
-  is inline at the call site instead of a call into another module. Inline,
-  not a local function: a local function would still be a call unless Luau's
-  inliner took it, and the cursor bump is four instructions that the emitter
-  can simply emit. This is the largest item left, and it is measured at 2.64×
-  on one row's decode by the hand-edited probe above.
-  What remains after every landed change is a call into the
-  package per field, and neither directive touches it. Native code generation
-  does not compile a cross-module call away, and optimization level 2 inlines
-  only a local function, which a value arriving through `TS.import` is not.
-  Removing one such call per element was worth up to 4.70× when a run of
-  fields shared one reservation, and 2.64× when the probe removed the call
-  itself. It is also the largest change: the scratch buffer is module state
-  the package owns, so what moves into the caller's file and what stays has to
-  be worked out before anything is written, and the two sides must not each
-  own a cursor. Three package functions reserve or read through that state and
-  the probe left all three alone: `writePackedCFrame`, which reserves a
-  variable 1, 13, or 25 bytes inside the package; `backpatchU32`, which reads
-  whichever buffer is current; and the blob channel. A generated recursion
-  helper is a fourth case and an easier one -- it sits in the same IIFE, so it
-  can share the state, but only as an upvalue.
+- Reserving bytes inline has landed, and it is the pattern the rest of this
+  list is measured against. What made it the largest item was that a
+  cross-module call is a per-element cost wherever a shape has a field per
+  element, and no directive reaches one: native code generation does not
+  compile a call away, and optimization level 2 inlines only a local function,
+  which a value arriving through `TS.import` is not. What made it the largest
+  change was that the scratch buffer was module state the package owned. It
+  moved into the closure each serializer is generated into, so the package now
+  owns no cursor and the two sides cannot each have one. The three package
+  functions that reserved or read through that state moved with it:
+  `writePackedCFrame` and `readPackedCFrame` take a buffer and an offset and
+  report the bytes they used, and `backpatchU32` is an inline
+  `buffer.writeu32` into whichever buffer is current.
 - Coalesce a tuple's consecutive fixed-size elements, the way an object's
   fields already are. The mechanism is `fixedBytes`, `allocRuns` and
   `withAllocRun`, unchanged; what is missing is a benchmark fixture that
@@ -844,20 +912,25 @@ native makes it _less_ worth fixing, by two percent.
 - A golden check in `test/golden.test.mjs` for each. The read loop's, the
   tagged union's, the `CFrame`'s, the shared reservation's and the blob
   channel's are there already, and so are the file pragmas on both sides.
-- Measure each one, and predict nothing from the compiled output. Eight
-  measurements have been through this document, and three of them moved a
-  number: 1.39×, 1.61×, and up to 4.70×. The rest came back between 1.00× and
-  1.02×, and neither the shape of the code removed nor the size of the saving
-  said in advance which would be which. What did, in hindsight, is whether
-  the cost was per element or per call. Read only the cells whose trials span
-  a few percent, and pick the protocol from the row: a scoped pair where its
-  trials are quiet scoped, a full pair where they are not.
-- Do not recommend `//!native` to a user as a default. It is measured now:
+- Measure each one, and predict nothing from the compiled output. Ten
+  measurements have been through this document, and four of them moved a
+  number: 1.39×, 1.61×, up to 4.70×, and 4.15×/2.48× across the catalog. The
+  rest came back between 1.00× and 1.02×, and neither the shape of the code
+  removed nor the size of the saving said in advance which would be which.
+  What did, in hindsight, is whether the cost was per element or per call:
+  every number above 1.02× came off a per-element cost, and every one below
+  came off a per-call cost. Read only the cells whose trials span a few
+  percent, and pick the protocol from the row: a scoped pair where its trials
+  are quiet scoped, a full pair where they are not.
+- Do not recommend `//!native` to a user as a default. It was measured at
   1.02× across the catalog, and 1.18× on the one row where a single
   `serialize()` call runs a thousand-element loop, in exchange for a whole
-  file compiled natively whether the rest of it should be or not.
-  `docs/usage.md` can say that much when it is written — worth it for a
-  caller whose shape is one large array, and not otherwise. `//!optimize 2`
+  file compiled natively whether the rest of it should be or not. That
+  measurement predates the inline reservation, which took out the per-field
+  crossing the second reading of it blamed, so what the directive is worth on
+  the generated code as it stands is unmeasured. Until it is measured again,
+  `docs/usage.md` should say what was measured and when, rather than offer a
+  recommendation the numbers no longer cover. `//!optimize 2`
   is the other way round: recommend it, because a published place compiles at
   that level and Studio does not, and because it works in a transformed file
   now.

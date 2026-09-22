@@ -147,10 +147,11 @@ the nested object, and the `CFrame` array. It is Luau, not TypeScript,
 because what it measures is what the Luau costs, and it writes surge's bytes
 exactly — 17, 24, and 1204 — so the speed tier compares code and not formats.
 The speed tier has since run, through `run-in-roblox`, and
-[benchmarks/speed.md](../benchmarks/speed.md) records it: surge encodes 2.87×
-slower than that baseline and decodes 1.63× slower on identical bytes, on the
-one of its three rows whose trials are quiet; the other two put the encode gap
-at 2.67× and 2.96× and spread by half their median. Its columns are not all compiled alike,
+[benchmarks/speed.md](../benchmarks/speed.md) records it. It opened with surge
+encoding 2.87× slower than that baseline and decoding 1.63× slower on
+identical bytes, on the one of its three rows whose trials are quiet. Those
+two figures are 1.08× and 1.05× now, and the encode one is inside the baseline
+cell's own spread. Its columns are not all compiled alike,
 which that file states first — fbs and Blink carry `--!native` where
 roblox-ts emits none.
 
@@ -347,7 +348,20 @@ exact bytes to 1.04× behind it. The decode figure is the cleanest, because
 `readAlloc` is nothing but the cursor bump the inline form does, so what it
 measures is one cross-module call per element and nothing else. It reaches the
 rows the shared reservation could not: one field per element leaves nothing to
-share, and the call is then the whole of the cost. That is what step 1 is.
+share, and the call is then the whole of the cost.
+
+The change itself landed next, in `rbxts-transformer-surge` `7f46c81` and
+`surge` `91310ea`, and a full run put it at 4.15× on encode and 2.48× on
+decode across the catalog, against three untouched columns that stayed between
+0.97× and 1.02×. The probe replicated to within a few percent on the three
+cells it had measured. Where it is largest is where a shape has many small
+fields and therefore had the most calls to remove: the tagged union at 7.35×
+on encode, the guarded union at 6.56×, `Blink: Booleans` at 5.56×. surge now
+leads fbs on 15 of 16 encode rows and all 16 decode rows, where it was behind
+on 10 encode rows, and leads Blink on 7 of the 11 decode rows they share,
+where Blink led every one. That was the last large item in
+[generated-code-performance.md](generated-code-performance.md), which is why
+the order below no longer starts with it.
 
 The same work found that `mise run ci` and both benchmark tiers could read
 the previous transformer's output: `tests/tsconfig.json` sets `incremental`
@@ -368,40 +382,39 @@ ends at `rbxts-transformer-surge` `aa59c4a`.
 
 ## Order
 
-The order below is unchanged, and the reason for it has narrowed.
+The order below has changed: its first step is done.
 [generated-code-performance.md](generated-code-performance.md) was first
-because the hand-written baseline had put a number on it; its large items and
-the `//!native` emission fix have since landed, and the six measurements that
-were only valid for interpreted code have been re-measured through that fix
-and stand. What keeps it first is what is left over: one item, which is
-rolling the hot paths into the generated code. That is the only remaining
-lever of the size of the ones that landed, and it is now measured rather
-than inferred — 2.64× on the row where a hand-edited probe removed one
-cross-module call per element and nothing else, on the rows a shared
-reservation could not reach. No directive reaches that call.
+because the hand-written baseline had put a number on it. Every large item in
+it has now landed, the last being the inline reservation, and the gap it was
+written about is 1.08× on encode and 1.05× on decode where it was 2.87× and
+1.63×. What is left there is the smaller items and one coalescing case, none
+of them the size of what landed, so the document moves to No step of its own
+and stops being a step.
 
-The smaller items of that document stay in No step of its own: on the
-evidence they are the kind of per-call and Luau-side cost that measured at
-1.00×, and native code generation moves them by two percent.
+Tier B of [type-coverage-parity.md](type-coverage-parity.md) takes first place
+by default, for the reason it already had: the size table showed that every
+byte Blink and Zap save against surge is a length prefix. Nothing measured
+moved anything else, and the steps below it keep their order.
 
-Tier B of [type-coverage-parity.md](type-coverage-parity.md) keeps second
-place, for the reason it had: the size table showed that every byte Blink and
-Zap save against surge is a length prefix. Nothing measured moved anything
-else.
-
-| Step | Document                                                                                                      | Why here                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
-| ---- | ------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| 1    | [generated-code-performance.md](generated-code-performance.md): rolling the hot paths into the generated code | The one item left of the size of those that landed, and the only one measured to reach the rows the shared reservation could not: a hand-edited probe of three compiled fixtures put it at 2.64× on one row's decode, 2.51× on its encode, and 1.52× on another row's decode, against four flat control columns. A call into the package per field is what the generated code spends its time on, and no directive reaches it: native code generation measured 1.02× on the catalog, and optimization level 2 inlines only a local function, which a value from `TS.import` is not. Six measured changes have already landed here — 1.00×, 1.39×, 1.61×, up to 4.70×, 1.00× and 1.00× — along with the emission fix; a hand-written codec writing surge's exact bytes still encodes 2.87× faster on the one row of three that can be read. |
-| 2    | [type-coverage-parity.md](type-coverage-parity.md) Tier B                                                     | New `DataType.*` surface (length-typed containers, per-component widths, ranges). The harness has now shown what a bound is worth: every byte Blink and Zap save against surge is a length prefix, and nothing else. Split from Tier A, which has landed.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
-| 3    | [deserialize-hardening.md](deserialize-hardening.md)                                                          | Opt-in checks; needed before the networking layer, not before.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
-| 4    | [documentation-gaps.md](documentation-gaps.md): `docs/usage.md`                                               | User documentation written against fixed behavior. The stale-statement sweep in the same document does not wait; see below.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
-| 5    | [ci-and-release.md](ci-and-release.md): version backstop and first tagged release                             | The backstop lands with the release it protects. The CI-only items do not wait; see below.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| Step | Document                                                                          | Why here                                                                                                                                                                                                                                                  |
+| ---- | --------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1    | [type-coverage-parity.md](type-coverage-parity.md) Tier B                         | New `DataType.*` surface (length-typed containers, per-component widths, ranges). The harness has now shown what a bound is worth: every byte Blink and Zap save against surge is a length prefix, and nothing else. Split from Tier A, which has landed. |
+| 2    | [deserialize-hardening.md](deserialize-hardening.md)                              | Opt-in checks; needed before the networking layer, not before.                                                                                                                                                                                            |
+| 3    | [documentation-gaps.md](documentation-gaps.md): `docs/usage.md`                   | User documentation written against fixed behavior. The stale-statement sweep in the same document does not wait; see below.                                                                                                                               |
+| 4    | [ci-and-release.md](ci-and-release.md): version backstop and first tagged release | The backstop lands with the release it protects. The CI-only items do not wait; see below.                                                                                                                                                                |
 
 ## No step of its own
 
 These are small, have no dependency on the order above, and can land at any
 time:
 
+- What is left of
+  [generated-code-performance.md](generated-code-performance.md): coalescing a
+  tuple's consecutive fixed-size elements, which no fixture measures yet, and
+  three smaller items -- `s.size()` evaluated twice, the scratch buffer never
+  shrinking, and a block-object's table sizing. Every large item in that
+  document has landed, and on the evidence these are the per-call and
+  Luau-side kind that measured at 1.00×.
 - [enum-and-opaque-union-members.md](enum-and-opaque-union-members.md).
   Its stage 1 has landed: a union of items from two enums is a diagnostic,
   where two items of the same name used to produce a wrong value with no
