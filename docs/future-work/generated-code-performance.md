@@ -9,19 +9,21 @@ on decode, on the `CFrame` array — the one of the baseline's three rows whose
 trials are quiet enough to read. The other two put the encode gap at 2.67×
 and 2.96× on trials spanning half their median. That is the size of what this
 document is about. It does not say which item below accounts for what.
-Eight things have since been measured on their own. Six are changes that
+Nine things have since been measured on their own. Six are changes that
 landed: the read loop, worth nothing; the tagged-union read's table copy,
 worth 1.39× on the one row that has one; a `CFrame`'s two reservations
 becoming one, worth 1.61× on encode; every run of consecutive fixed-size
 fields sharing one reservation, worth up to 4.70×; the blob side channel no
 longer being emitted where it is unused, worth nothing; and compiling every
 module at optimization level 2, worth nothing and kept for parity with what a
-published place runs. Two are probes that were reverted: `finishWrite`
-without its copy, worth nothing, and the generated code compiled natively,
-worth 1.02× on the catalog and 1.18× on one row. Together they say that
-per-element cost is what matters, that per-call cost is not, and that what is
-left is a call into the package per field rather than anything an optimizer
-reaches. Every other entry here is still what the
+published place runs. Three are probes that were reverted: `finishWrite`
+without its copy, worth nothing; the generated code compiled natively, worth
+1.02× on the catalog and 1.18× on one row; and the hot paths rolled into the
+generated code by hand, worth 2.64× on one row's decode, 2.51× on its encode,
+and 1.52× on another row's decode. Together they say that per-element cost is
+what matters, that per-call cost is not, and that what is left is a call into
+the package per field, which no optimizer reaches and which is the whole of
+the cost on the rows where a reservation cannot be shared. Every other entry here is still what the
 compiled output shows, not what was measured. The local-register ceiling that this
 document used to record has landed; see Risks in
 [transformer.md](../transformer.md).
@@ -608,6 +610,95 @@ outright measured at 1.00×, recorded above. What the collapse shows is how
 little Luau work is left once native code generation has done its part, not
 how much the copy costs an interpreted writer.
 
+**What rolling the hot paths into the generated code is worth, measured on
+hand-edited output.** The one change this document has left for last is the
+call per field into the package. A probe put a number on it before the
+emitter is touched, because `npm run build` runs only Rojo: a hand edit of
+`tests/out` reaches the place without a recompile, so the generated code can
+be rewritten into the shape the emitter would produce and timed as it stands.
+
+Three compiled fixtures were rewritten -- `large-array.luau`, `cframes.luau`,
+and `small-flat-struct.luau`. In each, the serializer's own IIFE took the
+scratch buffer, its capacity, the write cursor, the input buffer and the read
+cursor as locals; every `alloc(n)` became four instructions inline -- take the
+cursor, advance it, compare against the capacity, grow on the branch that is
+not taken -- and every `readAlloc(n)` became two. `beginWrite()` became
+`cursor = 0`, `finishWrite()` a local function, and every `buffer.writeXX`
+took the closure's buffer instead of the one the call returned. Nothing else
+in the place changed.
+
+The controls are the other four columns, and, inside `cframes.luau`, the two
+packed serializers. Those were left calling into the package, because
+`writePackedCFrame` reserves its bytes there -- so they sit in the same module
+as a rewritten serializer and did not change, which is as close a control as
+this catalog has.
+
+The rewrite was checked before it was timed. The size tier re-ran the same
+three fixtures under Lune, and every byte count and every round-trip figure
+matched the checked-in [benchmarks/size.md](../benchmarks/size.md), including
+surge's `2e-07` on the `CFrame` rows, which is the f32 axis-angle limit the
+untouched columns hit as well. The speed tier measures throughput and never
+checks what a codec produced, so that check is what makes its numbers mean
+anything.
+
+Two scoped runs of the same three patterns, read against each other:
+
+| Cell                                   | spread    | change |
+| -------------------------------------- | --------- | ------ |
+| surge, large array, decode             | 1% → 2%   | 2.64×  |
+| surge, large array, encode             | 2% → 3%   | 2.51×  |
+| surge, `CFrame` array, decode          | 3% → 2%   | 1.52×  |
+| surge, `CFrame` array (packed), encode | 2% → 0.9% | 1.00×  |
+| surge, `CFrame` array (packed), decode | 2% → 2%   | 0.99×  |
+
+Every untouched cell that is quiet in both runs moved between 0.98× and
+1.00×, and the two packed serializers in the rewritten file are in that band.
+Two cells cannot be read at all: `small flat struct`, whose trials span 15% to
+206% in both runs, and the `CFrame` array's encode, where fbs -- which was not
+touched -- moved 5.59× between the two runs while Blink and the baseline held
+at 0.99×. One reservation per call is what `small flat struct` has, so the
+per-call control this probe would most want is the cell it does not get.
+
+**The decode figure is the cross-module call and nothing else.** `readAlloc`
+has no growth check and no `buffer.len`: it takes the read cursor, advances
+it, and returns the input buffer beside it. The inline form does the first two
+and drops the third. So 2.64× is what one call per element costs, with nothing
+else removed alongside it. The encode figure is not that clean -- `alloc` also
+calls `growTo`, which calls `buffer.len` on every reservation -- so read 2.51×
+as the call plus those two, and 2.64× as the call.
+
+Against the columns measured beside it in the same two runs:
+
+| Row                    | against               | before | after |
+| ---------------------- | --------------------- | ------ | ----- |
+| large array, decode    | Blink                 | 0.34×  | 0.91× |
+| large array, decode    | fbs                   | 0.98×  | 2.60× |
+| large array, encode    | fbs                   | 0.37×  | 0.98× |
+| large array, encode    | Blink                 | 0.19×  | 0.50× |
+| `CFrame` array, decode | hand-written baseline | 0.62×  | 0.96× |
+| `CFrame` array, decode | Blink                 | 0.78×  | 1.20× |
+
+That is the gap at the head of this document. On the `CFrame` array's decode
+the generated code goes from 1.62× behind a hand-written codec writing its
+exact bytes to 1.04× behind it, and past Blink, whose generated module does
+its cursor arithmetic inline in exactly this way.
+
+It is not the largest single cell in this document — the shared reservation
+reached 4.70× on one. It is the complement of it. That change moved the rows
+with two fixed-size fields in a row to share, and left the large array, the
+large record, the string-heavy row and the `CFrame` array between 0.99× and
+1.01×, because each is one field per element and has nothing to share. This
+one moves exactly those: what is left when a reservation cannot be shared is
+the call itself.
+
+**What the probe does not measure.** A shape with a recursion helper, a blob,
+a `backpatchU32`, or a packed `CFrame` reserves inside the package, and none
+of those is in the three fixtures. The probe also gave each serializer its own
+scratch buffer, which is a design decision the implementation has to make
+rather than inherit: today one module-scoped buffer serves every serializer in
+a place, and a buffer per serializer is a different trade in memory and in what
+happens if two serializes ever overlap. Neither is measured here.
+
 ## Why deferred
 
 All of these are measurement-driven, and the baseline in Benchmarking
@@ -642,9 +733,11 @@ one per field is worth at least what it was measured at.
 
 What remains, then, is rolling the hot paths into the generated code, the
 smaller items, and tuple elements. Only the first is the size of the items
-that have landed, and the native measurement is what makes it the largest
-open item in this document rather than one of three: removing a cross-module
-call per field is the one thing left that a compiler cannot do for us.
+that have landed, and it is no longer an inference that it is worth doing:
+the hand-edited probe above puts one call per element at 2.64× on the row
+where it is read cleanly, on rows the shared reservation could not touch.
+Removing a cross-module call per field is also the one thing left that a
+compiler cannot do for us.
 Native code generation looked like it might be the exception and is not —
 measured, it is worth 1.02× on the catalog — so it removes no item from that
 list and adds none. It keeps an
@@ -714,7 +807,9 @@ the cost that is left: a cross-module call per field, and `buffer.create`
 plus `buffer.copy` per call. The first is what rolling the hot paths into the
 generated code removes, and this measurement makes that the only remaining
 item of size in the document — native is not an alternative to it, because
-native cannot make a cross-module call cheaper. The second is measured at
+native cannot make a cross-module call cheaper. That has since been measured
+directly, above: 2.64× on the one row where the call is all that was removed.
+The second is measured at
 1.00× and stays there. One inversion is worth keeping in view while the
 smaller items sit unfixed: evaluating `s.size()` twice is Luau work, so
 native makes it _less_ worth fixing, by two percent.
@@ -722,17 +817,26 @@ native makes it _less_ worth fixing, by two percent.
 ## How, briefly
 
 - Roll the hot paths into the generated code, so that `alloc`'s cursor bump
-  is a local function in the caller's own file instead of a call into another
-  module. This is the largest item left, and the native measurement is what
-  makes it so: what remains after every landed change is a call into the
+  is inline at the call site instead of a call into another module. Inline,
+  not a local function: a local function would still be a call unless Luau's
+  inliner took it, and the cursor bump is four instructions that the emitter
+  can simply emit. This is the largest item left, and it is measured at 2.64×
+  on one row's decode by the hand-edited probe above.
+  What remains after every landed change is a call into the
   package per field, and neither directive touches it. Native code generation
   does not compile a cross-module call away, and optimization level 2 inlines
   only a local function, which a value arriving through `TS.import` is not.
-  Removing one such call per element was worth up to 4.70×, the largest
-  number in this document. It is also the largest change: the scratch buffer
-  is module state the package owns, so what moves into the caller's file and
-  what stays has to be worked out before anything is written, and the two
-  sides must not each own a cursor.
+  Removing one such call per element was worth up to 4.70× when a run of
+  fields shared one reservation, and 2.64× when the probe removed the call
+  itself. It is also the largest change: the scratch buffer is module state
+  the package owns, so what moves into the caller's file and what stays has to
+  be worked out before anything is written, and the two sides must not each
+  own a cursor. Three package functions reserve or read through that state and
+  the probe left all three alone: `writePackedCFrame`, which reserves a
+  variable 1, 13, or 25 bytes inside the package; `backpatchU32`, which reads
+  whichever buffer is current; and the blob channel. A generated recursion
+  helper is a fourth case and an easier one -- it sits in the same IIFE, so it
+  can share the state, but only as an upvalue.
 - Coalesce a tuple's consecutive fixed-size elements, the way an object's
   fields already are. The mechanism is `fixedBytes`, `allocRuns` and
   `withAllocRun`, unchanged; what is missing is a benchmark fixture that
