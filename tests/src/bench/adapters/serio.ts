@@ -1,3 +1,4 @@
+//!optimize 2
 import type { SerializedData, Serializer } from "@rbxts/serio";
 
 import type { Adapter } from "../adapter";

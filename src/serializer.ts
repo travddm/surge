@@ -1,3 +1,4 @@
+//!optimize 2
 /** The bundled `serialize`/`deserialize` pair, matching fbs's `Serializer<T>` shape exactly. */
 export interface Serializer<T> {
 	serialize: (value: T) => { buffer: buffer; blobs: Array<defined> };

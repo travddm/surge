@@ -1,3 +1,4 @@
+//!optimize 2
 import { createBinarySerializer as createFbsSerializer } from "@rbxts/flamework-binary-serializer";
 import createSerioSerializer from "@rbxts/serio";
 import { createBinarySerializer } from "@rbxts/surge";

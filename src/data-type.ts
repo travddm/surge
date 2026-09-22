@@ -1,3 +1,4 @@
+//!optimize 2
 /**
  * Branded number types the transformer recognizes as an explicit width
  * request, matching fbs's own `DataType.*` branding convention (see Type

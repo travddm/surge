@@ -121,19 +121,43 @@ test("a shape with no blob field pays nothing for the blob side channel", () => 
 });
 
 // Regression check for the file-pragma item in
-// docs/future-work/generated-code-performance.md. This one reads @rbxts/surge's
-// own compiled output, not the tests place's.
-test("surge's four hot modules open with both Luau file pragmas", () => {
+// docs/future-work/generated-code-performance.md. These two read @rbxts/surge's
+// own compiled output and the transformed tests place, not one or the other.
+test("every compiled module of the package opens with its Luau file pragmas", () => {
 	// A hot comment is honoured anywhere ahead of the first line of code, so
-	// what this pins is that both survive a header edit: `--!native` for code
-	// generation, `--!optimize 2` for the level a published place compiles at
-	// and Studio does not.
+	// what this pins is that each one survives a header edit: `--!native` on
+	// the four modules with hot runtime code, and `--!optimize 2` everywhere,
+	// because a published place compiles at that level and Studio does not.
+	const head = (name) =>
+		readFileSync(join(here, "..", "out", name), "utf8")
+			.split(/\r?\n/)
+			.map((line) => line.trimEnd());
 	for (const name of ["alloc", "blobs", "cframe", "pack"]) {
-		const luau = readFileSync(join(here, "..", "out", `${name}.luau`), "utf8");
-		const [first, second] = luau.split("\n").map((line) => line.trimEnd());
-		assert.equal(first, "--!native", `${name}.luau line 1`);
-		assert.equal(second, "--!optimize 2", `${name}.luau line 2`);
+		const lines = head(`${name}.luau`);
+		assert.equal(lines[0], "--!native", `${name}.luau line 1`);
+		assert.equal(lines[1], "--!optimize 2", `${name}.luau line 2`);
 	}
-	// A positive control: the modules with no runtime code carry neither.
+	for (const name of ["data-type.luau", "serializer.luau"]) {
+		const lines = head(name);
+		assert.equal(lines[0], "--!optimize 2", `${name} line 1`);
+		assert.notEqual(lines[1], "--!native", `${name} line 2`);
+	}
+	// `index` is the exception and carries neither: roblox-ts emits a
+	// re-export-only module as `local exports = {}` and assignments, so a
+	// directive would land after code, where Luau ignores it and its linter
+	// warns about it.
 	assert.doesNotMatch(readFileSync(join(here, "..", "out", "init.luau"), "utf8"), /^--!/m);
+});
+
+test("a file directive survives the transformer's injected imports", () => {
+	// The injected `local __surge_*` imports used to be emitted above the
+	// directive, which left it behind `local TS = require(...)` where Luau
+	// ignores it. Every compiled module of the tests place carries
+	// `//!optimize 2` in source, so line 1 is where it has to come out.
+	for (const path of ["tests/basic.spec.luau", "support.luau", "bench/speed.spec.luau"]) {
+		const luau = readCompiledLuau(path);
+		assert.equal(luau.split(/\r?\n/)[0].trimEnd(), "--!optimize 2", `${path} line 1`);
+		// Once, not once at the top and once where it used to land.
+		assert.equal(luau.split("--!optimize 2").length, 2, `${path} carries it once`);
+	}
 });

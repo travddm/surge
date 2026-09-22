@@ -280,8 +280,8 @@ The concrete plan for everything else:
   repo's `test/` instead (they used to sit alongside the transformer's own
   unit tests, before the two-repo split — the fixtures they read,
   `tests/out/`, are only ever produced in this repo; one check reads this
-  package's own `out/` instead, for the two Luau file pragmas its hot
-  modules carry) and run in plain Node
+  package's own `out/` instead, for the Luau file pragmas each of its
+  modules carries) and run in plain Node
   (`node:test`, no extra dependency) — no execution needed, only reading
   the compiled `.luau` text: for a curated set of representative shapes,
   assert the emitted function body contains no shape-based branching (no

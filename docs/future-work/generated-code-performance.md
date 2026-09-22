@@ -273,30 +273,44 @@ straight-line `buffer.writeXX`/`readXX` calls, count-driven loops for
 `array`/`dict`, and recursive helper calls. It measures otherwise, which is
 the subject of the next section. Four mechanical facts come first.
 
-**A `//!native` on a transformed file is inert today, and so is a
-`//!optimize 2`.** A Luau hot comment is honoured anywhere ahead of the first
-line of code, and not only on line 1: the parser keeps its hot-comment header
-flag set until the first non-comment token (`Ast/src/Parser.cpp`). By that
-rule Blink's generated module has `--!strict` on line 1 and `--!native` on
-line 2 with both in effect, and surge's own modules can carry two. The rule is
-read off the parser; what was measured is the other end of it.
-Comments above a directive are harmless. Code above it is not: in a file that
-calls `createBinarySerializer`, the injected `local __surge_*` imports are
-emitted above the directive, which lands around line 12 behind a
-`local TS = require(...)`, where Luau ignores it. Measured on the benchmark
-fixtures, where it had to be hoisted by hand before those modules compiled
-natively at all. That is a defect in the emission, not a property of the
-pragma, and it has to be fixed before either directive can be put to a user.
+**A file directive used to be inert on a transformed file. It is not now.**
+A Luau hot comment is honoured anywhere ahead of the first line of code, and
+not only on line 1: the parser keeps its hot-comment header flag set until the
+first non-comment token (`Ast/src/Parser.cpp`). By that rule Blink's generated
+module has `--!strict` on line 1 and `--!native` on line 2 with both in
+effect. Comments above a directive are harmless. Code above it is not, and the
+injected `local __surge_*` imports were code: a `//!native` or `//!optimize 2`
+in a file that called `createBinarySerializer` landed around line 12, behind a
+`local TS = require(...)`, where Luau ignores it and its linter says so —
+"Comment directive is ignored because it is placed after the first non-comment
+token" (`Analysis/src/Linter.cpp`). Measured on the benchmark fixtures, where
+the directive had to be hoisted by hand before those modules compiled natively
+at all.
 
-**surge's own package carries both.** `alloc`, `blobs`, `cframe`, and
-`pack` are the four modules with hot runtime code, and each opens with
-`//!native` and `//!optimize 2`; `data-type`, `serializer`, and `index` do
-not: `data-type` compiles to nothing, `serializer` to three stubs that throw
-when the transformer is not registered, and `index` to re-exports. That is
-surge's own code, so neither directive has a blast radius. `//!native` is
-worth nothing there on its own, which the next section measures.
-`//!optimize 2` is not there for speed at all, which the section after it
-explains.
+The transformer moves the file's leading comments onto the import it injects
+now (Transformer Design §9 in [transformer.md](../transformer.md)), so a
+directive comes out on line 1, above roblox-ts's own banner.
+`test/golden.test.mjs` pins that on three compiled modules of the tests place,
+and the transformer's own suite pins the order a header keeps. What it
+unblocks is the section below: marking a benchmark fixture native is a line of
+its source now, rather than a hoist by hand in the compiled output, so the
+conditional list is a measurement pass and not a manual one.
+
+**Everything this repository compiles carries `//!optimize 2`.** That is
+surge's package, the tests place, the benchmark fixtures and adapters, and the
+hand-written baseline: 52 compiled modules with a directive ahead of their
+first line of code and none behind it. `alloc`, `blobs`, `cframe`, and `pack`
+are the four modules with hot runtime code and open with `//!native` as well.
+`index` is the one module that carries neither, and cannot: roblox-ts emits a
+re-export-only module as `local exports = {}` and assignments, above whatever
+led the first statement, so a directive there would land after code — dead,
+and a lint warning where the others are silent. Nothing runs there anyway.
+`test/golden.test.mjs` pins all of it.
+
+This is surge's own code, so neither directive has a blast radius.
+`//!native` is worth nothing on the package on its own, which the next section
+measures. `//!optimize 2` is not there for speed at all, which the section
+after it explains.
 
 **Neither `@native` nor typed Luau is reachable through the AST.** Luau's
 narrower per-function `@native` attribute has no `ts.factory` representation,
@@ -337,8 +351,9 @@ unrelated code that file happens to contain — a blast radius surge cannot
 reason about or promise is safe. `--!optimize 2` is the weaker case of the
 two, and worth separating if this is ever reopened: it does not change what
 the file means, only how well it is compiled and how readable a traceback
-through it is, and it is the level a published place is reported to use
-anyway. What it is not is surge's to decide for a file surge does not own.
+through it is, and it is the level that file will be compiled at in a
+published place regardless. What it is not is surge's to decide for a file
+surge does not own.
 
 **What the pragmas are worth, measured.** The speed tier's first run made
 this concrete, and not in surge's favour. fbs carries `--!native` and
@@ -368,16 +383,18 @@ and every generated loop is bounded by a count read out of the buffer at run
 time.
 
 **That null result is a reason to emit `--!optimize 2`, not a reason to leave
-it out**, and the reason is not speed. It cannot say whether the process
-compiled at level 1 or already at level 2 — the same two runtime-built
-modules put `--!native` at 11.68×, so their hot comments were certainly read,
-but this code measures at 1.00× under either level. What the directive does
-is pin the level instead of inheriting the host's default. Roblox is reported
-to compile a published place at level 2 and Studio not to, which is why fbs's
-two codec modules and Blink's generated module carry it; without it, what is
-profiled in Studio is not necessarily what runs live. surge's four hot
-modules carry it for that reason, at a measured cost of nothing, and the
-generated code should carry it too once the emission fix lets it.
+it out**, and the reason is not speed. A published place compiles at level 2
+and Studio does not, so the directive is what makes a Studio profile a profile
+of what runs live. It is why fbs's two codec modules and Blink's generated
+module carry it, and it is now on everything this repository compiles, at a
+measured cost of nothing.
+
+One thing follows for every number in this document and in
+[benchmarks/speed.md](../benchmarks/speed.md) taken before that: surge, serio
+and the baseline were compiled at level 1 and fbs, Blink and Zap at level 2,
+so the columns differed in optimization level as well as in native code
+generation. What that was worth is 1.00× on the two loops the probe measured
+and unmeasured on the catalog, which is the first thing the next run says.
 
 **What has to be native is where the work is.** surge's generated code lives
 in the consumer's file and calls into surge's package per field, so the two
@@ -515,11 +532,15 @@ The per-element results do not have that problem. A call out of a native
 region into a module that is not native costs more, not less, so removing
 one per field is worth at least what it was measured at.
 
-What remains, then, is the smaller items, the emission fix, tuple elements,
-and — after the fix, and only if the generated code compiles natively — the
+What remains, then, is the re-measurement the emission fix unblocked, the
+smaller items, tuple elements, what it would take for optimization level 2 to
+reach the generated code, and — only if that code compiles natively — the
 type annotations and `@native` that the section below moves from unreachable
-to unmeasured. None of them is a fifth item of the size of the fourth. Native
-code generation looked like the exception and is not either: measured, it
+to unmeasured. Of those, only the first of the two level-2 routes is the size
+of the items that have landed, and it is the largest open item in this
+document: rolling the hot paths into the generated code removes the
+cross-module call per field, which is the cost measured as worth the most.
+Native code generation looked like the exception and is not: measured, it
 reaches one row of the emitted code and leaves the rest, so it removes no
 item from that list. It keeps an
 open question of its own if it is ever made automatic, which needs a way to
@@ -530,15 +551,15 @@ such check exists.
 ## What native would change
 
 Every measurement in this document was taken on interpreted code, because
-that is what roblox-ts emits and what a `//!native` cannot reach today. Some
-of the conclusions survive that and some do not, and the difference is
-mechanical: `--!native` makes Luau work 2.25× to 11.68× cheaper and leaves a
-C call, a cross-module call, and an allocation exactly where they were. A
-result that says "X is invisible against the total" is a result about that
-ratio, not about X.
+that is what roblox-ts emits and, until the emission fix landed, what a
+`//!native` could not reach. Some of the conclusions survive that and some do
+not, and the difference is mechanical: `--!native` makes Luau work 2.25× to
+11.68× cheaper and leaves a C call, a cross-module call, and an allocation
+exactly where they were. A result that says "X is invisible against the
+total" is a result about that ratio, not about X.
 
-Three groups, and the emission fix below is what makes the first of them
-answerable.
+Three groups. The first is now a measurement pass rather than a set of open
+questions, because a fixture can be marked native in its own source.
 
 **Conditional — re-measure once generated code compiles natively.** Each of
 these rests on a measured 1.00× against an interpreted total.
@@ -610,14 +631,9 @@ native, not more.
 
 ## How, briefly
 
-- Emit file directives ahead of the injected `__surge_*` imports, first,
-  and not only because a `//!native` on a file that calls
-  `createBinarySerializer` is silently inert until it is. It is also what
-  makes the section above answerable: the benchmark fixtures had to have
-  the directive hoisted by hand before they compiled natively at all, which
-  is why no task repeats that run today. With the emission fixed, marking a
-  fixture native is a line of source, and the conditional list becomes a
-  measurement pass rather than a manual one.
+- Re-measure the conditional list in What native would change, now that the
+  emission fix has landed and a fixture can be marked native in its own
+  source. That is the pass the list was waiting for.
 - Coalesce a tuple's consecutive fixed-size elements, the way an object's
   fields already are. The mechanism is `fixedBytes`, `allocRuns` and
   `withAllocRun`, unchanged; what is missing is a benchmark fixture that
@@ -634,15 +650,13 @@ native, not more.
   Read only the cells whose trials span a few percent, and pick the protocol
   from the row: a scoped pair where its trials are quiet scoped, a full pair
   where they are not.
-- Do not document `//!native` as a manual opt-in until the emission fix has
-  landed and the conditional list has been re-measured through it. On the
-  current measurement the directive reaches one row of the emitted code, so
-  the advice would cost a user the blast radius and return almost nothing;
-  what it is worth afterwards is the open question. `//!optimize 2` is the
-  other way round — recommend it, because it pins the level a published place
-  compiles at and costs nothing measurable — but not before the same fix,
-  since a user's `//!optimize 2` lands behind the injected imports and is
-  inert for exactly the same reason.
+- Do not document `//!native` as a manual opt-in until the conditional list
+  has been re-measured. On the current measurement the directive reaches one
+  row of the emitted code, so the advice would cost a user the blast radius
+  and return almost nothing; what it is worth afterwards is the open
+  question. `//!optimize 2` is the other way round and is not gated on
+  anything: recommend it, because a published place compiles at that level
+  and Studio does not, and because it works in a transformed file now.
 - Investigate the post-emit route for type annotations and `@native` after
   that, and only if the generated code compiles natively: both are worth
   nothing without it. The first question is not how, since
@@ -652,6 +666,28 @@ native, not more.
   `ts.Diagnostic`. If it is, annotate what the measurement says pays — the
   values that arrive from the package through `TS.import` — and measure that
   before anything wider.
+- Investigate what it would take for level 2 to reach the generated code at
+  all. It adds two optimizations over level 1, and neither has anything to
+  work with here. Only a local function can be inlined, and every per-field
+  call goes into the package through `TS.import`, which is not a known
+  function at compile time. Only a loop whose bounds are known at compile
+  time can be unrolled, and every generated loop is bounded by a count read
+  out of the buffer; the one constant-bound loop in the package builds
+  `cframe`'s axis-aligned lookup table once at require time. Two routes,
+  answering different halves:
+    - **Roll the hot paths into the generated code**, so that `alloc`'s cursor
+      bump is a local function in the caller's own file instead of a call into
+      another module. That is what would make it inlinable, and it removes the
+      cross-module call itself — which is the cost this document has measured
+      as worth the most, at up to 4.70× for one `alloc` call per element. It is
+      also the larger change by far: the scratch buffer is module state the
+      package owns, and two modules cannot each own it, so what moves and what
+      stays has to be worked out before anything else.
+    - **Give the imported values types.** This does not help the inliner — a
+      value from another module is not a known function whatever its type —
+      but it is what the type-annotation measurement above is about, at 1.09×
+      on top of `--!native`. Keep the two apart: one is for level 2's inliner
+      and the other for native code generation.
 - If pursued as an automatic default: design a "this file is safe to mark
   file-wide native" check (for example, restrict it to a mode where the
   whole file is one `createBinarySerializer`-style call and its export,

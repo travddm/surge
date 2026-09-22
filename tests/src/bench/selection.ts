@@ -1,3 +1,4 @@
+//!optimize 2
 import type { Fixture } from "./adapter";
 
 /**

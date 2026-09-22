@@ -1,3 +1,4 @@
+//!optimize 2
 import { Fact } from "@rbxts/runit";
 
 import type { Entry, Fixture } from "./adapter";

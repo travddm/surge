@@ -1,3 +1,4 @@
+//!optimize 2
 import { TestRunner } from "@rbxts/runit";
 
 import { scopeTo } from "./bench/selection";

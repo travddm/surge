@@ -1,3 +1,4 @@
+//!optimize 2
 import type { Adapter } from "../adapter";
 import loadZapServer from "../zap/deferred";
 import type * as ZapServer from "../zap/server";

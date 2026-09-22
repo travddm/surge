@@ -1,3 +1,4 @@
+//!optimize 2
 import type { Adapter } from "../adapter";
 import type { BaselineCodec } from "../baseline/codecs";
 

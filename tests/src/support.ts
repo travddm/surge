@@ -1,3 +1,4 @@
+//!optimize 2
 import { createBinarySerializer } from "@rbxts/surge";
 
 // Lives next to `bench/`, not in `src/tests/`, so that directory holds suites only.

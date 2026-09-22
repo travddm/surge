@@ -1,3 +1,4 @@
+//!optimize 2
 import { Assert, Fact } from "@rbxts/runit";
 
 import { difference } from "../support";

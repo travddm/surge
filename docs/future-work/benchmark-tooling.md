@@ -287,27 +287,19 @@ writes:
   call and a string write, it was 2.25 times faster. `--!optimize 2` was
   worth nothing either way, for a mechanical reason recorded in
   [generated-code-performance.md](generated-code-performance.md), which
-  carries this whole thread. surge's package has since taken `//!native` on
-  its four hot modules, which measured as nothing on its own, and
-  `//!optimize 2` alongside it, which is a parity measure and not a speed
-  one.
-- Two things follow for this harness, and neither is settled here. The
-  checked-in table predates `//!optimize 2` on surge's package: the directive
-  measured at 1.00×, so the numbers stand, but the preamble that
-  [benchmarks/speed.md](../benchmarks/speed.md) carries describes the run it
-  came from and will not mention the directive until the next one. And what
-  optimization level this harness runs at is not established. Roblox is
-  reported to compile a published place at level 2 and Studio not to, so the
-  columns may differ in level as well as in native code generation, and every
-  unpinned column may be a level below what a live server would run. Level 2
-  is observable at run time — it is the level that inlines a local function —
-  so the speed tier could report it in one probe rather than leave it open.
-  Whether the fixture modules and the hand-written baseline should carry
-  `--!optimize 2` too, so that every column is compiled at the level a live
-  server uses, is a decision for that run.
-- serio and the baseline are the two columns compiled the way surge's
-  generated code is, which is with no directive at all; surge's per-field
-  calls land in a package that carries both.
+  carries this whole thread.
+- Everything this repository compiles has since taken `//!optimize 2`: the
+  package, the fixtures, the adapters, and the hand-written baseline. Studio
+  compiles at level 1 and a published place at level 2, so that is what makes
+  a run here a run of what ships. The checked-in table predates it, and is
+  therefore a level-1 measurement of surge, serio and the baseline against a
+  level-2 fbs, Blink and Zap. What that difference is worth is 1.00× on the
+  two loops the probe measured and unmeasured on the catalog, which is the
+  first thing the next run says. serio is the only column that still carries
+  no directive at all, since patching a dependency's modules is not worth the
+  drift.
+- The baseline is the column compiled the way surge's generated code is:
+  `--!optimize 2` and no `--!native`.
   surge is ahead of serio on all 32 of their measurements: by 1.29× to
   16.00× on encode, and by 1.03× to 6.58× on decode.
 - The baseline is the result this tier was built for. It writes surge's exact

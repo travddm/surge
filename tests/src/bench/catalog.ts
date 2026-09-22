@@ -1,3 +1,4 @@
+//!optimize 2
 import type { Fixture } from "./adapter";
 import { blinkBooleans, blinkEntities } from "./fixtures/blink-benches";
 import { cframeArray, cframeArrayPackedAligned, cframeArrayPackedArbitrary } from "./fixtures/cframes";

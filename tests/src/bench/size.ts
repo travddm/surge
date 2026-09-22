@@ -1,3 +1,4 @@
+//!optimize 2
 import type { Library } from "./adapter";
 import { LIBRARIES } from "./adapter";
 import { CATALOG } from "./catalog";

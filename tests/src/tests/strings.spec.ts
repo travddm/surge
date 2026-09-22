@@ -1,3 +1,4 @@
+//!optimize 2
 import { Assert, Fact, InlineData, Theory } from "@rbxts/runit";
 import { createBinarySerializer } from "@rbxts/surge";
 

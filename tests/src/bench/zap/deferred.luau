@@ -1,3 +1,4 @@
+--!optimize 2
 -- Loads the generated Zap server module next to this file, on first call rather than at require.
 --
 -- That module errors at require time when RunService:IsClient() is true, and Studio's edit mode --

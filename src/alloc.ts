@@ -3,10 +3,10 @@
 // Two Luau file pragmas. Both are honoured anywhere ahead of the first line of code, not only on
 // line 1. Native code generation buys nothing by itself: these functions are a cursor bump, so
 // almost no work sits inside the native region, and the code that does the writing is generated
-// into the caller's file. `optimize 2` pins the optimization level instead of inheriting the
-// host's default, which is 1 in Luau and reported to be 2 in a published place, so a profile
-// taken in Studio matches one taken live; it measured at 1.00x here either way. Kept because this
-// is surge's own code and neither costs anything to carry. See Native code generation in
+// into the caller's file. `optimize 2` is the level a published place compiles at, where Studio
+// compiles at 1, so it is what makes a profile taken in Studio a profile of what runs live; it
+// measured at 1.00x here either way, which is what makes it free rather than what rules it out.
+// Every module this repository compiles carries it. See Native code generation in
 // docs/future-work/generated-code-performance.md.
 // The single module-scoped scratch buffer every generated `write` function
 // shares (Transformer Design §4 in transformer.md). Growing it here, once,

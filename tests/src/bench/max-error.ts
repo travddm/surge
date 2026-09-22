@@ -1,3 +1,4 @@
+//!optimize 2
 /**
  * How far a round trip moved a value, in the units of its own components.
  *

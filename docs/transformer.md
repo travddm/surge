@@ -322,6 +322,14 @@ project's own small IR is written in TypeScript.
    call site, can neither collide with the import nor shadow it. Named
    imports, not a namespace import: roblox-ts compiles each one to a local
    (`local __surge_alloc = _surge.alloc`), so a call costs no table index.
+   The file's leading comments move onto that import, because it takes the
+   position they were attached to. Luau honours a `--!` hot comment only
+   ahead of the first line of code, and roblox-ts hoists one above its own
+   banner only while it leads the first statement it emits
+   (`transformSourceFile.js`), so without the move a user's `//!native` or
+   `//!optimize 2` was emitted behind `local TS = require(...)`, where Luau
+   ignores it and its linter warns that it does. Every leading comment
+   moves, not only the directives, so a file header keeps its order.
 
 ## Type coverage
 

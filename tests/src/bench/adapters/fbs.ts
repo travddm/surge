@@ -1,3 +1,4 @@
+//!optimize 2
 import type { Serializer } from "@rbxts/flamework-binary-serializer";
 
 import type { Adapter } from "../adapter";
