@@ -30,5 +30,5 @@ fixtures.
 | CFrame array                        | 1204  | 0    | inexact    | 50 arbitrary rotations, unpacked: position plus axis-angle                   |
 | CFrame array (packed, axis-aligned) | 654   | 0    | exact      | 50 axis-aligned rotations in `Packed<T>`: header byte plus position          |
 | CFrame array (packed, arbitrary)    | 1254  | 0    | inexact    | 50 arbitrary rotations in `Packed<T>`: header byte, position, and axis-angle |
-| Blink: Booleans                     | 1004  | 0    | exact      | 1000 booleans in one array, a byte each (Blink packs them into bits)         |
+| Blink: Booleans                     | 1004  | 0    | exact      | 1000 booleans in one array, a byte each, as Blink also writes them           |
 | Blink: Entities                     | 604   | 0    | exact      | 100 structs of six u8 fields                                                 |

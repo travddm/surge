@@ -1,10 +1,11 @@
 [tools]
 node = "24.18.0"
 "github:rojo-rbx/rojo" = "7.7.0-rc.1"
-# Runs the round-trip suite headlessly (see testing.md) via a fake-Instance shim in
-# tests/scripts/lune-test-runner.luau -- Roblox Studio is reserved for benchmarks only.
+# Runs the round-trip suite and the benchmark size tier headlessly (see testing.md) via the
+# fake-Instance shim in tests/scripts/lune-roblox-shim.luau -- Roblox Studio is reserved for the
+# speed tier, whose timings only the real engine can give.
 "github:lune-org/lune" = "0.10.5"
-# Drives a real Roblox Studio process to run the benchmark suite (see testing.md), via
+# Drives a real Roblox Studio process to run the benchmark speed suite (see testing.md), via
 # tests/scripts/run-in-roblox-benchmarks.luau -- confirmed to run as its own Script instance
 # without simulating Play, so it never triggers MainServer/MainBenchmarks itself.
 "github:rojo-rbx/run-in-roblox" = "0.3.0"

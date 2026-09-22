@@ -70,8 +70,8 @@ npm run tests:test`), not just the transformer repo's own unit tests.
 with a real Lune `Vector2int16` (`Vector3int16` until that type got its
 own encoding; the Lune runner didn't expose either type
 as a global before this doc; added alongside `CFrame`/`Vector3`/`Color3` in
-`lune-test-runner.luau`, following its own "cast because Lune 0.10.5's type
-definitions omit these constructors" pattern) round-tripping through the
+the Lune runner's fake-Instance shim, following its own "cast because Lune
+0.10.5's type definitions omit these constructors" pattern) round-tripping through the
 blob side channel with an asserted zero-byte buffer. `roblox.spec.ts`
 passes a Lune data-model `Part` through the blob channel as an `Instance`,
 an optional `Part`, and an `unknown`.

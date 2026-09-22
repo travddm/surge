@@ -28,10 +28,18 @@
 			"problemMatcher": []
 		},
 		{
-			"label": "surge: tests:benchmark",
-			"detail": "Run the benchmark suite in a real Roblox Studio process via run-in-roblox (mise run tests:benchmark)",
+			"label": "surge: bench:size",
+			"detail": "Measure the bytes each fixture costs under Lune and rewrite docs/benchmarks/size.md (mise run bench:size)",
 			"type": "shell",
-			"command": "mise run tests:benchmark",
+			"command": "mise run bench:size",
+			"group": "test",
+			"problemMatcher": []
+		},
+		{
+			"label": "surge: bench:speed",
+			"detail": "Run the benchmark speed suite in a real Roblox Studio process via run-in-roblox (mise run bench:speed)",
+			"type": "shell",
+			"command": "mise run bench:speed",
 			"group": "test",
 			"problemMatcher": []
 		},

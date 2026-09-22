@@ -54,7 +54,7 @@ for (const _ of $range(1, ENTITY_COUNT)) {
 
 export const blinkBooleans = defineFixture<Booleans>(
 	"Blink: Booleans",
-	`${BOOLEAN_COUNT} booleans in one array, a byte each (Blink packs them into bits)`,
+	`${BOOLEAN_COUNT} booleans in one array, a byte each, as Blink also writes them`,
 	{ values },
 	surgeAdapter(booleansSerializer),
 );

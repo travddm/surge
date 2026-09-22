@@ -110,10 +110,12 @@ Roblox Instance surface for `TS.import`/`require(Instance)` to resolve
 against real files on disk had already solved exactly this problem in
 another project, and adapting that same approach here — confirmed by actually
 running the real round-trip suite headlessly under Lune, not just by
-reasoning about whether it should work — is what `tests/scripts/lune-test-runner.luau`
-now does. **Roblox Studio no longer runs the round-trip suite at all** —
-only the benchmark suite, which stays on Studio (or `run-in-roblox`) for a
-different reason: see "No automated runtime CI for benchmarks" below.
+reasoning about whether it should work — is what
+`tests/scripts/lune-roblox-shim.luau` now does, for
+`lune-test-runner.luau` and `lune-size-runner.luau` alike. **Roblox Studio
+no longer runs the round-trip suite at all** — only the benchmark speed
+tier, which stays on Studio (or `run-in-roblox`) for a different reason:
+see "No automated runtime CI for benchmarks" below.
 
 ### Round-trip tests run under Lune
 

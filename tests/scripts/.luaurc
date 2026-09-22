@@ -1,6 +1,6 @@
-// lune-test-runner.luau is a Lune script, but luau-lsp analyses this workspace as a Roblox
-// project against a Rojo sourcemap (see .vscode/settings.json), so without this config it
-// reports errors in a file that runs correctly.
+// The files here are Lune scripts, but luau-lsp analyses this workspace as a Roblox project
+// against a Rojo sourcemap (see .vscode/settings.json), so without this config it reports errors
+// in files that run correctly.
 {
 	// Resolves `require("@lune/fs")` and friends against the type definitions that `lune setup`
 	// writes. Devs need to have run it once; mise only installs the binary. The version must
@@ -10,8 +10,8 @@
 		"lune": "~/.lune/.typedefs/0.10.5/"
 	},
 
-	// The runner swaps `script` around each require so the compiled output's `TS.import` calls
-	// resolve against the fake Instance tree.
+	// lune-roblox-shim.luau swaps `script` around each require so the compiled output's
+	// `TS.import` calls resolve against the fake Instance tree.
 	"globals": ["script"],
 
 	// Overwriting `require`, `script`, and `game` is the whole mechanism by which compiled

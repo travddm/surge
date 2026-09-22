@@ -28,6 +28,9 @@ own doc for the detail that belongs to it:
   and style conventions (each repo keeps its own copy — see below).
 - [testing.md](testing.md) — testing and verification strategy for the
   whole stack.
+- [benchmarks/](benchmarks/) — recorded results:
+  [size.md](benchmarks/size.md), bytes per value, written by
+  `mise run bench:size`.
 - [future-work/](future-work/) — deferred capabilities with no design yet
   (the `surge-net` networking layer, schema evolution/versioning, and a
   headless CI runner), plus the findings of the September 2026 adversarial
@@ -73,9 +76,10 @@ surge/                 = @rbxts/surge itself
 │                       `file:..` and on rbxts-transformer-surge via
 │                       `file:../../rbxts-transformer-surge` for local
 │                       development (see testing.md)
-│   └── scripts/         Lune test runner + shim (round-trip suite) and the
-│                        run-in-roblox script + wrapper (benchmark suite;
-│                        see testing.md)
+│   └── scripts/         the shared Lune fake-Instance shim with its two
+│                        runners (round-trip suite, benchmark size tier) and
+│                        the run-in-roblox script + wrapper (benchmark speed
+│                        tier; see testing.md)
 ├── docs/               this design, in full — the transformer repo only
 │                       keeps a README pointing back here
 ├── package.json        the shipped package manifest itself
@@ -265,8 +269,10 @@ only, not `optional`/`cframe`; and the structurally-ambiguous guarded-union
 case is a compile-time error, not guard codegen, exactly as step 8 always
 scoped it to be. Step 9 (the in-Studio benchmark run) is not done — it
 requires Roblox Studio, which this design has never assumed access to (see
-testing.md); the benchmark suite itself is written, not executed, so no
-performance numbers are claimed anywhere in these docs.
+testing.md); the speed suite is written, not executed, so no timing is
+claimed anywhere in these docs. The size tier does run, under Lune, and
+[benchmarks/size.md](benchmarks/size.md) records surge's bytes per value;
+it carries no comparison, because no other library has an adapter yet.
 
 0. This repo's `package.json` (the `@rbxts/surge` manifest itself), the
    `mise`-pinned toolchain (`node`, `rojo`), the `tests/` Rojo place and

@@ -326,6 +326,7 @@ Instance = {
 game = gameRoot
 script = testsFolder
 
--- `requireInstance(tests)` gives a runner the module src/index.ts compiles to, whose entry
--- points are `main` (the round-trip suite) and `runSizeBenchmarks` (the Tier 1 size run).
+-- `requireInstance(tests)` gives a runner the module src/index.ts compiles to, whose entry point
+-- for a headless run is `main` (the round-trip suite). The size runner does not go through it: it
+-- requires `tests.bench.size` directly, so a broken fixture cannot fail the round-trip suite.
 return { tests = testsFolder, requireInstance = requireInstance }
