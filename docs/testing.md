@@ -499,6 +499,41 @@ miss: `tests/node_modules/@rbxts/surge` is a packed copy, not a symlink (see
 benchmark run until `tests/` is installed again. Without it a run measures
 the previous build of the package and says nothing about it.
 
+**Either tier can be scoped to some fixtures.** `mise run bench:size:only
+large-array` and `mise run bench:speed:only cframe` measure only the rows
+their patterns select and print the table instead of rewriting the results
+file. That is how one change is read without a full run: seconds for the size
+tier, and a couple of minutes rather than seventeen for the speed tier. A
+pattern is one word, because a mise task argument does not reliably reach the
+task with its quoting intact — on Windows a quoted `large array` arrives as
+two arguments. The match drops case and every character that is not a letter
+or a digit from both sides, so `large-array` selects exactly the `large
+array` row and `cframe` selects all three `CFrame` rows. A pattern that
+matches nothing stops the run and lists the catalog — the size tier is the
+cheap place to confirm a pattern selects what you meant, since the speed tier
+only finds out after the place is built and Studio is up.
+
+A scoped **size** table can be read against
+[benchmarks/size.md](benchmarks/size.md) directly, because a byte count is
+the same on every run. A scoped **speed** table cannot:
+[benchmarks/speed.md](benchmarks/speed.md) holds that a column is read
+against the other columns of the same run and never against a number from
+another file, and a scoped run is a run of its own. Read one against another
+scoped run of the same patterns.
+
+A scoped run never writes either file. `size.md` is a byte-regression gate,
+and both files open with prose describing the whole catalog, so a file
+holding a few of its rows would read as a result about all of them. That is
+also why the flag is `--only` rather than "there are arguments": a
+`bench:*:only` task with no pattern stops instead of quietly doing a full run
+under a name that says otherwise. `run-in-roblox` passes no arguments into
+the Studio process, so a scoped speed run reaches the suite through the
+script it injects — the recorder copies
+`tests/scripts/run-in-roblox-benchmarks.luau` into `dist/` with the patterns
+substituted into the one line that file reserves for them. Both tiers select
+by one rule, in `tests/src/bench/selection.ts`, so a pattern picks the same
+rows in either.
+
 **Both tiers write their own results file.** The size tier does it
 directly, exactly as Lync's committed baseline does and for the same
 reason (a `lune run` script has ordinary filesystem access). A speed

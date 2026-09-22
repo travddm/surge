@@ -1,6 +1,7 @@
 import type { Library } from "./adapter";
 import { LIBRARIES } from "./adapter";
 import { CATALOG } from "./catalog";
+import { matching } from "./selection";
 
 /** One library's cell of one row of `docs/benchmarks/size.md`. */
 export interface SizeCell {
@@ -39,13 +40,16 @@ export interface SizeResult {
  * real Roblox process. `scripts/lune-size-runner.luau` calls this and writes
  * the table; nothing here prints a number it did not measure.
  *
+ * `patterns` narrows the catalog to the rows a scoped run asked for (see
+ * selection.ts); empty measures all of them.
+ *
  * Not a `.spec` module: it returns rows instead of asserting, so @rbxts/runit
  * never picks it up (its discovery takes ModuleScripts whose name ends in
  * `.spec`).
  */
-export function collectSizeRows(): SizeResult {
+export function collectSizeRows(patterns: ReadonlyArray<string>): SizeResult {
 	const rows = new Array<SizeRow>();
-	for (const fixture of CATALOG) {
+	for (const fixture of matching(CATALOG, patterns)) {
 		const cells = new Array<SizeCell>();
 		for (const library of LIBRARIES) {
 			const entry = fixture.entries.find((candidate) => candidate.library === library);

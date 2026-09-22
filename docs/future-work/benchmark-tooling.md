@@ -342,7 +342,10 @@ writes:
   the `BENCH_ROW:` lines the suite prints, and records with them the date,
   the machine, the engine version the process reports, and the commit or
   version of everything measured. A Roblox process has no filesystem, so
-  printed output is the only channel a timing has.
+  printed output is the only channel a timing has. Either tier also runs
+  scoped to particular fixtures, which prints its table rather than writing
+  either file; see "Either tier can be scoped to some fixtures" in
+  [testing.md](../testing.md).
 
 One of those is not implemented, deliberately: generated Luau size. Each
 fixture module holds its shape, its sample value, and now three factory

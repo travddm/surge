@@ -3,6 +3,7 @@ import { Fact } from "@rbxts/runit";
 import type { Entry, Fixture } from "./adapter";
 import { SIZE_ONLY } from "./adapter";
 import { CATALOG } from "./catalog";
+import { matching, scopedPatterns } from "./selection";
 
 /**
  * Tier 2 of docs/future-work/benchmark-tooling.md: encode and decode values
@@ -19,6 +20,11 @@ import { CATALOG } from "./catalog";
  * `BENCH_ROW: fixture | library | half | median | lowest | highest`, in
  * values per second; src/index.ts prints the closing `BENCH_RESULT:`, and
  * the recorder writes nothing without it.
+ *
+ * The catalog is narrowed per fact rather than once at module scope because a
+ * pattern that matches nothing throws: raised inside a fact it is one failed
+ * test with its message, and raised at module scope it would break runit's
+ * discovery instead.
  *
  * Nothing here may yield. runit starts every `@Fact` at once and awaits them
  * together with `Promise.all`, and `runBenchmarks` does not await the promise
@@ -95,7 +101,7 @@ function report(half: string, fixture: Fixture, entry: Entry, result: Result): v
 class SpeedBench {
 	@Fact
 	public encodeThroughput(): void {
-		for (const fixture of CATALOG) {
+		for (const fixture of matching(CATALOG, scopedPatterns())) {
 			for (const entry of fixture.entries) {
 				if (SIZE_ONLY.includes(entry.library)) {
 					continue;
@@ -107,7 +113,7 @@ class SpeedBench {
 
 	@Fact
 	public decodeThroughput(): void {
-		for (const fixture of CATALOG) {
+		for (const fixture of matching(CATALOG, scopedPatterns())) {
 			for (const entry of fixture.entries) {
 				if (SIZE_ONLY.includes(entry.library)) {
 					continue;

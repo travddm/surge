@@ -64,9 +64,17 @@ run = "npm run bench:definitions"
 description = "Reinstall and recompile tests/, measure the bytes each fixture costs under Lune, and rewrite docs/benchmarks/size.md (Tier 1, see future-work/benchmark-tooling.md); not part of ci -- a byte change is read, not gated pass/fail"
 run = "npm run bench:size"
 
+[tasks."bench:size:only"]
+description = "Reinstall and recompile tests/, then measure only the fixtures the given patterns select and print the table instead of rewriting docs/benchmarks/size.md -- for reading one change without a full run; a pattern is one word, matched against the fixture name with case and everything that is not a letter or a digit ignored, so `large-array` picks one row and `cframe` picks three"
+run = "npm run bench:size:only -- {{arg(name='fixture', var=true)}}"
+
 [tasks."bench:speed"]
 description = "Reinstall and recompile tests/, run the speed suite in a real Roblox Studio process via run-in-roblox, and rewrite docs/benchmarks/speed.md (Tier 2, see testing.md); not part of ci -- a timing is read, not gated pass/fail, and it needs Roblox Studio installed"
 run = "npm run bench:speed"
+
+[tasks."bench:speed:only"]
+description = "Reinstall and recompile tests/, then time only the fixtures the given patterns select in a real Roblox Studio process and print the tables instead of rewriting docs/benchmarks/speed.md -- for reading one change without a full run; a pattern is one word, matched against the fixture name with case and everything that is not a letter or a digit ignored, so `large-array` picks one row and `cframe` picks three"
+run = "npm run bench:speed:only -- {{arg(name='fixture', var=true)}}"
 
 [tasks."dev:tests"]
 description = "Compile once, then watch-compile and serve the tests place"

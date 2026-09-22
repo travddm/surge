@@ -1,5 +1,7 @@
 import { TestRunner } from "@rbxts/runit";
 
+import { scopeTo } from "./bench/selection";
+
 /** Sentinel consumed by scripts/check-test-output.mjs to derive an exit code (see testing.md). */
 const RESULT_PREFIX = "RUNIT_RESULT:";
 
@@ -69,8 +71,18 @@ export function main(): void {
  * The engine version goes out first because the recorder records the whole
  * environment a timing was taken in, and this is the part of it that only
  * the process itself knows.
+ *
+ * `fixtures` narrows the run to the rows those patterns select (see
+ * bench/selection.ts), and is how a scoped run reaches the suite: a Roblox
+ * process takes no arguments, so `scripts/run-in-roblox-benchmarks.luau`
+ * carries the list instead. Omitted, the whole catalog runs, which is what
+ * the `MainBenchmarks` Script in default.project.json does. Importing
+ * `scopeTo` costs this file nothing it must not depend on -- that module
+ * holds the patterns rather than the fixtures, so the catalog is still
+ * reached only from under `bench/`.
  */
-export function runBenchmarks(): void {
+export function runBenchmarks(fixtures?: ReadonlyArray<string>): void {
+	scopeTo(fixtures ?? []);
 	print(`${BENCH_ENVIRONMENT_PREFIX} engine=${version()}`);
 	run(script.WaitForChild("bench"), BENCH_RESULT_PREFIX);
 }

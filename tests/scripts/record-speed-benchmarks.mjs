@@ -13,6 +13,14 @@
 // Unlike the size table, these numbers describe one machine on one day, so the file records the
 // engine, the machine, and the commit of everything it measured. Nothing is written unless the
 // suite passed and every row came back in both halves: a partial table would read like a result.
+//
+// `--only <pattern>...` measures just the fixtures those patterns select (see
+// src/bench/selection.ts) and prints the tables instead of writing the file, which is how one
+// change is read without spending a full run (`mise run bench:speed:only`). This runs
+// `run-in-roblox` itself rather than taking the command as arguments, because a Studio process has
+// no argument channel of its own: the patterns can only reach the suite through the script that is
+// injected, so a scoped run injects a copy of scripts/run-in-roblox-benchmarks.luau that carries
+// them.
 import { execFileSync, spawn } from "node:child_process";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { cpus, platform, release } from "node:os";
@@ -27,10 +35,31 @@ const BASELINE = "surge";
 /** What a column reads where that library has no entry for the row. */
 const EMPTY = "—";
 
-const [command, ...args] = process.argv.slice(2);
+const COMMAND = "run-in-roblox";
+const PLACE_PATH = "dist/tests.rbxl";
+const ENTRY_PATH = "scripts/run-in-roblox-benchmarks.luau";
+/** Where a scoped run's copy of the entry script goes; `npm run build` has just made dist/. */
+const SCOPED_ENTRY_PATH = "dist/scoped-benchmarks.luau";
+/** The line of the entry script a scoped run rewrites, which that file documents as fixed. */
+const FIXTURES_MARKER = "local fixtures = {}";
 
-if (command === undefined) {
-	console.error("usage: record-speed-benchmarks.mjs <command> [...args]");
+/**
+ * The flag that scopes a run. It is required rather than inferred from "there are arguments", so
+ * that `bench:speed:only` with no pattern stops instead of spending a full run and rewriting the
+ * results file under a task name that says otherwise.
+ */
+const SCOPE_FLAG = "--only";
+
+const argv = process.argv.slice(2);
+const scoped = argv[0] === SCOPE_FLAG;
+const patterns = scoped ? argv.slice(1) : [];
+
+if (scoped && patterns.length === 0) {
+	console.error(`${SCOPE_FLAG} needs at least one fixture pattern.`);
+	process.exit(2);
+}
+if (!scoped && argv.length > 0) {
+	console.error(`Unexpected argument "${argv[0]}"; a scoped run is \`${SCOPE_FLAG} <pattern>...\`.`);
 	process.exit(2);
 }
 
@@ -84,23 +113,46 @@ function splitOnce(text, separator) {
 	return index === -1 ? [text, ""] : [text.slice(0, index), text.slice(index + separator.length)];
 }
 
-const child = spawn(command, args, { shell: false });
+/**
+ * The script to inject. A scoped run gets a copy of the entry script with its patterns
+ * substituted into the one line that file reserves for them.
+ */
+function entryScript() {
+	if (!scoped) {
+		return ENTRY_PATH;
+	}
+
+	const source = readFileSync(ENTRY_PATH, "utf8");
+	if (!source.includes(FIXTURES_MARKER)) {
+		console.error(`${ENTRY_PATH} no longer holds the line \`${FIXTURES_MARKER}\`, so a scoped run has no way in.`);
+		process.exit(2);
+	}
+
+	const list = patterns.map((pattern) => `"${pattern.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`).join(", ");
+	mkdirSync(dirname(SCOPED_ENTRY_PATH), { recursive: true });
+	writeFileSync(SCOPED_ENTRY_PATH, source.replace(FIXTURES_MARKER, `local fixtures = { ${list} }`), "utf8");
+	return SCOPED_ENTRY_PATH;
+}
+
+const child = spawn(COMMAND, ["--place", PLACE_PATH, "--script", entryScript()], { shell: false });
 
 child.stdout.on("data", (chunk) => forward(chunk, process.stdout));
 child.stderr.on("data", (chunk) => forward(chunk, process.stderr));
 
 child.on("error", (error) => {
 	if (error.code === "ENOENT") {
-		console.error(`${command} was not found on PATH. Run it through \`mise run bench:speed\`.`);
+		console.error(
+			`${COMMAND} was not found on PATH. Run it through \`mise run bench:speed\` or \`mise run bench:speed:only\`.`,
+		);
 		process.exit(127);
 	}
-	console.error(`Failed to run ${command}: ${error.message}`);
+	console.error(`Failed to run ${COMMAND}: ${error.message}`);
 	process.exit(127);
 });
 
 child.on("close", (code) => {
 	if (code !== 0) {
-		console.error(`\n${command} exited with code ${code}.`);
+		console.error(`\n${COMMAND} exited with code ${code}.`);
 		process.exit(code ?? 1);
 	}
 	if (result === undefined) {
@@ -114,6 +166,11 @@ child.on("close", (code) => {
 	if (fixtures.size === 0) {
 		console.error(`\nThe run passed but reported no rows.`);
 		process.exit(1);
+	}
+	requireBothHalves();
+	if (scoped) {
+		report();
+		return;
 	}
 	write();
 });
@@ -212,9 +269,21 @@ function table(half) {
 	return lines;
 }
 
-function write() {
-	requireBothHalves();
+/**
+ * What a scoped run leaves behind: the same tables the file would carry, in the same format.
+ * They are read against another scoped run of the same patterns, though, and not against
+ * speed.md: a scoped run is a run of its own, and the results file says a column is read against
+ * the other columns of the same run and never against a number from another file. Nothing is
+ * written -- the prose of that file describes the whole catalog, and a speed.md holding a few of
+ * its rows would read as a result about all of them.
+ */
+function report() {
+	const counted = `${fixtures.size} ${fixtures.size === 1 ? "fixture" : "fixtures"}`;
+	console.log(`\nscoped to ${counted} by ${patterns.join(", ")}; ${OUTPUT_PATH} was not rewritten`);
+	console.log(["", "## Encode", "", ...table("encode"), "", "## Decode", "", ...table("decode")].join("\n"));
+}
 
+function write() {
 	const method = environment.get("method") ?? "unknown";
 	const lines = [
 		"# Benchmark results: values per second",

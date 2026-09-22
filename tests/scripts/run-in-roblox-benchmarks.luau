@@ -7,5 +7,13 @@
 -- `MainBenchmarks` (see default.project.json) never fire on their own, so this is the only thing
 -- that runs. Reuses src/index.ts's own `runBenchmarks()` (the same function the disabled
 -- `MainBenchmarks` Script calls for a manual Play-based run) rather than reimplementing it here.
+--
+-- `run-in-roblox` passes no arguments into the Studio process, so this file is the only channel a
+-- scoped run (`mise run bench:speed:only`) has: scripts/record-speed-benchmarks.mjs copies this
+-- file into dist/ with the fixture patterns substituted into the line below, and points
+-- `--script` at the copy. An empty list measures the whole catalog. Keep that line on one line
+-- and exactly as written -- the recorder matches it verbatim and stops when it does not find it,
+-- rather than running the full catalog under a name that says otherwise.
+local fixtures = {}
 local tests = game:GetService("ServerStorage"):WaitForChild("tests")
-require(tests).runBenchmarks()
+require(tests).runBenchmarks(fixtures)

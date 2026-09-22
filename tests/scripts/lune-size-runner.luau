@@ -7,11 +7,15 @@
 -- It requires src/bench/size.luau directly rather than an entry point in src/index.ts, so a
 -- broken fixture can never fail the round-trip suite that index.ts's `main` runs.
 --
+-- `--only <pattern>...` measures just the fixtures those patterns select and prints the table
+-- instead, for reading one change without a full run; see the flag below.
+--
 -- The generated table carries no date, machine, or commit: the numbers are byte counts, so the
 -- file changes only when an encoding changes, which makes it a byte-regression gate as well as
 -- a result. `mise run bench:size` reformats it with Prettier afterwards, since every checked-in
 -- Markdown file has to pass `mise run format:check`.
 local fs = require("@lune/fs")
+local process = require("@lune/process")
 local shim = require("./lune-roblox-shim")
 
 local OUTPUT_DIRECTORY = "../docs/benchmarks"
@@ -20,8 +24,26 @@ local BASELINE = "surge"
 -- What a column reads where that library cannot express the row.
 local EMPTY = "—"
 
+-- `--only <pattern>...` measures just the fixtures those patterns select (see
+-- src/bench/selection.ts) and prints the table instead of writing size.md, which is how a change
+-- to one encoding is read without a full run. The flag is required rather than inferred from
+-- "there are arguments", so that `bench:size:only` with no pattern stops instead of quietly
+-- rewriting the file with the whole catalog under a task name that says otherwise.
+local SCOPE_FLAG = "--only"
+
+local patterns = {}
+local scoped = process.args[1] == SCOPE_FLAG
+if scoped then
+	table.move(process.args, 2, #process.args, 1, patterns)
+	if #patterns == 0 then
+		error(SCOPE_FLAG .. " needs at least one fixture pattern")
+	end
+elseif #process.args > 0 then
+	error(("unexpected argument %q (a scoped run is `%s <pattern>...`)"):format(process.args[1], SCOPE_FLAG))
+end
+
 local bench = shim.tests:WaitForChild("bench")
-local result = shim.requireInstance(bench:WaitForChild("size")).collectSizeRows()
+local result = shim.requireInstance(bench:WaitForChild("size")).collectSizeRows(patterns)
 local libraries, rows = result.libraries, result.rows
 
 local lines = {
@@ -68,6 +90,7 @@ local lines = {
 	"",
 }
 
+local tableLines = {}
 local header = { "Fixture" }
 local separator = { "---" }
 for _, library in libraries do
@@ -78,8 +101,8 @@ for _, column in { "Round trip", "What the row measures" } do
 	table.insert(header, column)
 	table.insert(separator, "---")
 end
-table.insert(lines, "| " .. table.concat(header, " | ") .. " |")
-table.insert(lines, "| " .. table.concat(separator, " | ") .. " |")
+table.insert(tableLines, "| " .. table.concat(header, " | ") .. " |")
+table.insert(tableLines, "| " .. table.concat(separator, " | ") .. " |")
 
 -- nil where the library has no adapter for that row: its column is empty there.
 local function cellOf(row, library)
@@ -124,8 +147,25 @@ for _, row in rows do
 
 	table.insert(columns, if #inexact == 0 then "exact" else "inexact: " .. table.concat(inexact, ", "))
 	table.insert(columns, row.note)
-	table.insert(lines, "| " .. table.concat(columns, " | ") .. " |")
+	table.insert(tableLines, "| " .. table.concat(columns, " | ") .. " |")
 end
+
+if scoped then
+	-- Printed, never written: the prose above describes the whole catalog, and a size.md holding
+	-- a few of its rows would read as a result about all of them.
+	print(
+		("scoped to %d %s by %s; %s was not rewritten"):format(
+			#rows,
+			if #rows == 1 then "fixture" else "fixtures",
+			table.concat(patterns, ", "),
+			OUTPUT_PATH
+		)
+	)
+	print(table.concat(tableLines, "\n"))
+	return
+end
+
+table.move(tableLines, 1, #tableLines, #lines + 1, lines)
 
 if not fs.isDir(OUTPUT_DIRECTORY) then
 	fs.writeDir(OUTPUT_DIRECTORY)
