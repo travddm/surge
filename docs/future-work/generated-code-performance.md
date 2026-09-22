@@ -7,13 +7,15 @@ project's reason to exist, and the harness in
 2.82× behind a hand-written codec that writes its exact bytes on encode, and
 between 1.51× and 2.40× behind it on decode. That is the size of what this
 document is about. It does not say which item below accounts for what.
-Five changes have since been measured on their own — the read loop, worth
-nothing; the tagged-union read's table copy, worth 1.39× on the one row that
-has one; a `CFrame`'s two reservations becoming one, worth 1.61× on encode;
-every run of consecutive fixed-size fields sharing one reservation, worth up
-to 4.70×; and the blob side channel no longer being emitted where it is
-unused, worth nothing. Together they say that per-element cost is what
-matters and per-call cost is not. Every other entry here is still what the
+Six things have since been measured on their own. Five are changes that
+landed: the read loop, worth nothing; the tagged-union read's table copy,
+worth 1.39× on the one row that has one; a `CFrame`'s two reservations
+becoming one, worth 1.61× on encode; every run of consecutive fixed-size
+fields sharing one reservation, worth up to 4.70×; and the blob side channel
+no longer being emitted where it is unused, worth nothing. The sixth is a
+probe that was reverted: `finishWrite` without its copy, also worth nothing.
+Together they say that per-element cost is what matters and per-call cost is
+not. Every other entry here is still what the
 compiled output shows, not what was measured. The local-register ceiling that this
 document used to record has landed; see Risks in
 [transformer.md](../transformer.md).
