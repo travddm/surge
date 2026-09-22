@@ -8,10 +8,13 @@ project's `@rbxts/runit` suites, which depend on both `@rbxts/surge` and
 `rbxts-transformer-surge`. The round-trip correctness suite
 (`src/tests/*.spec.ts`) runs headlessly under **Lune** (a standalone Luau
 runtime), as part of `mise run ci` — no Roblox Studio session needed. The
-benchmark suite (`src/bench/*.bench.spec.ts`) is a separate root
-specifically so it's never picked up by the Lune runner; it still needs a
-real Roblox process, driven either by Roblox Studio directly or by
-`run-in-roblox` (`mise run tests:benchmark`), and is not part of
+benchmark harness (`src/bench/`) is a separate root specifically so its
+suite is never picked up by the Lune runner. It has two tiers: bytes per
+value, which is deterministic and runs under Lune
+(`mise run bench:size`, writing
+[benchmarks/size.md](benchmarks/size.md)), and values per second, which
+needs a real Roblox process driven either by Roblox Studio directly or by
+`run-in-roblox` (`mise run bench:speed`). Neither is part of
 `mise run ci` — see Benchmarking strategy below.
 
 ## Static verification
@@ -164,10 +167,10 @@ the runner file itself):
   class is a Lune data-model instance, which is enough for a fixture that
   passes an `Instance` through the blob channel.
 - **Two separate roots, not one**: `src/tests/*.spec.ts` (correctness)
-  and `src/bench/*.bench.spec.ts` (benchmarks) are siblings, not nested —
+  and `src/bench/` (benchmarks) are siblings, not nested —
   `src/index.ts`'s `main()` only ever passes `script.tests` to
-  `TestRunner`, so the benchmark suite is structurally excluded from the
-  Lune runner rather than filtered out by convention (a benchmark
+  `TestRunner`, so `src/bench/speed.spec.ts` is structurally excluded from
+  the Lune runner rather than filtered out by convention (a benchmark
   suite's `@Fact`s don't assert anything meaningful for a pass/fail
   gate, and their iteration counts would slow down every `mise run ci`
   run for no benefit).
@@ -339,7 +342,7 @@ The concrete plan for everything else:
   applies to this project. It still applies to the **benchmark** suite,
   deliberately: it measures real Roblox performance, not just
   correctness (see Benchmarking strategy below), so it stays out of
-  `mise run ci` even though `mise run tests:benchmark` (via
+  `mise run ci` even though `mise run bench:speed` (via
   `run-in-roblox`, see below) can run it without a human clicking Play —
   `run-in-roblox` isn't a substitute for Lune's headless correctness gate
   here, since a benchmark run has no pass/fail signal to gate on, only
@@ -373,8 +376,8 @@ research on Zap's output module structure was inconclusive), so it isn't
 assumed here — but it's worth a direct check before fully committing to
 two baselines instead of three.
 
-This design benchmarks inside real Roblox — Studio, via the `tests`
-place, or `run-in-roblox` (`mise run tests:benchmark`) for an
+This design measures **speed** inside real Roblox — Studio, via the
+`tests` place, or `run-in-roblox` (`mise run bench:speed`) for an
 automatable-but-still-real-engine run — using `os.clock()` around many
 iterations, reported through the same runner output `@rbxts/runit`
 already prints to. Against two baselines, not three:
@@ -399,13 +402,46 @@ large array/`Record`, a string-heavy shape, an enum-heavy shape — the
 concrete case where this design's O(1) lookup should beat fbs's `indexOf`
 scan — a union-heavy shape, a `Packed<T>` vs. unpacked variant, and one
 deliberately large shape to exercise the Luau function-size risk in
-practice) live as their own `@rbxts/runit` suite, separate from the
-correctness suites, so a benchmark failing to compile/run is never
-confused with a behavioral regression.
+practice) are declared once in `tests/src/bench/fixtures/`, listed in
+`catalog.ts`, and driven through one `Adapter<T>` per library
+(`tests/src/bench/adapters/`). Both tiers read that one catalog, so a
+size number and a speed number always describe the same value. The speed
+tier is its own `@rbxts/runit` suite (`speed.spec.ts`), separate from the
+correctness suites, so a benchmark failing to compile or run is never
+confused with a behavioral regression; the size tier is a plain function
+(`size.ts`) that returns rows, which is why it is not a `.spec` module.
+The full plan, including the libraries that do not have an adapter yet,
+is [future-work/benchmark-tooling.md](future-work/benchmark-tooling.md).
 
-### Running benchmarks via run-in-roblox
+### Running the size tier under Lune
 
-`mise run tests:benchmark` builds the `tests` place (`rojo build`) and
+`mise run bench:size` runs `tests/scripts/lune-size-runner.luau`, which
+loads the compiled fixtures through the same fake-Instance shim the
+round-trip runner uses (`tests/scripts/lune-roblox-shim.luau`, shared by
+both), asks each fixture for its buffer size and side-table count, and
+writes [benchmarks/size.md](benchmarks/size.md) with `@lune/fs`. The task
+then reformats that file with Prettier, since every checked-in Markdown
+file has to pass `mise run format:check`.
+
+Lune is the right runtime for this tier and the wrong one for speed: a
+byte count is a property of the wire format, identical on any Luau
+runtime, while a timing is a property of the engine. The runner requires
+`src/bench/size.luau` directly rather than an entry point in
+`src/index.ts`, so a fixture that fails to load cannot break the
+round-trip suite. The generated table carries no date, machine, or commit,
+so it changes only when an encoding changes — which makes it a
+byte-regression gate as well as a result.
+
+Two limits of running this tier headlessly, both already known from the
+round-trip suite: Lune's Roblox database is missing members that
+`@rbxts/types` declares for every enum of more than 256 members
+(`Enum.KeyCode` included), so the catalog's enum row uses `Enum.Material`
+and the wide enum index is measured at the transformer level instead; and
+`DateTime` has a stand-in, so no fixture uses one.
+
+### Running the speed tier via run-in-roblox
+
+`mise run bench:speed` builds the `tests` place (`rojo build`) and
 runs it through [`run-in-roblox`](https://github.com/rojo-rbx/run-in-roblox)
 with `tests/scripts/run-in-roblox-benchmarks.luau` as the injected script
 (`tests/scripts/ensure-dist.mjs` creates `dist/` first, since it's
@@ -431,28 +467,35 @@ This is a different mechanism from the Lune runner above, not a
 replacement for it: `run-in-roblox` drives the actual Roblox engine, so
 its timings are real, but a benchmark run has no pass/fail signal —
 `tests/scripts/run-in-roblox-benchmarks.luau` has no equivalent of the
-Lune runner's `RUNIT_RESULT:` sentinel, and `mise run tests:benchmark` is
+Lune runner's `RUNIT_RESULT:` sentinel, and `mise run bench:speed` is
 deliberately not part of `mise run ci` (see "No automated runtime CI for
 benchmarks" above). Read the printed throughput numbers from its output
 and record them by hand, the same as a Studio-based run.
 
-**Recording results is not automated in this design**, unlike Lync's
-committed-and-diffed baseline (straightforward for Lync since its
-`lune run` scripts have ordinary filesystem access to write a report file
-on every run). Results here are read from the runner's printed output and
-recorded by hand (e.g. in a checked-in benchmark log) after a deliberate
-benchmarking pass, not on every change. Automating this further is a
-possible future improvement, not something this design depends on — the
-obvious route, if it's ever wanted, is `HttpService` to a local collector
-script, since the `tests` place already enables `HttpEnabled` for the
-template this design follows.
+**Recording speed results is not automated in this design.** The size
+tier writes its own table, exactly as Lync's committed baseline does and
+for the same reason (a `lune run` script has ordinary filesystem access).
+A speed number cannot take that route: it comes from a Roblox process,
+which has no filesystem. Those results are read from the runner's printed
+output and recorded by hand in `docs/benchmarks/speed.md` with the
+machine, the date, and the commit, after a deliberate benchmarking pass,
+not on every change. Automating that further is a possible future
+improvement, not something this design depends on — the obvious route, if
+it's ever wanted, is `HttpService` to a local collector script, since the
+`tests` place already enables `HttpEnabled` for the template this design
+follows.
 
-**Metrics per row**: throughput (values/sec) for serialize and
-deserialize separately, and generated Luau size (line/byte count) — size
-matters here specifically because full inlining trades code size for
-speed, and the one large-shape row exists to make that trade-off, and the
-Luau function-size risk (see Risks in [transformer.md](transformer.md)),
-visible in real numbers instead of only discussed. Because this all runs
-inside real Roblox (not Lune), these numbers are already the real, final
-production numbers — there is no separate "validate against real Roblox"
-pass needed, unlike the Lune-based approach this section replaced.
+**Metrics per row**: buffer bytes and side-table entries from the size
+tier, and throughput (values/sec) for serialize and deserialize
+separately from the speed tier. Generated Luau size (line/byte count)
+belongs with the speed numbers, because full inlining trades code size
+for speed and the one large-shape row exists to make that trade-off, and
+the Luau function-size risk (see Risks in
+[transformer.md](transformer.md)), visible in real numbers instead of
+only discussed; measuring it needs each fixture's generated code in a
+module of its own, which the harness does not do yet (see
+[future-work/benchmark-tooling.md](future-work/benchmark-tooling.md)).
+Because the speed tier runs inside real Roblox (not Lune), its numbers
+are already the real, final production numbers — there is no separate
+"validate against real Roblox" pass needed, unlike the Lune-based
+approach this section replaced.

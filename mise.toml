@@ -46,9 +46,13 @@ run = "npm run tests:build"
 description = "Run the @rbxts/runit round-trip suite headlessly under Lune (see testing.md)"
 run = "npm run tests:test"
 
-[tasks."tests:benchmark"]
-description = "Build the tests place and run the benchmark suite in a real Roblox Studio process via run-in-roblox (see testing.md); not part of ci -- benchmark numbers are read by hand, not gated pass/fail"
-run = "npm run tests:benchmark"
+[tasks."bench:size"]
+description = "Measure the bytes each fixture costs under Lune and rewrite docs/benchmarks/size.md (Tier 1, see future-work/benchmark-tooling.md); not part of ci -- a byte change is read, not gated pass/fail"
+run = "npm run bench:size"
+
+[tasks."bench:speed"]
+description = "Build the tests place and run the speed suite in a real Roblox Studio process via run-in-roblox (Tier 2, see testing.md); not part of ci -- benchmark numbers are read by hand, not gated pass/fail"
+run = "npm run bench:speed"
 
 [tasks."dev:tests"]
 description = "Compile once, then watch-compile and serve the tests place"

@@ -10,7 +10,8 @@
 		"serve": "rojo serve default.project.json",
 		"build": "node scripts/ensure-dist.mjs && rojo build default.project.json -o dist/tests.rbxl",
 		"test": "node scripts/check-test-output.mjs lune run scripts/lune-test-runner.luau",
-		"benchmark": "npm run build && run-in-roblox --place dist/tests.rbxl --script scripts/run-in-roblox-benchmarks.luau"
+		"bench:size": "lune run scripts/lune-size-runner.luau",
+		"bench:speed": "npm run build && run-in-roblox --place dist/tests.rbxl --script scripts/run-in-roblox-benchmarks.luau"
 	},
 	"author": "travddm",
 	"license": "ISC",

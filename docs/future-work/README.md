@@ -100,6 +100,21 @@ to be step 1, has landed; that document keeps Tier B.
 
 See Type Coverage and `Packed<T>` in [transformer.md](../transformer.md).
 
+The benchmark harness has landed, and with it the first checked-in
+numbers. `tests/src/bench/` is now a fixture catalog of 16 rows, one
+`Adapter<T>` per library (surge's only, so far), a size module, and
+`speed.spec.ts`. `mise run bench:size` runs the size tier under Lune —
+through the fake-Instance shim the round-trip runner now shares with it —
+and writes [benchmarks/size.md](../benchmarks/size.md); `mise run
+bench:speed` replaces `mise run tests:benchmark` for the speed tier. The
+size table is also a byte-regression gate: it carries no date or machine,
+so it changes only when an encoding changes. Two rows differ from the
+plan, because Lune's Roblox database is missing members of every enum
+above 256 members and because a product of `CFrame.Angles` quarter turns
+is not exactly axis-aligned; both are recorded in that document. Still
+open there: the four comparison adapters, the first speed run, and the
+generated-Luau-size column.
+
 Every claim in this directory was checked against both repositories at
 `surge` `7cce55e` and `rbxts-transformer-surge` `0e7c10d`. The order below
 changed as a result; each row states why. The robustness work described
@@ -113,7 +128,7 @@ ends at `rbxts-transformer-surge` `aa59c4a`.
 
 | Step | Document                                                                          | Why here                                                                                                                                                                                                         |
 | ---- | --------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1    | [benchmark-tooling.md](benchmark-tooling.md)                                      | The size and speed comparison harness against the four libraries. Tier A has landed, so a row that contains one of its datatypes does not move after it is recorded.                                             |
+| 1    | [benchmark-tooling.md](benchmark-tooling.md)                                      | The comparison adapters for fbs, serio, Blink, and Zap. The harness and surge's own column have landed; [benchmarks/size.md](../benchmarks/size.md) records surge's bytes for all 16 rows.                       |
 | 2    | [generated-code-performance.md](generated-code-performance.md)                    | Every remaining item is measurement-driven, so it follows the harness.                                                                                                                                           |
 | 3    | [type-coverage-parity.md](type-coverage-parity.md) Tier B                         | New `DataType.*` surface (length-typed containers, per-component widths, ranges). That document asks for the harness first, to show what each bound saves. Split from Tier A, which has landed, for that reason. |
 | 4    | [deserialize-hardening.md](deserialize-hardening.md)                              | Opt-in checks; needed before the networking layer, not before.                                                                                                                                                   |
@@ -139,9 +154,10 @@ time:
   workflow running the integration suite, the pinned sibling ref, `npm ci`,
   and the Windows job. The transformer's CI cannot see a broken
   serializer today.
-- The Lune size tier of [benchmark-tooling.md](benchmark-tooling.md) needs no
-  Roblox process. The wire format is deterministic, and no open step
-  changes the bytes of an existing encoding.
+- The remaining Tier 2 work in
+  [benchmark-tooling.md](benchmark-tooling.md): the speed suite compiles and
+  type-checks but has never been run, which needs a Roblox Studio process
+  and no other open step.
 - [transformer-unit-test-coverage.md](transformer-unit-test-coverage.md):
   each remaining case lands with the fix or fixture it pins.
 - [enum-encoding.md](enum-encoding.md): a one-byte saving that needs an IR

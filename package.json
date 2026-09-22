@@ -26,7 +26,8 @@
 		"tests:serve": "npm run serve --prefix tests",
 		"tests:build": "npm run build --prefix tests",
 		"tests:test": "npm run test --prefix tests",
-		"tests:benchmark": "npm run benchmark --prefix tests",
+		"bench:size": "npm run bench:size --prefix tests && prettier --write docs/benchmarks/size.md",
+		"bench:speed": "npm run bench:speed --prefix tests",
 		"dev:tests": "npm run compile && npm run tests:compile && concurrently --raw --kill-others \"npm:tests:compile:watch\" \"npm:tests:serve\""
 	},
 	"author": "travddm",

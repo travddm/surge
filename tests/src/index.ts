@@ -40,12 +40,16 @@ export function main(): void {
 }
 
 /**
- * Runs the benchmark suite (`src/bench/*.bench.spec.ts`) -- Roblox Studio
- * or `run-in-roblox` only, never the Lune test runner. Reads the `script`
- * global, so it only works from inside a running Script/ModuleScript, not
- * from Studio's command bar (where `script` is nil) -- invoke it via the
- * disabled `MainBenchmarks` Script in default.project.json: enable it and
- * Play when doing a deliberate benchmarking pass (see testing.md).
+ * Runs the speed suite (`src/bench/speed.spec.ts`) -- Roblox Studio or
+ * `run-in-roblox` only (`mise run bench:speed`), never the Lune test runner,
+ * because only the real engine's timings count (see testing.md). The size
+ * tier is not here: `scripts/lune-size-runner.luau` requires
+ * `src/bench/size.ts` directly, so a broken fixture cannot fail this file's
+ * round-trip entry point. Reads the `script` global, so it only works from
+ * inside a running Script/ModuleScript, not from Studio's command bar (where
+ * `script` is nil) -- invoke it via the disabled `MainBenchmarks` Script in
+ * default.project.json: enable it and Play when doing a deliberate
+ * benchmarking pass (see testing.md).
  */
 export function runBenchmarks(): void {
 	const benchRoot = script.WaitForChild("bench");

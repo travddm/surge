@@ -4,28 +4,32 @@ Part of the [surge](../architecture.md) design.
 
 ## What
 
-Running the `@rbxts/runit` benchmark suite (`tests/src/bench/`)
-automatically on every push, with results recorded and diffed against a
-prior baseline — instead of a human triggering a run and recording
-numbers by hand.
+Running the speed tier of the benchmark harness
+(`tests/src/bench/speed.spec.ts`) automatically on every push, with
+results recorded and diffed against a prior baseline — instead of a human
+triggering a run and recording numbers by hand. The size tier needs
+nothing here: it runs under Lune and writes `docs/benchmarks/size.md`
+itself (see Running the size tier under Lune in
+[testing.md](../testing.md)).
 
 ## Why deferred
 
 The round-trip correctness suite (`tests/src/tests/`) already runs
 headlessly, on every push, via a Lune-based test runner (see "Round-trip
-tests run under Lune" in [testing.md](../testing.md)). The benchmark
-suite can now also run without a human clicking Play — `run-in-roblox`
-drives a real Roblox Studio process for it (`mise run tests:benchmark`;
-see "Running benchmarks via run-in-roblox" in [testing.md](../testing.md))
+tests run under Lune" in [testing.md](../testing.md)). The speed
+tier can now also run without a human clicking Play — `run-in-roblox`
+drives a real Roblox Studio process for it (`mise run bench:speed`;
+see "Running the speed tier via run-in-roblox" in
+[testing.md](../testing.md))
 — but that only means a single run is automatable, not that it belongs in
 CI: a benchmark run has no pass/fail signal to gate on, only numbers, and
 turning those numbers into a tracked, diffed baseline (deciding what
 counts as a regression, where the baseline lives, how noisy a single-VM
 timing run is run-to-run) is a separate, larger design decision than
 `run-in-roblox` working at all — not something this design should take on
-as an assumed dependency. Consequence: benchmark numbers recorded for
+as an assumed dependency. Consequence: speed numbers recorded for
 this project are only as current as the last person who actually ran
-`mise run tests:benchmark` (or Studio) and wrote them down.
+`mise run bench:speed` (or Studio) and wrote them down.
 
 ## How, briefly
 
