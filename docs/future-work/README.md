@@ -293,6 +293,23 @@ hand. That run establishes what `--!native` is worth on the generated code;
 each item on the list is then a change measured against it. How, briefly in
 that document carries the procedure.
 
+The re-measurement that fix unblocked has since run, and it closes the list
+rather than reopening it. A throwaway build with `//!native` on the twelve
+fixture modules — where every `createBinarySerializer` call sits, and
+therefore where the generated code is — and on nothing else, so that the
+adapters, the harness and the hand-written baseline all stayed controls. It
+is worth 1.02× across the catalog and 1.18× on the one row where a single
+`serialize()` runs a thousand-element loop, against four control columns
+whose medians moved 0.99× to 1.01×. Every dismissal that was conditional on native shrinking
+the total by 2× to 11× therefore stands: the total does not shrink, because
+what this code spends its time on is a call into the package per field and
+two C calls per serialize, and native code generation compiles neither away.
+The build was reverted rather than committed, since a user's file is not
+native — surge does not put the directive there — so a checked-in table of a
+native build would describe a configuration nobody ships. What native changed
+in [generated-code-performance.md](generated-code-performance.md) carries the
+per-column table and what each dismissal now rests on.
+
 A full run either side of the level change put it at nothing the catalog can
 see. fbs and Blink, whose codecs were already level 2, are flat at 1.000× on
 both halves, which is the control; surge's encode, where the generated code
@@ -334,34 +351,33 @@ ends at `rbxts-transformer-surge` `aa59c4a`.
 
 ## Order
 
-The order below changed once more, and for a different reason than last
-time. [generated-code-performance.md](generated-code-performance.md) was
-first because the hand-written baseline had put a number on it. Its large
-items have since landed, and so has the `//!native` emission fix that kept it
-at the head last time. What keeps it there now is what the fix unblocked: six
-measurements that are only valid for interpreted code, which What native would
-change in that document lists, and which a fixture marked native in its own
-source can now be measured against. The same section carries the largest open
-item in the directory — rolling the hot paths into the generated code, which
-is what would let optimization level 2 reach it, and which removes the
-cross-module call per field that measured as worth up to 4.70×.
+The order below is unchanged, and the reason for it has narrowed.
+[generated-code-performance.md](generated-code-performance.md) was first
+because the hand-written baseline had put a number on it; its large items and
+the `//!native` emission fix have since landed, and the six measurements that
+were only valid for interpreted code have been re-measured through that fix
+and stand. What keeps it first is what is left over: one item, which is
+rolling the hot paths into the generated code. That is the only remaining
+lever of the size of the ones that landed, and the native run is what makes
+it so — a call into the package per field is what the time goes to, and no
+directive reaches it.
 
-The smaller items of that document moved down, to No step of its own: on the
+The smaller items of that document stay in No step of its own: on the
 evidence they are the kind of per-call and Luau-side cost that measured at
-1.00×, and one of them gets _less_ worth fixing under native, not more.
+1.00×, and native code generation moves them by two percent.
 
 Tier B of [type-coverage-parity.md](type-coverage-parity.md) keeps second
 place, for the reason it had: the size table showed that every byte Blink and
 Zap save against surge is a length prefix. Nothing measured moved anything
 else.
 
-| Step | Document                                                                                                                                                          | Why here                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
-| ---- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1    | [generated-code-performance.md](generated-code-performance.md): the re-measurement the emission fix unblocked, and what level 2 needs to reach the generated code | The emission fix has landed, so What native would change starts with one run: a fixture is marked native in its own source now, and How, briefly gives the procedure. The same section carries the largest open item in the directory, which is rolling the hot paths into the generated code — the only route by which optimization level 2's inliner reaches it, and the one that removes the cross-module call per field. Six changes from this document have already landed, for 1.00×, 1.39×, 1.61×, up to 4.70×, 1.00× again, and the emission fix; a hand-written codec writing surge's exact bytes still encodes 2.87× faster on the one row of three that can be read. |
-| 2    | [type-coverage-parity.md](type-coverage-parity.md) Tier B                                                                                                         | New `DataType.*` surface (length-typed containers, per-component widths, ranges). The harness has now shown what a bound is worth: every byte Blink and Zap save against surge is a length prefix, and nothing else. Split from Tier A, which has landed.                                                                                                                                                                                                                                                                                                                                                                                                                       |
-| 3    | [deserialize-hardening.md](deserialize-hardening.md)                                                                                                              | Opt-in checks; needed before the networking layer, not before.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
-| 4    | [documentation-gaps.md](documentation-gaps.md): `docs/usage.md`                                                                                                   | User documentation written against fixed behavior. The stale-statement sweep in the same document does not wait; see below.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
-| 5    | [ci-and-release.md](ci-and-release.md): version backstop and first tagged release                                                                                 | The backstop lands with the release it protects. The CI-only items do not wait; see below.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| Step | Document                                                                                                      | Why here                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| ---- | ------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1    | [generated-code-performance.md](generated-code-performance.md): rolling the hot paths into the generated code | The one item left of the size of those that landed. A call into the package per field is what the generated code spends its time on, and no directive reaches it: native code generation measured 1.02× on the catalog, and optimization level 2 inlines only a local function, which a value from `TS.import` is not. Removing one such call per element was worth up to 4.70×. Six measured changes have already landed here — 1.00×, 1.39×, 1.61×, up to 4.70×, 1.00× and 1.00× — along with the emission fix; a hand-written codec writing surge's exact bytes still encodes 2.87× faster on the one row of three that can be read. |
+| 2    | [type-coverage-parity.md](type-coverage-parity.md) Tier B                                                     | New `DataType.*` surface (length-typed containers, per-component widths, ranges). The harness has now shown what a bound is worth: every byte Blink and Zap save against surge is a length prefix, and nothing else. Split from Tier A, which has landed.                                                                                                                                                                                                                                                                                                                                                                               |
+| 3    | [deserialize-hardening.md](deserialize-hardening.md)                                                          | Opt-in checks; needed before the networking layer, not before.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| 4    | [documentation-gaps.md](documentation-gaps.md): `docs/usage.md`                                               | User documentation written against fixed behavior. The stale-statement sweep in the same document does not wait; see below.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| 5    | [ci-and-release.md](ci-and-release.md): version backstop and first tagged release                             | The backstop lands with the release it protects. The CI-only items do not wait; see below.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 
 ## No step of its own
 

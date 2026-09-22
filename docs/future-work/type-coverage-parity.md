@@ -110,8 +110,9 @@ These differences are design choices, not bugs, and should stay:
   design's point, which is flat generated code with no per-value
   branching, and it would be the only numeric width that needs a runtime
   helper in `@rbxts/surge`. Half of that is a design argument and half is
-  what the branching costs; native code generation would touch only the
-  second half (see What native would change in
+  what the branching costs; native code generation touches only the second
+  half, and it is measured at two percent on the generated code (see What
+  native changed in
   [generated-code-performance.md](generated-code-performance.md)). It saves
   2 bytes over `DataType.f32` and keeps about 3 significant digits. A value
   that can accept that loss is better served by a scaled integer

@@ -9,16 +9,19 @@ on decode, on the `CFrame` array — the one of the baseline's three rows whose
 trials are quiet enough to read. The other two put the encode gap at 2.67×
 and 2.96× on trials spanning half their median. That is the size of what this
 document is about. It does not say which item below accounts for what.
-Seven things have since been measured on their own. Six are changes that
+Eight things have since been measured on their own. Six are changes that
 landed: the read loop, worth nothing; the tagged-union read's table copy,
 worth 1.39× on the one row that has one; a `CFrame`'s two reservations
 becoming one, worth 1.61× on encode; every run of consecutive fixed-size
 fields sharing one reservation, worth up to 4.70×; the blob side channel no
 longer being emitted where it is unused, worth nothing; and compiling every
 module at optimization level 2, worth nothing and kept for parity with what a
-published place runs. The seventh is a probe that was reverted: `finishWrite`
-without its copy, also worth nothing. Together they say that per-element cost
-is what matters and per-call cost is not. Every other entry here is still what the
+published place runs. Two are probes that were reverted: `finishWrite`
+without its copy, worth nothing, and the generated code compiled natively,
+worth 1.02× on the catalog and 1.18× on one row. Together they say that
+per-element cost is what matters, that per-call cost is not, and that what is
+left is a call into the package per field rather than anything an optimizer
+reaches. Every other entry here is still what the
 compiled output shows, not what was measured. The local-register ceiling that this
 document used to record has landed; see Risks in
 [transformer.md](../transformer.md).
@@ -340,7 +343,7 @@ are never reassigned to `const`, and wrapping `TS.import` in a dead `require`
 branch so that luau-lsp can infer the imported module's type. So "not
 reachable" is a fact about the AST roblox-ts hands a transformer, and not
 about the output. What that route would cost surge, and what it would still
-have to solve, is in What native would change.
+have to solve, is in What native changed.
 
 Two things about `const` in particular, since it comes up: Roblox's Luau does
 parse it and Lune 0.10.5 does not, so emitting it would break the round-trip
@@ -467,14 +470,89 @@ all:
 So annotating both sides is worth about 1.09× on top of `--!native`, and
 nothing without it. Neither is reachable, for the AST reason above.
 
-**On the catalog, the pragma reaches one row of the emitted code.** Two runs
-of the speed tier, back to back on one machine. The first marked only surge's
+**What `--!native` is worth on the generated code, measured with controls.**
+The emission fix made this a line of source in each fixture rather than a
+hoist by hand, so this run has the controls the earlier one did not. The
+twelve modules under `tests/src/bench/fixtures/` carry `//!native` and
+nothing else does — not the adapters, not the harness, not
+`bench/baseline/codecs.luau`. Every other library does its per-call work in
+its own module or in its adapter, and a fixture module only builds its
+serializers, so that marking makes surge's generated functions native and
+nothing else. A full run against the table at HEAD, `25ca07c`, which is the
+run `85286e1` recorded, on a throwaway build that was reverted rather than
+committed: a user's file is not native, because surge does not put the
+directive there, so a checked-in table of a native build would describe a
+configuration nobody ships.
+
+| Column   | encode | decode |
+| -------- | ------ | ------ |
+| surge    | 1.016× | 1.021× |
+| fbs      | 1.006× | 1.000× |
+| Blink    | 1.000× | 1.006× |
+| serio    | 1.000× | 1.000× |
+| baseline | 1.002× | 0.987× |
+
+Medians of each column's quiet cells. Four columns did not move, so surge's
+own 1.02× is the whole of the effect across the catalog. Where it
+concentrates is one shape:
+
+| Cell                           | spread      | change |
+| ------------------------------ | ----------- | ------ |
+| surge, large array, encode     | 0.6% → 2%   | 1.18×  |
+| surge, `CFrame` array, decode  | 3% → 2%     | 1.10×  |
+| surge, Blink: Entities, decode | 5% → 3%     | 1.08×  |
+| surge, Blink: Entities, encode | 1% → 2%     | 1.05×  |
+| surge, `CFrame` array, encode  | 2% → 0.9%   | 1.03×  |
+| surge, large array, decode     | 0.5% → 0.5% | 1.00×  |
+| surge, string-heavy, encode    | 0.7% → 0.4% | 1.00×  |
+
+Read the small numbers in that table against what a control cell did, not
+against 1.00×: individual quiet cells of the four unchanged columns moved by
+as much as 1.04× on fbs and 1.09× on one serio encode row, so a surge cell
+below about 1.05× is not separable from that. It is the medians that separate
+the columns, and the top two rows that separate themselves.
+
+The 1000-element array's encode is the cell that moves, at 1.18×, which is
+the row the hand-hoisted run put at 1.14× — so this replicates it with the
+baseline as a control rather than as a second treatment. Its decode does not
+move at all. Why the two halves differ is not established here; the read side
+of that row builds a thousand-entry table, which is not work native code
+generation changes.
+
+**What that settles, and what it does not.** The section below rested on a
+ratio. Every 1.00× in this document was measured against an interpreted
+total, and `--!native` shrinks a Luau total by 2.25× to 11.68×, so a per-call
+cost's share of it would grow. On surge's generated code the directive is
+worth 1.02×, so the ratio is not there and neither is the conditional. That
+much is measured.
+
+Why it is 1.02× is not. The reading this document has argued for is that the
+time goes to the call into the package per field and the two C calls per
+`serialize()`, none of which native code generation compiles away — the same
+reading that made removing one `alloc` call per element worth 4.70×. A second
+reading fits the number equally well: native makes the straight-line writes
+faster and the per-field crossing out of the native region eats the gain
+back, which the helper and caller table above shows is a real effect in the
+other direction. Both point at the same change, which is why the plan does
+not turn on it: rolling the hot paths into the generated code is what would
+tell them apart, by removing the crossing.
+
+It also puts a number on the ceiling. On the one row of the baseline whose
+trials are quiet, native generated code is still 2.80× behind a hand-written
+codec that is not native on encode and 1.46× behind it on decode, against
+2.87× and 1.63× without the directive. That is about a tenth of the decode
+gap, and part of the tenth is the baseline's own 0.99× drift in the same run.
+What is left is structural.
+
+**An earlier run said the same with fewer controls.** Two runs of the speed
+tier, back to back on one machine. The first marked only surge's
 package native; the second marked the fixture modules and
 `bench/baseline/codecs.luau` as well, so that both sides of the generated
-code were native. Reproducing the second needs the directive hoisted by hand
-in the compiled fixtures, for the reason above, so no task repeats it today.
-fbs, serio, and Blink changed in neither run and are the control: their
-medians moved 1.00×.
+code were native — so the baseline was a second treatment there rather than
+a control, which is the difference between that pair and the run above. It
+also needed the directive hoisted by hand in the compiled fixtures, which is
+what the emission fix removed. fbs, serio, and Blink changed in neither run
+and are its control: their medians moved 1.00×.
 
 Medians are not the result here, because most of the fast rows are too noisy
 to read. Taking only the cells whose five trials span a few percent:
@@ -545,212 +623,143 @@ blob channel's three calls and its table at 1.00×, and `finishWrite`'s copy
 at 1.00× even on a 2004-byte payload. The read loop is the third kind — a
 branch per element — and it cost nothing either.
 
-So the per-call list is closed **for interpreted code**, and that
-qualification is the whole of what is left to say about it. Every one of
-these 1.00× results is of the form "this is invisible against the total",
-and `--!native` shrinks the Luau part of that total by 2.25× on a
-codec-shaped loop and 11.68× on a tight numeric one while leaving a C call
-exactly where it was. The table below is that effect measured directly: the
-same two calls go from invisible to dominant. So the read loop, the blob
-channel and `finishWrite` all have to be measured again if the generated
-code ever compiles natively, and the order matters — the pragma is worth
-nothing on surge's emitted code today partly because of the per-call copy,
-and the copy measures at nothing partly because the code is not native.
-Neither reading is wrong; they are one number seen twice. The emission fix
-below is what breaks the loop, and nothing on this list should be called
-settled under native until it lands.
+So the per-call list is closed, and the qualification it used to carry is
+gone. Every one of those 1.00× results is of the form "this is invisible
+against the total", which made them conditional on the total: `--!native`
+shrinks the Luau part of it by 2.25× on a codec-shaped loop and 11.68× on a
+tight numeric one, while leaving a C call exactly where it was. Measured on
+the generated code rather than on a loop, the directive is worth 1.02×. So
+the total does not shrink, the shares do not change, and the read loop, the
+blob channel and `finishWrite`'s copy are what they measured as. The circular
+reading that made this look unanswerable — the pragma is worth nothing partly
+because of the per-call copy, and the copy measures at nothing partly because
+the code is not native — resolves the other way: both are small because
+neither is what the time goes to.
 
 The per-element results do not have that problem. A call out of a native
 region into a module that is not native costs more, not less, so removing
 one per field is worth at least what it was measured at.
 
-What remains, then, is the re-measurement the emission fix unblocked, the
-smaller items, tuple elements, what it would take for optimization level 2 to
-reach the generated code, and — only if that code compiles natively — the
-type annotations and `@native` that the section below moves from unreachable
-to unmeasured. Of those, only the first of the two level-2 routes is the size
-of the items that have landed, and it is the largest open item in this
-document: rolling the hot paths into the generated code removes the
-cross-module call per field, which is the cost measured as worth the most.
-Native code generation looked like the exception and is not: measured, it
-reaches one row of the emitted code and leaves the rest, so it removes no
-item from that list. It keeps an
+What remains, then, is rolling the hot paths into the generated code, the
+smaller items, and tuple elements. Only the first is the size of the items
+that have landed, and the native measurement is what makes it the largest
+open item in this document rather than one of three: removing a cross-module
+call per field is the one thing left that a compiler cannot do for us.
+Native code generation looked like it might be the exception and is not —
+measured, it is worth 1.02× on the catalog — so it removes no item from that
+list and adds none. It keeps an
 open question of its own if it is ever made automatic, which needs a way to
 verify a file is safe to mark file-wide native (only surge's generated
 exports, nothing else) before surge could inject the pragma itself, and no
 such check exists.
 
-## What native would change
+## What native changed
 
-Every measurement in this document was taken on interpreted code, because
-that is what roblox-ts emits and, until the emission fix landed, what a
-`//!native` could not reach. Some of the conclusions survive that and some do
-not, and the difference is mechanical: `--!native` makes Luau work 2.25× to
-11.68× cheaper and leaves a C call, a cross-module call, and an allocation
-exactly where they were. A result that says "X is invisible against the
-total" is a result about that ratio, not about X.
+Every measurement in this document was taken on interpreted code, and the
+question this section used to ask was which of them survive the generated
+code compiling natively. That has been measured: 1.02× across the catalog and
+1.18× on one row, with every other column a control. So the answer is that
+they survive, and it is the same answer in each case. Each rested on a ratio
+— "X is invisible against an interpreted total, and native shrinks that total
+2.25× to 11.68× while leaving X where it is" — and the ratio is not there. On
+surge's generated code native code generation is worth two percent, because
+what this code spends its time on is a call into the package per field and
+two C calls per `serialize()`, and neither is an instruction native code
+generation compiles.
 
-Three groups. The first is measurable rather than open now, because a
-fixture can be marked native in its own source; How, briefly says what that
-run is and what it does not settle by itself.
+**Answered — the conditional is gone and the dismissal stands.**
 
-**Conditional — re-measure once generated code compiles natively.** Each of
-these rests on a measured 1.00× against an interpreted total.
-
-- The read loop, the blob side channel, and `finishWrite`'s copy. All three
-  landed or were probed at 1.00×; all three are per-call or per-branch costs
-  that native code generation cannot make cheaper while it makes everything
-  around them cheaper.
+- The read loop, the blob side channel, and `finishWrite`'s copy. Each
+  measured 1.00× against an interpreted total. Native moves that total by two
+  percent, so each is 1.00× against a total two percent smaller. There is
+  nothing here to re-measure.
 - The two-pass exact-sizing design that Transformer Design §4 in
   [transformer.md](../transformer.md) rejected, for one traversal of the
-  value instead of two. Native inverts that trade: the extra traversal is
-  Luau work that gets 2× to 11× cheaper, while the `buffer.copy` it removes
-  is a C call that does not. It is the clearest case in this list.
-- The package pragma, which this document records as worth nothing. That is
-  true of the configuration it was measured in and not of the one that
-  follows. The helper and caller table above has all four cells: marking
-  only the package is 0.04253s against 0.04233s, but once the caller is
-  native, marking the package as well takes 0.04278s to 0.02909s — 1.47×.
-  Nothing to do about it, since all four hot modules already carry the
-  directive, but "worth nothing" is not what it will mean.
-- `Packed<T>`'s advantage over the same shape unpacked, which
-  [benchmark-tooling.md](benchmark-tooling.md) records as 1.22× on encode.
-  It was 2.11× before the shared-reservation change, purely because the
-  unpacked path got faster. Bit packing is Luau arithmetic, so native moves
-  it again; which way is not worth guessing.
-- No f16, in [type-coverage-parity.md](type-coverage-parity.md). Half of
-  that argument is design — a software conversion with a branch per value is
-  the opposite of flat generated code — and half is what the branching
-  costs. Native only touches the second half.
+  value instead of two. The inversion it needed was the extra traversal
+  getting 2× to 11× cheaper while the `buffer.copy` it removes stayed put.
+  The traversal gets two percent cheaper.
+- The package pragma, which this document records as worth nothing. The
+  helper and caller table above predicts 1.47× once the caller is native as
+  well — 0.04278s to 0.02909s — and the caller was native in this run. The
+  catalog says 1.02×. That prediction belongs to a loop whose work sits
+  inside the native region, and surge's does not.
+- `Packed<T>`'s advantage over the same shape unpacked: 1.22× on encode
+  before and 1.23× after. Bit packing is Luau arithmetic, and it is still not
+  enough of the total to move.
+- No f16, in [type-coverage-parity.md](type-coverage-parity.md). Half of that
+  argument was what a branch per value costs, and a branch per value costs
+  what it cost.
 
-**Settled — already measured with `--!native`, and still dismissed.**
+**Settled before this, and still settled.**
 
+- `--!optimize 2`, which is not a performance item: it pins the level a
+  published place compiles at, it measured at nothing the catalog can see,
+  and everything this repository compiles carries it.
 - `const` against `local`, at 1.00× with the directive and without. The
   post-emit route above could emit it, but Lune 0.10.5 cannot parse it and
-  the round-trip suite runs under Lune, so it would have to be worth
-  something first, and it is not.
+  the round-trip suite runs under Lune.
 
-`--!optimize 2` has left this list altogether. It was filed here as a
-dismissal that survived, on a measured 1.00×; it is not a performance item at
-all, and the 1.00× is what makes it free rather than what rules it out. It is
-emitted now. See What the pragmas are worth.
-
-**Reachable after all, unmeasured on surge's own shape, and native-only in
-value.**
+**Reachable, and now plainly not worth the machinery.**
 
 - Type annotations on the generated write and read functions, worth about
-  1.09× on top of `--!native` and nothing without it — consistent with the
-  mechanism, since the type information that guides native code generation is
-  generated for native modules (`typeInfoLevel` in `Compiler.h`). They were
-  dismissed as unreachable. The AST route is still shut; the post-emit route
-  above is not.
-- The per-function `@native` attribute, by the same route. Luau accepts an
-  attribute ahead of a function expression as well as a declaration
-  (`simpleexp -> ... | [attributes] FUNCTION body`, handled by
-  `Parser::parseAttributedFunction`), so surge's `serialize = function(value)`
-  is a legal place to put one. What is missing is a way to emit it, not a
-  shape to emit it on.
-- Neither is measured on surge's real generated code, and what the route
-  costs is its own question. A pass that rewrites files the compiler has
-  already written, keyed on a predicted output path and a directory watch, is
-  outside anything roblox-ts promises. The prior art matches
-  `local function NAME(` by name, which does not reach a function expression
-  in a table constructor, so surge would need its own matching as well.
+  1.09× on top of `--!native` — on a synthetic writer whose work sits inside
+  the native region. On the generated code `--!native` itself is worth 1.02×,
+  so a ninth of that is not a number that pays for a pass which rewrites
+  files roblox-ts has written. The same goes for the per-function `@native`
+  attribute. The route is real, and `rbxts-transform-luau` is proof of it;
+  the value is not there.
 
-One inversion runs the other way, and is worth stating so it is not filed
-with the rest: the smaller items on this list are Luau work, not calls.
-Evaluating `s.size()` twice for a string gets _less_ worth fixing under
-native, not more.
+**What it leaves.** The cost that native code generation could not touch is
+the cost that is left: a cross-module call per field, and `buffer.create`
+plus `buffer.copy` per call. The first is what rolling the hot paths into the
+generated code removes, and this measurement makes that the only remaining
+item of size in the document — native is not an alternative to it, because
+native cannot make a cross-module call cheaper. The second is measured at
+1.00× and stays there. One inversion is worth keeping in view while the
+smaller items sit unfixed: evaluating `s.size()` twice is Luau work, so
+native makes it _less_ worth fixing, by two percent.
 
 ## How, briefly
 
-- Re-measure the conditional list in What native would change. The emission
-  fix made the precondition a line of source: `//!native` in a fixture's own
-  file comes out on line 1, above roblox-ts's banner and beside the
-  `//!optimize 2` every module now carries — confirmed by marking
-  `bench/fixtures/large-array.ts`, compiling, and reverting it. The pass is:
-    - Mark the modules under `tests/src/bench/fixtures/`. That is where every
-      `createBinarySerializer` call sits, and therefore where the generated
-      code is. Leave the adapters, the harness, and
-      `bench/baseline/codecs.luau` alone, which keeps every other column — the
-      hand-written one included — a control that the earlier hand-hoisted run
-      did not have. Every other library does its per-call work in its own
-      module or in its adapter, and a fixture module only builds its
-      serializers, so marking those twelve makes surge's generated functions
-      native and nothing else.
-    - Commit the markings before running. The recorder writes the commit of
-      each repository into both files and marks a tree that carries changes
-      that commit does not, so a run from a dirty tree records its own
-      provenance as unreproducible.
-    - One full run against the table checked in at `85286e1`, full to full.
-      fbs, Blink and serio change in neither, so their cells give the drift
-      band; read only the cells whose trials span a few percent.
-    - That run answers one question: what `--!native` is worth on the generated
-      code once it reaches it, against the 1.00× the hand-hoisted run measured.
-      It answers nothing else on the list. The read loop, the blob channel and
-      `finishWrite`'s copy each need their own change measured against the
-      native baseline this run establishes, because each is a per-call cost
-      whose share of the total grows only once the Luau around it is 2× to 11×
-      cheaper.
-    - Commit `speed-trials.tsv` with the table. It carries each cell's
-      median and its slowest and fastest trial, which `speed.md` does not,
-      and the run before this pass is the last one without it.
+- Roll the hot paths into the generated code, so that `alloc`'s cursor bump
+  is a local function in the caller's own file instead of a call into another
+  module. This is the largest item left, and the native measurement is what
+  makes it so: what remains after every landed change is a call into the
+  package per field, and neither directive touches it. Native code generation
+  does not compile a cross-module call away, and optimization level 2 inlines
+  only a local function, which a value arriving through `TS.import` is not.
+  Removing one such call per element was worth up to 4.70×, the largest
+  number in this document. It is also the largest change: the scratch buffer
+  is module state the package owns, so what moves into the caller's file and
+  what stays has to be worked out before anything is written, and the two
+  sides must not each own a cursor.
 - Coalesce a tuple's consecutive fixed-size elements, the way an object's
   fields already are. The mechanism is `fixedBytes`, `allocRuns` and
   `withAllocRun`, unchanged; what is missing is a benchmark fixture that
   serializes a tuple, without which nothing measures it.
 - A golden check in `test/golden.test.mjs` for each. The read loop's, the
   tagged union's, the `CFrame`'s, the shared reservation's and the blob
-  channel's are there already, and so is one for the two file pragmas on
-  surge's own hot modules.
-- Measure each one, and predict nothing from the compiled output. The five
-  measured so far came back at 1.00×, 1.39×, 1.61×, 4.70× and 1.00×, and
-  neither the shape of the code removed nor the size of the saving said
-  which would be which. What did, in hindsight, is whether the cost was per
-  element or per call.
-  Read only the cells whose trials span a few percent, and pick the protocol
-  from the row: a scoped pair where its trials are quiet scoped, a full pair
-  where they are not.
-- Do not document `//!native` as a manual opt-in until the conditional list
-  has been re-measured. On the current measurement the directive reaches one
-  row of the emitted code, so the advice would cost a user the blast radius
-  and return almost nothing; what it is worth afterwards is the open
-  question. `//!optimize 2` is the other way round and is not gated on
-  anything: recommend it, because a published place compiles at that level
-  and Studio does not, and because it works in a transformed file now.
-- Investigate the post-emit route for type annotations and `@native` after
-  that, and only if the generated code compiles natively: both are worth
-  nothing without it. The first question is not how, since
-  `rbxts-transform-luau` is proof that it works, but whether surge is
-  willing to rewrite files roblox-ts has written, on a predicted path and a
-  directory watch, in a transformer whose failure mode today is a
-  `ts.Diagnostic`. If it is, annotate what the measurement says pays — the
-  values that arrive from the package through `TS.import` — and measure that
-  before anything wider.
-- Investigate what it would take for level 2 to reach the generated code at
-  all. It adds two optimizations over level 1, and neither has anything to
-  work with here. Only a local function can be inlined, and every per-field
-  call goes into the package through `TS.import`, which is not a known
-  function at compile time. Only a loop whose bounds are known at compile
-  time can be unrolled, and every generated loop is bounded by a count read
-  out of the buffer; the one constant-bound loop in the package builds
-  `cframe`'s axis-aligned lookup table once at require time. Two routes,
-  answering different halves:
-    - **Roll the hot paths into the generated code**, so that `alloc`'s cursor
-      bump is a local function in the caller's own file instead of a call into
-      another module. That is what would make it inlinable, and it removes the
-      cross-module call itself — which is the cost this document has measured
-      as worth the most, at up to 4.70× for one `alloc` call per element. It is
-      also the larger change by far: the scratch buffer is module state the
-      package owns, and two modules cannot each own it, so what moves and what
-      stays has to be worked out before anything else.
-    - **Give the imported values types.** This does not help the inliner — a
-      value from another module is not a known function whatever its type —
-      but it is what the type-annotation measurement above is about, at 1.09×
-      on top of `--!native`. Keep the two apart: one is for level 2's inliner
-      and the other for native code generation.
-- If pursued as an automatic default: design a "this file is safe to mark
-  file-wide native" check (for example, restrict it to a mode where the
+  channel's are there already, and so are the file pragmas on both sides.
+- Measure each one, and predict nothing from the compiled output. Eight
+  measurements have been through this document, and three of them moved a
+  number: 1.39×, 1.61×, and up to 4.70×. The rest came back between 1.00× and
+  1.02×, and neither the shape of the code removed nor the size of the saving
+  said in advance which would be which. What did, in hindsight, is whether
+  the cost was per element or per call. Read only the cells whose trials span
+  a few percent, and pick the protocol from the row: a scoped pair where its
+  trials are quiet scoped, a full pair where they are not.
+- Do not recommend `//!native` to a user as a default. It is measured now:
+  1.02× across the catalog, and 1.18× on the one row where a single
+  `serialize()` call runs a thousand-element loop, in exchange for a whole
+  file compiled natively whether the rest of it should be or not.
+  `docs/usage.md` can say that much when it is written — worth it for a
+  caller whose shape is one large array, and not otherwise. `//!optimize 2`
+  is the other way round: recommend it, because a published place compiles at
+  that level and Studio does not, and because it works in a transformed file
+  now.
+- If an automatic default is ever pursued: design a "this file is safe to
+  mark file-wide native" check (for example, restrict it to a mode where the
   whole file is one `createBinarySerializer`-style call and its export,
-  nothing else) before surge injects the pragma itself, since there's no
-  way to scope it to just the generated functions.
+  nothing else) before surge injects the pragma itself, since there is no way
+  to scope the directive to the generated functions — and weigh the work
+  against the 1.02× that is what it would buy.

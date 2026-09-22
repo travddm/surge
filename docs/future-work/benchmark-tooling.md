@@ -386,8 +386,11 @@ writes:
   `scripts/record-speed-benchmarks.mjs`, which wraps `run-in-roblox`, reads
   the `BENCH_ROW:` lines the suite prints, and records with them the date,
   the machine, the engine version the process reports, and the commit or
-  version of everything measured. A Roblox process has no filesystem, so
-  printed output is the only channel a timing has. Either tier also runs
+  version of everything measured — marking a repository whose tree carries
+  changes its commit does not, so a run meant to be checked in is run from a
+  clean tree, and a probe's table carries the mark and is not checked in. A
+  Roblox process has no filesystem, so printed output is the only channel a
+  timing has. Either tier also runs
   scoped to particular fixtures, which prints its table rather than writing
   either file; see "Either tier can be scoped to some fixtures" in
   [testing.md](../testing.md).
