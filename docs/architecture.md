@@ -30,7 +30,8 @@ own doc for the detail that belongs to it:
   whole stack.
 - [benchmarks/](benchmarks/) — recorded results:
   [size.md](benchmarks/size.md), bytes per value, written by
-  `mise run bench:size`.
+  `mise run bench:size`, and [speed.md](benchmarks/speed.md), values per
+  second, written by `mise run bench:speed` from a real Roblox process.
 - [future-work/](future-work/) — deferred capabilities with no design yet
   (the `surge-net` networking layer, schema evolution/versioning, and a
   headless CI runner), plus the findings of the September 2026 adversarial
@@ -267,12 +268,18 @@ against both restructured repos (see serde.md) confirmed a
 [transformer.md](transformer.md)): `Packed<T>` bit-packs `boolean` fields
 only, not `optional`/`cframe`; and the structurally-ambiguous guarded-union
 case is a compile-time error, not guard codegen, exactly as step 8 always
-scoped it to be. Step 9 (the in-Studio benchmark run) is not done — it
-requires Roblox Studio, which this design has never assumed access to (see
-testing.md); the speed suite is written, not executed, so no timing is
-claimed anywhere in these docs. The size tier does run, under Lune, and
-[benchmarks/size.md](benchmarks/size.md) records surge's bytes per value;
-it carries no comparison, because no other library has an adapter yet.
+scoped it to be. Step 9 (the benchmark run) is done, and both tiers now write their own
+results. The size tier runs under Lune and
+[benchmarks/size.md](benchmarks/size.md) carries six columns — surge, fbs,
+serio, Blink, Zap, and a hand-written baseline. The speed tier runs in a real
+Roblox process through `run-in-roblox`, and
+[benchmarks/speed.md](benchmarks/speed.md) records it. The timings do not
+flatter this design: surge encodes between 2.65× and 4.58× slower than a
+hand-written codec writing its exact bytes, and the two columns ahead of it on
+most rows are natively compiled where surge's generated code is not, which
+that file states before its tables. What the gap is made of is
+[future-work/generated-code-performance.md](future-work/generated-code-performance.md),
+which the run moved to the head of the plan.
 
 0. This repo's `package.json` (the `@rbxts/surge` manifest itself), the
    `mise`-pinned toolchain (`node`, `rojo`), the `tests/` Rojo place and

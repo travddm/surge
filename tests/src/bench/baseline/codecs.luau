@@ -13,9 +13,11 @@
 -- format and its timing means nothing. Field order is surge's, which sorts by name; see Transformer
 -- Design in docs/transformer.md.
 --
--- No `--!optimize` directive, deliberately: roblox-ts emits none, so surge's generated modules run
--- at whatever level the place is built with, and a directive here would compile one side of the
--- comparison differently from the other.
+-- No `--!optimize` or `--!native` directive, deliberately: roblox-ts emits none, so surge's
+-- generated modules run at whatever level the place is built with, and a directive here would
+-- compile one side of the comparison differently from the other. surge's own package does carry
+-- `--!native` on its hot modules, which is a different thing and measured as worth nothing on its
+-- own; see Native code generation in docs/future-work/generated-code-performance.md.
 
 local function writeSmallFlatStruct(value)
 	-- One allocation, because every field of this shape is fixed width.

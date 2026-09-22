@@ -282,16 +282,19 @@ writes:
   neither, and the baseline drops them on purpose. Whether the process
   honours them was measured rather than assumed: two modules built at run
   time from one source, differing only in the directives, ran the same tight
-  buffer loop, and the one carrying them was 11.5 times faster in the same
-  Studio build. A codec also touches tables and strings, so that multiple
-  does not transfer whole — but it is large enough that the fbs and Blink
-  columns cannot be read as a comparison of codec design.
+  buffer loop, and the one carrying `--!native` was 11.68 times faster in the
+  same Studio build; on a loop shaped like a codec, with an allocation per
+  call and a string write, it was 2.25 times faster. `--!optimize 2` was
+  worth nothing either way. surge's package has since taken `//!native` on
+  its four hot modules, which measured as nothing on its own — see
+  [generated-code-performance.md](generated-code-performance.md), which
+  carries this whole thread.
 - serio and the baseline are the two columns compiled the way surge is.
-  surge is ahead of serio on all 32 of their measurements: by 1.22× to
-  14.55× on encode, and by 1.03× to 3.45× on decode.
+  surge is ahead of serio on all 32 of their measurements: by 1.25× to
+  15.25× on encode, and by 1.03× to 3.57× on decode.
 - The baseline is the result this tier was built for. It writes surge's exact
-  bytes, so none of its lead is format: it encodes between 2.59× and 4.66×
-  faster and decodes between 2.28× and 2.74× faster, over the three rows it
+  bytes, so none of its lead is format: it encodes between 2.65× and 4.58×
+  faster and decodes between 2.20× and 2.52× faster, over the three rows it
   covers. That gap is what the emitted code costs against straight-line Luau,
   and it is the measurement
   [generated-code-performance.md](generated-code-performance.md) was waiting
@@ -299,23 +302,22 @@ writes:
 - Against fbs, which is compiled differently, surge is behind on 14 of the 16
   encode rows and ahead on 9 of the 16 decode rows. The two encode rows it
   leads are both its own surface: on `Packed<T>` and on the guarded union,
-  fbs encodes at 0.60× and 0.67× of surge's rate.
-- `Packed<T>` is not only smaller. The same shape encodes 2.11× faster packed
-  than unpacked and decodes at 0.72×, so packing pays on the write and costs
+  fbs encodes at 0.59× and 0.66× of surge's rate.
+- `Packed<T>` is not only smaller. The same shape encodes 2.10× faster packed
+  than unpacked and decodes at 0.76×, so packing pays on the write and costs
   on the read.
 - Blink is ahead on every decode row and on 10 of its 11 encode rows, by as
   much as 23× on its own `Entities` bench. The one row it loses is the
-  1000-element array, at 0.21×, where it is the slowest of the four columns.
+  1000-element array, at 0.15×, where it is the slowest of the four columns.
   Nothing here says why.
 - The noise is concentrated in encode on the rows that run fastest, where
-  10000 calls take a few milliseconds. Of the 124 cells, 23 spread more than
-  a tenth of their median between their slowest and fastest trial, 13 more
-  than three tenths, and three more than a whole median. All 13 sit on the
-  flat struct, the nested object, the wide struct, the large array, or the
-  unpacked toggles, and on 12 of them the median is nearer the slowest trial
-  than the fastest — the shape of a cost most trials pay and one does not.
-  What that cost is was not established. Every row whose trials take longer
-  is quiet.
+  10000 calls take a few milliseconds. Of the 124 cells, 22 spread more than
+  a tenth of their median between their slowest and fastest trial, 12 more
+  than three tenths, and three more than a whole median. All 12 sit on the
+  flat struct, the nested object, the wide struct, or the large array, and on
+  nine of them the median is nearer the slowest trial than the fastest — the
+  shape of a cost most trials pay and one does not. What that cost is was not
+  established. Every row whose trials take longer is quiet.
 
 ### Methodology
 

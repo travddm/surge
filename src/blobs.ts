@@ -1,3 +1,6 @@
+//!native
+// Native code generation; it buys nothing by itself. See Native code generation in
+// docs/future-work/generated-code-performance.md.
 // The blob/passthrough side-channel (Type Coverage -> Blob / passthrough
 // channel in transformer.md). Values pushed here are never written into the
 // buffer; both sides must agree on push/read order, which is the generated

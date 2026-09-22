@@ -1,3 +1,9 @@
+//!native
+// Native code generation, which must be line 1 to be a Luau pragma. It buys nothing by itself:
+// these functions are a cursor bump, so almost no work sits inside the native region, and the
+// code that does the writing is generated into the caller's file. Kept because it is surge's own
+// code and costs nothing to carry. See Native code generation in
+// docs/future-work/generated-code-performance.md.
 // The single module-scoped scratch buffer every generated `write` function
 // shares (Transformer Design §4 in transformer.md). Growing it here, once,
 // keeps every generated serializer flat -- none of them branch on capacity.

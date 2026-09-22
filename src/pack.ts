@@ -1,3 +1,6 @@
+//!native
+// Native code generation; it buys nothing by itself. See Native code generation in
+// docs/future-work/generated-code-performance.md.
 // Bit-packing for `boolean` values, `optional` presence, and two-variant
 // tagged-union tags inside a `DataType.Packed<T>` subtree (Type Coverage ->
 // Packed<T> in transformer.md). The transformer
