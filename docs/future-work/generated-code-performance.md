@@ -590,8 +590,9 @@ not, and the difference is mechanical: `--!native` makes Luau work 2.25× to
 exactly where they were. A result that says "X is invisible against the
 total" is a result about that ratio, not about X.
 
-Three groups. The first is now a measurement pass rather than a set of open
-questions, because a fixture can be marked native in its own source.
+Three groups. The first is measurable rather than open now, because a
+fixture can be marked native in its own source; How, briefly says what that
+run is and what it does not settle by itself.
 
 **Conditional — re-measure once generated code compiles natively.** Each of
 these rests on a measured 1.00× against an interpreted total.
@@ -663,9 +664,32 @@ native, not more.
 
 ## How, briefly
 
-- Re-measure the conditional list in What native would change, now that the
-  emission fix has landed and a fixture can be marked native in its own
-  source. That is the pass the list was waiting for.
+- Re-measure the conditional list in What native would change. The emission
+  fix made the precondition a line of source: `//!native` in a fixture's own
+  file comes out on line 1, above roblox-ts's banner and beside the
+  `//!optimize 2` every module now carries — confirmed by marking
+  `bench/fixtures/large-array.ts`, compiling, and reverting it. The pass is:
+    - Mark the modules under `tests/src/bench/fixtures/`. That is where every
+      `createBinarySerializer` call sits, and therefore where the generated
+      code is. Leave the adapters, the harness, and
+      `bench/baseline/codecs.luau` alone, which keeps every other column — the
+      hand-written one included — a control that the earlier hand-hoisted run
+      did not have. Every other library does its per-call work in its own
+      module or in its adapter, and a fixture module only builds its
+      serializers, so marking those twelve makes surge's generated functions
+      native and nothing else.
+    - One full run against the table checked in at `85286e1`, full to full.
+      fbs, Blink and serio change in neither, so their cells give the drift
+      band; read only the cells whose trials span a few percent.
+    - That run answers one question: what `--!native` is worth on the generated
+      code once it reaches it, against the 1.00× the hand-hoisted run measured.
+      It answers nothing else on the list. The read loop, the blob channel and
+      `finishWrite`'s copy each need their own change measured against the
+      native baseline this run establishes, because each is a per-call cost
+      whose share of the total grows only once the Luau around it is 2× to 11×
+      cheaper.
+    - Keep the run's console output, which is the only place a cell's three
+      trials exist; `speed.md` keeps the median and the spread.
 - Coalesce a tuple's consecutive fixed-size elements, the way an object's
   fields already are. The mechanism is `fixedBytes`, `allocRuns` and
   `withAllocRun`, unchanged; what is missing is a benchmark fixture that
