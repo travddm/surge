@@ -27,13 +27,13 @@ compilation and unit tests, run through `mise run ci` — separately in
 `@rbxts/surge` (this repo) and in `rbxts-transformer-surge` (its own
 repo), each against its own copy of the same five steps:
 
-| Step    | Command                 | Checks                                                                                                                        |
-| ------- | ----------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| Lint    | `mise run lint:check`   | ESLint rules and markdownlint (see [coding-standards.md](coding-standards.md)).                                               |
-| Format  | `mise run format:check` | Prettier formatting.                                                                                                          |
-| Spell   | `mise run spell`        | Spelling in docs and other text files (cspell).                                                                               |
-| Compile | `mise run compile`      | TypeScript types and roblox-ts compilation, for that repo's own package.                                                      |
-| Test    | `mise run test`         | This repo: golden-Luau checks against `tests/`'s compiled output. The transformer repo: its Jest unit-test suite (see below). |
+| Step    | Command                 | Checks                                                                                                                                                            |
+| ------- | ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Lint    | `mise run lint:check`   | ESLint rules and markdownlint (see [coding-standards.md](coding-standards.md)).                                                                                   |
+| Format  | `mise run format:check` | Prettier formatting.                                                                                                                                              |
+| Spell   | `mise run spell`        | Spelling in docs and other text files (cspell).                                                                                                                   |
+| Compile | `mise run compile`      | TypeScript types and roblox-ts compilation, for that repo's own package.                                                                                          |
+| Test    | `mise run test`         | This repo: golden-Luau checks against `tests/`'s compiled output, and one against this package's own. The transformer repo: its Jest unit-test suite (see below). |
 
 This runs in order and stops at the first failure, matching an
 established roblox-ts starter template's own `mise run ci` task,
@@ -279,7 +279,9 @@ The concrete plan for everything else:
 - **Golden/invariant tests on the generated Luau itself** live in _this_
   repo's `test/` instead (they used to sit alongside the transformer's own
   unit tests, before the two-repo split — the fixtures they read,
-  `tests/out/`, are only ever produced in this repo) and run in plain Node
+  `tests/out/`, are only ever produced in this repo; one check reads this
+  package's own `out/` instead, for the two Luau file pragmas its hot
+  modules carry) and run in plain Node
   (`node:test`, no extra dependency) — no execution needed, only reading
   the compiled `.luau` text: for a curated set of representative shapes,
   assert the emitted function body contains no shape-based branching (no

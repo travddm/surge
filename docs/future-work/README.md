@@ -248,13 +248,31 @@ measurement and one that does not rest on a measurement at all: the read
 loop, the blob channel, the two-pass exact-allocation design that
 Transformer Design §4 rejected for one traversal over two, surge's own
 package pragma, `Packed<T>`'s advantage over the unpacked path, and the
-absence of f16. Two dismissals survive untouched, because they were measured
-with `--!native` already — `--!optimize 2` and `const` against `local` — and
-one is blocked on reachability rather than on value, where the value is
-1.09× and native-only: type annotations on the generated functions. What
-native would change in
+absence of f16. What native would change in
 [generated-code-performance.md](generated-code-performance.md) is the list,
 with what each one currently rests on.
+
+A second pass over the same document, this time over how the dismissals were
+argued rather than what they rest on, took two of them off that list
+altogether. `--!optimize 2`
+was filed as a dismissal that survived, because it measured at 1.00× with
+`--!native` and without. It is not a performance item: level 2 adds function
+inlining and loop unrolling, neither of which can reach a cross-module call or
+a loop bounded by a count read at run time, so 1.00× is what the mechanism
+predicts and what makes the directive free. What it buys is that the level is
+pinned rather than inherited — Roblox is reported to compile a published place
+at level 2 and Studio not to — so a Studio profile is a profile of what runs
+live. surge's four hot modules carry `//!optimize 2` next to `//!native` now,
+and the generated code should carry it once the emission fix lets a directive
+through. And type annotations and the per-function `@native` are not blocked
+on reachability after all: `rbxts-transform-luau` reaches both by rewriting
+the `.luau` file after roblox-ts has written it, which is prior art for a
+route surge's emitter does not have. They stay deferred — 1.09× on top of
+`--!native` and nothing without it — but as unmeasured work behind the
+emission fix, not as something that cannot be done. The same pass corrected
+two statements of fact: a Luau hot comment is honoured anywhere ahead of the
+first line of code rather than only on line 1, and `Packed<T>`'s decode ratio
+before the shared-reservation change was 0.72×, not 0.75×.
 
 The same work found that `mise run ci` and both benchmark tiers could read
 the previous transformer's output: `tests/tsconfig.json` sets `incremental`
@@ -280,8 +298,9 @@ time. [generated-code-performance.md](generated-code-performance.md) was
 first because the hand-written baseline had put a number on it. Its large
 items have since landed, and what keeps it first is now the `//!native`
 emission fix: a `//!native` on a file that calls `createBinarySerializer` is
-silently inert today, which is a defect on its own, and it is also the gate
-on six measurements that are only valid for interpreted code. What native
+silently inert today, and so is a `//!optimize 2`, which is a defect on its
+own, and it is also the gate on six measurements that are only valid for
+interpreted code. What native
 would change in that document lists them. It is a cheap fix that unblocks a
 measurement pass, which is why it stays at the head rather than dropping
 below Tier B with the rest of its document.
@@ -295,13 +314,13 @@ place, for the reason it had: the size table showed that every byte Blink and
 Zap save against surge is a length prefix. Nothing measured moved anything
 else.
 
-| Step | Document                                                                                                                         | Why here                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
-| ---- | -------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1    | [generated-code-performance.md](generated-code-performance.md): the `//!native` emission fix, and the re-measurement it unblocks | A `//!native` on a transformed file is inert, which is a defect in the emission and not a property of the pragma. Fixing it also turns What native would change from a list of open questions into one measurement pass, because a fixture can then be marked native in source instead of by hand. Five changes from this document have already landed, for 1.00×, 1.39×, 1.61×, up to 4.70×, and 1.00× again; a hand-written codec writing surge's exact bytes still encodes up to 2.82× faster. |
-| 2    | [type-coverage-parity.md](type-coverage-parity.md) Tier B                                                                        | New `DataType.*` surface (length-typed containers, per-component widths, ranges). The harness has now shown what a bound is worth: every byte Blink and Zap save against surge is a length prefix, and nothing else. Split from Tier A, which has landed.                                                                                                                                                                                                                                         |
-| 3    | [deserialize-hardening.md](deserialize-hardening.md)                                                                             | Opt-in checks; needed before the networking layer, not before.                                                                                                                                                                                                                                                                                                                                                                                                                                    |
-| 4    | [documentation-gaps.md](documentation-gaps.md): `docs/usage.md`                                                                  | User documentation written against fixed behavior. The stale-statement sweep in the same document does not wait; see below.                                                                                                                                                                                                                                                                                                                                                                       |
-| 5    | [ci-and-release.md](ci-and-release.md): version backstop and first tagged release                                                | The backstop lands with the release it protects. The CI-only items do not wait; see below.                                                                                                                                                                                                                                                                                                                                                                                                        |
+| Step | Document                                                                                                                         | Why here                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| ---- | -------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1    | [generated-code-performance.md](generated-code-performance.md): the `//!native` emission fix, and the re-measurement it unblocks | A `//!native` on a transformed file is inert, and so is a `//!optimize 2`: a defect in the emission, and not a property of either pragma. Fixing it also turns What native would change from a list of open questions into one measurement pass, because a fixture can then be marked native in source instead of by hand, and it is what the deferred type-annotation and `@native` work waits on. Five changes from this document have already landed, for 1.00×, 1.39×, 1.61×, up to 4.70×, and 1.00× again; a hand-written codec writing surge's exact bytes still encodes up to 2.82× faster. |
+| 2    | [type-coverage-parity.md](type-coverage-parity.md) Tier B                                                                        | New `DataType.*` surface (length-typed containers, per-component widths, ranges). The harness has now shown what a bound is worth: every byte Blink and Zap save against surge is a length prefix, and nothing else. Split from Tier A, which has landed.                                                                                                                                                                                                                                                                                                                                          |
+| 3    | [deserialize-hardening.md](deserialize-hardening.md)                                                                             | Opt-in checks; needed before the networking layer, not before.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| 4    | [documentation-gaps.md](documentation-gaps.md): `docs/usage.md`                                                                  | User documentation written against fixed behavior. The stale-statement sweep in the same document does not wait; see below.                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| 5    | [ci-and-release.md](ci-and-release.md): version backstop and first tagged release                                                | The backstop lands with the release it protects. The CI-only items do not wait; see below.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
 
 ## No step of its own
 

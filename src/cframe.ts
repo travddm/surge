@@ -1,5 +1,7 @@
 //!native
-// Native code generation; it buys nothing by itself. See Native code generation in
+//!optimize 2
+// Native code generation, and an optimization level pinned rather than inherited; neither is
+// worth anything here on its own. See Native code generation in
 // docs/future-work/generated-code-performance.md.
 // The `CFrame` encoding inside a `DataType.Packed<T>` subtree (Type Coverage
 // -> Packed<T> in transformer.md). One header byte, then only the parts the

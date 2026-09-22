@@ -119,3 +119,21 @@ test("a shape with no blob field pays nothing for the blob side channel", () => 
 	const withBlobs = readCompiledLuau("tests/roblox.spec.luau");
 	assert.match(withBlobs, /__surge_beginWriteBlobs\(/);
 });
+
+// Regression check for the file-pragma item in
+// docs/future-work/generated-code-performance.md. This one reads @rbxts/surge's
+// own compiled output, not the tests place's.
+test("surge's four hot modules open with both Luau file pragmas", () => {
+	// A hot comment is honoured anywhere ahead of the first line of code, so
+	// what this pins is that both survive a header edit: `--!native` for code
+	// generation, `--!optimize 2` for the level a published place compiles at
+	// and Studio does not.
+	for (const name of ["alloc", "blobs", "cframe", "pack"]) {
+		const luau = readFileSync(join(here, "..", "out", `${name}.luau`), "utf8");
+		const [first, second] = luau.split("\n").map((line) => line.trimEnd());
+		assert.equal(first, "--!native", `${name}.luau line 1`);
+		assert.equal(second, "--!optimize 2", `${name}.luau line 2`);
+	}
+	// A positive control: the modules with no runtime code carry neither.
+	assert.doesNotMatch(readFileSync(join(here, "..", "out", "init.luau"), "utf8"), /^--!/m);
+});

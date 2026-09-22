@@ -203,11 +203,11 @@ its single reservation. The deeply nested object is 0.96× and 1.02× on
 trials spanning 23% and 16%, which says nothing either way; it is one or two
 fields per level.
 
-What it costs elsewhere is worth recording. `Packed<T>` now encodes 1.22×
-faster than the same shape unpacked, against 2.11× before, and decodes at
-0.48× against 0.75×: the packed path was not touched, and the unpacked one
-got much faster. Against fbs, surge went from behind on 14 of the 16 encode
-rows to behind on 10.
+What it costs elsewhere is worth recording. `Packed<T>` encoded 1.22× faster
+than the same shape unpacked in that run, against 2.11× before, and decoded
+at 0.48× against 0.72×: the packed path was not touched, and the unpacked one
+got much faster. The checked-in table reads 1.24× and 0.45×, one run later.
+Against fbs, surge went from behind on 14 of the 16 encode rows to behind on 10.
 
 **The blob side channel was on every call, used or not.** Every
 `serialize()` called `beginWriteBlobs()`, which is a fresh table, and
@@ -271,49 +271,73 @@ table constructor.
 write/read code looks like what native code generation helps most —
 straight-line `buffer.writeXX`/`readXX` calls, count-driven loops for
 `array`/`dict`, and recursive helper calls. It measures otherwise, which is
-the subject of the next section. Three mechanical facts come first.
+the subject of the next section. Four mechanical facts come first.
 
-**A `//!native` on a transformed file is inert today.** The comment does
-reach the emitted Luau as `--!native` on line 1, ahead of roblox-ts's own
-"Compiled with roblox-ts" banner, which is what makes Luau honour it as a
-file pragma — but only in a file this transformer leaves alone. In a file
-that calls `createBinarySerializer`, the injected `local __surge_*` imports
-are emitted above it and the directive lands around line 12, where Luau
-ignores it. Measured on the benchmark fixtures, where it had to be hoisted
-by hand before those modules compiled natively at all. That is a defect in
-the emission, not a property of the pragma, and it has to be fixed before
-any of this can be put to a user.
+**A `//!native` on a transformed file is inert today, and so is a
+`//!optimize 2`.** A Luau hot comment is honoured anywhere ahead of the first
+line of code, and not only on line 1: the parser keeps its hot-comment header
+flag set until the first non-comment lexeme (`Ast/src/Parser.cpp`). That is
+why Blink's generated module carries `--!strict` on line 1 and `--!native` on
+line 2 with both in effect, and why surge's own modules can carry two.
+Comments above a directive are harmless. Code above it is not: in a file that
+calls `createBinarySerializer`, the injected `local __surge_*` imports are
+emitted above the directive, which lands around line 12 behind a
+`local TS = require(...)`, where Luau ignores it. Measured on the benchmark
+fixtures, where it had to be hoisted by hand before those modules compiled
+natively at all. That is a defect in the emission, not a property of the
+pragma, and it has to be fixed before either directive can be put to a user.
 
-**surge's own package carries it.** `alloc`, `blobs`, `cframe`, and `pack`
-are the four modules with hot runtime code, and each has `//!native` as its
-first line; `data-type`, `serializer`, and `index` do not, having none. That
-is surge's own code, so it has no blast radius — and on its own it is worth
-nothing, which the next section measures.
+**surge's own package carries both.** `alloc`, `blobs`, `cframe`, and
+`pack` are the four modules with hot runtime code, and each opens with
+`//!native` and `//!optimize 2`; `data-type`, `serializer`, and `index` do
+not: `data-type` compiles to nothing, `serializer` to three stubs that throw
+when the transformer is not registered, and `index` to re-exports. That is
+surge's own code, so neither directive has a blast radius. `//!native` is
+worth nothing there on its own, which the next section measures.
+`//!optimize 2` is not there for speed at all, which the section after it
+explains.
 
-**Neither `@native` nor typed Luau is reachable.** Luau's narrower
-per-function `@native` attribute has no `ts.factory` representation, and the
-transformer's only text-injection path (a synthetic leading comment) always
-renders as a real `--` comment (confirmed against `@roblox-ts/luau-ast`'s
-`renderComment.js` and `renderFunctionDeclaration.js`), so `@native` would
-come out as an inert `--@native`. Type annotations are not reachable either:
-`@roblox-ts/luau-ast`'s `SyntaxKind` has forty node kinds and not one of them
-is a type, so the emitter has no way to write
-`local function f(buf: buffer, offset: number): number`. What those absences
-cost is measured below.
+**Neither `@native` nor typed Luau is reachable through the AST.** Luau's
+narrower per-function `@native` attribute has no `ts.factory` representation,
+and the transformer's only text-injection path (a synthetic leading comment)
+always renders as a real `--` comment (confirmed against
+`@roblox-ts/luau-ast`'s `renderComment.js` and `renderFunctionDeclaration.js`),
+so `@native` would come out as an inert `--@native`. Type annotations are in
+the same position: `@roblox-ts/luau-ast`'s `SyntaxKind` has forty node kinds
+and not one of them is a type, so the emitter has no way to write
+`local function f(buf: buffer, offset: number): number`. So is `const`, which
+the AST has no form for either. What those absences cost is measured below.
 
-Nor is `const`, for the same reason — the AST has `VariableDeclaration` and
-nothing else. Two things about it, since it comes up: Roblox's Luau does
-parse `const`, and Lune 0.10.5 does not, so emitting it would break the
-round-trip suite this repository runs under Lune. And it measured at 1.00×
-against `local`, with `--!native` and without, so nothing is lost by the
-absence.
+**They are reachable by another route, and there is prior art for it.** A
+transformer can rewrite the `.luau` file after roblox-ts has written it.
+`rbxts-transform-luau` (npm, 1.0.1) does exactly that: during the transform
+it reads what it needs out of the TypeScript checker and works out the output
+path from `outDir` and `rootDir`, then watches the output directory and
+rewrites the emitted text — prepending `--!strict` and `--!optimize N`,
+hoisting every `--!` line to the top of the preamble, annotating
+`local function` signatures from the checker's types, promoting locals that
+are never reassigned to `const`, and wrapping `TS.import` in a dead `require`
+branch so that luau-lsp can infer the imported module's type. So "not
+reachable" is a fact about the AST roblox-ts hands a transformer, and not
+about the output. What that route would cost surge, and what it would still
+have to solve, is in What native would change.
 
-surge still does not put the pragma in the consumer's file. The generated
+Two things about `const` in particular, since it comes up: Roblox's Luau does
+parse it and Lune 0.10.5 does not, so emitting it would break the round-trip
+suite this repository runs under Lune. And it measured at 1.00× against
+`local`, with `--!native` and without, so nothing is lost by its absence
+either way.
+
+surge still does not put either pragma in the consumer's file. The generated
 code is inlined into the call site's own file (Transformer Design §2, "call
 site is transformed independently"), not emitted as a separate module, so a
 file-level `--!native` would also force native compilation of whatever
 unrelated code that file happens to contain — a blast radius surge cannot
-reason about or promise is safe.
+reason about or promise is safe. `--!optimize 2` is the weaker case of the
+two, and worth separating if this is ever reopened: it does not change what
+the file means, only how well it is compiled and how readable a traceback
+through it is, and it is the level a published place is reported to use
+anyway. What it is not is surge's to decide for a file surge does not own.
 
 **What the pragmas are worth, measured.** The speed tier's first run made
 this concrete, and not in surge's favour. fbs carries `--!native` and
@@ -331,12 +355,28 @@ only in their first lines, over four alternating passes:
 | Codec-shaped: one allocation per call, table reads, a string write | 0.92×           | 2.25×       | 2.22×  |
 
 Two things follow. `--!native` is the whole effect on a loop of that shape.
-And `--!optimize 2` measured as nothing: both of its figures straddle 1.00×,
-and adding it to `--!native` changed nothing either. Whether that is because
-Studio already compiles at that level, or because this code gains nothing
-from it, is not established here, and a published place may differ from
-Studio in either direction. So the `--!optimize 2` result is a fact about
-this run, not a general one.
+And `--!optimize 2` measured as nothing, which is what its mechanism
+predicts rather than a surprise. Level 1 is the Luau compiler's own default,
+the "baseline optimization level that doesn't prevent debuggability"; level 2
+adds the optimizations that do harm debuggability, which are function
+inlining and loop unrolling (`Compiler/include/Luau/Compiler.h`, and How we
+make Luau fast). Only a local function can be inlined, and only a loop whose
+bounds are known at compile time can be unrolled. surge's emitted code offers
+neither: every per-field call goes into another module through `TS.import`,
+and every generated loop is bounded by a count read out of the buffer at run
+time.
+
+**That null result is a reason to emit `--!optimize 2`, not a reason to leave
+it out**, and the reason is not speed. It cannot say whether the process
+compiled at level 1 or already at level 2 — the same two runtime-built
+modules put `--!native` at 11.68×, so their hot comments were certainly read,
+but this code measures at 1.00× under either level. What the directive does
+is pin the level instead of inheriting the host's default. Roblox is reported
+to compile a published place at level 2 and Studio not to, which is why fbs's
+two codec modules and Blink's generated module carry it; without it, what is
+profiled in Studio is not necessarily what runs live. surge's four hot
+modules carry it for that reason, at a measured cost of nothing, and the
+generated code should carry it too once the emission fix lets it.
 
 **What has to be native is where the work is.** surge's generated code lives
 in the consumer's file and calls into surge's package per field, so the two
@@ -474,11 +514,13 @@ The per-element results do not have that problem. A call out of a native
 region into a module that is not native costs more, not less, so removing
 one per field is worth at least what it was measured at.
 
-What remains, then, is the smaller items, the emission fix, and tuple
-elements, none of which is a fifth item of the size of the fourth. Native
-code generation looked like
-the exception and is not either: measured, it reaches one row of the emitted
-code and leaves the rest, so it removes no item from that list. It keeps an
+What remains, then, is the smaller items, the emission fix, tuple elements,
+and — after the fix, and only if the generated code compiles natively — the
+type annotations and `@native` that the section below moves from unreachable
+to unmeasured. None of them is a fifth item of the size of the fourth. Native
+code generation looked like the exception and is not either: measured, it
+reaches one row of the emitted code and leaves the rest, so it removes no
+item from that list. It keeps an
 open question of its own if it is ever made automatic, which needs a way to
 verify a file is safe to mark file-wide native (only surge's generated
 exports, nothing else) before surge could inject the pragma itself, and no
@@ -528,21 +570,37 @@ these rests on a measured 1.00× against an interpreted total.
 
 **Settled — already measured with `--!native`, and still dismissed.**
 
-- `--!optimize 2`. Measured alone and alongside `--!native`, both straddling
-  1.00×. Its result is a fact about that run rather than a general one, but
-  it is not a fact about interpreted code.
-- `const` against `local`. Measured at 1.00× with the directive and without,
-  and unreachable besides.
+- `const` against `local`, at 1.00× with the directive and without. The
+  post-emit route above could emit it, but Lune 0.10.5 cannot parse it and
+  the round-trip suite runs under Lune, so it would have to be worth
+  something first, and it is not.
 
-**Blocked on reachability, not on value, and the value is native-only.**
+`--!optimize 2` has left this list altogether. It was filed here as a
+dismissal that survived, on a measured 1.00×; it is not a performance item at
+all, and the 1.00× is what makes it free rather than what rules it out. It is
+emitted now. See What the pragmas are worth.
+
+**Reachable after all, unmeasured on surge's own shape, and native-only in
+value.**
 
 - Type annotations on the generated write and read functions, worth about
-  1.09× on top of `--!native` and nothing without it. They are dismissed
-  because `@roblox-ts/luau-ast` has no type node to emit, not because they
-  were measured as worthless — so if generated code ever compiles natively,
-  the right move is to reopen the reachability problem (a roblox-ts change,
-  or a text-injection path the emitter does not have today) rather than to
-  re-measure. The same is true of the per-function `@native` attribute.
+  1.09× on top of `--!native` and nothing without it — consistent with the
+  mechanism, since the type information that guides native code generation is
+  generated for native modules (`typeInfoLevel` in `Compiler.h`). They were
+  dismissed as unreachable. The AST route is still shut; the post-emit route
+  above is not.
+- The per-function `@native` attribute, by the same route. Luau accepts an
+  attribute ahead of a function expression as well as a declaration
+  (`simpleexp -> ... | [attributes] FUNCTION body`, handled by
+  `Parser::parseAttributedFunction`), so surge's `serialize = function(value)`
+  is a legal place to put one. What is missing is a way to emit it, not a
+  shape to emit it on.
+- Neither is measured on surge's real generated code, and what the route
+  costs is its own question. A pass that rewrites files the compiler has
+  already written, keyed on a predicted output path and a directory watch, is
+  outside anything roblox-ts promises. The prior art matches
+  `local function NAME(` by name, which does not reach a function expression
+  in a table constructor, so surge would need its own matching as well.
 
 One inversion runs the other way, and is worth stating so it is not filed
 with the rest: the smaller items on this list are Luau work, not calls.
@@ -564,8 +622,9 @@ native, not more.
   `withAllocRun`, unchanged; what is missing is a benchmark fixture that
   serializes a tuple, without which nothing measures it.
 - A golden check in `test/golden.test.mjs` for each. The read loop's, the
-  tagged union's, the `CFrame`'s and the shared reservation's are there
-  already.
+  tagged union's, the `CFrame`'s, the shared reservation's and the blob
+  channel's are there already, and so is one for the two file pragmas on
+  surge's own hot modules.
 - Measure each one, and predict nothing from the compiled output. The five
   measured so far came back at 1.00×, 1.39×, 1.61×, 4.70× and 1.00×, and
   neither the shape of the code removed nor the size of the saving said
@@ -574,13 +633,24 @@ native, not more.
   Read only the cells whose trials span a few percent, and pick the protocol
   from the row: a scoped pair where its trials are quiet scoped, a full pair
   where they are not.
-- Do not document `--!native`/`//!native` as a manual opt-in until the
-  emission fix has landed and the conditional list has been re-measured
-  through it. On the current measurement the directive reaches one row of
-  the emitted code, so the advice would cost a user the blast radius and
-  return almost nothing; what it is worth afterwards is the open question.
-  Leave `//!optimize 2` out either way: it changed nothing here, alone or
-  alongside `--!native`.
+- Do not document `//!native` as a manual opt-in until the emission fix has
+  landed and the conditional list has been re-measured through it. On the
+  current measurement the directive reaches one row of the emitted code, so
+  the advice would cost a user the blast radius and return almost nothing;
+  what it is worth afterwards is the open question. `//!optimize 2` is the
+  other way round — recommend it, because it pins the level a published place
+  compiles at and costs nothing measurable — but not before the same fix,
+  since a user's `//!optimize 2` lands behind the injected imports and is
+  inert for exactly the same reason.
+- Investigate the post-emit route for type annotations and `@native` after
+  that, and only if the generated code compiles natively: both are worth
+  nothing without it. The first question is not how, since
+  `rbxts-transform-luau` is proof that it works, but whether surge is
+  willing to rewrite files roblox-ts has written, on a predicted path and a
+  directory watch, in a transformer whose failure mode today is a
+  `ts.Diagnostic`. If it is, annotate what the measurement says pays — the
+  values that arrive from the package through `TS.import` — and measure that
+  before anything wider.
 - If pursued as an automatic default: design a "this file is safe to mark
   file-wide native" check (for example, restrict it to a mode where the
   whole file is one `createBinarySerializer`-style call and its export,
