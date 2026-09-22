@@ -3,14 +3,16 @@
 Part of the [surge](../architecture.md) design. The performance goal is the
 project's reason to exist, and the harness in
 [benchmark-tooling.md](benchmark-tooling.md) has now measured it.
-[benchmarks/speed.md](../benchmarks/speed.md) puts surge between 2.35× and
-4.62× behind a hand-written codec that writes its exact bytes on encode, and
-between 2.17× and 2.73× behind it on decode. That is the size of what this
-document is about. It does not say which item below accounts for what. Two
-items have since been measured on their own — the read loop, worth nothing,
-and the tagged-union read's table copy, worth 1.39× on the one row that has
-one — and every other entry here is still what the compiled output shows,
-not what was measured. The local-register ceiling that this
+[benchmarks/speed.md](../benchmarks/speed.md) puts surge between 2.87× and
+3.29× behind a hand-written codec that writes its exact bytes on encode, and
+between 1.60× and 2.65× behind it on decode. That is the size of what this
+document is about. It does not say which item below accounts for what.
+Three changes have since been measured on their own — the read loop, worth
+nothing; the tagged-union read's table copy, worth 1.39× on the one row that
+has one; and a `CFrame`'s two reservations becoming one, worth 1.61× on
+encode and 1.35× on decode on the row that reads a thousand of them — and
+every other entry here is still what the compiled output shows, not what was
+measured. The local-register ceiling that this
 document used to record has landed; see Risks in
 [transformer.md](../transformer.md).
 
@@ -100,6 +102,43 @@ fixed-size fields could share one reservation the same way, which is what
 Zap's emitted code does. On the read side the input buffer never changes
 during a call, so a single `readAlloc(totalFixedBytes)` per
 fixed-size run, or a local cursor with no helper call at all, is possible.
+
+**One `CFrame` does now, and it is the largest result in this document.**
+An unpacked `CFrame` wrote its position and its rotation vector through two
+`alloc(12)` calls, with `ToAxisAngle` and a `Vector3` multiply between them.
+Neither of those can grow the scratch buffer, so the two reservations are
+one `alloc(24)`, written at 0 and at 12, and the read side mirrors it. No
+byte moves, which `bytes.spec.ts` checks, and `test/golden.test.mjs` pins
+the single reservation. On the `CFrame` array row — 1000 elements per call,
+so exactly one `alloc` call saved per element per half:
+
+| Cell                                                 | spread      | change |
+| ---------------------------------------------------- | ----------- | ------ |
+| surge, `CFrame` array, encode                        | 0.6% → 2%   | 1.61×  |
+| surge, `CFrame` array, decode                        | 2% → 3%     | 1.35×  |
+| surge, `CFrame` array (packed, axis-aligned), encode | 0.8% → 0.5% | 1.01×  |
+| surge, `CFrame` array (packed, arbitrary), encode    | 0.5% → 1.5% | 1.01×  |
+| baseline, `CFrame` array, encode                     | 2% → 2%     | 1.00×  |
+| fbs, `CFrame` array, encode                          | 4% → 3%     | 1.02×  |
+
+Measured against the run checked in at `a4d6217`, full against full. The 79
+cells quiet in both runs drift 0.99× to 1.03×, median 1.01×, and every cell
+of that row but surge's own two is inside it. The two packed `CFrame` rows
+are the sharpest control there is: the same fixture and the same shape, but
+their encoding goes through `writePackedCFrame`, a runtime function this
+does not touch, and they did not move.
+
+It closes more of the distance to the hand-written baseline than anything
+else here. That row was surge's worst against the baseline on encode, 4.62×,
+and is now its best at 2.87×; on decode it went from 2.17× to 1.60×, which
+is the closest surge has been to straight-line Luau on any row. It also
+takes the row's decode past fbs, which read it at 1.08× of surge's rate and
+reads it at 0.81× now.
+
+So one `alloc` call per element is worth 1.61× on encode where the element
+is 24 bytes of otherwise straight-line writes. That is the case for the rest
+of this item, which is still open: the wide struct reserves twenty times per
+call and the flat struct five, each for a handful of bytes.
 
 **Smaller items.** Strings evaluate `s.size()` twice; `finishWrite`
 copies the payload (inherent to the shared scratch design); the scratch
@@ -286,13 +325,13 @@ All of these are measurement-driven, and the baseline in Benchmarking
 strategy ([testing.md](../testing.md)) has now given the total rather than
 the parts: the figures at the head of this document. Which item accounts for
 what still needs one change and one re-run each, which is the work this
-document orders. Two items have been through it. The read loop came back at
-1.00×, which is a result about the read side and not only about that item: a
-thousand iterations of the flag loop cost nothing readable. The tagged
-union's table copy came back at 1.39× on the one row that has one. Together
-they say where the read side's time goes — not in branching, but in the
-tables and the calls each element costs — which is the case for taking the
-`alloc` coalescing next. Native code generation looked like
+document orders. Three changes have been through it, and together they say
+where the time goes. The read loop came back at 1.00×: a thousand iterations
+of the flag loop cost nothing readable, so it is not branching. The tagged
+union's table copy came back at 1.39×, and one `CFrame`'s second reservation
+at 1.61× on encode. It is the tables and the helper calls each element pays
+for, which is what the rest of the one-call-per-field item is about and why
+it is what remains worth doing first. Native code generation looked like
 the exception and is not either: measured, it reaches one row of the emitted
 code and leaves the rest, so it removes no item from that list. It keeps an
 open question of its own if it is ever made automatic, which needs a way to
@@ -302,14 +341,20 @@ such check exists.
 
 ## How, briefly
 
-- Coalesce consecutive fixed-size fields into one `alloc`/`readAlloc`.
+- Coalesce consecutive fixed-size fields into one `alloc`/`readAlloc`. The
+  `CFrame` case landed on its own, for 1.61× on encode, and is the evidence
+  that the rest is worth the machinery. A run of fields is harder than one
+  field's two halves: `alloc` order is byte order, so a run cannot span a
+  variable-size reservation, a runtime helper that allocates
+  (`writePackedCFrame`, a recursion helper), or a nested statement list.
 - Measure a `finishWrite` that does not copy. On the numbers above it is the
   largest single cost in a small value's encode, which was not obvious when
   it was filed as a smaller item.
 - A golden check in `test/golden.test.mjs` for each: one `alloc` per
-  fixed-size run. The read loop's and the tagged union's are there already.
-- Measure each one, and predict nothing from the compiled output. The two
-  items measured so far came back at 1.00× and 1.39×, and neither the shape
+  fixed-size run. The read loop's, the tagged union's, and the `CFrame`'s
+  are there already.
+- Measure each one, and predict nothing from the compiled output. The three
+  measured so far came back at 1.00×, 1.39× and 1.61×, and neither the shape
   of the code removed nor the size of the saving said which would be which.
   Read only the cells whose trials span a few percent, and pick the protocol
   from the row: a scoped pair where its trials are quiet scoped, a full pair

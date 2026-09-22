@@ -79,3 +79,16 @@ test("a tagged-union read builds the variant literal with its tag, not a copy of
 	// A spread lowers to `table.clone` plus `setmetatable(_object, nil)`.
 	assert.doesNotMatch(luau, /table\.clone/);
 });
+
+// Regression check for the one-helper-call-per-field item in
+// docs/future-work/generated-code-performance.md.
+test("an unpacked CFrame reserves its 24 bytes once, not 12 bytes twice", () => {
+	const luau = readCompiledLuau("tests/coverage.spec.luau");
+	assert.match(luau, /__surge_alloc\(24\)/);
+	assert.match(luau, /__surge_readAlloc\(24\)/);
+	// The rotation vector's last component, written into the same reservation
+	// the position was: an offset of 20 exists only when the two halves share
+	// one `alloc`.
+	assert.match(luau, /buffer\.writef32\(buf\d+, pos\d+ \+ 20,/);
+	assert.match(luau, /buffer\.readf32\(buf\d+, pos\d+ \+ 20\)/);
+});

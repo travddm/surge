@@ -148,8 +148,8 @@ because what it measures is what the Luau costs, and it writes surge's bytes
 exactly — 17, 24, and 1204 — so the speed tier compares code and not formats.
 The speed tier has since run, through `run-in-roblox`, and
 [benchmarks/speed.md](../benchmarks/speed.md) records it: surge encodes
-between 2.35× and 4.62× slower than that baseline and decodes between 2.17×
-and 2.73× slower, on identical bytes. Its columns are not all compiled alike,
+between 2.87× and 3.29× slower than that baseline and decodes between 1.60×
+and 2.65× slower, on identical bytes. Its columns are not all compiled alike,
 which that file states first — fbs and Blink carry `--!native` and
 `--!optimize 2` where roblox-ts emits neither.
 
@@ -183,6 +183,21 @@ to 9608, against a drift of 0.92× to 1.03× over the 76 cells quiet in both
 runs. surge's own encode cell and every other library on the same row sit at
 0.98× to 1.00×.
 
+A third change has landed under the same step's one-helper-call-per-field
+item, and it is the largest result the plan has produced. An unpacked
+`CFrame` reserved its 24 bytes as two `alloc(12)` calls, one for the
+position and one for the rotation vector, with `ToAxisAngle` between them;
+neither statement between them can grow the scratch buffer, so it is one
+`alloc(24)` now. No byte moves. On the `CFrame` array row, a thousand
+elements per call and therefore one saved `alloc` call per element, that is
+1.61× on encode and 1.35× on decode, against a drift of 0.99× to 1.03× over
+79 cells quiet in both runs. The two packed `CFrame` rows encode through a
+runtime function this does not touch and did not move, which is the control.
+The row was surge's worst against the hand-written baseline on encode and is
+now its best. The rest of that item — a run of consecutive fixed-size fields
+sharing one reservation — is still open, and this is the evidence it is
+worth the machinery.
+
 The same work found that `mise run ci` and both benchmark tiers could read
 the previous transformer's output: `tests/tsconfig.json` sets `incremental`
 and the transformer is a tsconfig plugin, not an input file, so an
@@ -210,13 +225,13 @@ because the hand-written baseline put a number on it, and Tier B of
 table showed that every byte Blink and Zap save against surge is a length
 prefix. Nothing measured moved anything else.
 
-| Step | Document                                                                          | Why here                                                                                                                                                                                                                                                                          |
-| ---- | --------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1    | [generated-code-performance.md](generated-code-performance.md)                    | The harness has run, and [benchmarks/speed.md](../benchmarks/speed.md) is the measurement every item here was waiting for: a hand-written codec writing surge's exact bytes encodes up to 4.62× faster. Two of its items have landed, for 1.00× and 1.39× on the rows they touch. |
-| 2    | [type-coverage-parity.md](type-coverage-parity.md) Tier B                         | New `DataType.*` surface (length-typed containers, per-component widths, ranges). The harness has now shown what a bound is worth: every byte Blink and Zap save against surge is a length prefix, and nothing else. Split from Tier A, which has landed.                         |
-| 3    | [deserialize-hardening.md](deserialize-hardening.md)                              | Opt-in checks; needed before the networking layer, not before.                                                                                                                                                                                                                    |
-| 4    | [documentation-gaps.md](documentation-gaps.md): `docs/usage.md`                   | User documentation written against fixed behavior. The stale-statement sweep in the same document does not wait; see below.                                                                                                                                                       |
-| 5    | [ci-and-release.md](ci-and-release.md): version backstop and first tagged release | The backstop lands with the release it protects. The CI-only items do not wait; see below.                                                                                                                                                                                        |
+| Step | Document                                                                          | Why here                                                                                                                                                                                                                                                                                      |
+| ---- | --------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1    | [generated-code-performance.md](generated-code-performance.md)                    | The harness has run, and [benchmarks/speed.md](../benchmarks/speed.md) is the measurement every item here was waiting for: a hand-written codec writing surge's exact bytes encodes up to 3.29× faster. Three changes from it have landed, for 1.00×, 1.39× and 1.61× on the rows they touch. |
+| 2    | [type-coverage-parity.md](type-coverage-parity.md) Tier B                         | New `DataType.*` surface (length-typed containers, per-component widths, ranges). The harness has now shown what a bound is worth: every byte Blink and Zap save against surge is a length prefix, and nothing else. Split from Tier A, which has landed.                                     |
+| 3    | [deserialize-hardening.md](deserialize-hardening.md)                              | Opt-in checks; needed before the networking layer, not before.                                                                                                                                                                                                                                |
+| 4    | [documentation-gaps.md](documentation-gaps.md): `docs/usage.md`                   | User documentation written against fixed behavior. The stale-statement sweep in the same document does not wait; see below.                                                                                                                                                                   |
+| 5    | [ci-and-release.md](ci-and-release.md): version backstop and first tagged release | The backstop lands with the release it protects. The CI-only items do not wait; see below.                                                                                                                                                                                                    |
 
 ## No step of its own
 

@@ -274,7 +274,7 @@ results. The size tier runs under Lune and
 serio, Blink, Zap, and a hand-written baseline. The speed tier runs in a real
 Roblox process through `run-in-roblox`, and
 [benchmarks/speed.md](benchmarks/speed.md) records it. The timings do not
-flatter this design: surge encodes between 2.35× and 4.62× slower than a
+flatter this design: surge encodes between 2.87× and 3.29× slower than a
 hand-written codec writing its exact bytes, and the two columns ahead of it on
 most rows are natively compiled where surge's generated code is not, which
 that file states before its tables. What the gap is made of is
