@@ -232,13 +232,22 @@ project's own small IR is written in TypeScript.
    they're not created within the same TS file."_ Order is now a pure
    function of the property names in the type, independent of file,
    compiler version, or iteration state.
-4. **Buffer strategy (decided)**: a single growable, module-scoped scratch
-   buffer with a runtime write cursor — the same mechanism fbs and Zap both
-   already use. Generated `write` functions call a shared `alloc(n)` helper
-   (from `@rbxts/surge`, see [serde.md](serde.md)) that advances the
-   cursor and doubles the scratch buffer on overflow; at the end of a
-   top-level `serialize()` call, the used region is copied into an
-   exact-size result via `buffer.copy`. This was chosen over a two-pass
+4. **Buffer strategy (decided)**: a growable scratch buffer with a runtime
+   write cursor — the same mechanism fbs and Zap both already use, with one
+   difference. The buffer, its capacity and the cursor are locals of the
+   closure each serializer is generated into, not module state in
+   `@rbxts/surge`, so reserving `n` bytes is four instructions inline: take
+   the cursor, advance it, compare against the capacity, and call `grow` on
+   the branch that is not taken. That call is the only one left on the write
+   path apart from `finishWrite`, and it happens once per doubling. Measured,
+   reserving through a call into the package instead cost 2.64× on a row with
+   one field per element (What rolling the hot paths into the generated code
+   is worth, in
+   [future-work/generated-code-performance.md](future-work/generated-code-performance.md)).
+   One buffer per serializer rather than one per place also means two
+   serializers can be in flight at once. At the end of a top-level
+   `serialize()` call, the used region is copied into an exact-size result via
+   `buffer.copy`. This was chosen over a two-pass
    exact-allocation design (a companion `size(value)` function generated
    per shape, sized first, written with no copy) because it needs one
    traversal of the value instead of two. Native code generation looked like
@@ -246,21 +255,23 @@ project's own small IR is written in TypeScript.
    the copy it removes is a C call; measured, it is worth two percent on the
    generated code, so the trade stands (see What native changed in
    [future-work/generated-code-performance.md](future-work/generated-code-performance.md)).
-   It also reuses the same
-   runtime helper regardless of whether a shape is all-fixed-size or has
+   It also emits the same
+   reservation regardless of whether a shape is all-fixed-size or has
    variable-length fields — the `Field` IR does not need to branch on that
    distinction when emitting the buffer-writing statements, only when it
    emits size validation/guards. Variable-length aggregates
-   (arrays/maps/sets/records/dynamic strings) reserve their length prefix
-   with `alloc(4)`, remember the returned position, count entries while
-   writing them, then backpatch that position with `buffer.writeu32` once
-   the count is known — a single pass, same technique fbs's own
-   array/map/set encoding already uses.
+   (arrays/maps/sets/records/dynamic strings) reserve four bytes for their
+   length prefix, remember that position, count entries while writing them,
+   then backpatch it with `buffer.writeu32` once the count is known — a single
+   pass, same technique fbs's own array/map/set encoding already uses. The
+   backpatch reads the closure's buffer local rather than one captured before
+   the loop, because an arbitrary number of reservations, and therefore
+   growths, can happen in between.
 5. **IR → code emission**: a small internal `Stmt`/`Expr`-shaped builder
    (mirroring Zap's `irgen`, but producing `ts.factory` nodes instead of a
    Rust string emitter) turns the `Field` tree into one flat function body:
-    - Every field, fixed or variable-size, emits `alloc(n)` then
-      `buffer.writeXX(buf, cursor, expr)` / the matching read, in source
+    - Every field, fixed or variable-size, emits its reservation then
+      `buffer.writeXX(scratch, pos, expr)` / the matching read, in source
       order, with no runtime dispatch on field kind.
     - Variable-size fields (strings, dynamic arrays/maps/sets/records)
       additionally emit a length write/read followed by a loop, still
@@ -316,13 +327,15 @@ project's own small IR is written in TypeScript.
    TypeScript (absent from `typescript.d.ts`). A plain `throw` is reserved
    for internal invariants.
 9. **Injected imports**: the generated code calls `@rbxts/surge` exports
-   (`alloc`, `readAlloc`, ...). The transformer adds one import declaration
+   (`grow`, `finishWrite`, ...). The transformer adds one import declaration
    per file and aliases every name
-   (`import { alloc as __surge_alloc } from "@rbxts/surge"`), so a user
-   declaration named `alloc`, at the top level or in a scope enclosing the
+   (`import { grow as __surge_grow } from "@rbxts/surge"`), so a user
+   declaration named `grow`, at the top level or in a scope enclosing the
    call site, can neither collide with the import nor shadow it. Named
    imports, not a namespace import: roblox-ts compiles each one to a local
-   (`local __surge_alloc = _surge.alloc`), so a call costs no table index.
+   (`local __surge_grow = _surge.grow`), so a call costs no table index. The
+   closure-scoped cursor state carries the same `__surge_` prefix, for the
+   same reason.
    The file's leading comments move onto that import, because it takes the
    position they were attached to. Luau honours a `--!` hot comment only
    ahead of the first line of code, and roblox-ts hoists one above its own
@@ -566,9 +579,10 @@ number[]`) is the one union shape fbs handles by delegating to
   and more for strings, optionals, arrays, dicts, and unions, so 100
   numeric fields in one scope failed when the module loaded
   (`Out of local registers ... exceeded limit 200`, confirmed with Lune's
-  `luau.compile`). A run of consecutive fixed-size fields now shares one
-  reservation, so it declares one local per field after the first rather
-  than two; the other kinds are unchanged. The emitter counts the locals it
+  `luau.compile`). Two changes since then more than halved that: a run of
+  consecutive fixed-size fields shares one reservation, and a reservation
+  declares a position and nothing else, because the buffer it writes into is
+  the closure's own local. The other kinds are unchanged. The emitter counts the locals it
   declares in each generated function. Past 120 it wraps the fields of an
   object, or the fixed elements of a tuple, in blocks: consecutive fields
   are grouped up to 32 locals, and a single field with more locals than

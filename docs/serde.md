@@ -9,11 +9,12 @@ for that.
 
 ## What this package ships
 
-- The growable scratch-buffer/`alloc()` cursor helper the transformer's
-  generated `write`/`read` functions call into (see Transformer Design §4
-  in [transformer.md](transformer.md) for the strategy this implements:
-  a single module-scoped buffer, doubled on overflow, with backpatched
-  length prefixes for variable-length fields).
+- `grow` and `finishWrite`, the two cold ends of the buffer strategy (see
+  Transformer Design §4 in [transformer.md](transformer.md)). The scratch
+  buffer, its capacity and both cursors belong to each generated serializer,
+  not to this package, and reserving bytes is inline in the generated code;
+  what is left here is doubling the buffer, which happens once per doubling,
+  and copying the used region out, which happens once per `serialize()`.
 - The blob/passthrough side-channel array (see Type Coverage → Blob /
   passthrough channel in [transformer.md](transformer.md) for the
   encounter-order indexing rule the transformer's generated code must
