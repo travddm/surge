@@ -227,6 +227,18 @@ that removing one `alloc` call per element was worth, that is the shape of
 the whole cost: per-element overhead is what matters, and per-call overhead
 is not.
 
+A throwaway probe answered the one question left on that list.
+`finishWrite` copies the written region into an exact-size result on every
+`serialize()`, and it was the per-call cost with a reason to be different,
+because it scales with the payload. A build whose `finishWrite` skipped the
+copy moved surge's ten quiet encode cells by a median of 1.007×, inside the
+0.99× to 1.05× the untouched libraries drifted — 1.011× on the 2004-byte
+large array. So no design that removes it pays for itself: not a
+static-size fast path, not two-pass exact sizing, not handing the caller the
+scratch buffer. The probe was reverted, not committed, and
+[generated-code-performance.md](generated-code-performance.md) records what
+it measured and why it does not contradict the native-pragma result.
+
 The same work found that `mise run ci` and both benchmark tiers could read
 the previous transformer's output: `tests/tsconfig.json` sets `incremental`
 and the transformer is a tsconfig plugin, not an input file, so an

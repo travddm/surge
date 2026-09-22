@@ -227,12 +227,30 @@ catalog can see.
 Set against the 4.70× that removing one `alloc` call _per element_ was
 worth, that is the shape of the whole read/write cost: **per-call overhead
 does not matter and per-element overhead does.** It is the strongest
-evidence this document has for where to look next, and it argues against
-the rest of the per-call list — `finishWrite`'s copy included, except that
-the copy is the one per-call cost that scales with the payload.
+evidence this document has for where to look next, and it settles the rest
+of the per-call list, `finishWrite`'s copy included.
 
-**Smaller items.** Strings evaluate `s.size()` twice; `finishWrite`
-copies the payload (inherent to the shared scratch design); the scratch
+**`finishWrite`'s copy costs nothing, measured.** It was the one per-call
+item with a reason to be different, because it scales with the payload. It
+does not. A throwaway build whose `finishWrite` allocated the exact-size
+result and returned it without copying — wrong, but it runs, and the copy is
+write-side so only the encode half means anything — moved surge's ten quiet
+encode cells by a median of 1.007×, between 0.986× and 1.025×, while the
+untouched libraries' encode cells drifted 0.99× to 1.05× with a median of
+1.011×. The 2004-byte large array is 1.011× of that, and the `CFrame` array
+1.025×. Removing the copy entirely is inside the noise, so no design that
+removes it — a static-size fast path, two-pass exact sizing, or handing the
+caller the scratch — buys anything worth its cost. The probe was reverted,
+not committed.
+
+This does not contradict the native-code-generation measurement below, which
+found that adding exactly this copy to a natively compiled writer collapsed
+its gain from 12.65× to 1.75×. Both are true: native code generation makes
+the Luau around the copy fast enough that a C call dominates what is left,
+while in the interpreted code roblox-ts actually emits, the same copy is a
+small fraction of a much larger total.
+
+**Smaller items.** Strings evaluate `s.size()` twice; the scratch
 buffer only grows, so one large payload pins its memory for the module's
 lifetime. An object large enough to be emitted in blocks (the
 local-register fix) is read as `const result = {}` plus one assignment per
@@ -406,9 +424,11 @@ That is the catalog's shape: the row where one call writes a thousand
 elements moves, and the rows where it writes five do not. It does not account
 for the whole distance down to the 1.00× the catalog showed — the per-field
 call into the package, and the adapter and harness layers above it, are not
-measured here — but the per-call copy is the largest part of it. Which makes
-`finishWrite`'s copy, filed under Smaller items above, the first thing to
-measure a change against, not the native list.
+measured here. It once read as evidence that `finishWrite`'s copy was the
+largest single cost in a small value's encode. It is not: removing the copy
+outright measured at 1.00×, recorded above. What the collapse shows is how
+little Luau work is left once native code generation has done its part, not
+how much the copy costs an interpreted writer.
 
 ## Why deferred
 
@@ -416,15 +436,19 @@ All of these are measurement-driven, and the baseline in Benchmarking
 strategy ([testing.md](../testing.md)) has now given the total rather than
 the parts: the figures at the head of this document. Which item accounts for
 what still needs one change and one re-run each, which is the work this
-document orders. Four changes have been through it, and together they say
-where the time goes. The read loop came back at 1.00×: a thousand iterations
-of the flag loop cost nothing readable, so it is not branching. Everything
-else measured is a table or a call — the tagged union's copy at 1.39×, one
-`CFrame`'s second reservation at 1.61×, and a whole object's worth of
-reservations becoming one at up to 4.70×. The per-field call into the
-package was the largest single cost the generated code had, and what is left
-of this document is `finishWrite`'s copy and the smaller items, not a fifth
-thing of that size. Native code generation looked like
+document orders. Six measurements have been through it, and together they
+answer the question the document was written to ask. What costs is a table
+or a call **per element**: the tagged union's copy at 1.39×, one `CFrame`'s
+second reservation at 1.61×, and a whole object's worth of reservations
+becoming one at up to 4.70×. What costs nothing is anything per call: the
+blob channel's three calls and its table at 1.00×, and `finishWrite`'s copy
+at 1.00× even on a 2004-byte payload. The read loop is the third kind — a
+branch per element — and it cost nothing either.
+
+So the per-call list is closed, and with it the largest thing this document
+had left. What remains is the smaller items, the emission fix that makes a
+`//!native` reach the directive at all, and tuple elements, none of which is
+a fifth item of the size of the fourth. Native code generation looked like
 the exception and is not either: measured, it reaches one row of the emitted
 code and leaves the rest, so it removes no item from that list. It keeps an
 open question of its own if it is ever made automatic, which needs a way to
@@ -438,9 +462,6 @@ such check exists.
   fields already are. The mechanism is `fixedBytes`, `allocRuns` and
   `withAllocRun`, unchanged; what is missing is a benchmark fixture that
   serializes a tuple, without which nothing measures it.
-- Measure a `finishWrite` that does not copy. On the numbers above it is the
-  largest single cost in a small value's encode, which was not obvious when
-  it was filed as a smaller item.
 - A golden check in `test/golden.test.mjs` for each. The read loop's, the
   tagged union's, the `CFrame`'s and the shared reservation's are there
   already.
