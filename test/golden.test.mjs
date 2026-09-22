@@ -84,13 +84,15 @@ test("a tagged-union read builds the variant literal with its tag, not a copy of
 // docs/future-work/generated-code-performance.md.
 test("an unpacked CFrame reserves its 24 bytes once, not 12 bytes twice", () => {
 	const luau = readCompiledLuau("tests/coverage.spec.luau");
-	assert.match(luau, /__surge_alloc\(24\)/);
-	assert.match(luau, /__surge_readAlloc\(24\)/);
+	// A reservation is inline now: the cursor advances by 24 in one step,
+	// where two would advance by 12 twice.
+	assert.match(luau, /__surge_cursor = pos[0-9]+ [+] 24$/m);
+	assert.match(luau, /__surge_readCursor = pos[0-9]+ [+] 24$/m);
 	// The rotation vector's last component, written into the same reservation
 	// the position was: an offset of 20 exists only when the two halves share
-	// one `alloc`.
-	assert.match(luau, /buffer\.writef32\(buf\d+, pos\d+ \+ 20,/);
-	assert.match(luau, /buffer\.readf32\(buf\d+, pos\d+ \+ 20\)/);
+	// one reservation.
+	assert.match(luau, /buffer[.]writef32[(]__surge_scratch, pos[0-9]+ [+] 20,/);
+	assert.match(luau, /buffer[.]readf32[(]__surge_input, pos[0-9]+ [+] 20[)]/);
 });
 
 // Regression check for the shared-reservation item in
@@ -99,9 +101,10 @@ test("consecutive fixed-size fields share one reservation", () => {
 	const luau = readCompiledLuau("tests/basic.spec.luau");
 	// `Basic` starts with a `number` (f64, 8 bytes) and a `boolean` (1), so
 	// those two share one 9-byte reservation instead of taking one each.
-	assert.match(luau, /__surge_alloc\(9\)/);
-	assert.match(luau, /__surge_readAlloc\(9\)/);
+	assert.match(luau, /__surge_cursor = pos[0-9]+ [+] 9$/m);
+	assert.match(luau, /__surge_readCursor = pos[0-9]+ [+] 9$/m);
 	// A position computed from the shared one, which is what a run looks like.
+	assert.match(luau, /local pos[0-9]+ = pos[0-9]+ [+] [0-9]+$/m);
 	assert.match(luau, /local pos\d+ = pos\d+ \+ \d+/);
 });
 

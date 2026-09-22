@@ -2,7 +2,7 @@
 // module as `local exports = {}` and assignments, above whatever led the first statement,
 // so the directive would land after code -- dead, and a Luau lint warning where the others
 // are silent. Nothing runs here anyway.
-export { alloc, backpatchU32, beginRead, beginWrite, finishWrite, readAlloc } from "./alloc";
+export { finishWrite, grow } from "./alloc";
 export { readPackedCFrame, writePackedCFrame } from "./cframe";
 export { beginReadBlobs, beginWriteBlobs, finishWriteBlobs, nextBlob, pushBlob } from "./blobs";
 export { DataType } from "./data-type";

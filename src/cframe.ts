@@ -17,7 +17,11 @@
 //
 // Unlike every other encoding, this one branches on the value, so it is a
 // runtime function and not inlined code: the branches are the encoding.
-import { alloc, readAlloc } from "./alloc";
+//
+// Both take the buffer and the offset and report how many bytes they used,
+// because the cursor lives in the generated code (Transformer Design §4 in
+// transformer.md). The caller reserves the 25 bytes of the largest form, calls,
+// and then sets its cursor from what came back.
 
 const GENERAL_ROTATION = 31;
 const POSITION_ZERO = 1;
@@ -83,8 +87,11 @@ for (const index of $range(0, 23)) {
 	ALIGNED_ROTATIONS.push(CFrame.fromMatrix(Vector3.zero, x, y, x.Cross(y)));
 }
 
-/** Writes a `CFrame` in the packed form described at the top of this file. */
-export function writePackedCFrame(value: CFrame): void {
+/**
+ * Writes a `CFrame` at `pos` in the packed form described at the top of this
+ * file, and returns how many of the caller's reserved 25 bytes it used.
+ */
+export function writePackedCFrame(buf: buffer, pos: number, value: CFrame): number {
 	const position = value.Position;
 	let positionCode = 0;
 	if (position === Vector3.zero) {
@@ -93,43 +100,58 @@ export function writePackedCFrame(value: CFrame): void {
 		positionCode = POSITION_ONE;
 	}
 	const rotation = rotationIndex(value);
-	const [headerBuf, headerPos] = alloc(1);
-	buffer.writeu8(headerBuf, headerPos, rotation + positionCode * 32);
+	buffer.writeu8(buf, pos, rotation + positionCode * 32);
+	let size = 1;
 	if (positionCode === 0) {
-		const [buf, pos] = alloc(12);
-		buffer.writef32(buf, pos, position.X);
-		buffer.writef32(buf, pos + 4, position.Y);
-		buffer.writef32(buf, pos + 8, position.Z);
+		buffer.writef32(buf, pos + size, position.X);
+		buffer.writef32(buf, pos + size + 4, position.Y);
+		buffer.writef32(buf, pos + size + 8, position.Z);
+		size += 12;
 	}
 	if (rotation === GENERAL_ROTATION) {
 		const [axis, angle] = value.ToAxisAngle();
 		const scaled = axis.mul(angle);
-		const [buf, pos] = alloc(12);
-		buffer.writef32(buf, pos, scaled.X);
-		buffer.writef32(buf, pos + 4, scaled.Y);
-		buffer.writef32(buf, pos + 8, scaled.Z);
+		buffer.writef32(buf, pos + size, scaled.X);
+		buffer.writef32(buf, pos + size + 4, scaled.Y);
+		buffer.writef32(buf, pos + size + 8, scaled.Z);
+		size += 12;
 	}
+	return size;
 }
 
-/** Reads what {@link writePackedCFrame} wrote. */
-export function readPackedCFrame(): CFrame {
-	const [headerBuf, headerPos] = readAlloc(1);
-	const header = buffer.readu8(headerBuf, headerPos);
+/**
+ * Reads what {@link writePackedCFrame} wrote at `pos`, and returns it beside
+ * how many bytes it took, for the caller to advance its read cursor by.
+ */
+// eslint-disable-next-line roblox-ts/no-user-defined-lua-tuple -- a real Luau multi-return, not a stored value.
+export function readPackedCFrame(buf: buffer, pos: number): LuaTuple<[value: CFrame, size: number]> {
+	const header = buffer.readu8(buf, pos);
 	const rotationCode = header % 32;
 	const positionCode = header.idiv(32);
+	let size = 1;
 	let position = Vector3.zero;
 	if (positionCode === POSITION_ONE) {
 		position = Vector3.one;
 	} else if (positionCode === 0) {
-		const [buf, pos] = readAlloc(12);
-		position = new Vector3(buffer.readf32(buf, pos), buffer.readf32(buf, pos + 4), buffer.readf32(buf, pos + 8));
+		position = new Vector3(
+			buffer.readf32(buf, pos + size),
+			buffer.readf32(buf, pos + size + 4),
+			buffer.readf32(buf, pos + size + 8),
+		);
+		size += 12;
 	}
 	if (rotationCode !== GENERAL_ROTATION) {
-		return ALIGNED_ROTATIONS[rotationCode].add(position);
+		// eslint-disable-next-line roblox-ts/no-user-defined-lua-tuple -- the sanctioned way to return one.
+		return $tuple(ALIGNED_ROTATIONS[rotationCode].add(position), size);
 	}
-	const [buf, pos] = readAlloc(12);
-	const scaled = new Vector3(buffer.readf32(buf, pos), buffer.readf32(buf, pos + 4), buffer.readf32(buf, pos + 8));
+	const scaled = new Vector3(
+		buffer.readf32(buf, pos + size),
+		buffer.readf32(buf, pos + size + 4),
+		buffer.readf32(buf, pos + size + 8),
+	);
 	const angle = scaled.Magnitude;
 	// The same rule as the byte-aligned form: no axis to recover from a zero rotation.
-	return CFrame.fromAxisAngle(angle > 1e-6 ? scaled.Unit : Vector3.zAxis, angle).add(position);
+	const value = CFrame.fromAxisAngle(angle > 1e-6 ? scaled.Unit : Vector3.zAxis, angle).add(position);
+	// eslint-disable-next-line roblox-ts/no-user-defined-lua-tuple -- the sanctioned way to return one.
+	return $tuple(value, size + 12);
 }
