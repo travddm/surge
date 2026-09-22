@@ -14,11 +14,11 @@ RemoteEvent for Zap, and, for the baseline column, a pair of hand-written
 Luau functions. `mise run bench:size` writes
 [benchmarks/size.md](../benchmarks/size.md) with each column's bytes, its
 ratio against surge, and how far its round trip moved the value; `mise run
-bench:speed` runs the speed suite in a real Roblox process. So the project's
-claims now have measured bytes against every library it names, and no timings
-at all. What remains is the speed tier's first real run: `speed.spec.ts`
-compiles and type-checks but has never been run, which needs a Roblox Studio
-process.
+bench:speed` drives a real Roblox Studio process through `run-in-roblox` and
+writes [benchmarks/speed.md](../benchmarks/speed.md) from what that process
+printed. Both tiers have now run, so the project's claims have measured bytes
+and measured timings against every library it names. Only Tier 3 is left, and
+nothing yet asks for it.
 
 **Zap is a size-only column.** It has no callable encoder: its `types` table
 is module-local and only recursive declarations get `write_X`/`read_X`. So
@@ -41,11 +41,11 @@ under
 
 ### Two metrics, three tiers
 
-| Tier | Metric                            | Runs under                      | Why                                                                                                                                                                     |
-| ---- | --------------------------------- | ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1    | Buffer bytes + side-table entries | Lune (`mise run bench:size`)    | **Landed for surge, fbs, serio, and Blink.** Deterministic; no Studio; Lune has `@lune/fs`, so the run writes its own results table. Doubles as a byte-regression gate. |
-| 2    | Encode and decode values/second   | Real Roblox via `run-in-roblox` | Per Benchmarking strategy in [testing.md](../testing.md), only the real engine's timings count.                                                                         |
-| 3    | Wire cost (`Stats.DataSendKbps`)  | Real Roblox, client and server  | Optional. Blink's own benchmark method; the only tier that includes remote overhead and batching, so a networking library and a bare serializer meet on one axis.       |
+| Tier | Metric                            | Runs under                      | Why                                                                                                                                                                                                                                      |
+| ---- | --------------------------------- | ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1    | Buffer bytes + side-table entries | Lune (`mise run bench:size`)    | **Landed, all six columns.** Deterministic; no Studio; Lune has `@lune/fs`, so the run writes its own results table. Doubles as a byte-regression gate.                                                                                  |
+| 2    | Encode and decode values/second   | Real Roblox via `run-in-roblox` | **Landed.** Per Benchmarking strategy in [testing.md](../testing.md), only the real engine's timings count. A Roblox process has no filesystem, so the suite prints its rows and `scripts/record-speed-benchmarks.mjs` writes the table. |
+| 3    | Wire cost (`Stats.DataSendKbps`)  | Real Roblox, client and server  | Optional. Blink's own benchmark method; the only tier that includes remote overhead and batching, so a networking library and a bare serializer meet on one axis.                                                                        |
 
 Tier 1's numbers were only unstable before the wire-format determinism
 fixes (literal/guardedUnion ordering, packed padding, discriminant choice)
@@ -171,13 +171,13 @@ general form.
 
 ### How each library is driven (stated honestly)
 
-| Library | Drive                                                                                                                                                                                                                                            | Caveat                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
-| ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| surge   | `createBinarySerializer<T>()`                                                                                                                                                                                                                    | none                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
-| fbs     | `createBinarySerializer<T>()`; plain closures; needs `rbxts-transformer-flamework`, already in `tests/tsconfig.json`                                                                                                                             | Its surface is the one surge is a drop-in alternative to, so its adapter is surge's with one import changed. Not reentrant.                                                                                                                                                                                                                                                                                                                                                                                       |
-| serio   | `createSerializer<T>()` (a default export); plain closures; explicitly supports Lune, with its own `IS_LUNE` branches                                                                                                                            | `SerializedData.buf` is `undefined` at zero bytes and `blobs` at none, so a missing field is zero, not an error; plain `number` is f32 (fixtures pin widths anyway); `CFrame` is lossy, so the size table reports by how much.                                                                                                                                                                                                                                                                                    |
-| Blink   | `export struct X { ... }` generates `X.Write(value) -> buffer` and `X.Read(buffer)`; the adapter drives the server output, which creates its own RemoteEvents rather than waiting for them                                                       | Its `option Typescript` output is unusable at 0.18.8: it declares each export with `declare const` and exports none of them, so `bench/blink/server.d.ts` is hand-written. The module takes `Players`, `RunService`, and `Instance.new` at require time, and errors on a second require under one `RemoteScope`, so the whole catalog is one definition file. `option ManualReplication` drops its `Heartbeat` connection. Exports exclude generics, `Instance`, and `unknown`. `Write` allocates twice per call. |
-| Zap     | **No encoder API.** One `Fire` at the mocked RemoteEvent the Lune shim provides, then the `SendEvents` that `opt manual_event_loop` exposes; the bytes are what the remote was handed, minus the event-id byte. `opt tooling` decodes them back. | Size only, and only under Lune: the real engine has no mocked remote and no fake player to queue against. Its TypeScript output describes the event layer, so `bench/zap/*.d.ts` is hand-written. It emits its declarations in a different order on every run, which moves no bytes. `AlignedCFrame` asserts rather than falling back. Its writer reads a vector's components as `.x`, which Lune's `Vector3` does not answer to.                                                                                 |
+| Library | Drive                                                                                                                                                                                                                                            | Caveat                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| surge   | `createBinarySerializer<T>()`                                                                                                                                                                                                                    | none                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| fbs     | `createBinarySerializer<T>()`; plain closures; needs `rbxts-transformer-flamework`, already in `tests/tsconfig.json`                                                                                                                             | Its surface is the one surge is a drop-in alternative to, so its adapter is surge's with one import changed. Not reentrant.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| serio   | `createSerializer<T>()` (a default export); plain closures; explicitly supports Lune, with its own `IS_LUNE` branches                                                                                                                            | `SerializedData.buf` is `undefined` at zero bytes and `blobs` at none, so a missing field is zero, not an error; plain `number` is f32 (fixtures pin widths anyway); `CFrame` is lossy, so the size table reports by how much.                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| Blink   | `export struct X { ... }` generates `X.Write(value) -> buffer` and `X.Read(buffer)`; the adapter drives the server output, which creates its own RemoteEvents rather than waiting for them                                                       | Its `option Typescript` output is unusable at 0.18.8: it declares each export with `declare const` and exports none of them, so `bench/blink/server.d.ts` is hand-written. The module takes `Players`, `RunService`, and `Instance.new` at require time, and errors on a second require under one `RemoteScope`, so the whole catalog is one definition file. `option ManualReplication` drops its `Heartbeat` connection. Exports exclude generics, `Instance`, and `unknown`. `Write` allocates twice per call.                                                                                                                                      |
+| Zap     | **No encoder API.** One `Fire` at the mocked RemoteEvent the Lune shim provides, then the `SendEvents` that `opt manual_event_loop` exposes; the bytes are what the remote was handed, minus the event-id byte. `opt tooling` decodes them back. | Size only, and only under Lune: the real engine has no mocked remote and no fake player to queue against. Its TypeScript output describes the event layer, so `bench/zap/*.d.ts` is hand-written. It emits its declarations in a different order on every run, which moves no bytes. `AlignedCFrame` asserts rather than falling back. Its writer reads a vector's components as `.x`, which Lune's `Vector3` does not answer to. Its module errors on a client, and Studio's edit mode answers true to both `IsClient` and `IsServer`, so a fixture reaches it through `bench/zap/deferred.luau` on first use — which a Roblox process never reaches. |
 
 The "ideal flat serializer" baseline from testing.md is the sixth column,
 and the only one that is not a library. `bench/baseline/codecs.luau` is what
@@ -272,6 +272,51 @@ From [benchmarks/size.md](../benchmarks/size.md), which the run writes:
   `CFrame.fromAxisAngle` call, which the format fixes, so what its decode
   gap can show is loop and cursor overhead and nothing else.
 
+And from [benchmarks/speed.md](../benchmarks/speed.md), which the Tier 2 run
+writes:
+
+- Two of the five columns ran with Luau's `--!native` and `--!optimize 2`
+  and three ran without. fbs carries both on `createSerializer` and
+  `createDeserializer`, which is where its codec runs, and Blink's generated
+  module carries both; roblox-ts emits neither, so surge and serio have
+  neither, and the baseline drops them on purpose. Whether the process
+  honours them was measured rather than assumed: two modules built at run
+  time from one source, differing only in the directives, ran the same tight
+  buffer loop, and the one carrying them was 11.5 times faster in the same
+  Studio build. A codec also touches tables and strings, so that multiple
+  does not transfer whole — but it is large enough that the fbs and Blink
+  columns cannot be read as a comparison of codec design.
+- serio and the baseline are the two columns compiled the way surge is.
+  surge is ahead of serio on all 32 of their measurements: by 1.22× to
+  14.55× on encode, and by 1.03× to 3.45× on decode.
+- The baseline is the result this tier was built for. It writes surge's exact
+  bytes, so none of its lead is format: it encodes between 2.59× and 4.66×
+  faster and decodes between 2.28× and 2.74× faster, over the three rows it
+  covers. That gap is what the emitted code costs against straight-line Luau,
+  and it is the measurement
+  [generated-code-performance.md](generated-code-performance.md) was waiting
+  for.
+- Against fbs, which is compiled differently, surge is behind on 14 of the 16
+  encode rows and ahead on 9 of the 16 decode rows. The two encode rows it
+  leads are both its own surface: on `Packed<T>` and on the guarded union,
+  fbs encodes at 0.60× and 0.67× of surge's rate.
+- `Packed<T>` is not only smaller. The same shape encodes 2.11× faster packed
+  than unpacked and decodes at 0.72×, so packing pays on the write and costs
+  on the read.
+- Blink is ahead on every decode row and on 10 of its 11 encode rows, by as
+  much as 23× on its own `Entities` bench. The one row it loses is the
+  1000-element array, at 0.21×, where it is the slowest of the four columns.
+  Nothing here says why.
+- The noise is concentrated in encode on the rows that run fastest, where
+  10000 calls take a few milliseconds. Of the 124 cells, 23 spread more than
+  a tenth of their median between their slowest and fastest trial, 13 more
+  than three tenths, and three more than a whole median. All 13 sit on the
+  flat struct, the nested object, the wide struct, the large array, or the
+  unpacked toggles, and on 12 of them the median is nearer the slowest trial
+  than the fastest — the shape of a cost most trials pay and one does not.
+  What that cost is was not established. Every row whose trials take longer
+  is quiet.
+
 ### Methodology
 
 - Speed: warm-up, then N trials of M iterations; report the median and
@@ -289,9 +334,13 @@ From [benchmarks/size.md](../benchmarks/size.md), which the run writes:
   `Vector3` unfolded into their components. It is what separates f32
   rounding from an encoding that quantizes on purpose, which one shared
   `exact`/`inexact` column cannot do now that three libraries share it.
-- Output: `docs/benchmarks/size.md` written by the Tier 1 run;
-  `docs/benchmarks/speed.md` recorded by hand from the Tier 2 output with
-  the machine, the date, and the commit of every library.
+- Output: `docs/benchmarks/size.md`, written by the Tier 1 run.
+  `docs/benchmarks/speed.md`, written by
+  `scripts/record-speed-benchmarks.mjs`, which wraps `run-in-roblox`, reads
+  the `BENCH_ROW:` lines the suite prints, and records with them the date,
+  the machine, the engine version the process reports, and the commit or
+  version of everything measured. A Roblox process has no filesystem, so
+  printed output is the only channel a timing has.
 
 One of those is not implemented, deliberately: generated Luau size. Each
 fixture module holds its shape, its sample value, and now three factory
@@ -302,11 +351,11 @@ actual question.
 
 ## Why deferred
 
-Nothing is deferred any more except the numbers themselves: fbs and serio
-are `tests/` dependencies, Blink and Zap are in `[tools]`, all four have
-definitions, declarations, and checked-in generated modules where they need
-them, and the baseline is this project's own Luau. What is left is the speed
-tier's first run, which needs a Roblox Studio process.
+Nothing is deferred any more. fbs and serio are `tests/` dependencies, Blink
+and Zap are in `[tools]`, all four have definitions, declarations, and
+checked-in generated modules where they need them, the baseline is this
+project's own Luau, and both tiers have run and written their tables. Tier 3
+stays optional, on the condition in the last step below.
 
 ## How, briefly
 
@@ -337,7 +386,16 @@ tier's first run, which needs a Roblox Studio process.
    rows.~~ Landed as `bench/baseline/codecs.luau`, hand-written Luau with
    declarations beside it, writing surge's bytes exactly so the timing is
    like for like.
-7. Run the speed tier for the first time, and record
-   `docs/benchmarks/speed.md`.
+7. ~~Run the speed tier for the first time, and record
+   `docs/benchmarks/speed.md`.~~ Landed, and the recording is not by hand:
+   the suite prints one row per fixture, library, and half, and
+   `scripts/record-speed-benchmarks.mjs` wraps `run-in-roblox` and writes the
+   table. Two things had to come first. Zap's generated module errors on a
+   client and Studio's edit mode answers true to both `IsClient` and
+   `IsServer`, so every fixture that named a Zap event failed to load in a
+   real Roblox process; `bench/zap/deferred.luau` requires it on first use
+   instead, and `defineEntry` puts off a size-only entry's first encode, so
+   neither happens outside Lune. And `runBenchmarks` had no verdict to read,
+   so it now prints `BENCH_RESULT:` the way `main` prints `RUNIT_RESULT:`.
 8. Tier 3 last, only if wire cost with batching becomes a question the
    serializer comparison cannot answer.

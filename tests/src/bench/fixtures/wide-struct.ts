@@ -11,7 +11,6 @@ import { serioAdapter } from "../adapters/serio";
 import { surgeAdapter } from "../adapters/surge";
 import { zapAdapter } from "../adapters/zap";
 import { WideStruct as blinkCodec } from "../blink/server";
-import { Wide as zapEvent } from "../zap/server";
 
 /**
  * 50 fixed-size fields: 100 of the 120 locals at which the emitter starts
@@ -243,6 +242,10 @@ export const wideStruct: Fixture = {
 		defineEntry<FbsWideStruct>("fbs", value, fbsAdapter(fbsSerializer)),
 		defineEntry<SerioWideStruct>("serio", value, serioAdapter(serioSerializer)),
 		defineEntry("blink", value, blinkAdapter(blinkCodec)),
-		defineEntry("zap", value, zapAdapter(zapEvent)),
+		defineEntry(
+			"zap",
+			value,
+			zapAdapter((zap) => zap.Wide),
+		),
 	],
 };

@@ -12,7 +12,6 @@ import { serioAdapter } from "../adapters/serio";
 import { surgeAdapter } from "../adapters/surge";
 import { zapAdapter } from "../adapters/zap";
 import { TaggedUnion as blinkCodec } from "../blink/server";
-import { Tagged as zapEvent } from "../zap/server";
 
 const COUNT = 100;
 
@@ -93,6 +92,10 @@ export const taggedUnion: Fixture = {
 		defineEntry<FbsTaggedUnion>("fbs", { events }, fbsAdapter(fbsSerializer)),
 		defineEntry<SerioTaggedUnion>("serio", { events }, serioAdapter(serioSerializer)),
 		defineEntry("blink", { events }, blinkAdapter(blinkCodec)),
-		defineEntry("zap", { events: zapEvents }, zapAdapter(zapEvent)),
+		defineEntry(
+			"zap",
+			{ events: zapEvents },
+			zapAdapter((zap) => zap.Tagged),
+		),
 	],
 };

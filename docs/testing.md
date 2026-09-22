@@ -14,7 +14,8 @@ value, which is deterministic and runs under Lune
 (`mise run bench:size`, writing
 [benchmarks/size.md](benchmarks/size.md)), and values per second, which
 needs a real Roblox process driven either by Roblox Studio directly or by
-`run-in-roblox` (`mise run bench:speed`). Neither is part of
+`run-in-roblox` (`mise run bench:speed`, writing
+[benchmarks/speed.md](benchmarks/speed.md)). Neither is part of
 `mise run ci` — see Benchmarking strategy below.
 
 ## Static verification
@@ -446,7 +447,12 @@ functions, and Zap -- which has no codec to call at all -- is driven by
 firing one event at its mocked remote and measuring what `SendEvents` hands
 over. That mock is also why Zap has no speed number: the real Roblox process
 the speed tier runs in has neither a mocked remote nor a fake player to queue
-against, so `SIZE_ONLY` in `bench/adapter.ts` keeps the suite off it.
+against, so `SIZE_ONLY` in `bench/adapter.ts` keeps the suite off it. Its
+generated module cannot even be required there -- it errors on a client, and
+Studio's edit mode answers true to both `IsClient` and `IsServer` -- so a
+fixture reaches a Zap event through `bench/zap/deferred.luau`, which requires
+the module on first use, and `defineEntry` puts off a size-only entry's first
+encode for the same reason. In a Roblox process neither ever happens.
 
 ### Running the speed tier via run-in-roblox
 
@@ -474,25 +480,29 @@ Confirmed empirically, not assumed:
 
 This is a different mechanism from the Lune runner above, not a
 replacement for it: `run-in-roblox` drives the actual Roblox engine, so
-its timings are real, but a benchmark run has no pass/fail signal —
-`tests/scripts/run-in-roblox-benchmarks.luau` has no equivalent of the
-Lune runner's `RUNIT_RESULT:` sentinel, and `mise run bench:speed` is
-deliberately not part of `mise run ci` (see "No automated runtime CI for
-benchmarks" above). Read the printed throughput numbers from its output
-and record them by hand, the same as a Studio-based run.
+its timings are real, but a timing is a number to read rather than a
+pass/fail signal, which is why `mise run bench:speed` is deliberately not
+part of `mise run ci` (see "No automated runtime CI for benchmarks"
+above). The run does carry the Lune runner's `RUNIT_RESULT:` idea under
+another name: `src/index.ts` prints `BENCH_RESULT:` with runit's verdict,
+and the recorder below writes no results file without it.
 
-**Recording speed results is not automated in this design.** The size
-tier writes its own table, exactly as Lync's committed baseline does and
-for the same reason (a `lune run` script has ordinary filesystem access).
-A speed number cannot take that route: it comes from a Roblox process,
-which has no filesystem. Those results are read from the runner's printed
-output and recorded by hand in `docs/benchmarks/speed.md` with the
-machine, the date, and the commit, after a deliberate benchmarking pass,
-not on every change. Automating that further is a possible future
-improvement, not something this design depends on — the obvious route, if
-it's ever wanted, is `HttpService` to a local collector script, since the
-`tests` place already enables `HttpEnabled` for the template this design
-follows.
+**Both tiers write their own results file.** The size tier does it
+directly, exactly as Lync's committed baseline does and for the same
+reason (a `lune run` script has ordinary filesystem access). A speed
+number cannot take that route: it comes from a Roblox process, which has
+no filesystem. So it leaves as printed output instead —
+`src/bench/speed.spec.ts` prints one `BENCH_ROW:` line per fixture,
+library, and half, and `tests/scripts/record-speed-benchmarks.mjs` wraps
+`run-in-roblox`, forwards every line it is handed, and turns the rows
+into [benchmarks/speed.md](benchmarks/speed.md). That file records the
+date, the machine, the engine version the process itself reports, and the
+commit or version of everything measured, because a timing is only true
+of one machine on one day, where a byte count is true everywhere. The
+recorder writes nothing unless the suite passed and every row came back in
+both halves, so an interrupted run leaves the last real table in place.
+It is still a deliberate benchmarking pass, not something every change
+runs.
 
 **Metrics per row**: buffer bytes and side-table entries from the size
 tier, and throughput (values/sec) for serialize and deserialize

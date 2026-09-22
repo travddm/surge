@@ -12,7 +12,6 @@ import { serioAdapter } from "../adapters/serio";
 import { surgeAdapter } from "../adapters/surge";
 import { zapAdapter } from "../adapters/zap";
 import { LargeRecord as blinkCodec } from "../blink/server";
-import { Record as zapEvent } from "../zap/server";
 
 const COUNT = 200;
 
@@ -56,6 +55,10 @@ export const largeRecord: Fixture = {
 		defineEntry<FbsLargeRecord>("fbs", { entries: mapEntries }, fbsAdapter(fbsSerializer)),
 		defineEntry<SerioLargeRecord>("serio", { entries: mapEntries }, serioAdapter(serioSerializer)),
 		defineEntry("blink", { entries }, blinkAdapter(blinkCodec)),
-		defineEntry("zap", { entries }, zapAdapter(zapEvent)),
+		defineEntry(
+			"zap",
+			{ entries },
+			zapAdapter((zap) => zap.Record),
+		),
 	],
 };

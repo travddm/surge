@@ -145,9 +145,13 @@ prefix where surge writes u32. Its bit packing is per scope, so an array of
 The hand-written baseline is the sixth and last column, over the flat struct,
 the nested object, and the `CFrame` array. It is Luau, not TypeScript,
 because what it measures is what the Luau costs, and it writes surge's bytes
-exactly — 17, 24, and 1204 — so the speed tier will be comparing code and not
-formats. Only the speed run itself is still open there, and it needs a Roblox
-Studio process.
+exactly — 17, 24, and 1204 — so the speed tier compares code and not formats.
+The speed tier has since run, through `run-in-roblox`, and
+[benchmarks/speed.md](../benchmarks/speed.md) records it: surge encodes
+between 2.59× and 4.66× slower than that baseline and decodes between 2.28×
+and 2.74× slower, on identical bytes. Its columns are not all compiled alike,
+which that file states first — fbs and Blink carry `--!native` and
+`--!optimize 2` where roblox-ts emits neither.
 
 The fbs, serio, Blink, and Zap adapters, and the per-library size table they
 produce, landed after everything above, in this repository's `tests/`,
@@ -165,14 +169,13 @@ ends at `rbxts-transformer-surge` `aa59c4a`.
 
 ## Order
 
-| Step | Document                                                                          | Why here                                                                                                                                                                                                               |
-| ---- | --------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1    | [benchmark-tooling.md](benchmark-tooling.md)                                      | The first speed run, which needs Roblox Studio. Every column has landed; [benchmarks/size.md](../benchmarks/size.md) records their bytes, Blink's on the 11 rows it can express, Zap's on 12, and the baseline's on 3. |
-| 2    | [generated-code-performance.md](generated-code-performance.md)                    | Every remaining item is measurement-driven, so it follows the harness.                                                                                                                                                 |
-| 3    | [type-coverage-parity.md](type-coverage-parity.md) Tier B                         | New `DataType.*` surface (length-typed containers, per-component widths, ranges). That document asks for the harness first, to show what each bound saves. Split from Tier A, which has landed, for that reason.       |
-| 4    | [deserialize-hardening.md](deserialize-hardening.md)                              | Opt-in checks; needed before the networking layer, not before.                                                                                                                                                         |
-| 5    | [documentation-gaps.md](documentation-gaps.md): `docs/usage.md`                   | User documentation written against fixed behavior. The stale-statement sweep in the same document does not wait; see below.                                                                                            |
-| 6    | [ci-and-release.md](ci-and-release.md): version backstop and first tagged release | The backstop lands with the release it protects. The CI-only items do not wait; see below.                                                                                                                             |
+| Step | Document                                                                          | Why here                                                                                                                                                                                                         |
+| ---- | --------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1    | [generated-code-performance.md](generated-code-performance.md)                    | The harness has run, and [benchmarks/speed.md](../benchmarks/speed.md) is the measurement every item here was waiting for: a hand-written codec writing surge's exact bytes encodes up to 4.66× faster.          |
+| 2    | [type-coverage-parity.md](type-coverage-parity.md) Tier B                         | New `DataType.*` surface (length-typed containers, per-component widths, ranges). That document asks for the harness first, to show what each bound saves. Split from Tier A, which has landed, for that reason. |
+| 3    | [deserialize-hardening.md](deserialize-hardening.md)                              | Opt-in checks; needed before the networking layer, not before.                                                                                                                                                   |
+| 4    | [documentation-gaps.md](documentation-gaps.md): `docs/usage.md`                   | User documentation written against fixed behavior. The stale-statement sweep in the same document does not wait; see below.                                                                                      |
+| 5    | [ci-and-release.md](ci-and-release.md): version backstop and first tagged release | The backstop lands with the release it protects. The CI-only items do not wait; see below.                                                                                                                       |
 
 ## No step of its own
 
@@ -193,10 +196,6 @@ time:
   workflow running the integration suite, the pinned sibling ref, `npm ci`,
   and the Windows job. The transformer's CI cannot see a broken
   serializer today.
-- The remaining Tier 2 work in
-  [benchmark-tooling.md](benchmark-tooling.md): the speed suite compiles and
-  type-checks but has never been run, which needs a Roblox Studio process
-  and no other open step.
 - [transformer-unit-test-coverage.md](transformer-unit-test-coverage.md):
   each remaining case lands with the fix or fixture it pins.
 - [enum-encoding.md](enum-encoding.md): a one-byte saving that needs an IR

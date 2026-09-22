@@ -14,7 +14,6 @@ import { surgeAdapter } from "../adapters/surge";
 import { zapAdapter } from "../adapters/zap";
 import { transforms as baselineCodec } from "../baseline/codecs";
 import { Transforms as blinkCodec } from "../blink/server";
-import { Frames as zapEvent } from "../zap/server";
 
 const COUNT = 50;
 
@@ -82,7 +81,11 @@ export const cframeArray: Fixture = {
 		defineEntry<Transforms>("fbs", { list: arbitrary }, fbsAdapter(fbsSerializer)),
 		defineEntry<Transforms>("serio", { list: arbitrary }, serioAdapter(serioSerializer)),
 		defineEntry("blink", { list: arbitrary }, blinkAdapter(blinkCodec)),
-		defineEntry("zap", { list: arbitrary }, zapAdapter(zapEvent)),
+		defineEntry(
+			"zap",
+			{ list: arbitrary },
+			zapAdapter((zap) => zap.Frames),
+		),
 		defineEntry("baseline", { list: arbitrary }, baselineAdapter(baselineCodec)),
 	],
 };

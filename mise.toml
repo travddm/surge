@@ -65,7 +65,7 @@ description = "Measure the bytes each fixture costs under Lune and rewrite docs/
 run = "npm run bench:size"
 
 [tasks."bench:speed"]
-description = "Build the tests place and run the speed suite in a real Roblox Studio process via run-in-roblox (Tier 2, see testing.md); not part of ci -- benchmark numbers are read by hand, not gated pass/fail"
+description = "Build the tests place, run the speed suite in a real Roblox Studio process via run-in-roblox, and rewrite docs/benchmarks/speed.md (Tier 2, see testing.md); not part of ci -- a timing is read, not gated pass/fail, and it needs Roblox Studio installed"
 run = "npm run bench:speed"
 
 [tasks."dev:tests"]

@@ -1,6 +1,6 @@
 import type { Adapter } from "../adapter";
-import type { ZapEvent } from "../zap/server";
-import { SendEvents } from "../zap/server";
+import loadZapServer from "../zap/deferred";
+import type * as ZapServer from "../zap/server";
 import decodeZapPacket from "../zap/tooling";
 
 /** Zap writes an event's id as one byte, which the other libraries have no equivalent of. */
@@ -35,17 +35,22 @@ function zapRemote(): CapturingRemote {
  * decode side is the `opt tooling` decoder, which does take a buffer.
  *
  * This works only under the Lune runner, which provides that mocked remote;
- * it is why Zap is a size-only column and `speed.spec.ts` skips it. See
+ * it is why Zap is a size-only column and the speed tier skips it. See
  * docs/future-work/benchmark-tooling.md.
+ *
+ * The event arrives as a selector rather than as itself, because the module
+ * it comes from cannot be required at all in a real Roblox process: nothing
+ * here touches Zap until a tier drives the entry, which only the Lune runner
+ * does. `defineEntry` defers the rest.
  */
-export function zapAdapter<T>(event: ZapEvent<T>): Adapter<T> {
-	const remote = zapRemote();
+export function zapAdapter<T>(pick: (events: typeof ZapServer) => ZapServer.ZapEvent<T>): Adapter<T> {
 	return {
 		encode: (value) => {
-			event.Fire(PLAYER, value);
-			SendEvents();
+			const events = loadZapServer();
+			pick(events).Fire(PLAYER, value);
+			events.SendEvents();
 
-			const send = remote.LastSend;
+			const send = zapRemote().LastSend;
 			assert(send !== undefined, "Zap flushed nothing");
 			// Snapshotted here because the next encode overwrites the field.
 			return {
@@ -56,7 +61,7 @@ export function zapAdapter<T>(event: ZapEvent<T>): Adapter<T> {
 		},
 		decode: (payload) => {
 			const send = payload as CapturedSend;
-			const decoded = decodeZapPacket(remote, send.buffer, send.instances);
+			const decoded = decodeZapPacket(zapRemote(), send.buffer, send.instances);
 			assert(decoded !== undefined && decoded.size() === 1, "Zap decoded no single event");
 			return decoded[0].Arguments[0] as T;
 		},

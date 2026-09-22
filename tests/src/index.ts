@@ -3,8 +3,44 @@ import { TestRunner } from "@rbxts/runit";
 /** Sentinel consumed by scripts/check-test-output.mjs to derive an exit code (see testing.md). */
 const RESULT_PREFIX = "RUNIT_RESULT:";
 
-function finish(summary: string): void {
-	print(`${RESULT_PREFIX} ${summary}`);
+/** The same contract for the speed tier, read by scripts/record-speed-benchmarks.mjs. */
+const BENCH_RESULT_PREFIX = "BENCH_RESULT:";
+
+/**
+ * One `key=value` fact about the run, which the recorder copies into the
+ * results file. The suite prints its own; this file knows the engine version.
+ */
+const BENCH_ENVIRONMENT_PREFIX = "BENCH_ENV:";
+
+/** Turns runit's report into the one-line verdict a runner script reads. */
+function summarize(results: string): string {
+	const [ranText] = results.match("Ran%s*(%d+)%s*test");
+	const [failedText] = results.match("Failed:%s*(%d+)%s*$");
+	const ran = tonumber(ranText);
+	const failed = tonumber(failedText);
+	if (ran === undefined || failed === undefined) {
+		return "ERROR (could not parse the runit report)";
+	}
+	// Guards against a broken mount (an empty/misconfigured folder) silently
+	// reporting PASSED with zero suites actually run.
+	if (ran === 0) {
+		return "ERROR (no suites ran)";
+	}
+	return failed > 0 ? "FAILED" : "PASSED";
+}
+
+/** Runs one suite root and prints `prefix` with the verdict, whatever happens. */
+function run(root: Instance, prefix: string): void {
+	const finish = (summary: string): void => print(`${prefix} ${summary}`);
+	new TestRunner(root)
+		.run({
+			colors: false,
+			reporter: (results) => {
+				print(results);
+				finish(summarize(results));
+			},
+		})
+		.catch((err) => finish(`ERROR (${err})`));
 }
 
 /**
@@ -15,28 +51,7 @@ function finish(summary: string): void {
  * implementation to keep correct.
  */
 export function main(): void {
-	const testsRoot = script.WaitForChild("tests");
-	new TestRunner(testsRoot)
-		.run({
-			colors: false,
-			reporter: (results) => {
-				print(results);
-				const [ranText] = results.match("Ran%s*(%d+)%s*test");
-				const [failedText] = results.match("Failed:%s*(%d+)%s*$");
-				const ran = tonumber(ranText);
-				const failed = tonumber(failedText);
-				if (ran === undefined || failed === undefined) {
-					finish("ERROR (could not parse the runit report)");
-				} else if (ran === 0) {
-					// Guards against a broken mount (an empty/misconfigured `tests`
-					// folder) silently reporting PASSED with zero suites actually run.
-					finish("ERROR (no suites ran)");
-				} else {
-					finish(failed > 0 ? "FAILED" : "PASSED");
-				}
-			},
-		})
-		.catch((err) => finish(`ERROR (${err})`));
+	run(script.WaitForChild("tests"), RESULT_PREFIX);
 }
 
 /**
@@ -47,11 +62,15 @@ export function main(): void {
  * `src/bench/size.ts` directly, so a broken fixture cannot fail this file's
  * round-trip entry point. Reads the `script` global, so it only works from
  * inside a running Script/ModuleScript, not from Studio's command bar (where
- * `script` is nil) -- invoke it via the disabled `MainBenchmarks` Script in
- * default.project.json: enable it and Play when doing a deliberate
- * benchmarking pass (see testing.md).
+ * `script` is nil) -- invoke it via `mise run bench:speed`, or through the
+ * disabled `MainBenchmarks` Script in default.project.json: enable it and
+ * Play when doing a deliberate benchmarking pass (see testing.md).
+ *
+ * The engine version goes out first because the recorder records the whole
+ * environment a timing was taken in, and this is the part of it that only
+ * the process itself knows.
  */
 export function runBenchmarks(): void {
-	const benchRoot = script.WaitForChild("bench");
-	new TestRunner(benchRoot).run({ colors: false });
+	print(`${BENCH_ENVIRONMENT_PREFIX} engine=${version()}`);
+	run(script.WaitForChild("bench"), BENCH_RESULT_PREFIX);
 }

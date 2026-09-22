@@ -319,8 +319,10 @@ it carries no comparison, because no other library has an adapter yet.
    guard codegen needed); structurally-ambiguous multi-object-variant case
    as a separate, explicitly scoped follow-up (see Risks in
    [transformer.md](transformer.md)).
-9. Full benchmark suite run, inside Roblox Studio via the `tests` place,
-   against both baselines (fbs and the hand-written flat serializer — see
-   [testing.md](testing.md)), with results recorded by hand into a
-   checked-in benchmark log before publishing any headline performance
-   numbers.
+9. Full benchmark suite run, inside Roblox Studio via the `tests` place or
+   `run-in-roblox`, against every comparison library and the hand-written
+   flat serializer (see [testing.md](testing.md)), with results recorded
+   into the checked-in benchmark tables
+   ([benchmarks/size.md](benchmarks/size.md) and
+   [benchmarks/speed.md](benchmarks/speed.md)) before publishing any
+   headline performance numbers.

@@ -13,7 +13,6 @@ import { surgeAdapter } from "../adapters/surge";
 import { zapAdapter } from "../adapters/zap";
 import { nestedObject as baselineCodec } from "../baseline/codecs";
 import { NestedObject as blinkCodec } from "../blink/server";
-import { Nested as zapEvent } from "../zap/server";
 
 interface Leaf {
 	name: string;
@@ -83,7 +82,11 @@ export const nestedObject: Fixture = {
 		defineEntry<FbsNestedObject>("fbs", value, fbsAdapter(fbsSerializer)),
 		defineEntry<SerioNestedObject>("serio", value, serioAdapter(serioSerializer)),
 		defineEntry("blink", value, blinkAdapter(blinkCodec)),
-		defineEntry("zap", value, zapAdapter(zapEvent)),
+		defineEntry(
+			"zap",
+			value,
+			zapAdapter((zap) => zap.Nested),
+		),
 		defineEntry("baseline", value, baselineAdapter(baselineCodec)),
 	],
 };

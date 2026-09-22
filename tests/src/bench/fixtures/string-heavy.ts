@@ -11,7 +11,6 @@ import { serioAdapter } from "../adapters/serio";
 import { surgeAdapter } from "../adapters/surge";
 import { zapAdapter } from "../adapters/zap";
 import { StringHeavy as blinkCodec } from "../blink/server";
-import { Strings as zapEvent } from "../zap/server";
 
 const COUNT = 100;
 
@@ -45,6 +44,10 @@ export const stringHeavy: Fixture = {
 		defineEntry<StringHeavy>("fbs", value, fbsAdapter(fbsSerializer)),
 		defineEntry<StringHeavy>("serio", value, serioAdapter(serioSerializer)),
 		defineEntry("blink", value, blinkAdapter(blinkCodec)),
-		defineEntry("zap", value, zapAdapter(zapEvent)),
+		defineEntry(
+			"zap",
+			value,
+			zapAdapter((zap) => zap.Strings),
+		),
 	],
 };

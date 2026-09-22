@@ -10,8 +10,15 @@ import { maxComponentError } from "./max-error";
  * halves stay opaque to the harness.
  */
 export interface Adapter<T> {
-	encode: (value: T) => { bytes: number; side: number; payload: unknown };
+	encode: (value: T) => Encoded;
 	decode: (payload: unknown) => T;
+}
+
+/** What one `encode` produced: its cost, and whatever its `decode` needs back. */
+export interface Encoded {
+	bytes: number;
+	side: number;
+	payload: unknown;
 }
 
 /**
@@ -32,7 +39,10 @@ export const LIBRARIES: ReadonlyArray<Library> = ["surge", "fbs", "serio", "blin
  * come from firing one event at the mocked RemoteEvent the Lune runner
  * provides, which the real Roblox process the speed tier runs in does not
  * have, and an encode timed through the event path would measure batching
- * and the mock as much as the encoder. See
+ * and the mock as much as the encoder. Its generated module cannot even be
+ * required there -- it errors on a client, and Studio's edit mode answers
+ * true to both `IsClient` and `IsServer` -- which is why `defineEntry`
+ * builds a size-only entry on first use rather than at import. See
  * docs/future-work/benchmark-tooling.md.
  */
 export const SIZE_ONLY: ReadonlyArray<Library> = ["zap"];
@@ -83,25 +93,62 @@ export interface Fixture {
  * record, which fbs and serio can only hold as a `Map`).
  */
 export function defineEntry<T>(library: Library, value: T, adapter: Adapter<T>): Entry {
+	if (SIZE_ONLY.includes(library)) {
+		return deferredEntry(library, value, adapter);
+	}
+
 	// Encoded once here, not per timed iteration: the decode timing must not
 	// include the encode it reads from.
 	const encoded = adapter.encode(value);
 	return {
 		library,
-		measure: () => {
-			const decoded = adapter.decode(encoded.payload);
-			return {
-				bytes: encoded.bytes,
-				side: encoded.side,
-				roundTrip: difference(value, decoded),
-				maxError: maxComponentError(value, decoded),
-			};
-		},
+		measure: () => measurementOf(value, adapter, encoded),
 		encode: () => {
 			adapter.encode(value);
 		},
 		decode: () => {
 			adapter.decode(encoded.payload);
+		},
+	};
+}
+
+function measurementOf<T>(value: T, adapter: Adapter<T>, encoded: Encoded): Measurement {
+	const decoded = adapter.decode(encoded.payload);
+	return {
+		bytes: encoded.bytes,
+		side: encoded.side,
+		roundTrip: difference(value, decoded),
+		maxError: maxComponentError(value, decoded),
+	};
+}
+
+/**
+ * The same row for a library the speed suite skips, with the first encode put
+ * off until a tier asks for a number. Loading a fixture then costs nothing but
+ * the closure, which is what lets the speed tier load the catalog in a real
+ * Roblox process, where Zap's module cannot be required at all.
+ *
+ * Only a size-only library gets this: the two timed halves above have to stay
+ * free of the readiness check this needs, which on the fastest rows would be a
+ * measurable part of what they report.
+ */
+function deferredEntry<T>(library: Library, value: T, adapter: Adapter<T>): Entry {
+	let encoded: Encoded | undefined;
+	const encodeOnce = (): Encoded => {
+		if (encoded === undefined) {
+			encoded = adapter.encode(value);
+		}
+		return encoded;
+	};
+
+	return {
+		library,
+		measure: () => measurementOf(value, adapter, encodeOnce()),
+		encode: () => {
+			adapter.encode(value);
+		},
+		decode: () => {
+			adapter.decode(encodeOnce().payload);
 		},
 	};
 }
