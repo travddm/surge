@@ -254,7 +254,14 @@ The concrete plan for everything else:
     `tests/node_modules/` holds a **snapshot**, not a live view. A plain
     `npm install` reports the snapshot as up to date while the version
     number is unchanged, so `npm run tests:install` first deletes both
-    snapshots (`tests/scripts/clear-file-deps.mjs`) to force a fresh copy.
+    snapshots (`tests/scripts/clear-stale-build.mjs`) to force a fresh
+    copy. The same script deletes `tests/out/tsconfig.tsbuildinfo`, for
+    the same reason one step later: `tests/tsconfig.json` sets
+    `incremental`, and the transformer is a tsconfig plugin, not an input
+    file, so with `tests/src/` unchanged `rbxtsc` reuses the previous emit
+    and the new transformer never runs — the golden checks, the round-trip
+    run, and both benchmark tiers would all read the previous
+    transformer's code, with nothing in the output to say so.
     After editing this package's `src/` or the transformer's source, rerun
     `npm run tests:install` before `npm run tests:compile` (or
     `mise run tests:compile:watch`, which watches `tests/src/` only, never
@@ -497,7 +504,11 @@ measuring. The install is the part that matters and the part that is easy to
 miss: `tests/node_modules/@rbxts/surge` is a packed copy, not a symlink (see
 `install-links=true` above), so an edit under `src/` does not reach a
 benchmark run until `tests/` is installed again. Without it a run measures
-the previous build of the package and says nothing about it.
+the previous build of the package and says nothing about it. The same task
+deletes `tests/out/tsconfig.tsbuildinfo`, which is the same trap one step
+later: a transformer change leaves `tests/src/` untouched, so an incremental
+`rbxtsc` reuses the previous emit and the run measures the previous
+transformer.
 
 **Either tier can be scoped to some fixtures.** `mise run bench:size:only
 large-array` and `mise run bench:speed:only cframe` measure only the rows

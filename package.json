@@ -19,7 +19,7 @@
 		"format:fix": "prettier --write .",
 		"spell": "cspell --no-progress",
 		"test": "node --test",
-		"tests:install": "node tests/scripts/clear-file-deps.mjs && npm install --prefix tests",
+		"tests:install": "node tests/scripts/clear-stale-build.mjs && npm install --prefix tests",
 		"tests:compile": "npm run compile --prefix tests",
 		"tests:compile:watch": "npm run compile:watch --prefix tests",
 		"tests:sourcemap": "npm run sourcemap --prefix tests",
