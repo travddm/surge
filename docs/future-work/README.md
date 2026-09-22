@@ -150,8 +150,8 @@ The speed tier has since run, through `run-in-roblox`, and
 [benchmarks/speed.md](../benchmarks/speed.md) records it. It opened with surge
 encoding 2.87× slower than that baseline and decoding 1.63× slower on
 identical bytes, on the one of its three rows whose trials are quiet. Those
-two figures are 1.08× and 1.05× now, and the encode one is inside the baseline
-cell's own spread. Its columns are not all compiled alike,
+two figures are 1.08× and 1.05× now, with the baseline still ahead on both
+halves by a margin its trials can still separate. Its columns are not all compiled alike,
 which that file states first — fbs and Blink carry `--!native` where
 roblox-ts emits none.
 

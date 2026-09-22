@@ -312,8 +312,8 @@ writes:
   median or more. That gap is what the emitted code cost against straight-line
   Luau, and it is the measurement
   [generated-code-performance.md](generated-code-performance.md) was waiting
-  for. It is 1.08× and 1.05× now, on the same row, and the encode figure is
-  inside the baseline cell's own spread.
+  for. It is 1.08× and 1.05× now, on the same row, with the baseline still
+  ahead on both halves and the two columns' trials not overlapping on either.
 - Against fbs, which is compiled differently, surge is ahead on 15 of the 16
   encode rows and all 16 decode rows. It was behind on 10 encode rows before
   the inline reservation. The one it still loses is the 1000-element array, at

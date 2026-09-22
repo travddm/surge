@@ -245,7 +245,9 @@ project's own small IR is written in TypeScript.
    is worth, in
    [future-work/generated-code-performance.md](future-work/generated-code-performance.md)).
    One buffer per serializer rather than one per place also means two
-   serializers can be in flight at once. At the end of a top-level
+   serializers can be in flight at once — unless either carries a blob field,
+   because the blob side channel is still module state in the package. At the
+   end of a top-level
    `serialize()` call, the used region is copied into an exact-size result via
    `buffer.copy`. This was chosen over a two-pass
    exact-allocation design (a companion `size(value)` function generated

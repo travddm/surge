@@ -7,8 +7,8 @@ was written, [benchmarks/speed.md](../benchmarks/speed.md) put surge 2.87×
 behind a hand-written codec that writes its exact bytes on encode, and 1.63×
 behind it on decode, on the `CFrame` array — the one of the baseline's three
 rows whose trials are quiet enough to read. That gap is what the document was
-about. It is 1.08× and 1.05× now, and the encode figure sits inside the
-baseline cell's own 7% spread.
+about. It is 1.08× and 1.05× now. The baseline is still ahead on both
+halves, and separably so: the two columns' trials do not overlap on either.
 
 Ten things were measured on their own to get there. Seven are changes that
 landed: the read loop, worth nothing; the tagged-union read's table copy,
@@ -762,8 +762,11 @@ throwaway build and once by the emitter:
 **What it closes.** On the `CFrame` array, the one baseline row quiet in both
 halves, a hand-written codec writing surge's exact bytes encoded 2.87× faster
 and decoded 1.63× faster. It encodes 1.08× faster now and decodes 1.05×
-faster, and the encode figure is inside that cell's own 7% spread, so the two
-columns are no longer separable there. Against the other libraries, surge
+faster. Both are real rather than noise: the trials do not overlap on either
+half — 53.9k to 54.1k against 56.5k to 60.5k on encode, and 40.9k to 41.6k
+against 42.2k to 43.8k on decode. The baseline is still the fastest column
+on the rows it has, by a margin the harness can still see, and what changed
+is its size. Against the other libraries, surge
 leads fbs on 15 of 16 encode rows and all 16 decode rows, where it was behind
 on 10 encode rows; and it leads Blink on 7 of the 11 decode rows they share,
 where Blink led every one. Blink still leads the 1000-element array on both
