@@ -233,11 +233,14 @@ A throwaway probe answered the one question left on that list.
 because it scales with the payload. A build whose `finishWrite` skipped the
 copy moved surge's ten quiet encode cells by a median of 1.007×, inside the
 0.99× to 1.05× the untouched libraries drifted — 1.011× on the 2004-byte
-large array. So no design that removes it pays for itself: not a
-static-size fast path, not two-pass exact sizing, not handing the caller the
-scratch buffer. The probe was reverted, not committed, and
+large array. `finishWrite` is a `buffer.create` and a `buffer.copy`, and the
+probe removed only the copy, because the caller has to be handed a buffer;
+so it rules out a static-size fast path and two-pass exact sizing, which
+both still allocate one, and leaves open only the designs that hand the
+caller a buffer surge reuses. The probe was reverted, not committed, and
 [generated-code-performance.md](generated-code-performance.md) records what
-it measured and why it does not contradict the native-pragma result.
+it measured, what it does not, and why none of these 1.00× results survives
+the generated code being compiled natively without being measured again.
 
 The same work found that `mise run ci` and both benchmark tiers could read
 the previous transformer's output: `tests/tsconfig.json` sets `incremental`

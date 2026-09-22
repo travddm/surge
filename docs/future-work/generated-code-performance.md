@@ -240,17 +240,25 @@ write-side so only the encode half means anything — moved surge's ten quiet
 encode cells by a median of 1.007×, between 0.986× and 1.025×, while the
 untouched libraries' encode cells drifted 0.99× to 1.05× with a median of
 1.011×. The 2004-byte large array is 1.011× of that, and the `CFrame` array
-1.025×. Removing the copy entirely is inside the noise, so no design that
-removes it — a static-size fast path, two-pass exact sizing, or handing the
-caller the scratch — buys anything worth its cost. The probe was reverted,
-not committed.
+1.025×. The probe was reverted, not committed.
+
+**What that probe does and does not rule out.** `finishWrite` is two C
+calls: a `buffer.create`, which allocates, and a `buffer.copy`. The probe
+kept the allocation and removed only the copy, because the caller has to be
+given a buffer. So it rules out the designs that also keep the allocation —
+a static-size fast path and two-pass exact sizing both end in
+`buffer.create(exact)` — and it says nothing about the designs that remove
+the allocation as well, which means handing the caller a buffer surge owns
+and reuses. What that would be worth is unmeasured. It would have to be an
+opt-in API, because a reused buffer is dead the moment anything calls
+`serialize()` again.
 
 This does not contradict the native-code-generation measurement below, which
-found that adding exactly this copy to a natively compiled writer collapsed
-its gain from 12.65× to 1.75×. Both are true: native code generation makes
-the Luau around the copy fast enough that a C call dominates what is left,
-while in the interpreted code roblox-ts actually emits, the same copy is a
-small fraction of a much larger total.
+found that adding a `buffer.create` **and** a `buffer.copy` to a natively
+compiled writer collapsed its gain from 12.65× to 1.75×. Both are true, for
+two reasons that compound: native code generation makes the Luau around
+those two calls fast enough that they dominate what is left, and that probe
+counted the allocation where this one did not.
 
 **Smaller items.** Strings evaluate `s.size()` twice; the scratch
 buffer only grows, so one large payload pins its memory for the module's
@@ -447,10 +455,28 @@ blob channel's three calls and its table at 1.00×, and `finishWrite`'s copy
 at 1.00× even on a 2004-byte payload. The read loop is the third kind — a
 branch per element — and it cost nothing either.
 
-So the per-call list is closed, and with it the largest thing this document
-had left. What remains is the smaller items, the emission fix that makes a
-`//!native` reach the directive at all, and tuple elements, none of which is
-a fifth item of the size of the fourth. Native code generation looked like
+So the per-call list is closed **for interpreted code**, and that
+qualification is the whole of what is left to say about it. Every one of
+these 1.00× results is of the form "this is invisible against the total",
+and `--!native` shrinks the Luau part of that total by 2.25× on a
+codec-shaped loop and 11.68× on a tight numeric one while leaving a C call
+exactly where it was. The table below is that effect measured directly: the
+same two calls go from invisible to dominant. So the read loop, the blob
+channel and `finishWrite` all have to be measured again if the generated
+code ever compiles natively, and the order matters — the pragma is worth
+nothing on surge's emitted code today partly because of the per-call copy,
+and the copy measures at nothing partly because the code is not native.
+Neither reading is wrong; they are one number seen twice. The emission fix
+below is what breaks the loop, and nothing on this list should be called
+settled under native until it lands.
+
+The per-element results do not have that problem. A call out of a native
+region into a module that is not native costs more, not less, so removing
+one per field is worth at least what it was measured at.
+
+What remains, then, is the smaller items, the emission fix, and tuple
+elements, none of which is a fifth item of the size of the fourth. Native
+code generation looked like
 the exception and is not either: measured, it reaches one row of the emitted
 code and leaves the rest, so it removes no item from that list. It keeps an
 open question of its own if it is ever made automatic, which needs a way to
