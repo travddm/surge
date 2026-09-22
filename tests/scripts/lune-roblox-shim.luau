@@ -191,6 +191,14 @@ local function requireInstance(x)
 			error("requiring " .. (rawget(x, "_filePath") :: string) .. " failed: " .. tostring(result), 0)
 		end
 
+		-- Lua's require() stores `true` for a module that returns nil; Roblox's returns the nil
+		-- itself. roblox-ts compiles a type-only module (@rbxts/serio's data-types, which the
+		-- benchmark fixtures reach through its index) to exactly that, and its index iterates
+		-- `require(...) or {}`, which `true` breaks.
+		if result == true then
+			return nil
+		end
+
 		return result
 	end
 

@@ -4,7 +4,8 @@ Part of the [surge](../architecture.md) design. Compares what each library
 can express and what it costs on the wire, and lists the gaps surge should
 close to reach full coverage. Library facts come from reading each
 project's source at a pinned commit (September 2026), not from executing
-it:
+it, except for the `CFrame` cells the benchmark harness has since measured
+(recorded under the matrix):
 
 | Library                                    | Version | Commit    | Kind                                                              |
 | ------------------------------------------ | ------- | --------- | ----------------------------------------------------------------- |
@@ -64,6 +65,21 @@ buffer bytes.
 | generics               | yes (keyed by type identity)          | yes                                     | yes                                                | struct/map/enum generics                          | none                                         |
 | write-side validation  | none                                  | none                                    | range and NaN on every number                      | `option WriteValidations`                         | `write_checks` (default on)                  |
 | read-side checks       | none                                  | none                                    | none                                               | bounds validated                                  | server always, client optional               |
+
+Two `CFrame` cells have since been measured rather than read, by the
+harness in [benchmark-tooling.md](benchmark-tooling.md):
+
+- Both libraries' packed aligned tables hold 24 rotations built from
+  `CFrame.Angles` and are looked up with exact `CFrame` equality
+  (`table.find`), so a rotation built from unit axes almost never matches:
+  3 of 50 did, measured over the benchmark's axis-aligned row. surge's
+  own 1-byte form covers all 24 and is exact.
+- What the other 47 then cost is the two libraries' general rotation form:
+  about 2e-7 for fbs's three f32 of axis × angle, and a lost rotation for
+  serio's 6-byte quantized one — worst component 1.0 — where the axis is
+  the X axis, on which the scale it maps the Y component onto,
+  `(1 - x²)^0.5`, is zero. On an arbitrary rotation that same form costs
+  about 1e-4.
 
 ## Deliberate non-gaps
 

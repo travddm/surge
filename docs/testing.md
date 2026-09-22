@@ -362,31 +362,33 @@ compiled output can't run there (it can, per above). Lune is a separate
 Luau implementation/VM build from Roblox's own engine; `os.clock()`
 timings measured under it are not evidence of real in-game throughput,
 only of correctness. A benchmark number this design publishes has to come
-from the actual engine it claims to be fast on. Zap is, at minimum, not
-straightforwardly usable as a runnable baseline either way: its event-level
-`irgen`-produced writes target a module-global `outgoing_buff`/
-`outgoing_apos`, and the public surface for those is `Fire`/`FireAll`/`On`
-wired to real `RemoteEvent` instances at module load, not a callable
-`Zap.encode(shape, value)`. **Unconfirmed either way**: Zap's `.zap` DSL
-also supports named, reusable `type` declarations, which Zap compiles to
-their own shared function (`push_tydecl`) specifically so they can be
-referenced from multiple events — it's plausible those are exposed as
-directly-callable pure encode/decode functions in Zap's generated output
-for at least that case, which would make a real Zap baseline possible for
-`type`-declared shapes. This wasn't verified in either direction (prior
-research on Zap's output module structure was inconclusive), so it isn't
-assumed here — but it's worth a direct check before fully committing to
-two baselines instead of three.
+from the actual engine it claims to be fast on. Zap is not a speed baseline:
+its event-level `irgen`-produced writes target a module-global
+`outgoing_buff`/`outgoing_apos`, and the public surface for those is
+`Fire`/`FireAll`/`On` wired to real `RemoteEvent` instances at module load,
+not a callable `Zap.encode(shape, value)`. Reading Zap 0.6.29 settled the
+question its `.zap` DSL's named `type` declarations left open: only
+recursive ones get their own `write_X`/`read_X`, and the `types` table
+holding them is module-local, so no shape has a callable Zap codec. An
+encode timed through the event path would measure batching and a mocked
+remote as much as the encoder, so it is not taken. Its bytes are another
+matter, and are planned for Tier 1 through that same mocked remote minus
+the event-id byte; see
+[future-work/benchmark-tooling.md](future-work/benchmark-tooling.md).
 
 This design measures **speed** inside real Roblox — Studio, via the
 `tests` place, or `run-in-roblox` (`mise run bench:speed`) for an
 automatable-but-still-real-engine run — using `os.clock()` around many
 iterations, reported through the same runner output `@rbxts/runit`
-already prints to. Against two baselines, not three:
+already prints to. Against these baselines:
 
 1. **fbs**, via `createBinarySerializer<T>()` for the identical shape —
    the actual comparison this whole project is justified by.
-2. **A hand-written, non-generated "ideal" flat serializer** for a subset
+2. **serio**, via `createSerializer<T>()` — a second runtime schema
+   interpreter, with its own narrower widths and a lossy `CFrame`, which
+   is what shows whether a delta against fbs is fbs-specific or common to
+   interpreting a schema at runtime.
+3. **A hand-written, non-generated "ideal" flat serializer** for a subset
    of shapes — a manually written straight-line function doing the same
    writes with no transformer involved. This measures whether the
    transformer's emitted code actually reaches the flatness it claims, or
@@ -404,10 +406,12 @@ large array/`Record`, a string-heavy shape, an enum-heavy shape — the
 concrete case where this design's O(1) lookup should beat fbs's `indexOf`
 scan — a union-heavy shape, a `Packed<T>` vs. unpacked variant, and one
 deliberately large shape to exercise the Luau function-size risk in
-practice) are declared once in `tests/src/bench/fixtures/`, listed in
-`catalog.ts`, and driven through one `Adapter<T>` per library
-(`tests/src/bench/adapters/`). Both tiers read that one catalog, so a
-size number and a speed number always describe the same value. The speed
+practice) live one per module in `tests/src/bench/fixtures/`, each holding
+one sample value and its shape declared once per library — a width brand
+belongs to the library that declares it — listed in `catalog.ts`, and driven
+through one `Adapter<T>` per library (`tests/src/bench/adapters/`). Both
+tiers read that one catalog, so a size number and a speed number always
+describe the same value. The speed
 tier is its own `@rbxts/runit` suite (`speed.spec.ts`), separate from the
 correctness suites, so a benchmark failing to compile or run is never
 confused with a behavioral regression; the size tier is a plain function
@@ -420,8 +424,9 @@ is [future-work/benchmark-tooling.md](future-work/benchmark-tooling.md).
 `mise run bench:size` runs `tests/scripts/lune-size-runner.luau`, which
 loads the compiled fixtures through the same fake-Instance shim the
 round-trip runner uses (`tests/scripts/lune-roblox-shim.luau`, shared by
-both), asks each fixture for its buffer size and side-table count, and
-writes [benchmarks/size.md](benchmarks/size.md) with `@lune/fs`. The task
+both), asks each fixture for every library's buffer size, side-table count,
+and round-trip error, and writes [benchmarks/size.md](benchmarks/size.md)
+with `@lune/fs`, one column per library. The task
 then reformats that file with Prettier, since every checked-in Markdown
 file has to pass `mise run format:check`.
 

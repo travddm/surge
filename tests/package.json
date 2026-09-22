@@ -19,8 +19,10 @@
 		"@rbxts/surge": "file:..",
 		"rbxts-transformer-surge": "file:../../rbxts-transformer-surge",
 		"@flamework/core": "^1.3.2",
+		"@rbxts/flamework-binary-serializer": "0.7.0",
 		"@rbxts/repr": "1.0.2",
 		"@rbxts/runit": "^1.4.7",
+		"@rbxts/serio": "1.2.7",
 		"rbxts-transformer-flamework": "^1.3.2"
 	},
 	"devDependencies": {

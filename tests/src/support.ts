@@ -26,6 +26,20 @@ export function difference(expected: unknown, actual: unknown, path = "value"): 
 			? undefined
 			: `${path}: expected the bytes ${hex(expected)}, got ${hex(actual)}`;
 	}
+	// Lune keeps Luau's native `vector` and Roblox's `Vector3` apart, where
+	// Roblox has one type: `vector.create(x, y, z)` there is a `Vector3`. serio
+	// reads every vector field back through `vector.create` (it branches on
+	// `IS_LUNE` itself for the same reason), so under the Lune runner a decoded
+	// vector that differs from the input only in which of the two it is has
+	// round-tripped exactly.
+	if (typeIs(expected, "Vector3") && typeOf(actual) === "vector") {
+		const native = actual as unknown as { x: number; y: number; z: number };
+		return (
+			difference(expected.X, native.x, `${path}.X`) ??
+			difference(expected.Y, native.y, `${path}.Y`) ??
+			difference(expected.Z, native.z, `${path}.Z`)
+		);
+	}
 	if (typeIs(expected, "table") && typeIs(actual, "table")) {
 		const expectedTable = expected as Map<unknown, unknown>;
 		const actualTable = actual as Map<unknown, unknown>;

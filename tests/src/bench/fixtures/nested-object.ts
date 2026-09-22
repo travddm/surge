@@ -1,6 +1,12 @@
+import { DataType as Fbs, createBinarySerializer as createFbsSerializer } from "@rbxts/flamework-binary-serializer";
+import createSerioSerializer from "@rbxts/serio";
+import type * as Serio from "@rbxts/serio";
 import { DataType, createBinarySerializer } from "@rbxts/surge";
 
-import { defineFixture } from "../adapter";
+import type { Fixture } from "../adapter";
+import { defineEntry } from "../adapter";
+import { fbsAdapter } from "../adapters/fbs";
+import { serioAdapter } from "../adapters/serio";
 import { surgeAdapter } from "../adapters/surge";
 
 interface Leaf {
@@ -29,17 +35,46 @@ interface NestedObject {
 	version: DataType.u8;
 }
 
-const serializer = createBinarySerializer<NestedObject>();
+interface FbsNestedObject {
+	root: {
+		inner: {
+			inner: { leaf: { name: string; weight: Fbs.f32 }; flag: boolean };
+			count: Fbs.u16;
+		};
+		label: string;
+	};
+	version: Fbs.u8;
+}
 
-export const nestedObject = defineFixture<NestedObject>(
-	"deeply nested object",
-	"five levels of objects, one field each level",
-	{
-		root: {
-			inner: { inner: { leaf: { name: "leaf", weight: 0.5 }, flag: true }, count: 1200 },
-			label: "root",
-		},
-		version: 3,
+interface SerioNestedObject {
+	root: {
+		inner: {
+			inner: { leaf: { name: string; weight: Serio.f32 }; flag: boolean };
+			count: Serio.u16;
+		};
+		label: string;
+	};
+	version: Serio.u8;
+}
+
+const serializer = createBinarySerializer<NestedObject>();
+const fbsSerializer = createFbsSerializer<FbsNestedObject>();
+const serioSerializer = createSerioSerializer<SerioNestedObject>();
+
+const value = {
+	root: {
+		inner: { inner: { leaf: { name: "leaf", weight: 0.5 }, flag: true }, count: 1200 },
+		label: "root",
 	},
-	surgeAdapter(serializer),
-);
+	version: 3,
+};
+
+export const nestedObject: Fixture = {
+	name: "deeply nested object",
+	note: "five levels of objects, one field each level",
+	entries: [
+		defineEntry<NestedObject>("surge", value, surgeAdapter(serializer)),
+		defineEntry<FbsNestedObject>("fbs", value, fbsAdapter(fbsSerializer)),
+		defineEntry<SerioNestedObject>("serio", value, serioAdapter(serioSerializer)),
+	],
+};

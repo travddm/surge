@@ -1,7 +1,13 @@
+import { DataType as Fbs, createBinarySerializer as createFbsSerializer } from "@rbxts/flamework-binary-serializer";
+import createSerioSerializer from "@rbxts/serio";
+import type * as Serio from "@rbxts/serio";
 import { DataType, createBinarySerializer } from "@rbxts/surge";
 
 import { Rng } from "../../support";
-import { defineFixture } from "../adapter";
+import type { Fixture } from "../adapter";
+import { defineEntry } from "../adapter";
+import { fbsAdapter } from "../adapters/fbs";
+import { serioAdapter } from "../adapters/serio";
 import { surgeAdapter } from "../adapters/surge";
 
 const BOOLEAN_COUNT = 1000;
@@ -30,8 +36,20 @@ interface Entities {
 	entities: Entity[];
 }
 
+interface FbsEntities {
+	entities: Array<{ a: Fbs.u8; b: Fbs.u8; c: Fbs.u8; d: Fbs.u8; e: Fbs.u8; f: Fbs.u8 }>;
+}
+
+interface SerioEntities {
+	entities: Array<{ a: Serio.u8; b: Serio.u8; c: Serio.u8; d: Serio.u8; e: Serio.u8; f: Serio.u8 }>;
+}
+
 const booleansSerializer = createBinarySerializer<Booleans>();
 const entitiesSerializer = createBinarySerializer<Entities>();
+const fbsBooleansSerializer = createFbsSerializer<Booleans>();
+const fbsEntitiesSerializer = createFbsSerializer<FbsEntities>();
+const serioBooleansSerializer = createSerioSerializer<Booleans>();
+const serioEntitiesSerializer = createSerioSerializer<SerioEntities>();
 
 const rng = new Rng(1721);
 
@@ -52,16 +70,22 @@ for (const _ of $range(1, ENTITY_COUNT)) {
 	});
 }
 
-export const blinkBooleans = defineFixture<Booleans>(
-	"Blink: Booleans",
-	`${BOOLEAN_COUNT} booleans in one array, a byte each, as Blink also writes them`,
-	{ values },
-	surgeAdapter(booleansSerializer),
-);
+export const blinkBooleans: Fixture = {
+	name: "Blink: Booleans",
+	note: `${BOOLEAN_COUNT} booleans in one array, a byte each, as Blink also writes them`,
+	entries: [
+		defineEntry<Booleans>("surge", { values }, surgeAdapter(booleansSerializer)),
+		defineEntry<Booleans>("fbs", { values }, fbsAdapter(fbsBooleansSerializer)),
+		defineEntry<Booleans>("serio", { values }, serioAdapter(serioBooleansSerializer)),
+	],
+};
 
-export const blinkEntities = defineFixture<Entities>(
-	"Blink: Entities",
-	`${ENTITY_COUNT} structs of six u8 fields`,
-	{ entities },
-	surgeAdapter(entitiesSerializer),
-);
+export const blinkEntities: Fixture = {
+	name: "Blink: Entities",
+	note: `${ENTITY_COUNT} structs of six u8 fields`,
+	entries: [
+		defineEntry<Entities>("surge", { entities }, surgeAdapter(entitiesSerializer)),
+		defineEntry<FbsEntities>("fbs", { entities }, fbsAdapter(fbsEntitiesSerializer)),
+		defineEntry<SerioEntities>("serio", { entities }, serioAdapter(serioEntitiesSerializer)),
+	],
+};

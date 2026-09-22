@@ -1,6 +1,12 @@
+import { DataType as Fbs, createBinarySerializer as createFbsSerializer } from "@rbxts/flamework-binary-serializer";
+import createSerioSerializer from "@rbxts/serio";
+import type * as Serio from "@rbxts/serio";
 import { DataType, createBinarySerializer } from "@rbxts/surge";
 
-import { defineFixture } from "../adapter";
+import type { Fixture } from "../adapter";
+import { defineEntry } from "../adapter";
+import { fbsAdapter } from "../adapters/fbs";
+import { serioAdapter } from "../adapters/serio";
 import { surgeAdapter } from "../adapters/surge";
 
 /**
@@ -62,9 +68,117 @@ interface WideStruct {
 	f50: DataType.f32;
 }
 
-const serializer = createBinarySerializer<WideStruct>();
+interface FbsWideStruct {
+	f1: Fbs.f32;
+	f2: Fbs.f32;
+	f3: Fbs.f32;
+	f4: Fbs.f32;
+	f5: Fbs.f32;
+	f6: Fbs.f32;
+	f7: Fbs.f32;
+	f8: Fbs.f32;
+	f9: Fbs.f32;
+	f10: Fbs.f32;
+	f11: Fbs.f32;
+	f12: Fbs.f32;
+	f13: Fbs.f32;
+	f14: Fbs.f32;
+	f15: Fbs.f32;
+	f16: Fbs.f32;
+	f17: Fbs.f32;
+	f18: Fbs.f32;
+	f19: Fbs.f32;
+	f20: Fbs.f32;
+	f21: Fbs.f32;
+	f22: Fbs.f32;
+	f23: Fbs.f32;
+	f24: Fbs.f32;
+	f25: Fbs.f32;
+	f26: Fbs.f32;
+	f27: Fbs.f32;
+	f28: Fbs.f32;
+	f29: Fbs.f32;
+	f30: Fbs.f32;
+	f31: Fbs.f32;
+	f32: Fbs.f32;
+	f33: Fbs.f32;
+	f34: Fbs.f32;
+	f35: Fbs.f32;
+	f36: Fbs.f32;
+	f37: Fbs.f32;
+	f38: Fbs.f32;
+	f39: Fbs.f32;
+	f40: Fbs.f32;
+	f41: Fbs.f32;
+	f42: Fbs.f32;
+	f43: Fbs.f32;
+	f44: Fbs.f32;
+	f45: Fbs.f32;
+	f46: Fbs.f32;
+	f47: Fbs.f32;
+	f48: Fbs.f32;
+	f49: Fbs.f32;
+	f50: Fbs.f32;
+}
 
-const value: WideStruct = {
+interface SerioWideStruct {
+	f1: Serio.f32;
+	f2: Serio.f32;
+	f3: Serio.f32;
+	f4: Serio.f32;
+	f5: Serio.f32;
+	f6: Serio.f32;
+	f7: Serio.f32;
+	f8: Serio.f32;
+	f9: Serio.f32;
+	f10: Serio.f32;
+	f11: Serio.f32;
+	f12: Serio.f32;
+	f13: Serio.f32;
+	f14: Serio.f32;
+	f15: Serio.f32;
+	f16: Serio.f32;
+	f17: Serio.f32;
+	f18: Serio.f32;
+	f19: Serio.f32;
+	f20: Serio.f32;
+	f21: Serio.f32;
+	f22: Serio.f32;
+	f23: Serio.f32;
+	f24: Serio.f32;
+	f25: Serio.f32;
+	f26: Serio.f32;
+	f27: Serio.f32;
+	f28: Serio.f32;
+	f29: Serio.f32;
+	f30: Serio.f32;
+	f31: Serio.f32;
+	f32: Serio.f32;
+	f33: Serio.f32;
+	f34: Serio.f32;
+	f35: Serio.f32;
+	f36: Serio.f32;
+	f37: Serio.f32;
+	f38: Serio.f32;
+	f39: Serio.f32;
+	f40: Serio.f32;
+	f41: Serio.f32;
+	f42: Serio.f32;
+	f43: Serio.f32;
+	f44: Serio.f32;
+	f45: Serio.f32;
+	f46: Serio.f32;
+	f47: Serio.f32;
+	f48: Serio.f32;
+	f49: Serio.f32;
+	f50: Serio.f32;
+}
+
+const serializer = createBinarySerializer<WideStruct>();
+const fbsSerializer = createFbsSerializer<FbsWideStruct>();
+const serioSerializer = createSerioSerializer<SerioWideStruct>();
+
+const value = {
 	f1: 1.5,
 	f2: 2.5,
 	f3: 3.5,
@@ -117,9 +231,12 @@ const value: WideStruct = {
 	f50: 50.5,
 };
 
-export const wideStruct = defineFixture<WideStruct>(
-	"wide struct",
-	"50 f32 fields, just under the emitter's block-split threshold",
-	value,
-	surgeAdapter(serializer),
-);
+export const wideStruct: Fixture = {
+	name: "wide struct",
+	note: "50 f32 fields, just under the emitter's block-split threshold",
+	entries: [
+		defineEntry<WideStruct>("surge", value, surgeAdapter(serializer)),
+		defineEntry<FbsWideStruct>("fbs", value, fbsAdapter(fbsSerializer)),
+		defineEntry<SerioWideStruct>("serio", value, serioAdapter(serioSerializer)),
+	],
+};

@@ -1,11 +1,12 @@
 import { Fact } from "@rbxts/runit";
 
-import type { Fixture } from "./adapter";
+import type { Entry, Fixture } from "./adapter";
 import { CATALOG } from "./catalog";
 
 /**
  * Tier 2 of docs/future-work/benchmark-tooling.md: encode and decode values
- * per second, over the same catalog the size run measures. Real Roblox only
+ * per second, over the same catalog the size run measures, one line per
+ * fixture and library. Real Roblox only
  * (`mise run bench:speed`, or the disabled `MainBenchmarks` Script in
  * default.project.json): a timing from Lune is not evidence about the engine
  * this project claims to be fast on, which is why the Lune runner never
@@ -51,11 +52,12 @@ function measure(run: () => void): Result {
 	};
 }
 
-function report(half: string, fixture: Fixture, result: Result): void {
+function report(half: string, fixture: Fixture, entry: Entry, result: Result): void {
 	print(
 		string.format(
-			"%s %s: %.0f values/sec (median of %d x %d; %.0f to %.0f)",
+			"%s [%s] %s: %.0f values/sec (median of %d x %d; %.0f to %.0f)",
 			fixture.name,
+			entry.library,
 			half,
 			result.median,
 			TRIALS,
@@ -70,14 +72,18 @@ class SpeedBench {
 	@Fact
 	public encodeThroughput(): void {
 		for (const fixture of CATALOG) {
-			report("encode", fixture, measure(fixture.encode));
+			for (const entry of fixture.entries) {
+				report("encode", fixture, entry, measure(entry.encode));
+			}
 		}
 	}
 
 	@Fact
 	public decodeThroughput(): void {
 		for (const fixture of CATALOG) {
-			report("decode", fixture, measure(fixture.decode));
+			for (const entry of fixture.entries) {
+				report("decode", fixture, entry, measure(entry.decode));
+			}
 		}
 	}
 }

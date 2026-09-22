@@ -1,17 +1,34 @@
+import { DataType as Fbs, createBinarySerializer as createFbsSerializer } from "@rbxts/flamework-binary-serializer";
+import createSerioSerializer from "@rbxts/serio";
+import type * as Serio from "@rbxts/serio";
 import { DataType, createBinarySerializer } from "@rbxts/surge";
 
 import { Rng } from "../../support";
-import { defineFixture } from "../adapter";
+import type { Fixture } from "../adapter";
+import { defineEntry } from "../adapter";
+import { fbsAdapter } from "../adapters/fbs";
+import { serioAdapter } from "../adapters/serio";
 import { surgeAdapter } from "../adapters/surge";
 
 const COUNT = 50;
 
+/**
+ * No width brands, so the unpacked shape is the same for all three; only the
+ * `Packed<T>` wrapper comes from each library's own namespace. serio stores a
+ * rotation quantized to about 0.05 radians per component, so its round trip
+ * is inexact by design on every row here -- see the coverage matrix in
+ * docs/future-work/type-coverage-parity.md.
+ */
 interface Transforms {
 	list: CFrame[];
 }
 
 const serializer = createBinarySerializer<Transforms>();
 const packedSerializer = createBinarySerializer<DataType.Packed<Transforms>>();
+const fbsSerializer = createFbsSerializer<Transforms>();
+const fbsPackedSerializer = createFbsSerializer<Fbs.Packed<Transforms>>();
+const serioSerializer = createSerioSerializer<Transforms>();
+const serioPackedSerializer = createSerioSerializer<Serio.Packed<Transforms>>();
 
 const rng = new Rng(5419);
 
@@ -45,23 +62,32 @@ for (const _ of $range(1, COUNT)) {
 	arbitrary.push(CFrame.Angles(rng.next(), rng.next(), rng.next()).add(position));
 }
 
-export const cframeArray = defineFixture<Transforms>(
-	"CFrame array",
-	`${COUNT} arbitrary rotations, unpacked: position plus axis-angle`,
-	{ list: arbitrary },
-	surgeAdapter(serializer),
-);
+export const cframeArray: Fixture = {
+	name: "CFrame array",
+	note: `${COUNT} arbitrary rotations, unpacked: position plus axis-angle`,
+	entries: [
+		defineEntry<Transforms>("surge", { list: arbitrary }, surgeAdapter(serializer)),
+		defineEntry<Transforms>("fbs", { list: arbitrary }, fbsAdapter(fbsSerializer)),
+		defineEntry<Transforms>("serio", { list: arbitrary }, serioAdapter(serioSerializer)),
+	],
+};
 
-export const cframeArrayPackedAligned = defineFixture<DataType.Packed<Transforms>>(
-	"CFrame array (packed, axis-aligned)",
-	`${COUNT} axis-aligned rotations in \`Packed<T>\`: header byte plus position`,
-	{ list: aligned },
-	surgeAdapter(packedSerializer),
-);
+export const cframeArrayPackedAligned: Fixture = {
+	name: "CFrame array (packed, axis-aligned)",
+	note: `${COUNT} axis-aligned rotations in \`Packed<T>\`: header byte plus position`,
+	entries: [
+		defineEntry<DataType.Packed<Transforms>>("surge", { list: aligned }, surgeAdapter(packedSerializer)),
+		defineEntry<Fbs.Packed<Transforms>>("fbs", { list: aligned }, fbsAdapter(fbsPackedSerializer)),
+		defineEntry<Serio.Packed<Transforms>>("serio", { list: aligned }, serioAdapter(serioPackedSerializer)),
+	],
+};
 
-export const cframeArrayPackedArbitrary = defineFixture<DataType.Packed<Transforms>>(
-	"CFrame array (packed, arbitrary)",
-	`${COUNT} arbitrary rotations in \`Packed<T>\`: header byte, position, and axis-angle`,
-	{ list: arbitrary },
-	surgeAdapter(packedSerializer),
-);
+export const cframeArrayPackedArbitrary: Fixture = {
+	name: "CFrame array (packed, arbitrary)",
+	note: `${COUNT} arbitrary rotations in \`Packed<T>\`: header byte, position, and axis-angle`,
+	entries: [
+		defineEntry<DataType.Packed<Transforms>>("surge", { list: arbitrary }, surgeAdapter(packedSerializer)),
+		defineEntry<Fbs.Packed<Transforms>>("fbs", { list: arbitrary }, fbsAdapter(fbsPackedSerializer)),
+		defineEntry<Serio.Packed<Transforms>>("serio", { list: arbitrary }, serioAdapter(serioPackedSerializer)),
+	],
+};

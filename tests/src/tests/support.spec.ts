@@ -28,6 +28,15 @@ class SupportTest {
 	}
 
 	@Fact
+	public readsANativeVectorAsTheVector3ItIsInRoblox(): void {
+		// Lune keeps the two types apart; serio decodes every vector field into a
+		// native one, so the benchmark harness compares across the split.
+		const native = vector.create(1, 2, 3) as unknown;
+		Assert.undefined(difference(new Vector3(1, 2, 3), native));
+		Assert.defined(difference(new Vector3(1, 2, 4), native));
+	}
+
+	@Fact
 	public tellsZeroFromNegativeZero(): void {
 		Assert.defined(difference(0, -0));
 		Assert.undefined(difference(-0, -0));

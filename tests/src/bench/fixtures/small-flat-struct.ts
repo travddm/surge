@@ -1,9 +1,20 @@
+import { DataType as Fbs, createBinarySerializer as createFbsSerializer } from "@rbxts/flamework-binary-serializer";
+import createSerioSerializer from "@rbxts/serio";
+import type * as Serio from "@rbxts/serio";
 import { DataType, createBinarySerializer } from "@rbxts/surge";
 
-import { defineFixture } from "../adapter";
+import type { Fixture } from "../adapter";
+import { defineEntry } from "../adapter";
+import { fbsAdapter } from "../adapters/fbs";
+import { serioAdapter } from "../adapters/serio";
 import { surgeAdapter } from "../adapters/surge";
 
-/** Widths are explicit so a size delta reflects a format decision, not a library's default. */
+/**
+ * Widths are explicit so a size delta reflects a format decision, not a
+ * library's default. Each library brands its widths with its own type
+ * aliases, which is why the shape is declared once per library over one
+ * shared sample value.
+ */
 interface SmallFlatStruct {
 	id: DataType.u32;
 	x: DataType.f32;
@@ -12,11 +23,34 @@ interface SmallFlatStruct {
 	active: boolean;
 }
 
-const serializer = createBinarySerializer<SmallFlatStruct>();
+interface FbsSmallFlatStruct {
+	id: Fbs.u32;
+	x: Fbs.f32;
+	y: Fbs.f32;
+	z: Fbs.f32;
+	active: boolean;
+}
 
-export const smallFlatStruct = defineFixture<SmallFlatStruct>(
-	"small flat struct",
-	"five fixed-size fields, no container",
-	{ id: 4_000_000, x: 1.5, y: -2.25, z: 0.125, active: true },
-	surgeAdapter(serializer),
-);
+interface SerioSmallFlatStruct {
+	id: Serio.u32;
+	x: Serio.f32;
+	y: Serio.f32;
+	z: Serio.f32;
+	active: boolean;
+}
+
+const serializer = createBinarySerializer<SmallFlatStruct>();
+const fbsSerializer = createFbsSerializer<FbsSmallFlatStruct>();
+const serioSerializer = createSerioSerializer<SerioSmallFlatStruct>();
+
+const value = { id: 4_000_000, x: 1.5, y: -2.25, z: 0.125, active: true };
+
+export const smallFlatStruct: Fixture = {
+	name: "small flat struct",
+	note: "five fixed-size fields, no container",
+	entries: [
+		defineEntry<SmallFlatStruct>("surge", value, surgeAdapter(serializer)),
+		defineEntry<FbsSmallFlatStruct>("fbs", value, fbsAdapter(fbsSerializer)),
+		defineEntry<SerioSmallFlatStruct>("serio", value, serioAdapter(serioSerializer)),
+	],
+};

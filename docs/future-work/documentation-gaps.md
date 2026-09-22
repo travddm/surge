@@ -51,12 +51,6 @@ READMEs point at design docs instead.
   [testing.md](../testing.md) tell VS Code users to run the `mise: ci`
   task; the tasks are labeled `transformer: ci` and `surge: ci` (renamed
   for the multi-root workspace, per architecture.md).
-- Benchmarking strategy in [testing.md](../testing.md) leaves it
-  "unconfirmed either way" whether Zap exposes callable functions for
-  `type` declarations. Resolved by reading Zap 0.6.29: only recursive
-  declarations get `write_X`/`read_X`, and the `types` table holding them
-  is module-local, so there is no callable Zap codec (see
-  [benchmark-tooling.md](benchmark-tooling.md)).
 - Implementation status in architecture.md says steps 0 to 8 are "built
   and verified, end-to-end"; the bugs recorded in this directory show the
   verification was the eight round-trip facts, not the Type Coverage
