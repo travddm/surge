@@ -5,48 +5,50 @@ benchmark-coverage note. The harness measures **bandwidth** (bytes per
 value) and **speed** (values per second) for surge and the comparison
 libraries over one shared fixture catalog.
 
-The harness and three of its adapters have landed: the catalog of 16 rows is
+The harness and four of its adapters have landed: the catalog of 16 rows is
 in `tests/src/bench/fixtures/`, `catalog.ts` lists it, and
-`adapters/surge.ts`, `adapters/fbs.ts`, and `adapters/serio.ts` drive every
-row through `createBinarySerializer<T>()`, fbs's call of the same name, and
-serio's `createSerializer<T>()`. `mise run bench:size` writes
+`adapters/surge.ts`, `adapters/fbs.ts`, `adapters/serio.ts`, and
+`adapters/blink.ts` drive every row they can express — through
+`createBinarySerializer<T>()`, fbs's call of the same name, serio's
+`createSerializer<T>()`, and the `Write`/`Read` pair a Blink `export`
+generates. `mise run bench:size` writes
 [benchmarks/size.md](../benchmarks/size.md) with each library's bytes, its
 ratio against surge, and how far its round trip moved the value; `mise run
 bench:speed` runs the speed suite in a real Roblox process. So the project's
-claims now have measured bytes for surge, fbs, and serio, and no timings at
-all. What remains is the Blink adapter, the hand-written baseline, and the
-speed tier's first real run: `speed.spec.ts` compiles and type-checks but has
-never been run, which needs a Roblox Studio process.
+claims now have measured bytes for four libraries and no timings at all.
+What remains is Zap's size column, the hand-written baseline, and the speed
+tier's first real run: `speed.spec.ts` compiles and type-checks but has never
+been run, which needs a Roblox Studio process.
 
-**Zap is a size-only column, and it comes after Blink.** It has no callable
+**Zap is a size-only column, and it is next.** It has no callable
 encoder: its `types` table is module-local and only recursive declarations
 get `write_X`/`read_X`. Its bytes are still measurable honestly — fire one
 event into a mocked RemoteEvent and subtract the event-id byte — and its
 decode can be timed through the `opt tooling` decoder, which takes a buffer
 directly. Its **encode** throughput is not: the only path to it is the event
 path, which measures batching and the mock as much as the encoder, so Zap
-gets no encode number rather than a misleading one. The order is Blink
-first because the two share most of the cost — a compiler binary in the
-toolchain, IDL twins of all 16 rows, a build step, and a mocked remote
-environment — and Blink is the one that also yields real timings, so it
-proves that scaffolding on a library whose numbers are comparable
-throughout. Once it exists, Zap's marginal cost is its own binary and its
-own twins.
+gets no encode number rather than a misleading one. Blink went first because
+the two share most of the cost — a compiler binary in the toolchain, IDL
+twins of the rows, a build step, and a mocked remote environment — and Blink
+is the one that also yields real timings, so it proved that scaffolding on a
+library whose numbers are comparable throughout. All of that now exists, so
+what is left for Zap is its own binary, its own twins, and reading a size
+off the mocked remote instead of off a returned buffer.
 
 Library facts below come from source reading at the commits pinned in
-[type-coverage-parity.md](type-coverage-parity.md). fbs and serio have since
-been executed against the catalog; what that measured is under
-[What the first three-library run showed](#what-the-first-three-library-run-showed).
+[type-coverage-parity.md](type-coverage-parity.md). fbs, serio, and Blink
+have since been executed against the catalog; what that measured is under
+[What the run showed](#what-the-run-showed).
 
 ## What
 
 ### Two metrics, three tiers
 
-| Tier | Metric                            | Runs under                      | Why                                                                                                                                                               |
-| ---- | --------------------------------- | ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1    | Buffer bytes + side-table entries | Lune (`mise run bench:size`)    | **Landed for surge, fbs, and serio.** Deterministic; no Studio; Lune has `@lune/fs`, so the run writes its own results table. Doubles as a byte-regression gate.  |
-| 2    | Encode and decode values/second   | Real Roblox via `run-in-roblox` | Per Benchmarking strategy in [testing.md](../testing.md), only the real engine's timings count.                                                                   |
-| 3    | Wire cost (`Stats.DataSendKbps`)  | Real Roblox, client and server  | Optional. Blink's own benchmark method; the only tier that includes remote overhead and batching, so a networking library and a bare serializer meet on one axis. |
+| Tier | Metric                            | Runs under                      | Why                                                                                                                                                                     |
+| ---- | --------------------------------- | ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1    | Buffer bytes + side-table entries | Lune (`mise run bench:size`)    | **Landed for surge, fbs, serio, and Blink.** Deterministic; no Studio; Lune has `@lune/fs`, so the run writes its own results table. Doubles as a byte-regression gate. |
+| 2    | Encode and decode values/second   | Real Roblox via `run-in-roblox` | Per Benchmarking strategy in [testing.md](../testing.md), only the real engine's timings count.                                                                         |
+| 3    | Wire cost (`Stats.DataSendKbps`)  | Real Roblox, client and server  | Optional. Blink's own benchmark method; the only tier that includes remote overhead and batching, so a networking library and a bare serializer meet on one axis.       |
 
 Tier 1's numbers were only unstable before the wire-format determinism
 fixes (literal/guardedUnion ordering, packed padding, discriminant choice)
@@ -113,44 +115,61 @@ libraries and the size tier's runtime force:
   how each library tags a variant, not about whose default width is
   narrower.
 
-Blink's two rows are implemented from the shapes as this document records
-them. The `.blink` definitions are transcribed from Blink's own repository
-at the commit pinned in
-[type-coverage-parity.md](type-coverage-parity.md) when the Blink adapter
-lands, which is also when a mismatch would matter.
+Blink's two rows are transcribed from
+`benchmark/definitions/Definition.blink` in Blink's own repository at the
+commit pinned in [type-coverage-parity.md](type-coverage-parity.md). Its
+`Booleans` is `boolean[0..1000]` and its `Entity` is six `u8` fields, which
+is what the catalog already had; the field names differ (`id`, `x`, `y`,
+`z`, `orientation`, `animation` against `a` to `f`) and the bytes do not.
+Each is wrapped in a struct here, because an export is a named type and the
+catalog's rows are objects; a struct of one array costs no bytes over the
+bare array Blink's own definition sends. The cross-check against Blink's
+published table stays approximate either way: that table reports
+`Stats.DataSendKbps` over fired events, which is Tier 3 here, not a buffer
+length.
 
 Blink and Zap need IDL definitions for the same rows, kept next to the
-fixtures (`bench/definitions/*.blink`, `*.zap`) and compiled at build time.
-Both compilers install through mise's `github:` backend, the same pattern
-`mise.toml` uses for rojo (installability via mise unverified); Blink itself
-runs under Lune.
+fixtures (`bench/definitions/*.blink`, `*.zap`) and compiled ahead of the
+run. Both compilers install through mise's `github:` backend, the same
+pattern `mise.toml` uses for rojo; Blink 0.18.8 is in `[tools]`, and
+`mise run bench:definitions` compiles `catalog.blink` into `bench/blink/` again.
+The generated modules are checked in, so a fresh checkout compiles and
+measures without running the compiler first, and a definition change shows
+up as a diff in them.
 
-Neither can express every row, so their columns will have gaps where the
-three TypeScript libraries have none. From the coverage matrix in
-[type-coverage-parity.md](type-coverage-parity.md): a Roblox `EnumItem` is
-not a type either one has, so the enum-heavy row has no equivalent (their
-`enum` is a set of names, which measures something else); Blink has no
-guarded unions at all; and neither has a `Packed<T>`, so the packed rows
-compare a surge feature against its absence rather than two encodings. The
-harness has no rendering for a missing cell today — `collectSizeRows` fails
-when a row has no entry for a library — so the Blink step adds one, and the
-rows it cannot express say why in their note.
+One width rule keeps an IDL column honest: override a default only where the
+fixture brands a width. The fixtures brand element widths (`u8`, `u16`,
+`f32`), never length prefixes, so every string, array, and map in
+`catalog.blink` is unbounded and takes Blink's u16 count — a real format
+difference against surge's u32, which is what the table should show. The two
+Blink rows are the exception: they keep the `[0..1000]` bound their own
+definition carries, because matching it is their point.
+
+Neither can express every row, so their columns have gaps where the three
+TypeScript libraries have none. Blink has a cell on 11 of the 16 rows. It
+has no Roblox `EnumItem` — its `enum` is a set of names, which measures
+something else — so the enum-heavy row is empty; it has no untagged union,
+so the guarded-union row is empty; and it has no `Packed<T>`, so the three
+packed rows are empty rather than repeating an unpacked number under a
+heading about packing. A missing cell renders as an empty column entry:
+`collectSizeRows` emits a cell only for a library with an entry, since a
+Luau array cannot hold a hole.
 
 ### How each library is driven (stated honestly)
 
-| Library | Drive                                                                                                                                                                                         | Caveat                                                                                                                                                                                                                         |
-| ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| surge   | `createBinarySerializer<T>()`                                                                                                                                                                 | none                                                                                                                                                                                                                           |
-| fbs     | `createBinarySerializer<T>()`; plain closures; needs `rbxts-transformer-flamework`, already in `tests/tsconfig.json`                                                                          | Its surface is the one surge is a drop-in alternative to, so its adapter is surge's with one import changed. Not reentrant.                                                                                                    |
-| serio   | `createSerializer<T>()` (a default export); plain closures; explicitly supports Lune, with its own `IS_LUNE` branches                                                                         | `SerializedData.buf` is `undefined` at zero bytes and `blobs` at none, so a missing field is zero, not an error; plain `number` is f32 (fixtures pin widths anyway); `CFrame` is lossy, so the size table reports by how much. |
-| Blink   | `export type X` generates `X.Write(value) -> buffer` and `X.Read(buffer)` (used standalone in Blink's own `test/Test.luau`); `option Typescript` emits `.d.ts`                                | Generated modules resolve RemoteEvents at require time, so the harness mocks that environment as Blink's `test/Shared.luau` does. Exports exclude generics, `Instance`, and `unknown`. `Write` allocates twice per call.       |
-| Zap     | **No encoder API.** Size: mock the RemoteEvent, fire one event, measure what `SendEvents` flushes, minus the event-id byte. Decode timing: the `opt tooling` decoder takes a buffer directly. | Encode timing is only reachable through the event path, which includes batching and the mock, so the column carries bytes and a decode rate and no encode rate.                                                                |
+| Library | Drive                                                                                                                                                                                         | Caveat                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| surge   | `createBinarySerializer<T>()`                                                                                                                                                                 | none                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| fbs     | `createBinarySerializer<T>()`; plain closures; needs `rbxts-transformer-flamework`, already in `tests/tsconfig.json`                                                                          | Its surface is the one surge is a drop-in alternative to, so its adapter is surge's with one import changed. Not reentrant.                                                                                                                                                                                                                                                                                                                                                                                       |
+| serio   | `createSerializer<T>()` (a default export); plain closures; explicitly supports Lune, with its own `IS_LUNE` branches                                                                         | `SerializedData.buf` is `undefined` at zero bytes and `blobs` at none, so a missing field is zero, not an error; plain `number` is f32 (fixtures pin widths anyway); `CFrame` is lossy, so the size table reports by how much.                                                                                                                                                                                                                                                                                    |
+| Blink   | `export struct X { ... }` generates `X.Write(value) -> buffer` and `X.Read(buffer)`; the adapter drives the server output, which creates its own RemoteEvents rather than waiting for them    | Its `option Typescript` output is unusable at 0.18.8: it declares each export with `declare const` and exports none of them, so `bench/blink/server.d.ts` is hand-written. The module takes `Players`, `RunService`, and `Instance.new` at require time, and errors on a second require under one `RemoteScope`, so the whole catalog is one definition file. `option ManualReplication` drops its `Heartbeat` connection. Exports exclude generics, `Instance`, and `unknown`. `Write` allocates twice per call. |
+| Zap     | **No encoder API.** Size: mock the RemoteEvent, fire one event, measure what `SendEvents` flushes, minus the event-id byte. Decode timing: the `opt tooling` decoder takes a buffer directly. | Encode timing is only reachable through the event path, which includes batching and the mock, so the column carries bytes and a decode rate and no encode rate.                                                                                                                                                                                                                                                                                                                                                   |
 
 The hand-transcribed "ideal flat serializer" baseline from testing.md
 stays as a further column: it is what shows whether surge's output has
 avoidable overhead, independent of any library.
 
-### What the first three-library run showed
+### What the run showed
 
 From [benchmarks/size.md](../benchmarks/size.md), which the run writes:
 
@@ -183,7 +202,22 @@ From [benchmarks/size.md](../benchmarks/size.md), which the run writes:
   encoding costs on an arbitrary rotation.
 - No row puts a value in any library's side table, so no cell carries a
   `+N side` marker. The catalog has no `Instance`, `unknown`, or datatype
-  that any of the three passes outside the buffer.
+  that any of the four passes outside the buffer.
+- Blink is at or below surge on all 11 rows it can express, and every byte
+  of every difference is a length prefix: it defaults an unbounded string,
+  array, and map to a u16 count where surge writes u32. Each delta is that
+  and only that — 4 bytes on the nested object (two strings), 402 on the
+  large record (its map count and 200 key prefixes), 206 on string-heavy
+  (103 prefixes: two strings, the `lines` array, and its 100 elements), 46
+  on the tagged union (its array count and one prefix for each of the 22
+  chat events the row's seed produces), and 2 on each remaining row, which
+  has one length prefix each. Nothing else in the catalog separates them:
+  its `CFrame` is 24 bytes like surge's and fbs's, and inexact by the same
+  2e-07 of f32 rounding.
+- So Blink's column is an argument for length-typed containers, which is
+  Tier B of [type-coverage-parity.md](type-coverage-parity.md), and for
+  nothing else. It is also the one comparison here that a bound would move:
+  the fixtures brand element widths only, so Blink took its defaults.
 
 ### Methodology
 
@@ -216,10 +250,11 @@ actual question.
 ## Why deferred
 
 fbs and serio are `tests/` dependencies now, pinned to the versions the
-coverage matrix reads. What is left needs the Blink and Zap binaries in the
-toolchain, IDL twins of every fixture in both dialects, and a mocked remote
-environment for the modules both generate; each is real work, and most of it
-is shared between the two.
+coverage matrix reads, and Blink is in `[tools]` with its definitions and
+generated modules checked in. What is left needs the Zap binary, `.zap`
+twins of the rows it can express, and a mocked remote the size is read off
+rather than returned; the rest of that scaffolding the Blink step already
+built.
 
 ## How, briefly
 
@@ -237,8 +272,10 @@ is shared between the two.
    number above, and a shim fix — Lua's `require` stores `true` for a
    module that returns nil, where Roblox's returns the nil, which serio's
    type-only `data-types` module hits.
-4. Add the Blink adapter (Lune-compiled definitions, mocked remotes), and
-   with it the missing-cell rendering the rows it cannot express need.
+4. ~~Add the Blink adapter (Lune-compiled definitions, mocked remotes), and
+   with it the missing-cell rendering the rows it cannot express need.~~
+   Landed, with `bench:definitions` as the regeneration task, the generated
+   modules checked in, and hand-written declarations for them.
 5. Add Zap's size column on that same scaffolding (mocked remote minus the
    event-id byte), plus its decode timing through the `opt tooling`
    decoder. No encode number.

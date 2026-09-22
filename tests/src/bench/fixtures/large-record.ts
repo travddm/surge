@@ -6,9 +6,11 @@ import { DataType, createBinarySerializer } from "@rbxts/surge";
 import { Rng } from "../../support";
 import type { Fixture } from "../adapter";
 import { defineEntry } from "../adapter";
+import { blinkAdapter } from "../adapters/blink";
 import { fbsAdapter } from "../adapters/fbs";
 import { serioAdapter } from "../adapters/serio";
 import { surgeAdapter } from "../adapters/surge";
+import { LargeRecord as blinkCodec } from "../blink/server";
 
 const COUNT = 200;
 
@@ -51,5 +53,6 @@ export const largeRecord: Fixture = {
 		defineEntry<LargeRecord>("surge", { entries }, surgeAdapter(serializer)),
 		defineEntry<FbsLargeRecord>("fbs", { entries: mapEntries }, fbsAdapter(fbsSerializer)),
 		defineEntry<SerioLargeRecord>("serio", { entries: mapEntries }, serioAdapter(serioSerializer)),
+		defineEntry("blink", { entries }, blinkAdapter(blinkCodec)),
 	],
 };

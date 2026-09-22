@@ -6,9 +6,11 @@ import { DataType, createBinarySerializer } from "@rbxts/surge";
 import { Rng } from "../../support";
 import type { Fixture } from "../adapter";
 import { defineEntry } from "../adapter";
+import { blinkAdapter } from "../adapters/blink";
 import { fbsAdapter } from "../adapters/fbs";
 import { serioAdapter } from "../adapters/serio";
 import { surgeAdapter } from "../adapters/surge";
+import { Transforms as blinkCodec } from "../blink/server";
 
 const COUNT = 50;
 
@@ -69,6 +71,7 @@ export const cframeArray: Fixture = {
 		defineEntry<Transforms>("surge", { list: arbitrary }, surgeAdapter(serializer)),
 		defineEntry<Transforms>("fbs", { list: arbitrary }, fbsAdapter(fbsSerializer)),
 		defineEntry<Transforms>("serio", { list: arbitrary }, serioAdapter(serioSerializer)),
+		defineEntry("blink", { list: arbitrary }, blinkAdapter(blinkCodec)),
 	],
 };
 

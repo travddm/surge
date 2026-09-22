@@ -4,8 +4,9 @@ Part of the [surge](../architecture.md) design. Compares what each library
 can express and what it costs on the wire, and lists the gaps surge should
 close to reach full coverage. Library facts come from reading each
 project's source at a pinned commit (September 2026), not from executing
-it, except for the `CFrame` cells the benchmark harness has since measured
-(recorded under the matrix):
+it, except for the cells the benchmark harness has since measured: the
+`CFrame` ones recorded under the matrix, and Blink's string, array, and map
+lengths, whose u16 defaults the size table confirms row by row:
 
 | Library                                    | Version | Commit    | Kind                                                              |
 | ------------------------------------------ | ------- | --------- | ----------------------------------------------------------------- |

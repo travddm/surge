@@ -6,9 +6,11 @@ import { DataType, createBinarySerializer } from "@rbxts/surge";
 import { Rng } from "../../support";
 import type { Fixture } from "../adapter";
 import { defineEntry } from "../adapter";
+import { blinkAdapter } from "../adapters/blink";
 import { fbsAdapter } from "../adapters/fbs";
 import { serioAdapter } from "../adapters/serio";
 import { surgeAdapter } from "../adapters/surge";
+import { TaggedUnion as blinkCodec } from "../blink/server";
 
 const COUNT = 100;
 
@@ -69,5 +71,6 @@ export const taggedUnion: Fixture = {
 		defineEntry<TaggedUnion>("surge", { events }, surgeAdapter(serializer)),
 		defineEntry<FbsTaggedUnion>("fbs", { events }, fbsAdapter(fbsSerializer)),
 		defineEntry<SerioTaggedUnion>("serio", { events }, serioAdapter(serioSerializer)),
+		defineEntry("blink", { events }, blinkAdapter(blinkCodec)),
 	],
 };

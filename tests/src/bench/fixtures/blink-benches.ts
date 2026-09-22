@@ -6,9 +6,11 @@ import { DataType, createBinarySerializer } from "@rbxts/surge";
 import { Rng } from "../../support";
 import type { Fixture } from "../adapter";
 import { defineEntry } from "../adapter";
+import { blinkAdapter } from "../adapters/blink";
 import { fbsAdapter } from "../adapters/fbs";
 import { serioAdapter } from "../adapters/serio";
 import { surgeAdapter } from "../adapters/surge";
+import { Booleans as blinkBooleansCodec, Entities as blinkEntitiesCodec } from "../blink/server";
 
 const BOOLEAN_COUNT = 1000;
 const ENTITY_COUNT = 100;
@@ -77,6 +79,7 @@ export const blinkBooleans: Fixture = {
 		defineEntry<Booleans>("surge", { values }, surgeAdapter(booleansSerializer)),
 		defineEntry<Booleans>("fbs", { values }, fbsAdapter(fbsBooleansSerializer)),
 		defineEntry<Booleans>("serio", { values }, serioAdapter(serioBooleansSerializer)),
+		defineEntry("blink", { values }, blinkAdapter(blinkBooleansCodec)),
 	],
 };
 
@@ -87,5 +90,6 @@ export const blinkEntities: Fixture = {
 		defineEntry<Entities>("surge", { entities }, surgeAdapter(entitiesSerializer)),
 		defineEntry<FbsEntities>("fbs", { entities }, fbsAdapter(fbsEntitiesSerializer)),
 		defineEntry<SerioEntities>("serio", { entities }, serioAdapter(serioEntitiesSerializer)),
+		defineEntry("blink", { entities }, blinkAdapter(blinkEntitiesCodec)),
 	],
 };

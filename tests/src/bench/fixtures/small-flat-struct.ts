@@ -5,9 +5,11 @@ import { DataType, createBinarySerializer } from "@rbxts/surge";
 
 import type { Fixture } from "../adapter";
 import { defineEntry } from "../adapter";
+import { blinkAdapter } from "../adapters/blink";
 import { fbsAdapter } from "../adapters/fbs";
 import { serioAdapter } from "../adapters/serio";
 import { surgeAdapter } from "../adapters/surge";
+import { SmallFlatStruct as blinkCodec } from "../blink/server";
 
 /**
  * Widths are explicit so a size delta reflects a format decision, not a
@@ -52,5 +54,6 @@ export const smallFlatStruct: Fixture = {
 		defineEntry<SmallFlatStruct>("surge", value, surgeAdapter(serializer)),
 		defineEntry<FbsSmallFlatStruct>("fbs", value, fbsAdapter(fbsSerializer)),
 		defineEntry<SerioSmallFlatStruct>("serio", value, serioAdapter(serioSerializer)),
+		defineEntry("blink", value, blinkAdapter(blinkCodec)),
 	],
 };

@@ -388,7 +388,11 @@ already prints to. Against these baselines:
    interpreter, with its own narrower widths and a lossy `CFrame`, which
    is what shows whether a delta against fbs is fbs-specific or common to
    interpreting a schema at runtime.
-3. **A hand-written, non-generated "ideal" flat serializer** for a subset
+3. **Blink**, via the `Write`/`Read` pair an `export`ed type generates —
+   an IDL compiler rather than a runtime schema interpreter, so it is the
+   closest published comparison to what this transformer does, and the only
+   one of the three libraries whose shapes are declared outside TypeScript.
+4. **A hand-written, non-generated "ideal" flat serializer** for a subset
    of shapes — a manually written straight-line function doing the same
    writes with no transformer involved. This measures whether the
    transformer's emitted code actually reaches the flatness it claims, or
@@ -416,8 +420,10 @@ tier is its own `@rbxts/runit` suite (`speed.spec.ts`), separate from the
 correctness suites, so a benchmark failing to compile or run is never
 confused with a behavioral regression; the size tier is a plain function
 (`size.ts`) that returns rows, which is why it is not a `.spec` module.
-The full plan, including the libraries that do not have an adapter yet,
-is [future-work/benchmark-tooling.md](future-work/benchmark-tooling.md).
+A library with no adapter for a row, such as Blink on a shape its IDL
+cannot express, simply has no cell there. The full plan, including Zap,
+which will have bytes but no encode timing, is
+[future-work/benchmark-tooling.md](future-work/benchmark-tooling.md).
 
 ### Running the size tier under Lune
 
@@ -439,12 +445,17 @@ round-trip suite. The generated table carries no date, machine, or commit,
 so it changes only when an encoding changes — which makes it a
 byte-regression gate as well as a result.
 
-Two limits of running this tier headlessly, both already known from the
-round-trip suite: Lune's Roblox database is missing members that
+Three limits of running this tier headlessly. Two are already known from
+the round-trip suite: Lune's Roblox database is missing members that
 `@rbxts/types` declares for every enum of more than 256 members
 (`Enum.KeyCode` included), so the catalog's enum row uses `Enum.Material`
 and the wide enum index is measured at the transformer level instead; and
-`DateTime` has a stand-in, so no fixture uses one.
+`DateTime` has a stand-in, so no fixture uses one. The third came with the
+Blink adapter: its generated module reaches for `Players.PlayerRemoving`,
+`RunService:IsServer()`, and `Instance.new("RemoteEvent")` when it loads,
+because its event layer is not separable from the `Write`/`Read` pair the
+benchmark drives, so the shim stubs all three. Nothing fires them — no
+benchmark sends an event.
 
 ### Running the speed tier via run-in-roblox
 

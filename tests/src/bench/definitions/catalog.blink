@@ -1,0 +1,173 @@
+-- Blink twins of the fixture catalog in ../fixtures/, per the harness plan in
+-- docs/future-work/benchmark-tooling.md. `export` is what gives a type a standalone
+-- `Write(value) -> buffer` / `Read(buffer)` pair, which is the only way to drive Blink
+-- as a bare serializer; everything else it generates is the event layer.
+--
+-- Regenerate ../blink/server.luau and ../blink/client.luau with `mise run bench:definitions`.
+-- A client path is mandatory even when nothing requires the module, so it is generated and
+-- left alone; the adapter drives the server output, which creates its own RemoteEvents
+-- instead of waiting for them.
+option ServerOutput = "../blink/server.luau"
+option ClientOutput = "../blink/client.luau"
+option ManualReplication = true
+
+export struct SmallFlatStruct {
+    id: u32,
+    x: f32,
+    y: f32,
+    z: f32,
+    active: boolean,
+}
+
+struct Leaf {
+    name: string,
+    weight: f32,
+}
+
+struct Third {
+    leaf: Leaf,
+    flag: boolean,
+}
+
+struct Second {
+    inner: Third,
+    count: u16,
+}
+
+struct First {
+    inner: Second,
+    label: string,
+}
+
+export struct NestedObject {
+    root: First,
+    version: u8,
+}
+
+export struct WideStruct {
+    f1: f32,
+    f2: f32,
+    f3: f32,
+    f4: f32,
+    f5: f32,
+    f6: f32,
+    f7: f32,
+    f8: f32,
+    f9: f32,
+    f10: f32,
+    f11: f32,
+    f12: f32,
+    f13: f32,
+    f14: f32,
+    f15: f32,
+    f16: f32,
+    f17: f32,
+    f18: f32,
+    f19: f32,
+    f20: f32,
+    f21: f32,
+    f22: f32,
+    f23: f32,
+    f24: f32,
+    f25: f32,
+    f26: f32,
+    f27: f32,
+    f28: f32,
+    f29: f32,
+    f30: f32,
+    f31: f32,
+    f32: f32,
+    f33: f32,
+    f34: f32,
+    f35: f32,
+    f36: f32,
+    f37: f32,
+    f38: f32,
+    f39: f32,
+    f40: f32,
+    f41: f32,
+    f42: f32,
+    f43: f32,
+    f44: f32,
+    f45: f32,
+    f46: f32,
+    f47: f32,
+    f48: f32,
+    f49: f32,
+    f50: f32,
+}
+
+export struct LargeArray {
+    values: u16[],
+}
+
+map Entries = { [string]: u8 }
+
+export struct LargeRecord {
+    entries: Entries,
+}
+
+export struct StringHeavy {
+    title: string,
+    author: string,
+    lines: string[],
+}
+
+enum Event = "kind" {
+    spawn {
+        id: u32,
+        at: vector,
+    },
+    damage {
+        id: u32,
+        amount: u16,
+    },
+    chat {
+        id: u32,
+        text: string,
+    },
+    despawn {
+        id: u32,
+    },
+}
+
+export struct TaggedUnion {
+    events: Event[],
+}
+
+export struct Toggles {
+    a: boolean,
+    b: boolean,
+    c: boolean,
+    d: boolean,
+    e: boolean,
+    f: boolean,
+    g: boolean,
+    h: boolean,
+    i: boolean,
+    j: boolean,
+    level: u8,
+    label: string?,
+    offset: i16?,
+}
+
+export struct Transforms {
+    list: CFrame[],
+}
+
+export struct Booleans {
+    values: boolean[0..1000],
+}
+
+struct Entity {
+    a: u8,
+    b: u8,
+    c: u8,
+    d: u8,
+    e: u8,
+    f: u8,
+}
+
+export struct Entities {
+    entities: Entity[0..1000],
+}

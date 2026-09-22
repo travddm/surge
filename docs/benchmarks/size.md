@@ -5,8 +5,9 @@ harness in [future-work/benchmark-tooling.md](../future-work/benchmark-tooling.m
 
 Each library column holds the serialized buffer for one sample value of the
 shape, in bytes, and its ratio against surge. A cell reads `+N side` where
-that library passes N values outside the buffer — the blob array, in all
-three — which cost bandwidth the buffer does not show.
+that library passes N values outside the buffer, which costs bandwidth the
+buffer does not show: the blob array in surge, fbs, and serio, and nothing
+in Blink, whose exports cannot carry an Instance or an unknown at all.
 
 `Round trip` names every library whose decoded value differs from the input,
 with the largest absolute difference between the value's components and its
@@ -19,25 +20,27 @@ unit axes — almost never satisfy, so they fall back: fbs to its f32 triple,
 serio to a quantized form that loses a rotation about the X axis outright.
 
 Every library measures the same sample value over the same shape, which each
-row declares once per library because each library brands its widths with its
-own type aliases. Where one of them cannot express the shape the others take,
-the row's note says so. Blink still has no adapter and no column.
+row declares once per library, because each library brands its widths with
+its own type aliases. An empty cell means that library cannot express the
+row: Blink has no Roblox `EnumItem`, no untagged union, and no `Packed<T>`.
+Its columns are smaller wherever a length prefix appears, because it defaults
+an unbounded string, array, and map to a u16 count where surge writes u32.
 
-| Fixture                             | surge | fbs          | serio        | Round trip                                   | What the row measures                                                        |
-| ----------------------------------- | ----- | ------------ | ------------ | -------------------------------------------- | ---------------------------------------------------------------------------- |
-| small flat struct                   | 17    | 17 (1.00×)   | 17 (1.00×)   | exact                                        | five fixed-size fields, no container                                         |
-| deeply nested object                | 24    | 24 (1.00×)   | 24 (1.00×)   | exact                                        | five levels of objects, one field each level                                 |
-| wide struct                         | 200   | 200 (1.00×)  | 200 (1.00×)  | exact                                        | 50 f32 fields, just under the emitter's block-split threshold                |
-| large array                         | 2004  | 2004 (1.00×) | 2004 (1.00×) | exact                                        | 1000 u16 elements behind one u32 length prefix                               |
-| large record                        | 2096  | 2096 (1.00×) | 2096 (1.00×) | exact                                        | 200 string keys, each with a u8 value; a `Map` under fbs and serio           |
-| string-heavy                        | 2390  | 2390 (1.00×) | 2390 (1.00×) | exact                                        | two short strings and 100 of up to 40 bytes, each with a u32 length prefix   |
-| enum-heavy                          | 106   | 106 (1.00×)  | 106 (1.00×)  | exact                                        | 100 Enum.Material items plus two scalar enum fields, one index byte each     |
-| tagged union                        | 1274  | 1274 (1.00×) | 1274 (1.00×) | exact                                        | 100 events over four variants, discriminated by a literal field              |
-| guarded union                       | 849   | 849 (1.00×)  | 849 (1.00×)  | exact                                        | 100 values over string, number, and boolean                                  |
-| toggles (unpacked)                  | 26    | 26 (1.00×)   | 26 (1.00×)   | exact                                        | ten booleans, a u8, and two optionals, one byte per flag and per presence    |
-| toggles (packed)                    | 16    | 16 (1.00×)   | 16 (1.00×)   | exact                                        | the same shape in `Packed<T>`: one bit per flag and per presence             |
-| CFrame array                        | 1204  | 1204 (1.00×) | 904 (0.75×)  | inexact: surge 2e-07, fbs 2e-07, serio 1e-04 | 50 arbitrary rotations, unpacked: position plus axis-angle                   |
-| CFrame array (packed, axis-aligned) | 654   | 1179 (1.80×) | 904 (1.38×)  | inexact: fbs 2e-07, serio 1e+00              | 50 axis-aligned rotations in `Packed<T>`: header byte plus position          |
-| CFrame array (packed, arbitrary)    | 1254  | 1212 (0.97×) | 919 (0.73×)  | inexact: surge 2e-07, fbs 2e-07, serio 1e-04 | 50 arbitrary rotations in `Packed<T>`: header byte, position, and axis-angle |
-| Blink: Booleans                     | 1004  | 1004 (1.00×) | 1004 (1.00×) | exact                                        | 1000 booleans in one array, a byte each, as Blink also writes them           |
-| Blink: Entities                     | 604   | 604 (1.00×)  | 604 (1.00×)  | exact                                        | 100 structs of six u8 fields                                                 |
+| Fixture                             | surge | fbs          | serio        | blink        | Round trip                                                | What the row measures                                                        |
+| ----------------------------------- | ----- | ------------ | ------------ | ------------ | --------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| small flat struct                   | 17    | 17 (1.00×)   | 17 (1.00×)   | 17 (1.00×)   | exact                                                     | five fixed-size fields, no container                                         |
+| deeply nested object                | 24    | 24 (1.00×)   | 24 (1.00×)   | 20 (0.83×)   | exact                                                     | five levels of objects, one field each level                                 |
+| wide struct                         | 200   | 200 (1.00×)  | 200 (1.00×)  | 200 (1.00×)  | exact                                                     | 50 f32 fields, just under the emitter's block-split threshold                |
+| large array                         | 2004  | 2004 (1.00×) | 2004 (1.00×) | 2002 (1.00×) | exact                                                     | 1000 u16 elements behind one u32 length prefix                               |
+| large record                        | 2096  | 2096 (1.00×) | 2096 (1.00×) | 1694 (0.81×) | exact                                                     | 200 string keys, each with a u8 value; a `Map` under fbs and serio           |
+| string-heavy                        | 2390  | 2390 (1.00×) | 2390 (1.00×) | 2184 (0.91×) | exact                                                     | two short strings and 100 of up to 40 bytes, each with a u32 length prefix   |
+| enum-heavy                          | 106   | 106 (1.00×)  | 106 (1.00×)  | —            | exact                                                     | 100 Enum.Material items plus two scalar enum fields, one index byte each     |
+| tagged union                        | 1274  | 1274 (1.00×) | 1274 (1.00×) | 1228 (0.96×) | exact                                                     | 100 events over four variants, discriminated by a literal field              |
+| guarded union                       | 849   | 849 (1.00×)  | 849 (1.00×)  | —            | exact                                                     | 100 values over string, number, and boolean                                  |
+| toggles (unpacked)                  | 26    | 26 (1.00×)   | 26 (1.00×)   | 24 (0.92×)   | exact                                                     | ten booleans, a u8, and two optionals, one byte per flag and per presence    |
+| toggles (packed)                    | 16    | 16 (1.00×)   | 16 (1.00×)   | —            | exact                                                     | the same shape in `Packed<T>`: one bit per flag and per presence             |
+| CFrame array                        | 1204  | 1204 (1.00×) | 904 (0.75×)  | 1202 (1.00×) | inexact: surge 2e-07, fbs 2e-07, serio 1e-04, blink 2e-07 | 50 arbitrary rotations, unpacked: position plus axis-angle                   |
+| CFrame array (packed, axis-aligned) | 654   | 1179 (1.80×) | 904 (1.38×)  | —            | inexact: fbs 2e-07, serio 1e+00                           | 50 axis-aligned rotations in `Packed<T>`: header byte plus position          |
+| CFrame array (packed, arbitrary)    | 1254  | 1212 (0.97×) | 919 (0.73×)  | —            | inexact: surge 2e-07, fbs 2e-07, serio 1e-04              | 50 arbitrary rotations in `Packed<T>`: header byte, position, and axis-angle |
+| Blink: Booleans                     | 1004  | 1004 (1.00×) | 1004 (1.00×) | 1002 (1.00×) | exact                                                     | 1000 booleans in one array, a byte each, as Blink also writes them           |
+| Blink: Entities                     | 604   | 604 (1.00×)  | 604 (1.00×)  | 602 (1.00×)  | exact                                                     | 100 structs of six u8 fields                                                 |

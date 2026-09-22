@@ -15,13 +15,13 @@ export interface Adapter<T> {
 }
 
 /** A library with an adapter. */
-export type Library = "surge" | "fbs" | "serio";
+export type Library = "surge" | "fbs" | "serio" | "blink";
 
 /**
  * Column order of `docs/benchmarks/size.md`. surge comes first: the other
  * columns carry their ratio against it.
  */
-export const LIBRARIES: ReadonlyArray<Library> = ["surge", "fbs", "serio"];
+export const LIBRARIES: ReadonlyArray<Library> = ["surge", "fbs", "serio", "blink"];
 
 /** What one fixture costs under one library. */
 export interface Measurement {

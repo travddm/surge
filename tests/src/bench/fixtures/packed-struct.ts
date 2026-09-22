@@ -5,9 +5,11 @@ import { DataType, createBinarySerializer } from "@rbxts/surge";
 
 import type { Fixture } from "../adapter";
 import { defineEntry } from "../adapter";
+import { blinkAdapter } from "../adapters/blink";
 import { fbsAdapter } from "../adapters/fbs";
 import { serioAdapter } from "../adapters/serio";
 import { surgeAdapter } from "../adapters/surge";
+import { Toggles as blinkCodec } from "../blink/server";
 
 /**
  * The same shape twice, so the two rows differ only in `Packed<T>`: ten
@@ -94,6 +96,7 @@ export const unpackedStruct: Fixture = {
 		defineEntry<Toggles>("surge", value, surgeAdapter(unpackedSerializer)),
 		defineEntry<FbsToggles>("fbs", value, fbsAdapter(fbsUnpackedSerializer)),
 		defineEntry<SerioToggles>("serio", value, serioAdapter(serioUnpackedSerializer)),
+		defineEntry("blink", value, blinkAdapter(blinkCodec)),
 	],
 };
 

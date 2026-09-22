@@ -118,18 +118,31 @@ brand belongs to the library that declares it. surge and fbs agree byte
 for byte on 14 of 16 rows; the `CFrame` rows are where the three libraries
 part, and surge's packed axis-aligned row is its clear win at 654 bytes
 against 1179 and 904, and the only exact one of the three. Four rows differ from the plan, for
-reasons recorded in that document. Zap is now a size-only target, and it
-comes after Blink: it has no callable encoder, so its bytes are measurable
-through a mocked RemoteEvent but its encode throughput is not measurable
-honestly at all. Blink comes first because the two share the cost — a
-compiler binary, IDL twins of all 16 rows, and the mocked remote — and
-Blink also yields real timings. Still open there: the Blink adapter, Zap's
-size column, the hand-written baseline, the first speed run, and the
-generated-Luau-size column.
+reasons recorded in that document.
 
-The fbs and serio adapters, and the per-library size table they produce,
-landed after everything above, in this repository's `tests/` only: no
-transformer or `@rbxts/surge` source changed with them.
+Blink has landed too, as a fourth column on the 11 rows it can express. It
+is an IDL compiler, so it needs `.blink` twins of those rows
+(`bench/definitions/catalog.blink`, compiled by `mise run bench:definitions`
+into checked-in modules), hand-written declarations because its own
+TypeScript output exports nothing, and enough of a mocked remote environment
+in the Lune shim for its generated module to load. It has no cell on the
+enum-heavy row (no Roblox `EnumItem`), the guarded union (no untagged
+union), or the three packed rows (no `Packed<T>`), and a missing cell is
+rendered empty. Where it does have one it is at or below surge, and every
+byte of the difference is its u16 length prefix against surge's u32 — an
+argument for the length-typed containers in Tier B of
+[type-coverage-parity.md](type-coverage-parity.md), and for nothing else.
+
+Zap is a size-only target and is next: it has no callable encoder, so its
+bytes are measurable through a mocked RemoteEvent but its encode throughput
+is not measurable honestly at all. Still open there: Zap's size column, the
+hand-written baseline, the first speed run, and the generated-Luau-size
+column.
+
+The fbs, serio, and Blink adapters, and the per-library size table they
+produce, landed after everything above, in this repository's `tests/`,
+`docs/`, `mise.toml`, and root `package.json` only: no transformer or
+`@rbxts/surge` source changed with them.
 
 Every claim in this directory was checked against both repositories at
 `surge` `7cce55e` and `rbxts-transformer-surge` `0e7c10d`. The order below
@@ -142,14 +155,14 @@ ends at `rbxts-transformer-surge` `aa59c4a`.
 
 ## Order
 
-| Step | Document                                                                          | Why here                                                                                                                                                                                                                                 |
-| ---- | --------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1    | [benchmark-tooling.md](benchmark-tooling.md)                                      | The Blink adapter, Zap's size-only column, and the hand-written baseline. The harness and the surge, fbs, and serio columns have landed; [benchmarks/size.md](../benchmarks/size.md) records all three libraries' bytes for all 16 rows. |
-| 2    | [generated-code-performance.md](generated-code-performance.md)                    | Every remaining item is measurement-driven, so it follows the harness.                                                                                                                                                                   |
-| 3    | [type-coverage-parity.md](type-coverage-parity.md) Tier B                         | New `DataType.*` surface (length-typed containers, per-component widths, ranges). That document asks for the harness first, to show what each bound saves. Split from Tier A, which has landed, for that reason.                         |
-| 4    | [deserialize-hardening.md](deserialize-hardening.md)                              | Opt-in checks; needed before the networking layer, not before.                                                                                                                                                                           |
-| 5    | [documentation-gaps.md](documentation-gaps.md): `docs/usage.md`                   | User documentation written against fixed behavior. The stale-statement sweep in the same document does not wait; see below.                                                                                                              |
-| 6    | [ci-and-release.md](ci-and-release.md): version backstop and first tagged release | The backstop lands with the release it protects. The CI-only items do not wait; see below.                                                                                                                                               |
+| Step | Document                                                                          | Why here                                                                                                                                                                                                                            |
+| ---- | --------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1    | [benchmark-tooling.md](benchmark-tooling.md)                                      | Zap's size-only column and the hand-written baseline. The harness and the surge, fbs, serio, and Blink columns have landed; [benchmarks/size.md](../benchmarks/size.md) records their bytes, Blink's on the 11 rows it can express. |
+| 2    | [generated-code-performance.md](generated-code-performance.md)                    | Every remaining item is measurement-driven, so it follows the harness.                                                                                                                                                              |
+| 3    | [type-coverage-parity.md](type-coverage-parity.md) Tier B                         | New `DataType.*` surface (length-typed containers, per-component widths, ranges). That document asks for the harness first, to show what each bound saves. Split from Tier A, which has landed, for that reason.                    |
+| 4    | [deserialize-hardening.md](deserialize-hardening.md)                              | Opt-in checks; needed before the networking layer, not before.                                                                                                                                                                      |
+| 5    | [documentation-gaps.md](documentation-gaps.md): `docs/usage.md`                   | User documentation written against fixed behavior. The stale-statement sweep in the same document does not wait; see below.                                                                                                         |
+| 6    | [ci-and-release.md](ci-and-release.md): version backstop and first tagged release | The backstop lands with the release it protects. The CI-only items do not wait; see below.                                                                                                                                          |
 
 ## No step of its own
 

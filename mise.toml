@@ -9,6 +9,11 @@ node = "24.21.0"
 # tests/scripts/run-in-roblox-benchmarks.luau -- confirmed to run as its own Script instance
 # without simulating Play, so it never triggers MainServer/MainBenchmarks itself.
 "github:rojo-rbx/run-in-roblox" = "0.3.0"
+# Compiles the benchmark's Blink twins (tests/src/bench/definitions/catalog.blink) into the
+# generated modules the Blink adapter drives, via `mise run bench:definitions`. Pinned to the
+# version the coverage matrix in future-work/type-coverage-parity.md was read at, since the
+# bytes it emits are a result this repository checks in.
+"github:1Axen/blink" = "0.18.8"
 
 [hooks]
 # Keeps node_modules in sync whenever `mise install` runs (e.g. after a [tools] version bump),
@@ -46,6 +51,10 @@ run = "npm run tests:build"
 [tasks."tests:test"]
 description = "Run the @rbxts/runit round-trip suite headlessly under Lune (see testing.md)"
 run = "npm run tests:test"
+
+[tasks."bench:definitions"]
+description = "Recompile the benchmark's Blink definitions into tests/src/bench/blink/ (Tier 1 and 2 both read the result; the generated modules are checked in, so this only runs when a definition changes)"
+run = "npm run bench:definitions"
 
 [tasks."bench:size"]
 description = "Measure the bytes each fixture costs under Lune and rewrite docs/benchmarks/size.md (Tier 1, see future-work/benchmark-tooling.md); not part of ci -- a byte change is read, not gated pass/fail"

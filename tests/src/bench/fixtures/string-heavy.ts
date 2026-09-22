@@ -5,9 +5,11 @@ import { createBinarySerializer } from "@rbxts/surge";
 import { Rng } from "../../support";
 import type { Fixture } from "../adapter";
 import { defineEntry } from "../adapter";
+import { blinkAdapter } from "../adapters/blink";
 import { fbsAdapter } from "../adapters/fbs";
 import { serioAdapter } from "../adapters/serio";
 import { surgeAdapter } from "../adapters/surge";
+import { StringHeavy as blinkCodec } from "../blink/server";
 
 const COUNT = 100;
 
@@ -40,5 +42,6 @@ export const stringHeavy: Fixture = {
 		defineEntry<StringHeavy>("surge", value, surgeAdapter(serializer)),
 		defineEntry<StringHeavy>("fbs", value, fbsAdapter(fbsSerializer)),
 		defineEntry<StringHeavy>("serio", value, serioAdapter(serioSerializer)),
+		defineEntry("blink", value, blinkAdapter(blinkCodec)),
 	],
 };

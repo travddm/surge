@@ -17,6 +17,8 @@ local shim = require("./lune-roblox-shim")
 local OUTPUT_DIRECTORY = "../docs/benchmarks"
 local OUTPUT_PATH = OUTPUT_DIRECTORY .. "/size.md"
 local BASELINE = "surge"
+-- What a column reads where that library cannot express the row.
+local EMPTY = "—"
 
 local bench = shim.tests:WaitForChild("bench")
 local result = shim.requireInstance(bench:WaitForChild("size")).collectSizeRows()
@@ -30,8 +32,9 @@ local lines = {
 	"",
 	"Each library column holds the serialized buffer for one sample value of the",
 	"shape, in bytes, and its ratio against surge. A cell reads `+N side` where",
-	"that library passes N values outside the buffer — the blob array, in all",
-	"three — which cost bandwidth the buffer does not show.",
+	"that library passes N values outside the buffer, which costs bandwidth the",
+	"buffer does not show: the blob array in surge, fbs, and serio, and nothing",
+	"in Blink, whose exports cannot carry an Instance or an unknown at all.",
 	"",
 	"`Round trip` names every library whose decoded value differs from the input,",
 	"with the largest absolute difference between the value's components and its",
@@ -44,9 +47,11 @@ local lines = {
 	"serio to a quantized form that loses a rotation about the X axis outright.",
 	"",
 	"Every library measures the same sample value over the same shape, which each",
-	"row declares once per library because each library brands its widths with its",
-	"own type aliases. Where one of them cannot express the shape the others take,",
-	"the row's note says so. Blink still has no adapter and no column.",
+	"row declares once per library, because each library brands its widths with",
+	"its own type aliases. An empty cell means that library cannot express the",
+	"row: Blink has no Roblox `EnumItem`, no untagged union, and no `Packed<T>`.",
+	"Its columns are smaller wherever a length prefix appears, because it defaults",
+	"an unbounded string, array, and map to a u16 count where surge writes u32.",
 	"",
 }
 
@@ -63,22 +68,32 @@ end
 table.insert(lines, "| " .. table.concat(header, " | ") .. " |")
 table.insert(lines, "| " .. table.concat(separator, " | ") .. " |")
 
+-- nil where the library has no adapter for that row: its column is empty there.
 local function cellOf(row, library)
 	for _, cell in row.cells do
 		if cell.library == library then
 			return cell
 		end
 	end
-	error(("%s: no %s cell"):format(row.name, library))
+	return nil
 end
 
 for _, row in rows do
-	local baseline = cellOf(row, BASELINE).bytes
+	local baselineCell = cellOf(row, BASELINE)
+	if not baselineCell then
+		error(("%s: no %s cell"):format(row.name, BASELINE))
+	end
+	local baseline = baselineCell.bytes
 	local columns = { row.name }
 	local inexact = {}
 
 	for _, library in libraries do
 		local cell = cellOf(row, library)
+		if not cell then
+			table.insert(columns, EMPTY)
+			continue
+		end
+
 		local text = tostring(cell.bytes)
 		if library ~= BASELINE then
 			text ..= (" (%.2f×)"):format(cell.bytes / baseline)

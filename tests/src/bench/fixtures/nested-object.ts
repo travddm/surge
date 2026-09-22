@@ -5,9 +5,11 @@ import { DataType, createBinarySerializer } from "@rbxts/surge";
 
 import type { Fixture } from "../adapter";
 import { defineEntry } from "../adapter";
+import { blinkAdapter } from "../adapters/blink";
 import { fbsAdapter } from "../adapters/fbs";
 import { serioAdapter } from "../adapters/serio";
 import { surgeAdapter } from "../adapters/surge";
+import { NestedObject as blinkCodec } from "../blink/server";
 
 interface Leaf {
 	name: string;
@@ -76,5 +78,6 @@ export const nestedObject: Fixture = {
 		defineEntry<NestedObject>("surge", value, surgeAdapter(serializer)),
 		defineEntry<FbsNestedObject>("fbs", value, fbsAdapter(fbsSerializer)),
 		defineEntry<SerioNestedObject>("serio", value, serioAdapter(serioSerializer)),
+		defineEntry("blink", value, blinkAdapter(blinkCodec)),
 	],
 };

@@ -262,7 +262,18 @@ local runService = newStub("RunService", "RunService", gameRoot, {
 })
 gameRoot._children.RunService = runService
 
-local players = newStub("Players", "Players", gameRoot, { LocalPlayer = nil })
+local function inertConnection()
+	return { Disconnect = function() end }
+end
+
+-- PlayerRemoving is here for Blink's generated server module, which connects to it at require
+-- time to drop a leaving player's queued events. That module also reads RunService:IsServer()
+-- and creates its own two RemoteEvents, both of which the stubs above and below already cover. Nothing fires it: the benchmark drives Blink
+-- through the standalone Write/Read pair an `export`ed type generates, never through an event.
+local players = newStub("Players", "Players", gameRoot, {
+	LocalPlayer = nil,
+	PlayerRemoving = { Connect = inertConnection },
+})
 gameRoot._children.Players = players
 
 -- Casts because Lune 0.10.5's @lune/roblox type definitions omit these datatype constructors
@@ -310,6 +321,20 @@ DateTime = {
 -- the blob channel.
 Instance = {
 	new = function(className)
+		-- A remote's events never fire here, but Blink's generated module connects to
+		-- OnServerEvent at require time, and Lune's own RemoteEvent instance has no events at
+		-- all. `.Name` and `.Parent` are plain fields on the stub, which is all the module
+		-- assigns to them.
+		if className == "RemoteEvent" or className == "UnreliableRemoteEvent" then
+			return {
+				ClassName = className,
+				Name = className,
+				Parent = nil,
+				OnServerEvent = { Connect = inertConnection },
+				OnClientEvent = { Connect = inertConnection },
+				Destroy = function() end,
+			}
+		end
 		if className == "BindableEvent" then
 			local callbacks = {}
 			local function connect(_, callback)

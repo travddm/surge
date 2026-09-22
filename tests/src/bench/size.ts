@@ -17,7 +17,13 @@ export interface SizeCell {
 export interface SizeRow {
 	name: string;
 	note: string;
-	/** One cell per entry of `libraries`, in that order. */
+	/**
+	 * One cell per library that can express the row, in `libraries` order. A
+	 * library with no cell has no entry for the row -- Blink has no Roblox
+	 * `EnumItem`, no guarded union, and no `Packed<T>` -- and the runner
+	 * renders that as an empty cell. The cells are an array rather than one
+	 * slot per library because a Luau array cannot hold a hole.
+	 */
 	cells: Array<SizeCell>;
 }
 
@@ -44,9 +50,7 @@ export function collectSizeRows(): SizeResult {
 		for (const library of LIBRARIES) {
 			const entry = fixture.entries.find((candidate) => candidate.library === library);
 			if (entry === undefined) {
-				// Every row is declared for every library with an adapter, so a
-				// gap is a mistake in the fixture module, not a result.
-				error(`${fixture.name}: no ${library} entry`);
+				continue;
 			}
 
 			const measurement = entry.measure();
