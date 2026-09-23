@@ -483,5 +483,17 @@ stays optional, on the condition in the last step below.
    so it now prints `BENCH_RESULT:` the way `main` prints `RUNIT_RESULT:`,
    and returns only once it has, because the suite yields and
    `run-in-roblox` ends the run when the injected script returns.
-8. Tier 3 last, only if wire cost with batching becomes a question the
+8. Widen the hand-written baseline to the shapes whose generated code is
+   not a straight run of writes: the tagged union (a branch on the tag and
+   per-variant construction) and the packed `toggles` (the bit region runs
+   through a runtime function rather than inline code). Not the large
+   array, since the `CFrame` array already prices the loop at under a
+   nanosecond per element; and not the large record until Tier B of
+   [type-coverage-parity.md](type-coverage-parity.md) has settled its
+   length prefix, because a baseline writes surge's exact bytes and the
+   size tier checks that it does. Before either: the three rows already
+   there show the encode gap as a constant of about 0.2 µs per call, not
+   per field, which [speed-remeasurement.md](speed-remeasurement.md) puts
+   first; a new row measures nothing new until that is understood.
+9. Tier 3 last, only if wire cost with batching becomes a question the
    serializer comparison cannot answer.
