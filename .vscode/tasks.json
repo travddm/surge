@@ -44,6 +44,14 @@
 			"problemMatcher": []
 		},
 		{
+			"label": "surge: bench:speed:render",
+			"detail": "Rewrite docs/benchmarks/speed.md from the trials file without a run (mise run bench:speed:render)",
+			"type": "shell",
+			"command": "mise run bench:speed:render",
+			"group": "test",
+			"problemMatcher": []
+		},
+		{
 			"label": "surge: test",
 			"detail": "Run the golden-Luau invariant checks against tests/'s compiled output (mise run test)",
 			"type": "shell",

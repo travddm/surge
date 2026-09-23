@@ -32,7 +32,8 @@
 		"bench:size:only": "npm run bench:prepare && npm run bench:size:only --prefix tests --",
 		"bench:speed": "npm run bench:prepare && npm run bench:speed --prefix tests && prettier --write docs/benchmarks/speed.md",
 		"bench:speed:only": "npm run bench:prepare && npm run bench:speed:only --prefix tests --",
-		"dev:tests": "npm run compile && npm run tests:compile && concurrently --raw --kill-others \"npm:tests:compile:watch\" \"npm:tests:serve\""
+		"dev:tests": "npm run compile && npm run tests:compile && concurrently --raw --kill-others \"npm:tests:compile:watch\" \"npm:tests:serve\"",
+		"bench:speed:render": "npm run bench:speed:render --prefix tests && prettier --write docs/benchmarks/speed.md"
 	},
 	"author": "travddm",
 	"license": "ISC",

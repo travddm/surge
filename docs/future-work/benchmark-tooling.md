@@ -392,8 +392,12 @@ mode itself explains are corrected here.
   two Studio processes back to back, pooled, and `speed.md` states how far
   a cell's median moved between them, which is the run-to-run noise. The
   run writes every trial of every run to `docs/benchmarks/speed-trials.tsv`
-  beside it, so any other statistic is taken from there, and two runs can
-  be compared at trial level rather than only at their medians.
+  beside it, so any other statistic is taken from there, two runs can be
+  compared at trial level rather than only at their medians, and
+  `mise run bench:speed:render` can write the table again from it without
+  a run. The table opens with one figure per library and half, the
+  geometric mean of its ratios against surge over the quiet rows; a cell
+  whose spread or drift is above a tenth is marked and left out of it.
 - Size: bytes of the returned buffer plus the count of side-table entries,
   per fixture and library, plus the ratio against surge.
 - Also per fixture and library: round-trip exactness, and, where a round

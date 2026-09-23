@@ -9,6 +9,7 @@
 # @rbxts/flamework-binary-serializer: 0.7.0
 # @rbxts/serio: 1.2.7
 # Blink: 0.18.8
+# Method: 9 trials per cell, each at least 0.2 seconds of calls after 0.1 seconds of warm-up calls, timed in chunks of 250 calls so that the yields between chunks are not in the time; within a row the libraries take turns, one trial each
 fixture	library	half	run	trial	rate
 small flat struct	surge	encode	1	1	2615475
 small flat struct	surge	encode	1	2	2131846

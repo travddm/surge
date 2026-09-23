@@ -30,6 +30,11 @@
 // no argument channel of its own: the patterns can only reach the suite through the script that is
 // injected, so a scoped run injects a copy of scripts/run-in-roblox-benchmarks.luau that carries
 // them.
+//
+// `--render` writes speed.md again from the trials file, with no run (`mise run
+// bench:speed:render`). The trials file carries every trial and every fact of the run it came
+// from, so a change to how this file summarizes or lays out a table is read without ten minutes of
+// Studio, and the table and the trials cannot drift apart.
 import { execFileSync, spawn } from "node:child_process";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { cpus, platform, release } from "node:os";
@@ -41,17 +46,26 @@ const RESULT_PREFIX = "BENCH_RESULT:";
 
 const OUTPUT_PATH = "../docs/benchmarks/speed.md";
 /**
- * Every trial behind `OUTPUT_PATH`, one line each. That file carries a median and a spread per
- * cell and two drift figures for the whole table, which is what a reader needs; a cell's own
- * drift, or any other statistic over the trials -- whether a median sits nearer its slowest trial
- * than its fastest, say -- cannot be taken from it, and the run's console output is gone by the
- * time anyone asks. Checked in beside the table so that a later run can be compared with this one
- * at trial level and not only at its medians.
+ * Every trial behind `OUTPUT_PATH`, one line each, under the facts of the run. That file carries a
+ * median and a spread per cell and two drift figures for the whole table, which is what a reader
+ * needs; a cell's own drift, or any other statistic over the trials -- whether a median sits
+ * nearer its slowest trial than its fastest, say -- is taken from here, and the run's console
+ * output is gone by the time anyone asks. Checked in beside the table so that a later run can be
+ * compared with this one at trial level and not only at its medians, and so that `--render` can
+ * write the table again.
  */
 const TRIALS_PATH = "../docs/benchmarks/speed-trials.tsv";
 const BASELINE = "surge";
 /** What a column reads where that library has no entry for the row. */
 const EMPTY = "—";
+/** Marks a cell whose spread or drift is above `NOISY`, in the tables and in the prose. */
+const FLAG = "†";
+/**
+ * Spread or drift, as a fraction of the median, above which a cell is marked and left out of the
+ * summary. A tenth: below it a cell's noise is smaller than the differences the table exists to
+ * show, and above it a ratio through the cell says less than the cell's own doubt.
+ */
+const NOISY = 0.1;
 
 /** Studio processes a full run spends, back to back; the drift a cell shows is between them. */
 const RUNS = 2;
@@ -70,21 +84,31 @@ const FIXTURES_MARKER = "local fixtures = {}";
  * results file under a task name that says otherwise.
  */
 const SCOPE_FLAG = "--only";
+/** The flag that writes the table again from the trials file, with no run. */
+const RENDER_FLAG = "--render";
+
+/** The label the trials file carries the suite's method under, so a render can restate it. */
+const METHOD_LABEL = "Method";
 
 const argv = process.argv.slice(2);
 const scoped = argv[0] === SCOPE_FLAG;
+const rendering = argv[0] === RENDER_FLAG;
 const patterns = scoped ? argv.slice(1) : [];
 
 if (scoped && patterns.length === 0) {
 	console.error(`${SCOPE_FLAG} needs at least one fixture pattern.`);
 	process.exit(2);
 }
-if (!scoped && argv.length > 0) {
+if (rendering && argv.length > 1) {
+	console.error(`${RENDER_FLAG} takes no other argument.`);
+	process.exit(2);
+}
+if (!scoped && !rendering && argv.length > 0) {
 	console.error(`Unexpected argument "${argv[0]}"; a scoped run is \`${SCOPE_FLAG} <pattern>...\`.`);
 	process.exit(2);
 }
 
-const runs = scoped ? 1 : RUNS;
+let runs = scoped ? 1 : RUNS;
 
 /** `fixture -> library -> half -> rates per run`, in the order the first run reported them. */
 const fixtures = new Map();
@@ -94,6 +118,16 @@ const environment = new Map();
 /** Which run's rows are being read, from zero. */
 let run = 0;
 let result;
+
+function addTrials(name, library, half, runIndex, rates) {
+	if (!libraries.includes(library)) libraries.push(library);
+	if (!fixtures.has(name)) fixtures.set(name, new Map());
+	const halves = fixtures.get(name);
+	if (!halves.has(library)) halves.set(library, new Map());
+	const byHalf = halves.get(library);
+	if (!byHalf.has(half)) byHalf.set(half, []);
+	byHalf.get(half)[runIndex] = rates;
+}
 
 function readRow(line) {
 	const [name, library, half, trials] = line.split("|").map((field) => field.trim());
@@ -106,14 +140,7 @@ function readRow(line) {
 		console.error(`\nMalformed trials: ${line}`);
 		process.exit(1);
 	}
-
-	if (!libraries.includes(library)) libraries.push(library);
-	if (!fixtures.has(name)) fixtures.set(name, new Map());
-	const halves = fixtures.get(name);
-	if (!halves.has(library)) halves.set(library, new Map());
-	const byHalf = halves.get(library);
-	if (!byHalf.has(half)) byHalf.set(half, []);
-	byHalf.get(half)[run] = rates;
+	addTrials(name, library, half, run, rates);
 }
 
 let buffered = "";
@@ -206,21 +233,62 @@ function runOnce(script) {
 	});
 }
 
-const script = entryScript();
-for (run = 0; run < runs; run += 1) {
-	if (runs > 1) console.log(`\nrun ${run + 1} of ${runs}`);
-	await runOnce(script);
+/**
+ * The trials file read back: its facts, in order, and every trial into the same structures a run
+ * fills. The method comes from its facts, since a render has no process to ask.
+ */
+function readTrials() {
+	const facts = [];
+	let header;
+	for (const line of readFileSync(TRIALS_PATH, "utf8").split(/\r?\n/)) {
+		if (line === "") continue;
+		if (line.startsWith("#")) {
+			const [label, value] = splitOnce(line.slice(1).trim(), ": ");
+			if (value !== "") facts.push([label, value]);
+			continue;
+		}
+		const fields = line.split("\t");
+		if (header === undefined) {
+			header = fields;
+			continue;
+		}
+		const [name, library, half, runIndex, trialIndex, rate] = fields;
+		const rates = fixtures.get(name)?.get(library)?.get(half)?.[Number(runIndex) - 1] ?? [];
+		rates[Number(trialIndex) - 1] = Number(rate);
+		addTrials(name, library, half, Number(runIndex) - 1, rates);
+		runs = Math.max(runs, Number(runIndex));
+	}
+
+	const method = facts.find(([label]) => label === METHOD_LABEL);
+	if (method === undefined) {
+		console.error(`${TRIALS_PATH} carries no "${METHOD_LABEL}" line, so the table cannot state its method.`);
+		process.exit(1);
+	}
+	environment.set("method", method[1]);
+	return facts.filter(([label]) => label !== METHOD_LABEL);
 }
 
-if (fixtures.size === 0) {
-	console.error(`\nThe run passed but reported no rows.`);
-	process.exit(1);
-}
-requireEveryCell();
-if (scoped) {
-	report();
+if (rendering) {
+	const facts = readTrials();
+	requireEveryCell();
+	write(facts);
 } else {
-	write();
+	const script = entryScript();
+	for (run = 0; run < runs; run += 1) {
+		if (runs > 1) console.log(`\nrun ${run + 1} of ${runs}`);
+		await runOnce(script);
+	}
+
+	if (fixtures.size === 0) {
+		console.error(`\nThe run passed but reported no rows.`);
+		process.exit(1);
+	}
+	requireEveryCell();
+	if (scoped) {
+		report();
+	} else {
+		write(runFacts());
+	}
 }
 
 /**
@@ -253,19 +321,21 @@ function medianOf(sorted) {
  * One cell's statistics over every run's trials. `low` and `high` are the trials a quarter of the
  * way in from either end of the sorted list, so the spread between them is the middle half of the
  * trials and one stray trial cannot set it. `drift` is how far the runs' own medians sit apart, as
- * a fraction of the pooled median; it is zero for a single run.
+ * a fraction of the pooled median; it is zero for a single run. A cell is `noisy` when either is
+ * above `NOISY`.
  */
 function summarize(perRun) {
 	const pooled = perRun.flat().sort((left, right) => left - right);
 	const median = medianOf(pooled);
 	const low = pooled[Math.floor(pooled.length / 4)];
 	const high = pooled[Math.floor((pooled.length * 3) / 4)];
+	const spread = (high - low) / median;
 	const medians = perRun.map((rates) => medianOf([...rates].sort((left, right) => left - right)));
 	const drift = (Math.max(...medians) - Math.min(...medians)) / median;
-	return { median, low, high, drift };
+	return { median, spread, drift, noisy: spread > NOISY || drift > NOISY };
 }
 
-/** `fixture -> library -> half -> summary`, computed once for the table, the prose, and the trials. */
+/** `fixture -> library -> half -> summary`, computed once for the tables, the prose, and the trials. */
 function summaries() {
 	const cells = new Map();
 	for (const [name, byLibrary] of fixtures) {
@@ -290,6 +360,10 @@ function formatRate(rate) {
 /** A decimal below one percent, so a quiet cell reads as a number rather than as a bound. */
 function formatSpread(fraction) {
 	return fraction < 0.01 ? `${(fraction * 100).toFixed(1)}%` : `${Math.round(fraction * 100)}%`;
+}
+
+function formatRatio(ratio) {
+	return `${ratio.toFixed(2)}×`;
 }
 
 function packageVersion(name) {
@@ -331,17 +405,29 @@ function runFacts() {
 	];
 }
 
-function table(cells, half) {
-	const header = ["Fixture", ...libraries];
-	const lines = [`| ${header.join(" | ")} |`, `| ${header.map(() => "---").join(" | ")} |`];
+/** The surge cell a row's ratios divide by, or a stop: a row without one has no column to read. */
+function referenceOf(name, byLibrary, half) {
+	const reference = byLibrary.get(BASELINE)?.get(half);
+	if (reference === undefined) {
+		console.error(`\n${name} reported no ${BASELINE} ${half} row, so its column has nothing to divide by.`);
+		process.exit(1);
+	}
+	return reference;
+}
 
+function markdownTable(header, rows) {
+	return [
+		`| ${header.join(" | ")} |`,
+		`| ${header.map(() => "---").join(" | ")} |`,
+		...rows.map((row) => `| ${row.join(" | ")} |`),
+	];
+}
+
+/** Every column's throughput, with its spread, marked where the cell is noisy. */
+function throughputTable(cells, half) {
+	const rows = [];
 	for (const [name, byLibrary] of cells) {
-		const reference = byLibrary.get(BASELINE)?.get(half);
-		if (reference === undefined) {
-			console.error(`\n${name} reported no ${BASELINE} ${half} row, so its column has nothing to divide by.`);
-			process.exit(1);
-		}
-
+		referenceOf(name, byLibrary, half);
 		const columns = [name];
 		for (const library of libraries) {
 			const cell = byLibrary.get(library)?.get(half);
@@ -352,13 +438,65 @@ function table(cells, half) {
 			// Per cell rather than per row: the noise here is concentrated in a few
 			// measurements, and a row-wide figure would put their doubt on cells that
 			// do not carry it.
-			const spread = formatSpread((cell.high - cell.low) / cell.median);
-			const ratio = library === BASELINE ? "" : ` (${(cell.median / reference.median).toFixed(2)}×)`;
-			columns.push(`${formatRate(cell.median)}${ratio} ±${spread}`);
+			columns.push(`${formatRate(cell.median)} ±${formatSpread(cell.spread)}${cell.noisy ? FLAG : ""}`);
 		}
-		lines.push(`| ${columns.join(" | ")} |`);
+		rows.push(columns);
 	}
-	return lines;
+	return markdownTable(["Fixture", ...libraries], rows);
+}
+
+/** Every other column against surge, marked where either side of the ratio is noisy. */
+function ratioTable(cells, half) {
+	const others = libraries.filter((library) => library !== BASELINE);
+	const rows = [];
+	for (const [name, byLibrary] of cells) {
+		const reference = referenceOf(name, byLibrary, half);
+		const columns = [name];
+		for (const library of others) {
+			const cell = byLibrary.get(library)?.get(half);
+			if (cell === undefined) {
+				columns.push(EMPTY);
+				continue;
+			}
+			columns.push(`${formatRatio(cell.median / reference.median)}${cell.noisy || reference.noisy ? FLAG : ""}`);
+		}
+		rows.push(columns);
+	}
+	return markdownTable(["Fixture", ...others], rows);
+}
+
+/**
+ * One figure per library and half: the geometric mean of its ratios against surge over the rows
+ * both have a cell in and neither cell is noisy. Geometric, because ratios multiply: a column
+ * twice as fast on one row and half as fast on another means 1.00×, not 1.25×. The count says how
+ * many rows the figure stands on.
+ */
+function summaryTable(cells) {
+	const others = libraries.filter((library) => library !== BASELINE);
+	const rows = [];
+	for (const library of others) {
+		const columns = [library];
+		for (const half of ["encode", "decode"]) {
+			const logs = [];
+			let shared = 0;
+			for (const [name, byLibrary] of cells) {
+				const cell = byLibrary.get(library)?.get(half);
+				if (cell === undefined) continue;
+				shared += 1;
+				const reference = referenceOf(name, byLibrary, half);
+				if (cell.noisy || reference.noisy) continue;
+				logs.push(Math.log(cell.median / reference.median));
+			}
+			if (logs.length === 0) {
+				columns.push(EMPTY);
+				continue;
+			}
+			const mean = Math.exp(logs.reduce((sum, value) => sum + value, 0) / logs.length);
+			columns.push(`${formatRatio(mean)} over ${logs.length} of ${shared} rows`);
+		}
+		rows.push(columns);
+	}
+	return markdownTable(["Library", "Encode", "Decode"], rows);
 }
 
 /**
@@ -374,6 +512,16 @@ function driftFacts(cells) {
 	}
 	drifts.sort((left, right) => left - right);
 	return { largest: drifts[drifts.length - 1], ninthDecile: drifts[Math.floor(drifts.length * 0.9)] };
+}
+
+function noisyCount(cells) {
+	let count = 0;
+	for (const byLibrary of cells.values()) {
+		for (const perHalf of byLibrary.values()) {
+			for (const cell of perHalf.values()) if (cell.noisy) count += 1;
+		}
+	}
+	return count;
 }
 
 /**
@@ -396,6 +544,19 @@ function wrap(sentence, width = 72) {
 	return lines;
 }
 
+function halfSection(cells, half) {
+	const title = half === "encode" ? "Encode" : "Decode";
+	return [
+		`## ${title} throughput`,
+		"",
+		...throughputTable(cells, half),
+		"",
+		`## ${title} against surge`,
+		"",
+		...ratioTable(cells, half),
+	];
+}
+
 /**
  * What a scoped run leaves behind: the same tables the file would carry, in the same format, from
  * one run. They are read against another scoped run of the same patterns, though, and not against
@@ -408,20 +569,20 @@ function report() {
 	const cells = summaries();
 	const counted = `${cells.size} ${cells.size === 1 ? "fixture" : "fixtures"}`;
 	console.log(`\nscoped to ${counted} by ${patterns.join(", ")}, in one run; ${OUTPUT_PATH} was not rewritten`);
-	console.log(
-		["", "## Encode", "", ...table(cells, "encode"), "", "## Decode", "", ...table(cells, "decode")].join("\n"),
-	);
+	console.log(["", ...halfSection(cells, "encode"), "", ...halfSection(cells, "decode")].join("\n"));
 }
 
 /**
  * Every trial of every run, one line each, tab-separated because it is read by whatever is at
- * hand rather than by a person. It repeats the table's provenance lines so that a pair of files
- * measured together can be told from a pair that was not.
+ * hand rather than by a person. It repeats the table's provenance lines, and the suite's method,
+ * so that a pair of files measured together can be told from a pair that was not and so that
+ * `--render` can write the table again.
  */
 function writeTrials(facts) {
 	const lines = [
 		"# Trials behind speed.md. Written by `mise run bench:speed`; do not edit by hand.",
 		...facts.map(([label, value]) => `# ${label}: ${value}`),
+		`# ${METHOD_LABEL}: ${environment.get("method") ?? "unknown"}`,
 		["fixture", "library", "half", "run", "trial", "rate"].join("\t"),
 	];
 	let count = 0;
@@ -443,76 +604,70 @@ function writeTrials(facts) {
 	console.log(`wrote ${TRIALS_PATH} (${count} trials)`);
 }
 
-function write() {
+function write(facts) {
 	const cells = summaries();
 	const method = environment.get("method") ?? "unknown";
 	const drift = driftFacts(cells);
-	// Once, so that the table and the trials beside it cannot disagree about the run they record.
-	const facts = runFacts();
+	const noisy = noisyCount(cells);
 	const lines = [
 		"# Benchmark results: values per second",
 		"",
 		"Generated by `mise run bench:speed`; do not edit by hand.",
 		"",
-		"Each cell is a throughput in values per second, with its ratio against",
-		"surge in the same row: above 1.00× is faster than surge, below it is",
-		"slower.",
-		...wrap(
-			`Each cell is the median over the trials of ${runs} runs of the suite, back to back, each run being ${method}.`,
-		),
+		...summaryTable(cells),
 		"",
-		"The `±` figure is the gap between the trials a quarter of the way in",
-		"from either end of that cell's sorted trials, as a fraction of its",
-		"median: the middle half of the trials, which one stray trial cannot",
-		"set. It is not a confidence interval: it is the raw noise within a run,",
-		"and a difference narrower than it says nothing.",
+		"Each figure above is the geometric mean of that library's throughput",
+		"against surge's, over the rows both have a cell in and neither cell is",
+		"noisy: above 1.00× is faster than surge, below it is slower. The tables",
+		"below are what it is made of.",
 		"",
 		...wrap(
-			`Between the runs behind this file, no cell's median moved by more than ${formatSpread(drift.largest)}, and nine cells in ten moved by under ${formatSpread(drift.ninthDecile)}. That is the run-to-run noise on this machine on this day: a difference between two files narrower than it is not a result either.`,
+			`Each cell is a throughput in values per second: the median over the trials of ${runs} ${runs === 1 ? "run" : "runs"} of the suite, back to back, each run being ${method}.`,
 		),
 		"",
-		"Within a row the libraries take turns, one trial each, so a drift over",
-		"the row lands on every column alike, and a ratio between two columns of",
-		"the same row is read against the same conditions.",
+		"The `±` is the middle half of a cell's trials, as a fraction of its",
+		"median: the noise within a run, not a confidence interval.",
 		"",
-		"The columns do not all carry Luau's compiler directives. The modules",
-		"holding surge's generated serializers carry `--!native` and",
-		"`--!optimize 2`, and so does the hand-written baseline; fbs and Blink",
-		"carry both as they ship, on the modules their codecs run in. serio",
-		"carries neither, so its column is a comparison of compilation mode as",
-		"well as of codec design.",
+		...wrap(
+			`Between the runs behind this file, no cell's median moved by more than ${formatSpread(drift.largest)}, and nine cells in ten moved by under ${formatSpread(drift.ninthDecile)}; that is the noise between runs. A difference narrower than either is not a result.`,
+		),
 		"",
-		"One value is encoded, or one buffer decoded, over and over, and every",
-		"result is discarded, so a number here is throughput for one shape in a",
-		"warm loop, not an application profile. [size.md](size.md) says what each",
-		"row measures and what it costs in bytes.",
+		...wrap(
+			`A cell marked ${FLAG} spread or moved by more than ${formatSpread(NOISY)} and is left out of the figures above; a ratio is marked when either side is. ${noisy === 0 ? "No cell in this file is marked." : noisy === 1 ? "One cell in this file is marked." : `${noisy} cells in this file are marked.`}`,
+		),
 		"",
-		"An empty cell means that library has no entry for the row. Zap has no",
-		"column at all, because it exposes no encoder to call. `baseline` is not",
-		"a library either: it is a hand-written codec over three rows that writes",
-		"surge's exact bytes, so the distance between those two columns is what",
-		"surge's generated code costs over the fewest instructions the shape",
-		"needs, and not a difference of format.",
+		"Within a row the libraries take turns, one trial each, so a ratio",
+		"between two columns of the same row is read against the same",
+		"conditions. `baseline` is not a library: it is a hand-written codec over",
+		"three rows that writes surge's exact bytes, so its distance from surge",
+		"is what the generated code costs over the fewest instructions the shape",
+		"needs. Zap has no column, because it exposes no encoder to call, and an",
+		"empty cell is a library with no entry for the row.",
 		"",
-		"These numbers describe one machine on one day. Read a column against the",
-		"other columns of the same run, never against a number from another file.",
+		"surge's generated serializers, the baseline, fbs, and Blink run with",
+		"`--!native` and `--!optimize 2`; serio carries neither, so its column",
+		"compares compilation mode as well as codec design.",
+		"",
+		"One value is encoded, or one buffer decoded, over and over, with every",
+		"result discarded: throughput for one shape in a warm loop, not an",
+		"application profile. [size.md](size.md) says what each row measures and",
+		"what it costs in bytes, and Benchmarking strategy in",
+		"[testing.md](../testing.md) says how the suite measures. These numbers",
+		"describe one machine on one day: read a column against the other",
+		"columns of the same run, never against a number from another file.",
 		"",
 		"The run:",
 		"",
 		...facts.map(([label, value]) => `- ${label}: ${value}`),
 		"",
-		"## Encode",
+		...halfSection(cells, "encode"),
 		"",
-		...table(cells, "encode"),
-		"",
-		"## Decode",
-		"",
-		...table(cells, "decode"),
+		...halfSection(cells, "decode"),
 		"",
 	];
 
 	mkdirSync(dirname(OUTPUT_PATH), { recursive: true });
 	writeFileSync(OUTPUT_PATH, lines.join("\n"), "utf8");
 	console.log(`\nwrote ${OUTPUT_PATH} (${cells.size} fixtures × ${libraries.length} libraries)`);
-	writeTrials(facts);
+	if (!rendering) writeTrials(facts);
 }

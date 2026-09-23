@@ -14,7 +14,8 @@
 		"bench:size": "lune run scripts/lune-size-runner.luau",
 		"bench:size:only": "npm run bench:size -- --only",
 		"bench:speed": "npm run build && node scripts/record-speed-benchmarks.mjs",
-		"bench:speed:only": "npm run bench:speed -- --only"
+		"bench:speed:only": "npm run bench:speed -- --only",
+		"bench:speed:render": "node scripts/record-speed-benchmarks.mjs --render"
 	},
 	"author": "travddm",
 	"license": "ISC",

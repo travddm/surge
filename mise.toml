@@ -76,6 +76,10 @@ run = "npm run bench:speed"
 description = "Reinstall and recompile tests/, then time only the fixtures the given patterns select in a real Roblox Studio process and print the tables instead of rewriting docs/benchmarks/speed.md -- for reading one change without a full run; a pattern is one word, matched against the fixture name with case and everything that is not a letter or a digit ignored, so `large-array` picks one row and `cframe` picks three"
 run = "npm run bench:speed:only -- {{arg(name='fixture', var=true)}}"
 
+[tasks."bench:speed:render"]
+description = "Rewrite docs/benchmarks/speed.md from docs/benchmarks/speed-trials.tsv without a run -- for reading a change to how the recorder summarizes or lays out the table without ten minutes of Studio"
+run = "npm run bench:speed:render"
+
 [tasks."dev:tests"]
 description = "Compile once, then watch-compile and serve the tests place"
 run = "npm run dev:tests"

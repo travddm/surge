@@ -594,7 +594,10 @@ a timing is only true of one machine on one day, where a byte count is
 true everywhere. The recorder writes nothing unless every run passed and
 every row came back in both halves of every run, so an interrupted run
 leaves the last real table in place. It is still a deliberate
-benchmarking pass, not something every change runs.
+benchmarking pass, not something every change runs. `mise run
+bench:speed:render` writes `speed.md` again from the trials file with no
+run, which is how a change to the recorder's statistics or layout is read
+without ten minutes of Studio.
 
 **Metrics per row**: buffer bytes and side-table entries from the size
 tier, and throughput (values/sec) for serialize and deserialize
