@@ -155,7 +155,8 @@ sections, in order:
 2. **Setup.** `mise install` once; the rest is a link into `README.md`.
 3. **Commands.** The essentials only, each with one line: `mise run ci`,
    `compile`, `lint:fix` and `format:fix`, `tests:test`, `bench:size`,
-   `bench:speed` and their `:only` forms. The full task reference lives in
+   `bench:speed`, their `:only` forms, and `bench:speed:render`. The full
+   task reference lives in
    `README.md`.
 4. **Where to make changes.** The runtime package's `src/`, the standalone
    `tests/` project, and the transformer's `src/` in the sibling

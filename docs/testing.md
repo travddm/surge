@@ -468,7 +468,7 @@ encode for the same reason. In a Roblox process neither ever happens.
 ### Running the speed tier via run-in-roblox
 
 `mise run bench:speed` reinstalls and recompiles `tests/`, builds the
-`tests` place (`rojo build`), and runs it through
+`tests` place (`rojo build`), and runs it twice, back to back, through
 [`run-in-roblox`](https://github.com/rojo-rbx/run-in-roblox) with
 `tests/scripts/run-in-roblox-benchmarks.luau` as the injected script
 (`tests/scripts/ensure-dist.mjs` creates `dist/` first, since it's
@@ -537,8 +537,8 @@ transformer.
 large-array` and `mise run bench:speed:only cframe` measure only the rows
 their patterns select and print the table instead of rewriting the results
 file. That is how one change is read without a full run: seconds for the size
-tier, and a fraction of the two minutes the full catalog spends in Studio for
-the speed tier. A
+tier, and one short Studio run for the speed tier, where the full catalog is
+two runs of about four minutes each. A
 pattern is one word, because a mise task argument does not reliably reach the
 task with its quoting intact — on Windows a quoted `large array` arrives as
 two arguments. The match drops case and every character that is not a letter

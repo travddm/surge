@@ -381,8 +381,15 @@ an A/B on one scoped run established (see the comment block in
 [testing.md](../testing.md)). The loop times its calls in chunks and yields
 between chunks once a quarter second of measured work has passed, the two
 facts are one, and `runBenchmarks` waits for the verdict. Re-recording
-`speed.md` that way moved 105 of 124 cells by more than 1.2×, up to 19×,
-and the run takes two minutes where it took thirteen. Every ratio quoted
+`speed.md` that way moved 105 of 124 cells by more than 1.2×, up to 19×.
+A trial is a length of time now rather than 10,000 calls, since on the
+fastest rows that was five milliseconds and every such cell spread by more
+than 10%; within a row the libraries take turns; three idle frames separate
+rows; and a full run is two Studio runs of about four minutes each, with
+the drift between them stated in the file, which opens with a geometric
+mean per library and marks any cell noisier than a tenth.
+`mise run bench:speed:render` rewrites the file from the trials without a
+run. Every ratio quoted
 above from a full run before this was read from cells in that slow mode;
 [speed-remeasurement.md](speed-remeasurement.md) lists which conclusions
 that reaches and how to re-measure them, and the figures above are left as
@@ -443,7 +450,7 @@ time:
   enum or opaque member, so they move no pinned buffer today.
 - [speed-remeasurement.md](speed-remeasurement.md): the before/after
   ratios recorded above were measured in the slow mode; each is one
-  checkout and one two-minute run per side, and the results land once, in
+  checkout and one ten-minute double run per side, and the results land once, in
   the research papers the restructure assigns them to.
 - The first two steps of
   [documentation-restructure.md](documentation-restructure.md): the two

@@ -37,7 +37,7 @@
 		},
 		{
 			"label": "surge: bench:speed",
-			"detail": "Run the benchmark speed suite in a real Roblox Studio process via run-in-roblox (mise run bench:speed)",
+			"detail": "Run the benchmark speed suite twice in a real Roblox Studio process via run-in-roblox, about ten minutes (mise run bench:speed)",
 			"type": "shell",
 			"command": "mise run bench:speed",
 			"group": "test",
