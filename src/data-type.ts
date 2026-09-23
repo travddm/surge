@@ -34,11 +34,15 @@ export namespace DataType {
 	 *
 	 * With a whole number literal (`Length<string, 8>`) no count is written
 	 * at all and both sides use exactly that many bytes or elements. The
-	 * value must have exactly that many: a longer one is truncated and a
-	 * shorter one raises. Nothing checks this until write-side validation
-	 * exists, so use it only where the length is fixed by construction. A
-	 * `Map`, `Set`, or `Record` cannot take this form — the write side counts
-	 * entries as it iterates them, so it cannot promise a fixed number.
+	 * value must have exactly that many: a longer one is truncated, and a
+	 * shorter one raises wherever writing the missing part touches it. The
+	 * one exception is an array or tuple rest whose element is optional,
+	 * where the missing elements are written as absent and the value comes
+	 * back at its own length. Nothing checks any of this until write-side
+	 * validation exists, so use the exact form only where the length is
+	 * fixed by construction. A `Map`, `Set`, or `Record` cannot take it —
+	 * the write side counts entries as it iterates them, so it cannot
+	 * promise a fixed number.
 	 *
 	 * Unlike {@link Packed}, this applies to the container it wraps and not
 	 * to the subtree under it: in `Length<Array<Array<string>>, u16>` the

@@ -139,8 +139,13 @@ would say so.
 - Exact-length semantics, which the note fixes because the emitter cannot.
   `buffer.writestring(b, pos, s, N)` writes N **bytes**, not characters, and
   `s.size()` is bytes. Measured under Lune 0.10.5: a value longer than N is
-  truncated silently, and a shorter one raises `string length overflow`.
-  Until write validation lands, that is the contract.
+  truncated silently, a shorter string raises `string length overflow`, and
+  a `buffer.copy` past the source's end raises `buffer access out of
+bounds`. An array or tuple rest of an **optional** element is the one
+  place nothing raises: `arr[i]` past the end is `nil`, which is what an
+  absent optional writes, so a short value pads with absent markers and
+  comes back at its own length. Until write validation lands, that is the
+  contract.
 - `Range<Min, Max>` and an explicit width brand can disagree. The explicit
   width wins, and a range that does not fit it is a diagnostic rather than a
   silent widening.

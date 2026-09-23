@@ -61,6 +61,9 @@ interface WithExactLengths {
 }
 const exactSerializer = createBinarySerializer<WithExactLengths>();
 
+type ExactOptionals = DataType.Length<Array<Point | undefined>, 3>;
+const exactOptionalsSerializer = createBinarySerializer<ExactOptionals>();
+
 const FUZZ_ITERATIONS = 100;
 
 function randomPoint(rng: Rng): Point {
@@ -241,6 +244,25 @@ class CollectionsTest {
 			const { buffer: written, blobs } = exactSerializer.serialize(value);
 			Assert.equal(undefined, difference(value, exactSerializer.deserialize(written, blobs)));
 		}
+	}
+
+	// The exact form says a shorter value raises, and that holds wherever
+	// writing the missing element touches it. An optional element is the one
+	// exception: `arr[i]` past the end is `nil`, which is exactly what an
+	// absent optional writes, so the missing elements are written as absent
+	// and nothing raises. The read side then pushes `undefined`, which appends
+	// nothing to a Luau array, so the value comes back at its own length.
+	@Fact
+	public padsAShortExactArrayOfOptionalsInsteadOfRaising(): void {
+		const short: ExactOptionals = [
+			{ x: 1, y: 2 },
+			{ x: 3, y: 4 },
+		];
+		const { buffer: written, blobs } = exactOptionalsSerializer.serialize(short);
+		// Three elements written: two present (a presence byte and two f64
+		// each) and one absent (a presence byte alone).
+		Assert.equal(2 * 17 + 1, buffer.len(written));
+		Assert.equal(undefined, difference(short, exactOptionalsSerializer.deserialize(written, blobs)));
 	}
 }
 

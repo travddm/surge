@@ -469,9 +469,17 @@ sides use exactly `L` bytes or elements, which is Blink's and Zap's exact
 form. The write side stops caring what the value's own length is: a string
 passes `L` to `buffer.writestring` as a **byte** count, an array and a
 tuple's rest run an indexed loop of exactly `L`, and a `buffer` copies `L`
-bytes. So a longer value is truncated and a shorter one raises — nothing
-checks it until write-side validation lands (see
-[deserialize-hardening.md](future-work/deserialize-hardening.md)), and the
+bytes. So a longer value is truncated, and a shorter one raises wherever
+writing the missing part touches it — `buffer.writestring` with a count over
+the string's byte length raises `string length overflow`, `buffer.copy` past
+the source's end raises `buffer access out of bounds`, and an element write
+through `arr[i]` past the end raises on the `nil`. An **optional** element is
+the exception: `nil` is exactly what an absent optional writes, so the
+missing elements are written as absent and nothing raises, and since the read
+side's `push(undefined)` appends nothing to a Luau array the value comes back
+at its own length. Nothing checks any of this until write-side validation
+lands (see
+[deserialize-hardening.md](future-work/deserialize-hardening.md)), so the
 brand is a statement that the length is fixed by construction.
 
 A `dict` takes a width but never an exact count. Its write side counts
