@@ -366,6 +366,14 @@ function formatRatio(ratio) {
 	return `${ratio.toFixed(2)}×`;
 }
 
+/** Microseconds per value, at three significant figures, from a rate in values per second. */
+function formatMicroseconds(rate) {
+	const microseconds = 1e6 / rate;
+	if (microseconds >= 100) return `${microseconds.toFixed(0)} µs`;
+	if (microseconds >= 10) return `${microseconds.toFixed(1)} µs`;
+	return `${microseconds.toFixed(2)} µs`;
+}
+
 function packageVersion(name) {
 	return JSON.parse(readFileSync(join("node_modules", name, "package.json"), "utf8")).version;
 }
@@ -439,6 +447,20 @@ function throughputTable(cells, half) {
 			// measurements, and a row-wide figure would put their doubt on cells that
 			// do not carry it.
 			columns.push(`${formatRate(cell.median)} ±${formatSpread(cell.spread)}${cell.noisy ? FLAG : ""}`);
+		}
+		rows.push(columns);
+	}
+	return markdownTable(["Fixture", ...libraries], rows);
+}
+
+/** Every column's time per value: the throughput table again, as microseconds per call. */
+function timeTable(cells, half) {
+	const rows = [];
+	for (const [name, byLibrary] of cells) {
+		const columns = [name];
+		for (const library of libraries) {
+			const cell = byLibrary.get(library)?.get(half);
+			columns.push(cell === undefined ? EMPTY : `${formatMicroseconds(cell.median)}${cell.noisy ? FLAG : ""}`);
 		}
 		rows.push(columns);
 	}
@@ -541,6 +563,10 @@ function halfSection(cells, half) {
 		"",
 		...throughputTable(cells, half),
 		"",
+		`## ${title} time per value`,
+		"",
+		...timeTable(cells, half),
+		"",
 		`## ${title} against surge`,
 		"",
 		...ratioTable(cells, half),
@@ -610,6 +636,9 @@ function write(facts) {
 		...wrap(
 			`Each cell below is a median throughput over ${runs === 1 ? "one run" : `${runs} runs back to back`}. \`±\` is the middle half of its trials, as a fraction of the median.${runs === 1 ? "" : ` Between the runs, no cell moved by more than ${formatSpread(drift.largest)} and nine in ten by under ${formatSpread(drift.ninthDecile)}; a difference narrower than that is noise.`} A cell marked ${FLAG} spread or moved by more than ${formatSpread(NOISY)} and is left out of the summary.`,
 		),
+		"",
+		"Time per value is the same measurement as microseconds per call, which",
+		"reads across rows where a rate does not.",
 		"",
 		"`baseline` is a hand-written codec that writes surge's exact bytes on",
 		"three rows, so its ratio is what surge's generated code costs against",

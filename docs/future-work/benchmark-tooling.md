@@ -386,7 +386,9 @@ mode itself explains are corrected here.
   fixed 10,000 calls was five milliseconds on the fastest rows, and every
   cell whose trial ran under ten milliseconds spread by more than 10%.
   Within a row the libraries take turns, one trial each, so a drift over
-  the row lands on every column alike. The suite prints every trial's
+  the row lands on every column alike, and three idle frames separate one
+  row from the next so that a row does not pay for the row before it. The
+  suite prints every trial's
   rate, one line per fixture and library, and the recorder summarizes: the
   median, and as the spread the middle half of the trials. A full run is
   two Studio processes back to back, pooled, and `speed.md` states how far
@@ -398,6 +400,8 @@ mode itself explains are corrected here.
   a run. The table opens with one figure per library and half, the
   geometric mean of its ratios against surge over the quiet rows; a cell
   whose spread or drift is above a tenth is marked and left out of it.
+  Each half has a throughput table, the same cells as microseconds per
+  value, and a table of ratios against surge.
 - Size: bytes of the returned buffer plus the count of side-table entries,
   per fixture and library, plus the ratio against surge.
 - Also per fixture and library: round-trip exactness, and, where a round

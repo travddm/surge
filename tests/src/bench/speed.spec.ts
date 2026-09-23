@@ -48,7 +48,10 @@ import { matching, scopedPatterns } from "./selection";
  * A drift over the row -- the process slowing as it heats, the collector
  * catching up -- then lands on every column alike instead of on whichever
  * library ran last, which is what makes a ratio between two columns of the
- * same row a fair one.
+ * same row a fair one. Between rows the loop yields `SETTLE_FRAMES` frames
+ * with no work in them, so the collector can catch up on the previous row's
+ * garbage before the next row's warm-up starts, and a row's first trials do
+ * not pay for the row before it.
  *
  * The loops yield, on purpose. `run-in-roblox` calls the injected script on
  * its own plugin thread and does not report the run finished until that
@@ -100,6 +103,8 @@ const TRIAL_SECONDS = 0.2;
  * percent of a chunk on the clock reads around it.
  */
 const CHUNK = 250;
+/** Frames yielded, idle, between one row and the next. */
+const SETTLE_FRAMES = 3;
 /**
  * Seconds of measured work after which the loop yields between chunks. The
  * slow mode described above set in after roughly ten seconds without a
@@ -115,7 +120,7 @@ const ENVIRONMENT_PREFIX = "BENCH_ENV:";
 // the suite rather than any one test, and it is what keeps the generated file from
 // restating these constants from memory.
 print(
-	`${ENVIRONMENT_PREFIX} method=${TRIALS} trials per cell, each at least ${TRIAL_SECONDS} seconds of calls after ${WARM_UP_SECONDS} seconds of warm-up calls, timed in chunks of ${CHUNK} calls so that the yields between chunks are not in the time; within a row the libraries take turns, one trial each`,
+	`${ENVIRONMENT_PREFIX} method=${TRIALS} trials per cell, each at least ${TRIAL_SECONDS} seconds of calls after ${WARM_UP_SECONDS} seconds of warm-up calls, timed in chunks of ${CHUNK} calls so that the yields between chunks are not in the time; within a row the libraries take turns, one trial each, and ${SETTLE_FRAMES} idle frames separate one row from the next`,
 );
 
 /** Measured seconds since the loop last yielded; shared by every row, since the budget is. */
@@ -142,6 +147,14 @@ function warmUp(run: () => void): void {
 	while (elapsed < WARM_UP_SECONDS) {
 		elapsed += chunk(run);
 	}
+}
+
+/** Idle frames between rows; the yield budget starts over, since nothing measured has run. */
+function settle(): void {
+	for (const _ of $range(1, SETTLE_FRAMES)) {
+		task.wait();
+	}
+	sinceYield = 0;
 }
 
 /** One trial: values per second over at least `TRIAL_SECONDS` of calls. */
@@ -189,6 +202,7 @@ class SpeedBench {
 					entries.forEach((entry, index) => rates[index].push(trial(entry[half])));
 				}
 				entries.forEach((entry, index) => report(half, fixture, entry, rates[index]));
+				settle();
 			}
 		}
 	}
