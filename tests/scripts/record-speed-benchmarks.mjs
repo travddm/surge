@@ -514,16 +514,6 @@ function driftFacts(cells) {
 	return { largest: drifts[drifts.length - 1], ninthDecile: drifts[Math.floor(drifts.length * 0.9)] };
 }
 
-function noisyCount(cells) {
-	let count = 0;
-	for (const byLibrary of cells.values()) {
-		for (const perHalf of byLibrary.values()) {
-			for (const cell of perHalf.values()) if (cell.noisy) count += 1;
-		}
-	}
-	return count;
-}
-
 /**
  * The sentences of the generated file are written out by hand at this width, and this folds the
  * sentences that carry a value from the run to the same width, so that the file passes the
@@ -606,9 +596,7 @@ function writeTrials(facts) {
 
 function write(facts) {
 	const cells = summaries();
-	const method = environment.get("method") ?? "unknown";
 	const drift = driftFacts(cells);
-	const noisy = noisyCount(cells);
 	const lines = [
 		"# Benchmark results: values per second",
 		"",
@@ -616,45 +604,22 @@ function write(facts) {
 		"",
 		...summaryTable(cells),
 		"",
-		"Each figure above is the geometric mean of that library's throughput",
-		"against surge's, over the rows both have a cell in and neither cell is",
-		"noisy: above 1.00× is faster than surge, below it is slower. The tables",
-		"below are what it is made of.",
+		"Each figure is the geometric mean of that library's throughput against",
+		"surge's over the rows both have: above 1.00× is faster than surge.",
 		"",
 		...wrap(
-			`Each cell is a throughput in values per second: the median over the trials of ${runs} ${runs === 1 ? "run" : "runs"} of the suite, back to back, each run being ${method}.`,
+			`Each cell below is a median throughput over ${runs === 1 ? "one run" : `${runs} runs back to back`}. \`±\` is the middle half of its trials, as a fraction of the median.${runs === 1 ? "" : ` Between the runs, no cell moved by more than ${formatSpread(drift.largest)} and nine in ten by under ${formatSpread(drift.ninthDecile)}; a difference narrower than that is noise.`} A cell marked ${FLAG} spread or moved by more than ${formatSpread(NOISY)} and is left out of the summary.`,
 		),
 		"",
-		"The `±` is the middle half of a cell's trials, as a fraction of its",
-		"median: the noise within a run, not a confidence interval.",
+		"`baseline` is a hand-written codec that writes surge's exact bytes on",
+		"three rows, so its ratio is what surge's generated code costs against",
+		"hand-written Luau. Zap exposes no encoder to call and has no column.",
+		"Every column but serio runs with `--!native` and `--!optimize 2`.",
 		"",
-		...wrap(
-			`Between the runs behind this file, no cell's median moved by more than ${formatSpread(drift.largest)}, and nine cells in ten moved by under ${formatSpread(drift.ninthDecile)}; that is the noise between runs. A difference narrower than either is not a result.`,
-		),
-		"",
-		...wrap(
-			`A cell marked ${FLAG} spread or moved by more than ${formatSpread(NOISY)} and is left out of the figures above; a ratio is marked when either side is. ${noisy === 0 ? "No cell in this file is marked." : noisy === 1 ? "One cell in this file is marked." : `${noisy} cells in this file are marked.`}`,
-		),
-		"",
-		"Within a row the libraries take turns, one trial each, so a ratio",
-		"between two columns of the same row is read against the same",
-		"conditions. `baseline` is not a library: it is a hand-written codec over",
-		"three rows that writes surge's exact bytes, so its distance from surge",
-		"is what the generated code costs over the fewest instructions the shape",
-		"needs. Zap has no column, because it exposes no encoder to call, and an",
-		"empty cell is a library with no entry for the row.",
-		"",
-		"surge's generated serializers, the baseline, fbs, and Blink run with",
-		"`--!native` and `--!optimize 2`; serio carries neither, so its column",
-		"compares compilation mode as well as codec design.",
-		"",
-		"One value is encoded, or one buffer decoded, over and over, with every",
-		"result discarded: throughput for one shape in a warm loop, not an",
-		"application profile. [size.md](size.md) says what each row measures and",
-		"what it costs in bytes, and Benchmarking strategy in",
-		"[testing.md](../testing.md) says how the suite measures. These numbers",
-		"describe one machine on one day: read a column against the other",
-		"columns of the same run, never against a number from another file.",
+		"Each number is one shape in a warm loop, on one machine on one day, not",
+		"an application profile; compare columns within this file only.",
+		"[size.md](size.md) gives each row's bytes, and",
+		"[testing.md](../testing.md) says how the suite measures.",
 		"",
 		"The run:",
 		"",
