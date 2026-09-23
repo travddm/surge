@@ -37,9 +37,11 @@ The review read each promise in the design documents, then constructed the
 smallest program that would test it and ran the compiled transformer over it
 under Node — walking throwaway `ts.Program`s, printing the emitter's output,
 and compiling probe files with `rbxtsc` where the question was whether the
-generated code builds. Every finding it filed states the case it was
-confirmed on, so a reader can re-run it. Nothing was filed from a reading of
-the source alone.
+generated code builds. Each document states how its findings were confirmed
+and marks its exceptions: one union case in `walker-emitter-robustness.md` is
+from code reading, and the enum index overflow rests on a member count taken
+from the installed `@rbxts/types`. Everything else names a case a reader can
+re-run.
 
 Each finding became one document under `docs/future-work/`, with what, why it
 was deferred, and how it would be fixed; the index ordered them and said why

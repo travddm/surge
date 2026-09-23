@@ -38,7 +38,7 @@ own doc for the detail that belongs to it:
   [specs/README.md](specs/README.md) states the format. None published yet.
 - [research/](research/) — papers reporting what was measured, dated and
   never edited after the fact; [research/README.md](research/README.md)
-  states the format. None published yet.
+  states the format and indexes them.
 - [future-work/](future-work/) — deferred capabilities with no design yet
   (the `surge-net` networking layer, schema evolution/versioning, and a
   headless CI runner), plus the findings of the September 2026 adversarial
