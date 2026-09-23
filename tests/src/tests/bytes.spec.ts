@@ -118,6 +118,23 @@ const packedTagSerializer =
 		DataType.Packed<{ first: { mode: "off" } | { mode: "on"; level: DataType.u8 }; flag: boolean }>
 	>();
 
+// Per-component widths: `cell` stores a `Vector3`'s three components at a
+// width each, and `placement` a `CFrame`'s position, whose rotation stays an
+// f32 triple.
+interface Narrowed {
+	cell: DataType.Vector<DataType.u8, DataType.i16, DataType.u24>;
+	placement: DataType.Transform<DataType.i16>;
+}
+const narrowedSerializer = createBinarySerializer<Narrowed>();
+
+// Every argument defaulted. Rule 4 of future-work/data-type-surface.md says
+// this has to write what an unbranded `Vector3` and `CFrame` write.
+interface DefaultedComponents {
+	cell: DataType.Vector;
+	placement: DataType.Transform<DataType.f32>;
+}
+const defaultedComponentsSerializer = createBinarySerializer<DefaultedComponents>();
+
 class BytesTest {
 	@Fact
 	public pinsPrimitivesInNameOrder(): void {
@@ -314,6 +331,32 @@ class BytesTest {
 		// rotation. A rotation is not pinned: its axis-angle form is not exact.
 		const position = "0000803f" + "00000040" + "00004040";
 		Assert.equal(position + string.rep("00", 12), hex(placementSerializer.serialize(new CFrame(1, 2, 3)).buffer));
+	}
+
+	@Fact
+	public pinsPerComponentWidths(): void {
+		// cell: u8 | i16 | u24, whose low u16 comes first | placement: 3 x i16
+		// position, then the rotation's 3 x f32, zero with no rotation.
+		const cell = "03" + "feff" + "030201";
+		const position = "0100" + "0200" + "0300";
+		const { buffer } = narrowedSerializer.serialize({
+			cell: new Vector3(3, -2, 0x010203),
+			placement: new CFrame(1, 2, 3),
+		});
+		Assert.equal(cell + position + string.rep("00", 12), hex(buffer));
+	}
+
+	@Fact
+	public pinsThatDefaultedComponentWidthsMoveNoBytes(): void {
+		// The same values, and so the same bytes, `pinsFixedSizeDatatypes` and
+		// `pinsACFrameWithNoRotation` pin for the unbranded types.
+		const cell = "0000003f" + "00000000" + "00000040";
+		const position = "0000803f" + "00000040" + "00004040";
+		const { buffer } = defaultedComponentsSerializer.serialize({
+			cell: new Vector3(0.5, 0, 2),
+			placement: new CFrame(1, 2, 3),
+		});
+		Assert.equal(cell + position + string.rep("00", 12), hex(buffer));
 	}
 
 	@Fact

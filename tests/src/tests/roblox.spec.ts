@@ -1,6 +1,6 @@
 //!optimize 2
 import { Assert, Fact } from "@rbxts/runit";
-import { createBinarySerializer } from "@rbxts/surge";
+import { DataType, createBinarySerializer } from "@rbxts/surge";
 
 import { Rng, difference } from "../support";
 
@@ -58,6 +58,23 @@ interface WithFixedDatatypes {
 	stamp: DateTime;
 }
 const fixedDatatypesSerializer = createBinarySerializer<WithFixedDatatypes>();
+
+// Per-component widths: a `Vector3`'s components and a `CFrame`'s position at
+// a width of their own, wherever a brand has to survive being walked into --
+// an array element, an optional, and a union member. `Cell` is a re-alias,
+// which carries no brand alias, so its widths are read back out of the brand
+// property; `i24` is the one width whose read side is not a single buffer
+// call, but a u16 and a u8 folded back over the sign.
+type Cell = DataType.Vector<DataType.i24, DataType.u8, DataType.i16>;
+
+interface WithNarrowedComponents {
+	cell: Cell;
+	cellOrLabel: Cell | string;
+	maybeCell?: Cell;
+	placement: DataType.Transform<DataType.i16, DataType.u8, DataType.i16>;
+	path: Array<DataType.Vector<DataType.u8>>;
+}
+const narrowedComponentsSerializer = createBinarySerializer<WithNarrowedComponents>();
 
 const RIGS: ReadonlyArray<Enum.HumanoidRigType> = [Enum.HumanoidRigType.R6, Enum.HumanoidRigType.R15];
 
@@ -186,6 +203,33 @@ class RobloxTest {
 			const { buffer, blobs } = fixedDatatypesSerializer.serialize(value);
 			Assert.empty(blobs);
 			Assert.equal(undefined, difference(value, fixedDatatypesSerializer.deserialize(buffer, blobs)));
+		}
+	}
+
+	// Every component is a whole number inside the width that holds it, so a
+	// narrowed value comes back exactly. What a component outside its width
+	// does is a write-side contract, documented on `DataType.Vector`, and not
+	// something a round trip can show.
+	@Fact
+	public roundTripsNarrowedComponents(): void {
+		const rng = new Rng(15);
+		for (const _ of $range(1, 100)) {
+			const cell = new Vector3(rng.int(-8388608, 8388607), rng.int(0, 255), rng.int(-32768, 32767));
+			const path = new Array<Vector3>();
+			for (const __ of $range(1, rng.int(0, 4))) {
+				path.push(new Vector3(rng.int(0, 255), rng.int(0, 255), rng.int(0, 255)));
+			}
+			const value: WithNarrowedComponents = {
+				cell,
+				cellOrLabel: rng.bool() ? cell : rng.str(),
+				maybeCell: rng.bool() ? cell : undefined,
+				// Translation only: a rotation does not survive the axis-angle encoding bit for bit.
+				placement: new CFrame(rng.int(-32768, 32767), rng.int(0, 255), rng.int(-32768, 32767)),
+				path,
+			};
+			const { buffer, blobs } = narrowedComponentsSerializer.serialize(value);
+			Assert.empty(blobs);
+			Assert.equal(undefined, difference(value, narrowedComponentsSerializer.deserialize(buffer, blobs)));
 		}
 	}
 

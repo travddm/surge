@@ -95,9 +95,11 @@ directory states them.
   linked from both READMEs. The directives section can be written and
   linked before the rest, since it depends on no open step. The wire-format
   section must state each container's default length width and that
-  `DataType.Length<T, L>` changes it, which
-  [data-type-surface.md](data-type-surface.md) treats as part of the decision
-  rather than as a detail of it.
+  `DataType.Length<T, L>` changes it, and the three `f32`s a `Vector3` and a
+  `CFrame`'s position cost by default and that `DataType.Vector<X, Y, Z>` and
+  `DataType.Transform<X, Y, Z>` change them. Each default is part of the
+  decision in [data-type-surface.md](data-type-surface.md) rather than a
+  detail of it.
 - Correct each stale statement in place as its fix lands; the list above
   is the checklist.
 - `CHANGELOG.md` and a short release section in serde.md (tag both

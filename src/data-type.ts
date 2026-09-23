@@ -50,14 +50,43 @@ export namespace DataType {
 	 */
 	export type Length<T, L extends u8 | u16 | u24 | u32 = u32> = T & { readonly _surge_length?: [T, L] };
 
+	/** Every width brand above, and the constraint a per-component width takes. */
+	type Width = f32 | f64 | u8 | u16 | u24 | u32 | i8 | i16 | i24 | i32;
+
+	/**
+	 * Stores a `Vector3`'s three components at the given widths instead of
+	 * three {@link f32}s. `Y` and `Z` default to `X`, and `X` to {@link f32},
+	 * so an all-default `Vector` and a `Vector3` produce the same bytes.
+	 *
+	 * An integer width truncates a component toward zero and wraps it modulo
+	 * its range. Nothing raises and nothing checks the value until write-side
+	 * validation exists, so a width states a range the shape is known to keep.
+	 */
+	export type Vector<X extends Width = f32, Y extends Width = X, Z extends Width = X> = Vector3 & {
+		readonly _surge_vector?: [X, Y, Z];
+	};
+
+	/**
+	 * Stores a `CFrame`'s position at the given widths, exactly as
+	 * {@link Vector} does for a `Vector3`. The rotation is unchanged: it stays
+	 * an f32 axis-angle triple.
+	 *
+	 * Has no form inside {@link Packed}, whose `CFrame` writes its position
+	 * through a runtime function with a layout of its own; a width other than
+	 * the default there is a diagnostic.
+	 */
+	export type Transform<X extends Width = f32, Y extends Width = X, Z extends Width = X> = CFrame & {
+		readonly _surge_transform?: [X, Y, Z];
+	};
+
 	/**
 	 * Opts a subtree into the smaller encodings. As a direct property of an
 	 * object inside it, a `boolean`, an `optional`'s presence, and the tag of
 	 * a two-variant tagged union are 1 bit each, not 1 byte. A `CFrame`
 	 * anywhere inside it is 1 byte when its rotation is axis-aligned and its
 	 * position is zero or one, 13 bytes with one of the two, and 25 bytes
-	 * (1 more than outside) with neither. See Type Coverage -> Packed<T> in
-	 * transformer.md.
+	 * (1 more than outside) with neither, and {@link Transform} does not
+	 * apply to it. See Type Coverage -> Packed<T> in transformer.md.
 	 */
 	export type Packed<T> = T & { readonly _surge_packed?: [T] };
 }

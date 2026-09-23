@@ -146,6 +146,14 @@ bounds`. An array or tuple rest of an **optional** element is the one
   absent optional writes, so a short value pads with absent markers and
   comes back at its own length. Until write validation lands, that is the
   contract.
+- What an integer component width does to a value outside it, which
+  `Vector<X, Y, Z>` and `Transform<X, Y, Z>` leave to the `buffer` call.
+  Measured under Lune 0.10.5: `buffer.writeu8` of `3.7` reads back 3, of
+  `-1` reads back 255, and of `300` reads back 44; `buffer.writei16` of
+  `-1.5` reads back -1 and of `40000` reads back -25536; a NaN and an
+  infinity both read back 0. None of them raises, so truncation toward
+  zero and wrapping modulo the range is the contract until write-side
+  validation lands.
 - `Range<Min, Max>` and an explicit width brand can disagree. The explicit
   width wins, and a range that does not fit it is a diagnostic rather than a
   silent widening.
@@ -168,3 +176,17 @@ entries as it iterates them, so it cannot promise a compile-time number, and
 unlike a string — where an exact count truncates that field and nothing else
 — a miscount there shifts every field after it. Blink and Zap bound a map by
 width and not by an exact count either.
+
+`Vector<X, Y, Z>` and `Transform<X, Y, Z>` have landed after it, each
+defaulting `Y` and `Z` to `X` and `X` to `f32`, so a defaulted brand leaves
+both the IR and the bytes where they were and `bytes.spec.ts` pins that.
+Two things this note did not anticipate about them:
+
+- Neither takes a value type, because each fixes its own, so rule 3's first
+  parameter is a width. That costs nothing: a brand that wraps nothing can
+  never be the outer one, which is the answer `getSurgeBrand`'s
+  outermost-brand check already gives for it.
+- `Transform` has no form inside `Packed<T>`. That `CFrame`'s position goes
+  through `writePackedCFrame`, at a layout of its own and only when the
+  header does not already give it, so a width other than the default there
+  is a diagnostic rather than a silent drop.

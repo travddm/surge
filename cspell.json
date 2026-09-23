@@ -86,6 +86,7 @@
 		"vector3",
 		"workstream",
 		"writef",
+		"writei",
 		"writestring",
 		"writeu",
 		"zap"
