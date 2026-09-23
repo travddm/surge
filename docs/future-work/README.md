@@ -415,23 +415,31 @@ written about is 1.08× on encode and 1.06× on decode where it was 2.87× and
 of them the size of what landed, so the document moves to No step of its own
 and stops being a step.
 
-Tier B of [type-coverage-parity.md](type-coverage-parity.md) takes first place
-by default, for the reason it already had: the size table showed that every
-byte Blink and Zap save against surge is a length prefix. Nothing measured
-moved anything else, and the steps below it keep their order.
+Tier B of [type-coverage-parity.md](type-coverage-parity.md) held first place
+for a measured reason: the size table showed that every byte Blink and Zap
+save against surge is a length prefix. The two items that rested on that
+reading have since landed — `DataType.Length<T, L>`, which is how a shape
+takes those bytes back, and the per-component widths
+`DataType.Vector<X, Y, Z>` and `DataType.Transform<X, Y, Z>`. The reason is
+spent, and what is left of Tier B rests on nothing measured.
 
-The two items that rested on that reading have since landed —
-`DataType.Length<T, L>`, which is how a shape takes those bytes back, and the
-per-component widths `DataType.Vector<X, Y, Z>` and
-`DataType.Transform<X, Y, Z>`. Nothing left in Tier B rests on a measurement,
-so the step keeps first place as a default and no longer as a result.
+[deserialize-hardening.md](deserialize-hardening.md) takes first place
+instead, because both steps that used to be above it now wait on it. Tier B's
+`Range<Min, Max>` validates on write, and the opt-in switch that validation
+hangs from is what that document designs; the user pages of
+[documentation-restructure.md](documentation-restructure.md) cannot state an
+error contract it is about to change. Nothing else waits on Tier B, so it
+moves below the restructure: each remaining brand adds a row to a
+supported-types table, which is the kind of update the restructure's own
+trigger table is for, while every feature that lands before the restructure
+accretes into the documents it has to untangle.
 
-| Step | Document                                                                                                                                  | Why here                                                                                                                                                                                                                                         |
-| ---- | ----------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| 1    | [type-coverage-parity.md](type-coverage-parity.md) Tier B, designed in [data-type-surface.md](data-type-surface.md)                       | New `DataType.*` surface. The length-typed containers and the per-component widths have landed; what is left is numeric ranges, a bit-packed set of a fixed member list, and a quantized `CFrame` rotation. Split from Tier A, which has landed. |
-| 2    | [deserialize-hardening.md](deserialize-hardening.md)                                                                                      | Opt-in checks; needed before the networking layer, not before.                                                                                                                                                                                   |
-| 3    | [documentation-restructure.md](documentation-restructure.md), delivering the user pages of [documentation-gaps.md](documentation-gaps.md) | User pages, specs under `docs/specs/`, and research papers under `docs/research/`, written against fixed behavior and corrected numbers. Its format READMEs, the frame-starvation paper, and the review paper do not wait; see below.            |
-| 4    | [ci-and-release.md](ci-and-release.md): version backstop and first tagged release                                                         | The backstop lands with the release it protects. The CI-only items do not wait; see below.                                                                                                                                                       |
+| Step | Document                                                                                                                                  | Why here                                                                                                                                                                                                                                                                                                                                                         |
+| ---- | ----------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1    | [deserialize-hardening.md](deserialize-hardening.md)                                                                                      | Opt-in checks, and the `config` switch they hang from. Both steps that used to be above it wait on that switch: `Range<Min, Max>` validates on write through it, and a user page cannot state an error contract this document is about to change.                                                                                                                |
+| 2    | [documentation-restructure.md](documentation-restructure.md), delivering the user pages of [documentation-gaps.md](documentation-gaps.md) | User pages, specs under `docs/specs/`, and research papers under `docs/research/`, written against fixed behavior and corrected numbers. Its format READMEs, the frame-starvation paper, and the review paper do not wait; see below.                                                                                                                            |
+| 3    | [type-coverage-parity.md](type-coverage-parity.md) Tier B, designed in [data-type-surface.md](data-type-surface.md)                       | New `DataType.*` surface. The length-typed containers and the per-component widths have landed, and with them the measured reason this came first; what is left is numeric ranges, a bit-packed set of a fixed member list, and a quantized `CFrame` rotation. `Range<Min, Max>` needs step 1's validation switch, and none of the three rests on a measurement. |
+| 4    | [ci-and-release.md](ci-and-release.md): version backstop and first tagged release                                                         | The backstop lands with the release it protects. The CI-only items do not wait; see below.                                                                                                                                                                                                                                                                       |
 
 ## No step of its own
 

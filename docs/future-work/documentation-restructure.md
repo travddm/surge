@@ -321,10 +321,16 @@ the task has been done twice by hand.
 
 ## Why deferred
 
-The user pages should describe fixed behavior, and two things still move
-it: Tier B of [type-coverage-parity.md](type-coverage-parity.md) adds to
-the supported-types table and [deserialize-hardening.md](deserialize-hardening.md)
-changes the error contract. The performance papers wait on
+The user pages should describe fixed behavior, and
+[deserialize-hardening.md](deserialize-hardening.md) still moves it: it
+changes what `deserialize` does on bad input, which
+`errors-and-guarantees.md` is the page for. That document is the step
+before this one for that reason. What is left of Tier B of
+[type-coverage-parity.md](type-coverage-parity.md) is no longer a reason to
+wait: each remaining brand adds a row to `supported-types.md` and
+`data-types.md`, which is what the trigger table above is for, and holding
+the move for it would only add more of the documents it has to untangle.
+The performance papers wait on
 [speed-remeasurement.md](speed-remeasurement.md). And the move touches
 every cross-reference in both repositories, so it is one unit of work
 with a sequence, not a series of opportunistic edits.
