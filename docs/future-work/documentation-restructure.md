@@ -321,13 +321,12 @@ the task has been done twice by hand.
 
 ## Why deferred
 
-The user pages should describe fixed behavior, and
-[deserialize-hardening.md](deserialize-hardening.md) still moves it: it
-changes what `deserialize` does on bad input, which
-`errors-and-guarantees.md` is the page for. That document is the step
-before this one for that reason. What is left of Tier B of
-[type-coverage-parity.md](type-coverage-parity.md) is no longer a reason to
-wait: each remaining brand adds a row to `supported-types.md` and
+The user pages should describe fixed behavior, and nothing still moves it.
+`deserialize`'s error contract, which `errors-and-guarantees.md` is the
+page for, is settled (What `deserialize` does with bad input in
+[serde.md](../serde.md)). What is left of Tier B of
+[type-coverage-parity.md](type-coverage-parity.md) is not a reason to wait
+either: each remaining brand adds a row to `supported-types.md` and
 `data-types.md`, which is what the trigger table above is for, and holding
 the move for it would only add more of the documents it has to untangle.
 The performance papers wait on

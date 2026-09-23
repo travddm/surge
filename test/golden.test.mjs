@@ -164,3 +164,22 @@ test("a file directive survives the transformer's injected imports", () => {
 		assert.equal(luau.split("--!optimize 2").length, 2, `${path} carries it once`);
 	}
 });
+
+test("a serializer without `checks` carries no read-side check at all", () => {
+	// The option is opt-in per call site, so the cost has to be absent from
+	// every suite that did not ask for it -- not merely branch-not-taken.
+	for (const path of ["tests/basic.spec.luau", "tests/collections.spec.luau", "tests/roblox.spec.luau"]) {
+		const luau = readCompiledLuau(path);
+		assert.doesNotMatch(luau, /@rbxts\/surge: deserialize/, `${path} has a check`);
+		assert.doesNotMatch(luau, /__surge_inputLength/, `${path} reads the input length`);
+	}
+});
+
+test("a serializer with `checks` carries them", () => {
+	// The other half of the claim above: the checks are really emitted, so the
+	// absence elsewhere is the option working and not the test looking wrong.
+	const luau = readCompiledLuau("tests/checks.spec.luau");
+	assert.match(luau, /@rbxts\/surge: deserialize read past the end of the input buffer/);
+	assert.match(luau, /@rbxts\/surge: deserialize found a count/);
+	assert.match(luau, /__surge_inputLength = buffer\.len\(__surge_input\)/);
+});

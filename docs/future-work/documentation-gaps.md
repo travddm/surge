@@ -73,11 +73,11 @@ the tooling description, no statement of which Roblox, roblox-ts, and
 
 ## Why deferred
 
-User documentation should be written against fixed behavior, so
-`docs/usage.md` comes late in [README.md](README.md)'s order: Tier B of
-[type-coverage-parity.md](type-coverage-parity.md) adds to the
-supported-types table and [deserialize-hardening.md](deserialize-hardening.md)
-changes the error contract of `deserialize`.
+User documentation should be written against fixed behavior. What moved it
+has since landed: `deserialize`'s error contract is settled (What
+`deserialize` does with bad input in [serde.md](../serde.md)), and what is
+left of Tier B in [type-coverage-parity.md](type-coverage-parity.md) adds a
+row to the supported-types table rather than changing one.
 
 Two parts of this document do not wait, and README.md lists both under No
 step of its own. The stale-statement checklist does not, because every entry

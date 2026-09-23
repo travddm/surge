@@ -1,7 +1,7 @@
 //!optimize 2
 import { Assert, Fact } from "@rbxts/runit";
 
-import { difference } from "../support";
+import { difference, hex, unhex } from "../support";
 
 // Every other suite asserts `difference(...) === undefined`, so a `difference`
 // that reports nothing would pass them all.
@@ -19,6 +19,15 @@ class SupportTest {
 		Assert.defined(difference({ a: 1, b: 2 }, { a: 1 }));
 		Assert.defined(difference({ a: 1 }, { a: 1, b: 2 }));
 		Assert.defined(difference([1], ["1"]));
+	}
+
+	// `checks.spec.ts` builds every malformed payload with `unhex`, so one
+	// that decoded wrongly would test something other than what it says.
+	@Fact
+	public decodesTheHexItEncodes(): void {
+		Assert.equal("", hex(unhex("")));
+		Assert.equal("00ff107f", hex(unhex("00ff107f")));
+		Assert.equal(4, buffer.len(unhex("00ff107f")));
 	}
 
 	@Fact

@@ -69,6 +69,15 @@ export function hex(buf: buffer): string {
 	return parts.join("");
 }
 
+/** {@link hex} in reverse, for handing `deserialize` bytes no `serialize` would write. */
+export function unhex(digits: string): buffer {
+	const result = buffer.create(digits.size() / 2);
+	for (const i of $range(0, buffer.len(result) - 1)) {
+		buffer.writeu8(result, i, tonumber(digits.sub(i * 2 + 1, i * 2 + 2), 16)!);
+	}
+	return result;
+}
+
 const PARK_MILLER_MODULUS = 2147483647;
 const PARK_MILLER_MULTIPLIER = 48271;
 

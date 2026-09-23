@@ -317,6 +317,22 @@ project's own small IR is written in TypeScript.
    error), not a guaranteed clean error. This keeps the generated read path
    exactly as flat as the write path (see [testing.md](testing.md) for the
    corresponding test-scope decision this implies).
+
+    A call site asks for the checks with `{ checks: true }`, the factory's
+    one option, which the transformer reads from the call expression and
+    which must therefore be a literal `true` or `false` — anything else is a
+    diagnostic rather than a quiet `false`. It is per call site and not per
+    project, because a place has both kinds of input: one serializer for a
+    remote event and another for its own storage. Under it the emitter adds
+    one `buffer.len` per `deserialize`, a bound after every read-side
+    reservation, and a bound on every count it reads back — the count times
+    the element's minimum size against the bytes left, or, where an element
+    reads no bytes and so cannot be bounded by the payload, a fixed cap.
+    That minimum is a lower bound by construction: an optional, a blob and a
+    recursive reference contribute nothing, so no bound can exceed what a
+    valid value costs. See What `deserialize` does with bad input in
+    [serde.md](serde.md) for the contract this gives a caller.
+
 8. **Error model**: a type the transformer cannot encode correctly is a
    build error, never a silent fallback and never a Node stack trace. The
    walker collects a diagnostic for each such type (a function, `symbol`,
@@ -478,8 +494,9 @@ the exception: `nil` is exactly what an absent optional writes, so the
 missing elements are written as absent and nothing raises, and since the read
 side's `push(undefined)` appends nothing to a Luau array the value comes back
 at its own length. Nothing checks any of this until write-side validation
-lands (see
-[deserialize-hardening.md](future-work/deserialize-hardening.md)), so the
+lands (item 5 of Tier B in
+[future-work/type-coverage-parity.md](future-work/type-coverage-parity.md)),
+so the
 brand is a statement that the length is fixed by construction.
 
 A `dict` takes a width but never an exact count. Its write side counts
@@ -525,8 +542,8 @@ with the fixed-size fields beside it (Transformer Design §4). A `u24` or
 
 An integer width truncates a component toward zero and wraps it modulo its
 range. Nothing raises, and nothing checks the value until write-side
-validation lands (see
-[future-work/deserialize-hardening.md](future-work/deserialize-hardening.md)),
+validation lands (item 5 of Tier B in
+[future-work/type-coverage-parity.md](future-work/type-coverage-parity.md)),
 so a width states the range the shape is known to keep.
 
 `Transform<X, Y, Z>` sets the position and nothing else. The rotation stays

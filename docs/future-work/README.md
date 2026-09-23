@@ -423,23 +423,26 @@ takes those bytes back, and the per-component widths
 `DataType.Vector<X, Y, Z>` and `DataType.Transform<X, Y, Z>`. The reason is
 spent, and what is left of Tier B rests on nothing measured.
 
-[deserialize-hardening.md](deserialize-hardening.md) takes first place
-instead, because both steps that used to be above it now wait on it. Tier B's
-`Range<Min, Max>` validates on write, and the opt-in switch that validation
-hangs from is what that document designs; the user pages of
-[documentation-restructure.md](documentation-restructure.md) cannot state an
-error contract it is about to change. Nothing else waits on Tier B, so it
-moves below the restructure: each remaining brand adds a row to a
-supported-types table, which is the kind of update the restructure's own
-trigger table is for, while every feature that lands before the restructure
-accretes into the documents it has to untangle.
+Hardening `deserialize` took first place after that, because both remaining
+steps waited on the switch it designed — and it has since landed. The
+factory's `checks` option bounds every read and every count against the
+input, per call site rather than per project, and What `deserialize` does
+with bad input in [serde.md](../serde.md) is the contract it gives a caller.
+Its document is deleted; the write-side half of its subject is item 5 of
+Tier B.
+
+[documentation-restructure.md](documentation-restructure.md) takes first
+place now, and nothing it writes waits on behavior any more. The error
+contract is settled, and each brand left in Tier B adds a row to a
+supported-types table rather than changing one — which is what the
+restructure's own trigger table is for, while every feature that lands
+before the move only adds to the documents it has to untangle.
 
 | Step | Document                                                                                                                                  | Why here                                                                                                                                                                                                                                                                                                                                                         |
 | ---- | ----------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1    | [deserialize-hardening.md](deserialize-hardening.md)                                                                                      | Opt-in checks, and the `config` switch they hang from. Both steps that used to be above it wait on that switch: `Range<Min, Max>` validates on write through it, and a user page cannot state an error contract this document is about to change.                                                                                                                |
-| 2    | [documentation-restructure.md](documentation-restructure.md), delivering the user pages of [documentation-gaps.md](documentation-gaps.md) | User pages, specs under `docs/specs/`, and research papers under `docs/research/`, written against fixed behavior and corrected numbers. Its format READMEs, the frame-starvation paper, and the review paper do not wait; see below.                                                                                                                            |
-| 3    | [type-coverage-parity.md](type-coverage-parity.md) Tier B, designed in [data-type-surface.md](data-type-surface.md)                       | New `DataType.*` surface. The length-typed containers and the per-component widths have landed, and with them the measured reason this came first; what is left is numeric ranges, a bit-packed set of a fixed member list, and a quantized `CFrame` rotation. `Range<Min, Max>` needs step 1's validation switch, and none of the three rests on a measurement. |
-| 4    | [ci-and-release.md](ci-and-release.md): version backstop and first tagged release                                                         | The backstop lands with the release it protects. The CI-only items do not wait; see below.                                                                                                                                                                                                                                                                       |
+| 1    | [documentation-restructure.md](documentation-restructure.md), delivering the user pages of [documentation-gaps.md](documentation-gaps.md) | User pages, specs under `docs/specs/`, and research papers under `docs/research/`, written against fixed behavior and corrected numbers. Its format READMEs, the frame-starvation paper, and the review paper do not wait; see below.                                                                                                                            |
+| 2    | [type-coverage-parity.md](type-coverage-parity.md) Tier B, designed in [data-type-surface.md](data-type-surface.md)                       | New `DataType.*` surface. The length-typed containers and the per-component widths have landed, and with them the measured reason this came first; what is left is numeric ranges, a bit-packed set of a fixed member list, and a quantized `CFrame` rotation. `Range<Min, Max>` needs step 1's validation switch, and none of the three rests on a measurement. |
+| 3    | [ci-and-release.md](ci-and-release.md): version backstop and first tagged release                                                         | The backstop lands with the release it protects. The CI-only items do not wait; see below.                                                                                                                                                                                                                                                                       |
 
 ## No step of its own
 

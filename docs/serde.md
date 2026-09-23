@@ -47,6 +47,45 @@ convention, so existing call sites migrate with an import-path change
 individually for callers (e.g. a networking library) that want just one
 direction.
 
+## What `deserialize` does with bad input
+
+By default it does not examine the bytes it is given, and promises nothing
+about what happens when they are wrong. A `buffer` that no
+`serialize` of the same shape produced may raise a Luau `buffer` error,
+return a wrong value, or run a loop for as long as a count in the payload
+says. Bytes from this game's own `DataStore` are bytes it wrote; bytes from
+a remote event are not.
+
+`checks` is how a call site asks it to examine them. It is written as a
+literal, because it decides what the transformer emits:
+
+```ts
+const fromClient = createBinarySerializer<Move>({ checks: true });
+```
+
+With it, every read is bounded against the input's length, and every count
+read back is bounded against what the bytes left could hold -- or, for an
+element that reads no bytes at all, against a fixed cap. A payload that
+fails a bound raises a string beginning `@rbxts/surge:`, so a caller
+`pcall`s at the boundary and tells a rejection from a bug in its own code:
+
+```ts
+const [ok, result] = pcall(() => fromClient.deserialize(bytes, blobs));
+```
+
+Reading past the end of the `inputBlobs` array raises the same way with or
+without `checks`, since that read is a call into this package either way.
+
+What `checks` does not do is look at values. A payload whose lengths are
+consistent and whose contents are nonsense deserializes into nonsense of
+the right shape, and a number that arrives outside the range a caller
+expects is the caller's to reject.
+
+Read state -- the input buffer, the read cursor, the blob index -- is reset
+at the start of every `deserialize`, so a call that raised leaves nothing
+behind for the next one. That is what makes a `pcall` at the boundary
+enough on its own.
+
 ## Package name and distribution
 
 Not published to the npm registry — neither this package nor

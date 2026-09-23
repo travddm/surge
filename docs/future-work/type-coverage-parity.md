@@ -193,9 +193,11 @@ bound without a helper type.
 4. Numeric ranges as a brand (`DataType.Range<Min, Max>`): validation on
    write, and narrowing to the smallest width that fits (which neither
    Blink nor Zap does; serio validates but does not narrow).
-5. Opt-in write-side validation and read-side checks (see
-   [deserialize-hardening.md](deserialize-hardening.md)); every other
-   library has at least one of the two.
+5. Opt-in write-side validation. The read-side half has landed as the
+   factory's `checks` option (What `deserialize` does with bad input in
+   [serde.md](../serde.md)); what is left is checking a value on the way
+   in, which is the same option's other half and is what `Range<Min, Max>`
+   above needs. Every other library has at least one of the two.
 6. A quantized rotation option for `CFrame` (serio's 18-byte form, with
    its documented ~0.05 error) for shapes that can accept it.
 

@@ -39,6 +39,9 @@ export function nextBlob(): defined {
 	if (blobs === undefined) {
 		throw "@rbxts/surge: deserialize() encountered a blob field but no inputBlobs array was provided";
 	}
+	if (readIndex >= blobs.size()) {
+		throw "@rbxts/surge: deserialize read past the end of the inputBlobs array";
+	}
 	const value = blobs[readIndex];
 	readIndex += 1;
 	return value;
