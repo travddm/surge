@@ -280,7 +280,7 @@ suite yielded, and most of the cells those runs measured were in the slow mode
 [frame-starvation.md](../research/frame-starvation.md) describes. Each has
 since been re-read from a run made on the yielding suite, and the entries
 below carry the re-read figures, with the earlier ones beside them where they
-moved.
+moved. The one exception is marked where it stands.
 
 - Four of the five columns run with Luau's `--!native`, and the table measures
   the configuration surge recommends rather than the one roblox-ts emits by
@@ -305,15 +305,17 @@ moved.
   package, the fixtures, the adapters, and the hand-written baseline. Studio
   compiles at level 1 and a published place at level 2, so that is what makes
   a run here a run of what ships. serio is the only column without it, since
-  patching a dependency's modules is not worth the drift. What it was worth is
-  measured: nothing the catalog can see, with fbs and Blink flat at 1.000× as
-  the control and surge's encode at 1.004×. The table by column is in
-  [generated-code-performance.md](generated-code-performance.md).
+  patching a dependency's modules is not worth the drift. What it is worth is
+  measured on the yielding suite: nothing the catalog can see, 0.996× on
+  surge's encode inside the range of four control columns
+  ([file-directives-on-generated-code.md](../research/file-directives-on-generated-code.md)).
 - The baseline is the column compiled the way surge's generated code is, which
   is now `--!optimize 2` and `--!native` on both. Marking the two together is
   what keeps the distance between them a fact about code rather than about
-  compilation mode: it moved both columns and left the gap where it was, 1.08×
-  and 1.05× interpreted against 1.08× and 1.06× native.
+  compilation mode. On the reference run the gap is 1.22× on encode and 1.11×
+  on decode on the `CFrame` array. That marking both left the gap where it was
+  rests on a pre-yield pair, 1.08× and 1.05× interpreted against 1.08× and
+  1.06× native, which was not re-measured.
 - surge is ahead of serio on all 32 of their measurements: by 3.36× to
   33.22× on encode, and by 2.26× to 8.08× on decode. The figures were 3.17× to
   104.76× and 1.94× to 9.91× when read from a run made before the suite

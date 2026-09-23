@@ -8,9 +8,11 @@
 Reserving bytes inline in the generated code, instead of calling into the
 package for each reservation, is worth a median 1.538× on encode and 1.134× on
 decode across the catalog, where it was recorded at 4.15× and 2.48× before the
-speed suite yielded. The gain is real on every encode row, and each `alloc`
-call it removed saved about 22 to 27 ns, the same whether a row made one such
-call per `serialize()`, eight, or a thousand. What it left is a gap to a hand-written Luau codec
+speed suite yielded. It is above 1.00× on every encode row and readable on
+fifteen of the sixteen; the wide struct's 1.048× sits inside the band two runs
+of unchanged code differ by. On the three rows where the calls can be counted
+and the gain read, each `alloc` call it removed saved about 22 to 27 ns,
+whether the row made one such call per `serialize()`, eight, or a thousand. What it left is a gap to a hand-written Luau codec
 writing the same bytes that is small on a large payload and large on a small
 one — 1.22× on the `CFrame` array's encode, 2.20× on the flat struct's — which
 is the shape of a cost paid once per call. The generated `serialize()` makes
@@ -159,6 +161,16 @@ the two builds is inflated. This fits the direction and the size of the
 difference, and it would apply to every speed-up measured before the suite
 yielded, but it was not tested: no before-side run was repeated in the old
 mode to see where its onset fell.
+
+A second difference between the two measurements runs the other way. The
+recorded pair was taken before `//!native` was added to the fixture modules
+(surge `afde7bc`, two hours after the inline reservation landed), so both of
+its sides compiled the generated code interpreted; this re-measurement has it
+native on both sides. The change replaces a cross-module call with four inline
+instructions, and native code generation makes those instructions much faster
+while doing little for a call, so under native the gain should be larger, not
+smaller. The configuration difference therefore cannot account for the
+shrinkage, and if it has any effect it hides some of it.
 
 **What is left is per call.** A gap that is 2.20× on a seventeen-byte struct
 and 1.22× on a twelve-hundred-byte array is not a per-element cost; it is
