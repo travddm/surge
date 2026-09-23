@@ -10,7 +10,7 @@ rows whose trials are quiet enough to read. That gap is what the document was
 about. It is 1.08× and 1.05× now. The baseline is still ahead on both
 halves, and separably so: the two columns' trials do not overlap on either.
 
-Ten things were measured on their own to get there. Seven are changes that
+Eleven things were measured on their own to get there. Seven are changes that
 landed: the read loop, worth nothing; the tagged-union read's table copy,
 worth 1.39× on the one row that has one; a `CFrame`'s two reservations
 becoming one, worth 1.61× on encode; every run of consecutive fixed-size
@@ -20,10 +20,12 @@ module at optimization level 2, worth nothing and kept for parity with what a
 published place runs; and reserving bytes inline in the generated code rather
 than through a call into the package, worth 4.15× on encode and 2.48× on
 decode across the catalog, which is the largest result here and the last of
-the large ones. Three are probes that were reverted: `finishWrite` without its
-copy, worth nothing; the generated code compiled natively, worth 1.02× on the
-catalog and 1.18× on one row; and the hand-edited probe of the inline
-reservation, which the change that followed it replicated.
+the large ones. Four are probes that were reverted: `finishWrite` without its
+copy, worth nothing; the generated code compiled natively, twice — worth 1.02×
+on the catalog while every field still called into the package, and 1.10× on
+decode and 1.03× on encode once the inline reservation had removed that call;
+and the hand-edited probe of the inline reservation itself, which the change
+that followed it replicated.
 
 Together they say that per-element cost is what matters and per-call cost is
 not, and that a cross-module call is a per-element cost wherever a shape has a
@@ -526,6 +528,56 @@ move at all. Why the two halves differ is not established here; the read side
 of that row builds a thousand-entry table, which is not work native code
 generation changes.
 
+**What `--!native` is worth once the crossing is gone.** The 1.02× above was
+measured on generated code that called into the package per field, and the
+section below named the per-field crossing out of the native region as one of
+the two readings of why it was so small. The inline reservation removed that
+crossing, so the directive was measured again, the same way: `//!native` on
+the twelve modules under `tests/src/bench/fixtures/` and nothing else, a full
+run against the table `4afeaca` recorded, the build reverted rather than
+committed. Both sides of this pair have full-precision trials, which the
+earlier one did not.
+
+| Column   | encode           | decode            |
+| -------- | ---------------- | ----------------- |
+| surge    | 1.028× (7 cells) | 1.099× (11 cells) |
+| fbs      | 0.991×           | 0.999×            |
+| serio    | 1.000×           | 1.004×            |
+| Blink    | 0.993×           | 1.007×            |
+| baseline | —                | 1.019× (1 cell)   |
+
+Medians of the cells quiet in both runs. The 60 readable cells of the four
+columns that did not change span 0.975× to 1.022×, median 0.999×, and that
+band is what a surge cell has to clear to mean anything.
+
+**Decode clears it everywhere.** All eleven readable decode cells are above
+the band, from 1.026× to 1.225×, with no exceptions: `Blink: Entities`
+1.225×, `Blink: Booleans` 1.161×, the `CFrame` array 1.147×, enum-heavy
+1.137×, the tagged union 1.126×, the large array 1.095×. Against the 1.021×
+the same measurement gave before the inline reservation, that is five times
+the effect, and it is the first result in this document that says what the
+directive is worth on code shaped the way surge emits it now.
+
+**Encode does not.** Its median is 1.028× over seven readable cells and two of
+them — both `CFrame` array halves — sit inside the control band at 0.988× and
+1.008×. The guarded union at 1.100×, `Blink: Booleans` at 1.078× and
+string-heavy at 1.046× are outside it, so the effect is real and small rather
+than absent.
+
+Why the two halves differ is a reading and not a finding. The read path is
+what native code generation handles best and what this change left cleanest:
+straight-line buffer reads and a two-instruction cursor bump, with no call in
+it at all. The write path still has a capacity compare per reservation, a
+`grow` on the boundary, and `finishWrite` per `serialize()` — a cross-module
+call wrapping two C calls, which is exactly the shape the copy-collapse table
+above shows native cannot help.
+
+**What it does not settle.** Fourteen surge cells are too noisy to read, and
+three of them carry the largest apparent gains in the run: the large array's
+encode at 1.66× on trials that widened from 3.7% to 9%, the large record's at
+1.61× where one side spans 60%, and the wide struct's at 1.52× where both
+spans are above 75%. If any of those is real, encode's median understates the
+directive. Nothing here separates them from noise.
 **What that settles, and what it does not.** The section below rested on a
 ratio. Every 1.00× in this document was measured against an interpreted
 total, and `--!native` shrinks a Luau total by 2.25× to 11.68×, so a per-call
@@ -841,17 +893,20 @@ code compiling natively. That has been measured: 1.02× across the catalog and
 they survive, and it is the same answer in each case. Each rested on a ratio
 — "X is invisible against an interpreted total, and native shrinks that total
 2.25× to 11.68× while leaving X where it is" — and the ratio is not there. On
-surge's generated code native code generation is worth two percent, because
-what this code spends its time on is a call into the package per field and
-two C calls per `serialize()`, and neither is an instruction native code
+surge's generated code native code generation was worth two percent when this
+section was written, and is worth 1.10× on decode and 1.03× on encode since
+the inline reservation. Neither is the 2.25× to 11.68× the conditional needed,
+so nothing below changes; what the code spends its time on was a call into the
+package per field and two C calls per `serialize()`, and neither was an
+instruction native code generation compiles.
 generation compiles.
 
 **Answered — the conditional is gone and the dismissal stands.**
 
 - The read loop, the blob side channel, and `finishWrite`'s copy. Each
   measured 1.00× against an interpreted total. Native moves that total by two
-  percent, so each is 1.00× against a total two percent smaller. There is
-  nothing here to re-measure.
+  percent, and by ten on the decode side since the inline reservation, so each
+  is 1.00× against a total that is at most a tenth smaller. There is
 - The two-pass exact-sizing design that Transformer Design §4 in
   [transformer.md](../transformer.md) rejected, for one traversal of the
   value instead of two. The inversion it needed was the extra traversal
@@ -885,23 +940,23 @@ generation compiles.
   the native region. This entry used to divide that by the 1.02× `--!native`
   was worth on the generated code and conclude the route did not pay. That
   denominator was measured before the inline reservation removed the per-field
-  crossing out of the native region, which is the effect the same section
-  named as one of the two readings of it, so the division no longer settles
-  anything. The same goes for the per-function `@native` attribute, which is
-  the route that would let a consumer mark the generated functions rather than
-  a whole file. The route is real and `rbxts-transform-luau` is proof of it;
-  what it is worth is now an open question rather than a closed one, and it
-  reopens on a re-measurement of `--!native`, not on its own.
-
-**What it leaves.** The cost native code generation could not touch was the
-cost that was left: a cross-module call per field, and `buffer.create` plus
-`buffer.copy` per call. The first is gone — rolling the hot paths into the
-generated code removed it, at 4.15× on encode and 2.48× on decode, and native
-was never an alternative to that, because native cannot make a cross-module
-call cheaper. The second is measured at 1.00× and stays there. One inversion
-is worth keeping in view while the smaller items sit unfixed: evaluating
-`s.size()` twice is Luau work, so native makes it _less_ worth fixing, by two
-percent.
+  crossing out of the native region. Measured again after it, `--!native` is
+  worth 1.10× on decode, so a ninth of that is about 1.01× — still not a
+  number that pays for a pass which rewrites files roblox-ts has written, and
+  now said against a current denominator rather than a stale one. The
+  per-function `@native` attribute is a different case and stays open: what it
+  buys is not the 1.09× of annotations but the ability to mark the generated
+  functions instead of the module, which is what would make the file-shape
+  recommendation unnecessary. The route is real and `rbxts-transform-luau` is
+  proof of it.
+  cost that was left: a cross-module call per field, and `buffer.create` plus
+  `buffer.copy` per call. The first is gone — rolling the hot paths into the
+  generated code removed it, at 4.15× on encode and 2.48× on decode, and native
+  was never an alternative to that, because native cannot make a cross-module
+  call cheaper. The second is measured at 1.00× and stays there. One inversion
+  is worth keeping in view while the smaller items sit unfixed: evaluating
+  `s.size()` twice is Luau work, so native makes it _less_ worth fixing — by two
+  percent when this was written, and by three on the encode side it sits on now.
 
 ## How, briefly
 
@@ -927,7 +982,8 @@ percent.
   channel's are there already, and so are the file pragmas on both sides.
 - Measure each one, and predict nothing from the compiled output. Ten
   measurements have been through this document, and four of them moved a
-  number: 1.39×, 1.61×, up to 4.70×, and 4.15×/2.48× across the catalog. The
+  number: 1.39×, 1.61×, up to 4.70×, 4.15×/2.48× across the catalog, and 1.10×
+  on decode for --!native once the per-field call was gone. The
   rest came back between 1.00× and 1.02×, and neither the shape of the code
   removed nor the size of the saving said in advance which would be which.
   What did, in hindsight, is whether the cost was per element or per call:
@@ -949,15 +1005,13 @@ Serio`, `import type { Fixture }` and `DataType` produce nothing at all in
   recommendation. `//!optimize 2` needs no such care and goes on every module
   a consumer writes: it is the level a published place compiles at and Studio
   does not.
-- Re-measure what `//!native` is worth before `docs/usage.md` quotes a number.
-  1.02× was measured on the generated code as it stood before the inline
-  reservation, and the second reading of that result blamed the per-field
-  crossing out of the native region — which is exactly what the inline
-  reservation removed. The figure is stale in the direction that matters. The
-  emission fix made re-measuring it one run, since `//!native` is a line of
-  source in a fixture now, and the protocol is the one that measured it
-  before: mark the twelve fixture modules, leave every other column a control,
-  revert the build rather than commit it.
+- The number `docs/usage.md` should quote is 1.10× on decode and 1.03× on
+  encode, not the 1.02× this document carried for one change. That figure was
+  measured before the inline reservation removed the per-field crossing out of
+  the native region; measured again after it, every readable decode cell
+  clears the control band and the median is 1.099×. What `--!native` is worth
+  on surge's generated code, in What `--!native` is worth once the crossing is
+  gone, is the entry to quote.
 - If surge is ever to inject `//!native` itself, the check is not "one
   serializer call and its export", which is what this bullet used to propose.
   A module may declare several serializers — three of the benchmark fixtures
