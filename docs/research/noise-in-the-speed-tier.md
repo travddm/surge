@@ -103,7 +103,7 @@ that a column will, to about 3%, and a cell may not, to 26%.
 That is what makes a per-cell before-and-after ratio unreadable below roughly
 1.3× from one pair of invocations, and it is why the probes in
 [per-call-overhead.md](per-call-overhead.md) and
-[native-on-generated-code.md](native-on-generated-code.md) are read as medians
+[file-directives-on-generated-code.md](file-directives-on-generated-code.md) are read as medians
 over many cells with the untouched libraries as controls in the same run. A
 control column is the only thing that separates a change from the day.
 

@@ -504,7 +504,7 @@ nothing without it. Neither is reachable, for the AST reason above.
 **Superseded.** Both entries below were measured before the speed suite
 yielded. `--!native` is worth a median 1.335× on encode and 1.180× on decode,
 not the 1.02× to 1.10× they record:
-[native-on-generated-code.md](../research/native-on-generated-code.md). They
+[file-directives-on-generated-code.md](../research/file-directives-on-generated-code.md). They
 are kept until this document is reduced to its open items, because the
 controls and the per-column method they describe are what the re-measurement
 reused.
@@ -937,7 +937,7 @@ The figure that answers it has been re-measured on a suite that yields, and it
 moved: `--!native` is worth a median 1.335× on encode and 1.180× on decode
 across the catalog, on every one of its rows, where every earlier measurement
 of it put it between 1.02× and 1.10×
-([native-on-generated-code.md](../research/native-on-generated-code.md)). The
+([file-directives-on-generated-code.md](../research/file-directives-on-generated-code.md)). The
 earlier figures were taken in the mode
 [frame-starvation.md](../research/frame-starvation.md) describes, where
 allocation dominates the loop and native code generation cannot make

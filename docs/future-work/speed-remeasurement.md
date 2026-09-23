@@ -77,10 +77,13 @@ nothing, re-measured on a yielding run with controls:
 because the re-recorded file shows a 0.2 µs per-call encode gap against the
 hand-written baseline, and it accounts for about an eighth of it.
 
-The `--!native` question is answered too, and it is the first conclusion here
-to move: the directive is worth a median 1.335× on encode and 1.180× on decode
+Pinning `--!optimize 2` is the one conclusion on this list that comes back
+identical: 0.996× encode and 0.981× decode against controls spanning 0.979× to
+1.018×, which is the null the mechanism predicts and the same null the
+pre-yield run reported. The `--!native` question is answered too, and it is
+the first conclusion here to move: the directive is worth a median 1.335× on encode and 1.180× on decode
 on the generated code, where every earlier measurement put it between 1.02×
-and 1.10× ([native-on-generated-code.md](../research/native-on-generated-code.md)).
+and 1.10× ([file-directives-on-generated-code.md](../research/file-directives-on-generated-code.md)).
 The dismissals in What native changed still stand, since a third is not the
 2.25× to 11.68× inversion they needed, but two of them are reopened there.
 
@@ -98,13 +101,12 @@ first three are corrected in place in
 
 **Conclusions to re-measure**, with where they are stated:
 
-| Conclusion                                                                                                           | Stated in                                                | Rests on                                                   | Priority                                       |
-| -------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------- | ---------------------------------------------------------- | ---------------------------------------------- |
-| Reserving bytes inline: 4.15× encode, 2.48× decode across the catalog; 7.35×, 6.56×, 5.56× on the union/boolean rows | generated-code-performance.md, Reserving bytes inline    | Full runs either side; all listed cells late or decode     | Third: the headline result                     |
-| Shared reservation: 4.70×, 3.01×, 3.96×, 1.72×, 1.51×, 1.43×, 1.17×                                                  | generated-code-performance.md, One helper call per field | Full runs either side; mixed (wide struct encode is clean) | Third                                          |
-| `CFrame` second reservation: 1.61× encode, 1.35× decode                                                              | generated-code-performance.md                            | Full runs; `CFrame` array is a late encode row             | Fourth                                         |
-| Tagged-union literal: 1.39× decode, 6929 to 9608 values a second                                                     | generated-code-performance.md                            | Full runs; decode                                          | Fourth                                         |
-| Pinning `--!optimize 2` cost nothing: 1.004× encode, 1.030× decode, controls at 1.000×                               | generated-code-performance.md                            | Full runs either side                                      | Low: the mechanical argument stands without it |
+| Conclusion                                                                                                           | Stated in                                                | Rests on                                                   | Priority                   |
+| -------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------- | ---------------------------------------------------------- | -------------------------- |
+| Reserving bytes inline: 4.15× encode, 2.48× decode across the catalog; 7.35×, 6.56×, 5.56× on the union/boolean rows | generated-code-performance.md, Reserving bytes inline    | Full runs either side; all listed cells late or decode     | Third: the headline result |
+| Shared reservation: 4.70×, 3.01×, 3.96×, 1.72×, 1.51×, 1.43×, 1.17×                                                  | generated-code-performance.md, One helper call per field | Full runs either side; mixed (wide struct encode is clean) | Third                      |
+| `CFrame` second reservation: 1.61× encode, 1.35× decode                                                              | generated-code-performance.md                            | Full runs; `CFrame` array is a late encode row             | Fourth                     |
+| Tagged-union literal: 1.39× decode, 6929 to 9608 values a second                                                     | generated-code-performance.md                            | Full runs; decode                                          | Fourth                     |
 
 ## Why deferred
 

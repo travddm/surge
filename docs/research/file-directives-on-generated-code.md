@@ -1,12 +1,13 @@
-# What `--!native` is worth on generated serializer code
+# What Luau's file directives are worth on generated serializer code
 
 2026-09-23 · surge `824a279` · rbxts-transformer-surge `aa6f04b` · Roblox
 0.739.0.7390687
 
 ## Abstract
 
-Removing `//!native` from the twelve benchmark fixture modules, which is where
-all of surge's generated code sits, and changing nothing else, costs a median
+Two directives, measured the same way: each is removed from the twelve
+benchmark fixture modules, which is where all of surge's generated code sits,
+and nothing else changes. Removing `//!native` costs a median
 1.335× on encode and 1.180× on decode across the sixteen-row catalog. Every
 encode row loses between 1.10× and 2.53×, every decode row between 1.03× and
 1.75×, and the four untouched library columns in the same run moved 0.97× to
@@ -15,7 +16,10 @@ yielded, in a mode where allocation dominated the loop and native code
 generation cannot make allocation faster. Native is therefore worth about a
 third of surge's encode throughput, not two percent — still short of the 2.25×
 to 11.68× that the dismissals resting on this figure required, but every
-number in the argument they were made with is wrong.
+number in the argument they were made with is wrong. Removing `//!optimize 2`
+costs nothing: 0.996× on encode and 0.981× on decode, inside the 0.979× to
+1.018× the untouched columns moved in the same run. The two directives the
+repository recommends together are worth very different amounts.
 
 ## Background
 
@@ -45,10 +49,11 @@ rbxts-transformer-surge `aa6f04b`, in which the twelve fixture modules carry
 `//!native` and `//!optimize 2`: two Studio runs back to back, nine trials per
 cell.
 
-The probe removes the one line `//!native` from those twelve modules and
-nothing else, and is measured as its own full catalog run. Verified in the
-compiled output: no fixture module begins with `--!native` afterwards, the
-hand-written baseline still does, and `//!optimize 2` is unchanged everywhere.
+Each probe removes one directive line from those twelve modules and nothing
+else, and is measured as its own full catalog run. Verified in the compiled
+output each time: after the first, no fixture module begins with `--!native`
+while the hand-written baseline still does; after the second, each fixture
+begins with `--!native` and carries no `--!optimize 2`.
 
 What that isolates, and what it does not. All of surge's generated code is in
 those twelve modules — the one other file that names `createBinarySerializer`
@@ -64,6 +69,8 @@ Ratios are reference over probe, so above 1.00× is what the directive buys.
 Cells the recorder marks noisy are excluded from the summary figures.
 
 ## Results
+
+### `--!native`
 
 | Fixture                             | Encode | Decode |
 | ----------------------------------- | ------ | ------ |
@@ -102,9 +109,41 @@ through the package's `cframe` codec rather than through inline writes. The
 small flat struct, at 1.102×, is a seventeen-byte call where the per-call
 overhead the directive cannot touch is most of it.
 
+### `--!optimize 2`
+
+Removing the directive leaves the fixture modules at whatever level Studio
+compiles by default, with every other module in the place, both other
+libraries' codecs and surge's own runtime package, still pinned at level 2.
+
+| Column   | Encode | Decode |
+| -------- | ------ | ------ |
+| surge    | 0.996× | 0.981× |
+| fbs      | 0.994× | 0.984× |
+| serio    | 0.988× | 0.984× |
+| blink    | 0.980× | 0.986× |
+| baseline | 1.018× | 0.979× |
+
+surge is inside the range the four controls cover, on both halves. The
+recorded figure, 1.004× and 1.030× from a full run either side of the change,
+said the same thing before the suite yielded, and this is the one conclusion
+on the re-measurement list that comes back identical.
+
+That is what the mechanism predicts. Level 2 adds function inlining and loop
+unrolling. Only a local Luau function can be inlined, and what the generated
+code calls is `buffer.writeXX` and `buffer.readXX`, which are C functions;
+only a compile-time bound can be unrolled, and every generated loop is bounded
+by a count read out of the buffer at run time. The inline reservation removed
+the per-field cross-module call, which was the other reason given for level 2
+not reaching this code, and it made no difference to this figure — because the
+two reasons that remain are not about crossing a module boundary.
+
+What it buys is therefore not speed but determinism: the level is pinned
+rather than inherited, so a profile taken in Studio is a profile of what a
+published place runs.
+
 ## Discussion
 
-The recorded figure was wrong by an order of magnitude in its effect on the
+The recorded `--!native` figure was wrong by an order of magnitude in its effect on the
 encode half, and it was wrong in the direction the slow mode predicts. That is
 the second conclusion in this repository to move on re-measurement, and unlike
 [per-call-overhead.md](per-call-overhead.md) it moves a number that other
@@ -130,7 +169,15 @@ dismissed by dividing that by the 1.10× native was worth on decode to get
 worth a pass that rewrites files roblox-ts has written, but is not the same
 statement.
 
-What this does not show. It measures one directive on one build of one
+What the `--!optimize 2` result rests on, and does not establish, is that
+Studio does not already compile at level 2. If it does, the probe changed
+nothing and the null result is empty rather than informative. Nothing here
+verifies the level Studio defaults to; the recorded claim that a published
+place compiles at level 2 and Studio does not is taken from
+[generated-code-performance.md](../future-work/generated-code-performance.md),
+and the earlier measurement of the same question shares the assumption.
+
+What this does not show. It measures two directives on one build of one
 catalog on one machine, and it says nothing about what native is worth on a
 consumer's own code, which surge does not mark. It does not separate native
 code generation from whatever else the directive changes about how Luau
@@ -144,7 +191,9 @@ as the gain measured from a cold start.
 
 ## Conclusion
 
-`--!native` is worth a median 1.335× on encode and 1.180× on decode on surge's
+`--!optimize 2` is worth nothing measurable on this code, for reasons its
+mechanism predicts, and is worth having anyway because it pins the level a
+profile is taken at. `--!native` is worth a median 1.335× on encode and 1.180× on decode on surge's
 generated code, on every row of the catalog, where the figure on record was
 1.02×. The recommendation to mark a module holding generated serializers was
 right for a much larger reason than the measurement behind it said. The
@@ -157,6 +206,7 @@ need their arithmetic redone.
 
 - The reference run: `docs/benchmarks/speed.md` and
   `docs/benchmarks/speed-trials.tsv` as committed at surge `ed28683`.
-- The probe run, kept because nothing else records it:
-  `data/without-native-on-the-fixtures.md` in this directory. The probe is not
-  in any build that shipped.
+- The two probe runs, kept because nothing else records them:
+  `data/without-native-on-the-fixtures.md` and
+  `data/without-optimize-2-on-the-fixtures.md` in this directory. Neither
+  probe is in any build that shipped.
