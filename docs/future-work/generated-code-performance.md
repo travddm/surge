@@ -1,7 +1,13 @@
 # Future work: generated code performance
 
-Part of the [surge](../architecture.md) design. The performance goal is the
-project's reason to exist, and the harness in
+Part of the [surge](../architecture.md) design. Every speed figure in this
+document was read from a run made before 2026-09-23, when the suite did not
+yield and measured most of a full run's cells in a slow mode that inflated
+allocation costs by up to 19×; [speed-remeasurement.md](speed-remeasurement.md)
+says which cells that reached and which conclusions here are to be
+re-measured before they are relied on. The figures are left as they were
+recorded, except the one the slow mode itself explains. The performance
+goal is the project's reason to exist, and the harness in
 [benchmark-tooling.md](benchmark-tooling.md) measured it. When this document
 was written, [benchmarks/speed.md](../benchmarks/speed.md) put surge 2.87×
 behind a hand-written codec that writes its exact bytes on encode, and 1.63×
@@ -111,9 +117,10 @@ inside it. It moves the row's whole decode column: fbs read it at 0.91× of
 surge's rate and read it at 0.65× after the change, 0.56× in the current
 table.
 
-Both runs are full runs, because the scoped protocol cannot read this row —
-its decode trials spread by 302% measured alone and by 1% in a full run. See
-the scoped-against-full entry in
+Both runs are full runs, because at the time the scoped protocol could not
+read this row: its decode trials spread by 302% measured alone and by 1% in
+a full run. That spread was a scoped run crossing into the slow mode
+mid-row, not noise; see the scoped-against-full entry in
 [benchmark-tooling.md](benchmark-tooling.md).
 
 **One helper call per field, until it was one per run.** Each field,

@@ -370,6 +370,24 @@ and the transformer is a tsconfig plugin, not an input file, so an
 two packed `file:` dependencies it already deleted, for the same reason. See
 Benchmarking strategy in [testing.md](../testing.md).
 
+The speed suite yields now. It never had, and `run-in-roblox` runs the
+injected script on its plugin's own thread, so a full run held that thread
+for the whole catalog with no frame in between; Studio raised its "plugin
+has stopped responding" prompt over it, and that is how it was noticed. The
+prompt was not the damage. After roughly ten seconds without a frame every
+allocation-heavy path slows by an order of magnitude and stays slow, which
+an A/B on one scoped run established (see the comment block in
+`speed.spec.ts` and Running the speed tier via run-in-roblox in
+[testing.md](../testing.md)). The loop times its calls in chunks and yields
+between chunks once a quarter second of measured work has passed, the two
+facts are one, and `runBenchmarks` waits for the verdict. Re-recording
+`speed.md` that way moved 105 of 124 cells by more than 1.2×, up to 19×,
+and the run takes two minutes where it took thirteen. Every ratio quoted
+above from a full run before this was read from cells in that slow mode;
+[speed-remeasurement.md](speed-remeasurement.md) lists which conclusions
+that reaches and how to re-measure them, and the figures above are left as
+recorded until it does.
+
 Every claim in this directory was checked against both repositories at
 `surge` `7cce55e` and `rbxts-transformer-surge` `0e7c10d`. The order below
 changed as a result; each row states why. The robustness work described
@@ -395,12 +413,12 @@ by default, for the reason it already had: the size table showed that every
 byte Blink and Zap save against surge is a length prefix. Nothing measured
 moved anything else, and the steps below it keep their order.
 
-| Step | Document                                                                                                            | Why here                                                                                                                                                                                                                                                  |
-| ---- | ------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1    | [type-coverage-parity.md](type-coverage-parity.md) Tier B, designed in [data-type-surface.md](data-type-surface.md) | New `DataType.*` surface (length-typed containers, per-component widths, ranges). The harness has now shown what a bound is worth: every byte Blink and Zap save against surge is a length prefix, and nothing else. Split from Tier A, which has landed. |
-| 2    | [deserialize-hardening.md](deserialize-hardening.md)                                                                | Opt-in checks; needed before the networking layer, not before.                                                                                                                                                                                            |
-| 3    | [documentation-gaps.md](documentation-gaps.md): `docs/usage.md`                                                     | User documentation written against fixed behavior. The stale-statement sweep in the same document does not wait; see below.                                                                                                                               |
-| 4    | [ci-and-release.md](ci-and-release.md): version backstop and first tagged release                                   | The backstop lands with the release it protects. The CI-only items do not wait; see below.                                                                                                                                                                |
+| Step | Document                                                                                                                                  | Why here                                                                                                                                                                                                                                                  |
+| ---- | ----------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1    | [type-coverage-parity.md](type-coverage-parity.md) Tier B, designed in [data-type-surface.md](data-type-surface.md)                       | New `DataType.*` surface (length-typed containers, per-component widths, ranges). The harness has now shown what a bound is worth: every byte Blink and Zap save against surge is a length prefix, and nothing else. Split from Tier A, which has landed. |
+| 2    | [deserialize-hardening.md](deserialize-hardening.md)                                                                                      | Opt-in checks; needed before the networking layer, not before.                                                                                                                                                                                            |
+| 3    | [documentation-restructure.md](documentation-restructure.md), delivering the user pages of [documentation-gaps.md](documentation-gaps.md) | User pages, specs under `docs/specs/`, and research papers under `docs/research/`, written against fixed behavior and corrected numbers. Its format READMEs, the frame-starvation paper, and the review paper do not wait; see below.                     |
+| 4    | [ci-and-release.md](ci-and-release.md): version backstop and first tagged release                                                         | The backstop lands with the release it protects. The CI-only items do not wait; see below.                                                                                                                                                                |
 
 ## No step of its own
 
@@ -423,6 +441,16 @@ time:
   and `Instance | string`, which are diagnostics today; they change
   `guardedUnion` variant order. `bytes.spec.ts` pins no union with an
   enum or opaque member, so they move no pinned buffer today.
+- [speed-remeasurement.md](speed-remeasurement.md): the before/after
+  ratios recorded above were measured in the slow mode; each is one
+  checkout and one two-minute run per side, and the results land once, in
+  the research papers the restructure assigns them to.
+- The first two steps of
+  [documentation-restructure.md](documentation-restructure.md): the two
+  format READMEs, `contributing-docs.md` and the future-work rule it
+  states, the frame-starvation paper, and the review paper that absorbs
+  the narrative at the head of this file. None depends on open behavior
+  or on a re-measurement.
 - The stale-statement checklist in
   [documentation-gaps.md](documentation-gaps.md). Every entry describes
   behavior that is already final.

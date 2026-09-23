@@ -275,7 +275,12 @@ From [benchmarks/size.md](../benchmarks/size.md), which the run writes:
   gap can show is loop and cursor overhead and nothing else.
 
 And from [benchmarks/speed.md](../benchmarks/speed.md), which the Tier 2 run
-writes:
+writes. Every figure in this list was read from a run made before the suite
+yielded, and most of the cells those runs measured were in the slow mode
+that [speed-remeasurement.md](speed-remeasurement.md) describes; that
+document lists which of these conclusions are to be re-measured and which
+can be re-read from the current file. Only the two entries that the slow
+mode itself explains are corrected here.
 
 - Four of the five columns run with Luau's `--!native`, and the table measures
   the configuration surge recommends rather than the one roblox-ts emits by
@@ -340,21 +345,23 @@ writes:
   The one encode row it keeps is the 1000-element array, at 1.18×, and it is
   the same row on decode at 1.04×. Both codecs now carry both directives, so
   what is left between them is codec design.
-- A scoped run and a full run do not agree on every cell, and where they
-  disagree it is by an order of magnitude. Measured against the run checked
-  in at `1b1ec9f`, encode on the two union rows was 13× and 14× faster alone
-  than in a full run, and for all four columns at once — surge, fbs, serio,
-  and Blink together — and Blink's 1000-element array encode 34× faster
-  alone. Decode agrees on every row
-  tried, and both halves of the large array, the large record, the
-  string-heavy row, and the three `CFrame` rows agree but for that one Blink
-  cell. What separates a row that agrees from one that does not was not
-  established. This is why a scoped table is read only against another
-  scoped run of the same patterns, which "Either tier can be scoped to some
-  fixtures" below already requires. It also means a full run is the only
-  readable protocol for a row whose scoped trials are noisy: both union rows
-  decode within a percent of their median in a full run and spread by 91%
-  and 302% measured alone.
+- A scoped run and a full run used not to agree on every cell, and where
+  they disagreed it was by an order of magnitude: against the run checked in
+  at `1b1ec9f`, encode on the two union rows was 13× and 14× faster alone
+  than in a full run, for all four columns at once, and Blink's 1000-element
+  array encode 34× faster alone. What separated a row that agreed from one
+  that did not is established now: the suite never yielded, and after
+  roughly ten seconds without a frame every allocation-heavy path slowed by
+  an order of magnitude, so a full run measured most of its cells in that
+  state and a short scoped run did not. The 91% and 302% decode spreads the
+  union rows showed "measured alone" were the same thing, a scoped run
+  crossing into the slow mode mid-row, and not noise the full run was free
+  of. The suite yields between timed chunks since 2026-09-23, the full run
+  and a scoped run of the same rows agree within their spreads, and
+  [speed-remeasurement.md](speed-remeasurement.md) carries what follows for
+  the numbers recorded before. A scoped table is still read only against
+  another scoped run of the same patterns, as "Either tier can be scoped to
+  some fixtures" below requires, because a scoped run is a run of its own.
 - The noise is concentrated in encode on the rows that run fastest, where
   10000 calls take a few milliseconds. Of the 124 cells, 27 spread more than
   a tenth of their median between their slowest and fastest trial, 11 more
@@ -368,18 +375,25 @@ writes:
 
 ### Methodology
 
-- Speed: warm-up, then N trials of M iterations; report the median and
-  the spread, encode and decode separately, in values per second; the
-  same value object reused across iterations; result buffers discarded.
-  `speed.spec.ts` does this with 1000 warm-up calls and 5 trials of 10000,
-  and prints the median with the lowest and highest trial, one line per
-  fixture and library. `speed.md` keeps the median and the spread and not
-  the three numbers behind them, so the run writes
-  `docs/benchmarks/speed-trials.tsv` beside it:
-  one line per cell, with the median and the slowest and fastest trial. A
-  statistic over the trials — whether a median sits nearer its slowest trial
-  than its fastest, for one — is taken from there, and two runs can be
-  compared at trial level rather than only at their medians.
+- Speed: warm-up, then N trials; report the median and the spread, encode
+  and decode separately, in values per second; the same value object
+  reused across iterations; result buffers discarded. `speed.spec.ts` does
+  this with a tenth of a second of warm-up calls and nine trials of at
+  least a fifth of a second of calls each, timed in chunks of 250 calls
+  with a yield between chunks once a quarter second of measured work has
+  passed, so that the engine gets a frame and the yield is never inside
+  the time. A trial is a length of time and not a count of calls because a
+  fixed 10,000 calls was five milliseconds on the fastest rows, and every
+  cell whose trial ran under ten milliseconds spread by more than 10%.
+  Within a row the libraries take turns, one trial each, so a drift over
+  the row lands on every column alike. The suite prints every trial's
+  rate, one line per fixture and library, and the recorder summarizes: the
+  median, and as the spread the middle half of the trials. A full run is
+  two Studio processes back to back, pooled, and `speed.md` states how far
+  a cell's median moved between them, which is the run-to-run noise. The
+  run writes every trial of every run to `docs/benchmarks/speed-trials.tsv`
+  beside it, so any other statistic is taken from there, and two runs can
+  be compared at trial level rather than only at their medians.
 - Size: bytes of the returned buffer plus the count of side-table entries,
   per fixture and library, plus the ratio against surge.
 - Also per fixture and library: round-trip exactness, and, where a round
@@ -458,6 +472,8 @@ stays optional, on the condition in the last step below.
    real Roblox process; `bench/zap/deferred.luau` requires it on first use
    instead, and `defineEntry` puts off a size-only entry's first encode, so
    neither happens outside Lune. And `runBenchmarks` had no verdict to read,
-   so it now prints `BENCH_RESULT:` the way `main` prints `RUNIT_RESULT:`.
+   so it now prints `BENCH_RESULT:` the way `main` prints `RUNIT_RESULT:`,
+   and returns only once it has, because the suite yields and
+   `run-in-roblox` ends the run when the injected script returns.
 8. Tier 3 last, only if wire cost with batching becomes a question the
    serializer comparison cannot answer.

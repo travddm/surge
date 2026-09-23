@@ -1,6 +1,10 @@
 # Future work: documentation gaps and stale statements
 
-Part of the [surge](../architecture.md) design.
+Part of the [surge](../architecture.md) design. The user pages this
+document asks for are one part of
+[documentation-restructure.md](documentation-restructure.md), which plans
+the whole `docs/` tree around its readers; the stale-statement checklist
+below is worked off during that move.
 
 ## What
 
