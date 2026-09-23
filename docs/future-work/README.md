@@ -46,8 +46,7 @@ time:
   hand-written baseline to the tagged union and the packed toggles, which
   waits on the per-call gap to hand-written Luau being understood and on
   Tier B settling the large record's length prefix, and a third tier that
-  needs a driver. Its landed
-  steps are still struck through rather than removed, which step 1 repairs.
+  needs a driver.
 - The stale-statement checklist in
   [documentation-gaps.md](documentation-gaps.md). Every entry describes
   behavior that is already final.

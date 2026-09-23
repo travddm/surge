@@ -74,10 +74,12 @@ The paper still to write, and where its content is today:
 | Serialized size across five libraries | benchmark-tooling.md results, benchmarks/size.md's reading |
 
 **Future work** (`docs/future-work/`) holds open work only, per the rule in
-[contributing-docs.md](../contributing-docs.md). One document still breaks
-that rule, and the sequence below repairs it:
-[benchmark-tooling.md](benchmark-tooling.md) keeps its landed steps as
-struck-through entries.
+[contributing-docs.md](../contributing-docs.md). Two documents still hold
+more than that, and the sequence below repairs both:
+[benchmark-tooling.md](benchmark-tooling.md) keeps the harness design until
+`specs/benchmark-harness.md` takes it over, and
+[generated-code-performance.md](generated-code-performance.md) keeps landed
+measurements until its first step reduces it.
 
 ### Conventions to adopt
 
