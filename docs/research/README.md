@@ -54,6 +54,7 @@ Prose follows [../contributing-docs.md](../contributing-docs.md).
 | [file-directives-on-generated-code.md](file-directives-on-generated-code.md)     | What `--!native` is worth on the generated code: 1.335× on encode, where the figure on record was 1.02×.                           |
 | [noise-in-the-speed-tier.md](noise-in-the-speed-tier.md)                         | What a cell's trials disagree by, what two invocations of unchanged code disagree by, and which of the two matters.                |
 | [generated-code-against-hand-written.md](generated-code-against-hand-written.md) | What the inline reservation bought, at 1.54× on encode against 4.15× on record, and the per-call gap to hand-written Luau it left. |
+| [serialized-size-across-libraries.md](serialized-size-across-libraries.md)       | surge's bytes against fbs, serio, Blink and Zap on sixteen rows, and what every difference is.                                     |
 
 A paper's own run output, where nothing else records it, is under
 [data/](data/). Which papers are planned, and where the measurements behind
