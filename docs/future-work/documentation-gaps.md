@@ -89,7 +89,11 @@ directory states them.
   to default to, per How, briefly in
   [generated-code-performance.md](generated-code-performance.md)),
   linked from both READMEs. The directives section can be written and
-  linked before the rest, since it depends on no open step.
+  linked before the rest, since it depends on no open step. The wire-format
+  section must state each container's default length width and that
+  `DataType.Length<T, L>` changes it, which
+  [data-type-surface.md](data-type-surface.md) treats as part of the decision
+  rather than as a detail of it.
 - Correct each stale statement in place as its fix lands; the list above
   is the checklist.
 - `CHANGELOG.md` and a short release section in serde.md (tag both

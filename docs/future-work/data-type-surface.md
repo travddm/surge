@@ -85,23 +85,32 @@ inner one means branding the inner type. This is the deliberate difference
 from `Packed<T>`, which does propagate — a propagating length has no way to
 say different widths at different depths.
 
-## The default stays u32
+## The default is u32, and it is documented rather than assumed
 
 Blink and Zap default an unbounded string, array, and map to u16, and
 [benchmarks/size.md](../benchmarks/size.md) shows every byte they save against
 surge is that prefix and nothing else. Matching them by default would close
 the whole measured gap at once.
 
-Keep u32 anyway, and make the bound opt-in:
+Either default is defensible, and the choice is close. What makes it safe
+either way is that the default is stated to the consumer and overridable one
+container at a time, which `Length<T, L>` is whichever way it falls. Given
+that, u32 wins on two things that are not about bandwidth:
 
-- A u16 default silently truncates a container above 65535 entries. That is
-  the same trade Deliberate non-gaps in
-  [type-coverage-parity.md](type-coverage-parity.md) already rejects for
-  serio's f32 `number` default: a silently lossy default is the wrong one for
-  a drop-in target.
-- It would break every pinned buffer in `bytes.spec.ts`, against rule 4.
-- The truncation is only safe once write-side validation exists, which is a
-  later Tier B item and [deserialize-hardening.md](deserialize-hardening.md).
+- Rule 4. u32 is what an unbranded container writes today, so every pinned
+  buffer in `bytes.spec.ts` stays green and no existing wire format moves.
+- A u16 default truncates a container above 65535 entries, and nothing
+  detects it until write-side validation lands (a later Tier B item, and
+  [deserialize-hardening.md](deserialize-hardening.md)). A u32 default has no
+  matching failure: its cost is two bytes, paid visibly.
+
+So the trade is two bytes per container against a silent ceiling, and a
+consumer takes the two bytes back per container with `Length<T, u16>`.
+
+**The default is therefore user documentation, not an implementation
+detail.** `docs/usage.md` has to state what an unbranded string, array, map,
+set, `Record`, `buffer`, and tuple rest each cost, and that `Length<T, L>` is
+how to change it; see [documentation-gaps.md](documentation-gaps.md).
 
 A project-wide default in `tsconfig.json` is rejected: two projects compiled
 with different settings could not exchange bytes, and nothing in the type
