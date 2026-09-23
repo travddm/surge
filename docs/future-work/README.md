@@ -39,6 +39,14 @@ time:
   and `Instance | string`, which are diagnostics today; they change
   `guardedUnion` variant order. `bytes.spec.ts` pins no union with an
   enum or opaque member, so they move no pinned buffer today.
+- [blob-classification.md](blob-classification.md): whether an empty object
+  type should encode as zero bytes, which waits on the design decision that
+  document records.
+- What is left of [benchmark-tooling.md](benchmark-tooling.md): widening the
+  hand-written baseline to the tagged union and the packed toggles, which
+  waits on the re-measurement below and on Tier B settling the large
+  record's length prefix, and a third tier that needs a driver. Its landed
+  steps are still struck through rather than removed, which step 1 repairs.
 - [speed-remeasurement.md](speed-remeasurement.md): the before/after ratios
   the performance documents record were measured in the slow mode; each is
   one checkout and one ten-minute double run per side, and the results land
