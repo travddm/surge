@@ -490,6 +490,27 @@ Confirmed empirically, not assumed:
   which is what makes it usable from a task instead of only from a human
   pressing Play.
 
+`run-in-roblox` calls the injected script on its plugin's own thread and
+ends the run when that call returns, so the suite yields on purpose: its
+timing loop yields between timed chunks of calls once a quarter second of
+measured work has passed, and `runBenchmarks` waits for runit's verdict
+before it returns. A suite that never yielded held the plugin thread for
+the whole catalog with no frame in between, and Studio raised its "plugin
+has stopped responding" prompt over it. The prompt was the symptom; the
+damage was to the numbers. After some seconds without a frame, every path
+that allocates per call slows by an order of magnitude — in a scoped run
+of the large record with the yield disabled, serio's decode fell from 24k
+values a second on its first trial to 1.9k on its last, and with the yield
+it held 24k across all five — and the full catalog recorded that slow mode
+for most cells after its first few fixtures, at up to a nineteenth of what
+a yielding run measures. The likely cause is that the engine runs its
+garbage-collection step per frame, so a run with no frames lets the heap
+grow until allocation is what the loop measures; the A/B is what is
+established, not the mechanism (see the comment block in
+`tests/src/bench/speed.spec.ts`). The yield is never inside a timed chunk.
+It also means the rows reach the terminal as they are measured, since the
+plugin flushes its output on `Heartbeat`.
+
 This is a different mechanism from the Lune runner above, not a
 replacement for it: `run-in-roblox` drives the actual Roblox engine, so
 its timings are real, but a timing is a number to read rather than a
@@ -516,7 +537,8 @@ transformer.
 large-array` and `mise run bench:speed:only cframe` measure only the rows
 their patterns select and print the table instead of rewriting the results
 file. That is how one change is read without a full run: seconds for the size
-tier, and a couple of minutes rather than seventeen for the speed tier. A
+tier, and a fraction of the two minutes the full catalog spends in Studio for
+the speed tier. A
 pattern is one word, because a mise task argument does not reliably reach the
 task with its quoting intact — on Windows a quoted `large array` arrives as
 two arguments. The match drops case and every character that is not a letter
@@ -555,18 +577,24 @@ reason (a `lune run` script has ordinary filesystem access). A speed
 number cannot take that route: it comes from a Roblox process, which has
 no filesystem. So it leaves as printed output instead —
 `src/bench/speed.spec.ts` prints one `BENCH_ROW:` line per fixture,
-library, and half, and `tests/scripts/record-speed-benchmarks.mjs` wraps
-`run-in-roblox`, forwards every line it is handed, and turns the rows
-into [benchmarks/speed.md](benchmarks/speed.md), and the three numbers
-behind each of its cells into `benchmarks/speed-trials.tsv` beside it.
-Both record the date, the machine, the engine version the process itself
-reports, and the commit or version of everything measured, because a
-timing is only true of one machine on one day, where a byte count is true
-everywhere. The
-recorder writes nothing unless the suite passed and every row came back in
-both halves, so an interrupted run leaves the last real table in place.
-It is still a deliberate benchmarking pass, not something every change
-runs.
+library, and half, carrying every trial's rate, and
+`tests/scripts/record-speed-benchmarks.mjs` wraps `run-in-roblox`,
+forwards every line it is handed, and turns the rows into
+[benchmarks/speed.md](benchmarks/speed.md), with every trial of every run
+in `benchmarks/speed-trials.tsv` beside it. A full run is two Studio
+processes back to back, and a cell is the median over both runs' trials;
+the file states how far a cell's median moved between the two runs, which
+is the run-to-run noise a reader needs to tell a real change from drift,
+and which one run cannot show. A trial is a length of time rather than a
+number of calls, and within a row the libraries take turns, one trial
+each; the comment block in `speed.spec.ts` says why each of those is so.
+Both files record the date, the machine, the engine version the process
+itself reports, and the commit or version of everything measured, because
+a timing is only true of one machine on one day, where a byte count is
+true everywhere. The recorder writes nothing unless every run passed and
+every row came back in both halves of every run, so an interrupted run
+leaves the last real table in place. It is still a deliberate
+benchmarking pass, not something every change runs.
 
 **Metrics per row**: buffer bytes and side-table entries from the size
 tier, and throughput (values/sec) for serialize and deserialize

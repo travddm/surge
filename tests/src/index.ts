@@ -32,10 +32,10 @@ function summarize(results: string): string {
 	return failed > 0 ? "FAILED" : "PASSED";
 }
 
-/** Runs one suite root and prints `prefix` with the verdict, whatever happens. */
-function run(root: Instance, prefix: string): void {
+/** Runs one suite root and prints `prefix` with the verdict, whatever happens; settles once it has. */
+function run(root: Instance, prefix: string): Promise<void> {
 	const finish = (summary: string): void => print(`${prefix} ${summary}`);
-	new TestRunner(root)
+	return new TestRunner(root)
 		.run({
 			colors: false,
 			reporter: (results) => {
@@ -81,9 +81,16 @@ export function main(): void {
  * `scopeTo` costs this file nothing it must not depend on -- that module
  * holds the patterns rather than the fixtures, so the catalog is still
  * reached only from under `bench/`.
+ *
+ * Returns only once the verdict has been printed, unlike `main`: the speed
+ * suite yields between its timed chunks (see bench/speed.spec.ts), and
+ * `run-in-roblox` treats the injected script's return as the end of the
+ * run, so returning on the first yield would close Studio with most of the
+ * catalog unmeasured. Waiting here is itself a yield, which is what keeps
+ * the plugin thread responsive while the suite runs.
  */
 export function runBenchmarks(fixtures?: ReadonlyArray<string>): void {
 	scopeTo(fixtures ?? []);
 	print(`${BENCH_ENVIRONMENT_PREFIX} engine=${version()}`);
-	run(script.WaitForChild("bench"), BENCH_RESULT_PREFIX);
+	run(script.WaitForChild("bench"), BENCH_RESULT_PREFIX).expect();
 }

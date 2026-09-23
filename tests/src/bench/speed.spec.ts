@@ -18,108 +18,177 @@ import { matching, scopedPatterns } from "./selection";
  * A Roblox process cannot write a file, so the results leave as printed
  * lines and scripts/record-speed-benchmarks.mjs turns them into
  * `docs/benchmarks/speed.md`. Each line is
- * `BENCH_ROW: fixture | library | half | median | lowest | highest`, in
- * values per second; src/index.ts prints the closing `BENCH_RESULT:`, and
- * the recorder writes nothing without it.
+ * `BENCH_ROW: fixture | library | half | rate rate ...`, one rate in values
+ * per second per trial, in the order the trials ran; the recorder sorts
+ * and summarizes them, so the statistic is defined once, there.
+ * src/index.ts prints the closing `BENCH_RESULT:`, and the recorder writes
+ * nothing without it.
  *
  * The catalog is narrowed per fact rather than once at module scope because a
  * pattern that matches nothing throws: raised inside a fact it is one failed
  * test with its message, and raised at module scope it would break runit's
  * discovery instead.
  *
- * Nothing here may yield. runit starts every `@Fact` at once and awaits them
- * together with `Promise.all`, and `runBenchmarks` does not await the promise
- * `run()` returns, so one `task.wait` would both interleave the two halves
- * and let that function return -- closing Studio under `run-in-roblox` --
- * before the last row was measured. The engine's script-timeout watchdog does
- * not fire here, which is what makes that affordable: measured directly, a
- * 25-second loop that never yields runs to the end.
+ * A trial is a length of time, not a number of calls. It used to be 10,000
+ * calls, which is five milliseconds on a row that runs at two million values
+ * a second, and every cell whose trial was under ten milliseconds spread by
+ * more than 10% -- most by more than 100%, with one trial two or three times
+ * faster than the median, the shape of a periodic cost of a few milliseconds
+ * that most short trials carry and one slips between. Those were the flat
+ * struct, the nested object, the wide struct, and the toggles: the rows the
+ * hand-written baseline exists to be read against. A trial now runs chunks
+ * of calls until `TRIAL_SECONDS` of measured time have passed and reports
+ * calls over time, so a fast row gets hundreds of thousands of calls per
+ * trial and the periodic cost averages in, and a slow row keeps roughly what
+ * it had. The warm-up is time-based for the same reason: a thousand calls is
+ * a quarter of a millisecond on a fast row.
+ *
+ * Within a fixture, the libraries take turns: every library is warmed up,
+ * then trial one runs for each library in turn, then trial two, and so on.
+ * A drift over the row -- the process slowing as it heats, the collector
+ * catching up -- then lands on every column alike instead of on whichever
+ * library ran last, which is what makes a ratio between two columns of the
+ * same row a fair one.
+ *
+ * The loops yield, on purpose. `run-in-roblox` calls the injected script on
+ * its own plugin thread and does not report the run finished until that
+ * call returns, so a suite that never yielded held that thread for the whole
+ * catalog -- about thirteen minutes by the earlier speed-trials.tsv -- with
+ * no frame in between. Studio raised its "plugin has stopped responding"
+ * prompt over that, which is how it was noticed, but the prompt is not the
+ * damage. After some seconds without a frame, every path that allocates per
+ * call slows by an order of magnitude: in a scoped run of the large record
+ * with the yield below disabled, serio's decode fell from 24,000 values a
+ * second on its first trial to 1,900 on its last, and with the yield it held
+ * 24,000 across all five; the rows the full catalog recorded that way were
+ * that slow mode for most cells after the first few fixtures, at up to a
+ * nineteenth of what a yielding run measures. A likely cause is that the
+ * engine does its garbage-collection step per frame, so a run with no frames
+ * lets the heap grow until allocation is what the loop measures, but that
+ * mechanism is not established here; the A/B is.
+ *
+ * Yielding once per row or per trial would not be enough: in that slow mode
+ * a cell spends up to ninety seconds on one row and seventeen on one trial.
+ * So every call is timed inside a chunk of `CHUNK` calls, a trial's time is
+ * the sum of its chunks, and the loop yields between two chunks once
+ * `YIELD_AFTER` seconds of measured work have gone by since it last did. The
+ * yield is never inside a timed chunk. A row fast enough to finish a trial
+ * inside the budget never yields mid-trial and pays only the two clock reads
+ * per chunk.
+ *
+ * Because the loops yield, the two halves are one `@Fact`: runit starts
+ * every fact at once and awaits them together with `Promise.all`, and two
+ * facts would interleave at every yield. And `runBenchmarks` waits for the
+ * run to settle before it returns, or the injected script would hand
+ * control back -- closing Studio under `run-in-roblox` -- before the last
+ * row was measured.
  */
-const WARM_UP = 1_000;
-const TRIALS = 5;
-const ITERATIONS = 10_000;
+/** Seconds of measured calls each library gets before a row's trials begin. */
+const WARM_UP_SECONDS = 0.1;
+/** Trials per cell. Odd, so that one run's median is a trial and not an average. */
+const TRIALS = 9;
+/**
+ * Seconds of measured calls a trial runs for, at least: the trial ends at
+ * the first chunk boundary past it, so a slow row's trial is one chunk.
+ */
+const TRIAL_SECONDS = 0.2;
+/**
+ * Calls between two clock reads. Small enough that the slowest cell in
+ * speed-trials.tsv (about 600 calls a second) finishes a chunk well inside
+ * a second, so the yield the budget below asks for is never far away; large
+ * enough that the fastest cell (millions a second) spends a fraction of a
+ * percent of a chunk on the clock reads around it.
+ */
+const CHUNK = 250;
+/**
+ * Seconds of measured work after which the loop yields between chunks. The
+ * slow mode described above set in after roughly ten seconds without a
+ * frame; a quarter second stays far from that and costs a run one frame per
+ * quarter second of measurement.
+ */
+const YIELD_AFTER = 0.25;
 
 /** The prefix one `key=value` fact about the run leaves by, for the recorder. */
 const ENVIRONMENT_PREFIX = "BENCH_ENV:";
 
 // Printed as the module loads, so it goes out once and before any row: it describes
 // the suite rather than any one test, and it is what keeps the generated file from
-// restating these three constants from memory.
+// restating these constants from memory.
 print(
-	`${ENVIRONMENT_PREFIX} method=the median of ${TRIALS} trials of ${ITERATIONS} calls, after ${WARM_UP} warm-up calls`,
+	`${ENVIRONMENT_PREFIX} method=${TRIALS} trials per cell, each at least ${TRIAL_SECONDS} seconds of calls after ${WARM_UP_SECONDS} seconds of warm-up calls, timed in chunks of ${CHUNK} calls so that the yields between chunks are not in the time; within a row the libraries take turns, one trial each`,
 );
 
-interface Result {
-	median: number;
-	lowest: number;
-	highest: number;
-}
+/** Measured seconds since the loop last yielded; shared by every row, since the budget is. */
+let sinceYield = 0;
 
-/** Values per second over `TRIALS` trials of `ITERATIONS` calls, after a warm-up. */
-function measure(run: () => void): Result {
-	for (const _ of $range(1, WARM_UP)) {
+/** Runs `CHUNK` calls and returns the seconds they took; yields afterwards once the budget is spent. */
+function chunk(run: () => void): number {
+	const start = os.clock();
+	for (const _ of $range(1, CHUNK)) {
 		run();
 	}
+	const elapsed = os.clock() - start;
 
-	const rates = new Array<number>();
-	for (const _ of $range(1, TRIALS)) {
-		const start = os.clock();
-		for (const _iteration of $range(1, ITERATIONS)) {
-			run();
-		}
-		rates.push(ITERATIONS / (os.clock() - start));
+	sinceYield += elapsed;
+	if (sinceYield >= YIELD_AFTER) {
+		sinceYield = 0;
+		task.wait();
 	}
-	rates.sort((left, right) => left < right);
+	return elapsed;
+}
 
-	return {
-		median: rates[math.floor(TRIALS / 2)],
-		lowest: rates[0],
-		highest: rates[TRIALS - 1],
-	};
+function warmUp(run: () => void): void {
+	let elapsed = 0;
+	while (elapsed < WARM_UP_SECONDS) {
+		elapsed += chunk(run);
+	}
+}
+
+/** One trial: values per second over at least `TRIAL_SECONDS` of calls. */
+function trial(run: () => void): number {
+	let elapsed = 0;
+	let calls = 0;
+	while (elapsed < TRIAL_SECONDS) {
+		elapsed += chunk(run);
+		calls += CHUNK;
+	}
+	return calls / elapsed;
 }
 
 /** The prefix scripts/record-speed-benchmarks.mjs reads a row out of. */
 const ROW_PREFIX = "BENCH_ROW:";
 
-function report(half: string, fixture: Fixture, entry: Entry, result: Result): void {
+function report(half: string, fixture: Fixture, entry: Entry, rates: ReadonlyArray<number>): void {
 	// Printed as each row is measured rather than collected for the end, so a
 	// run that stops early still reports what it did measure. The recorder
 	// writes no file for one of those, so the output is where those rows stay.
 	print(
 		string.format(
-			"%s %s | %s | %s | %.0f | %.0f | %.0f",
+			"%s %s | %s | %s | %s",
 			ROW_PREFIX,
 			fixture.name,
 			entry.library,
 			half,
-			result.median,
-			result.lowest,
-			result.highest,
+			rates.map((rate) => string.format("%.0f", rate)).join(" "),
 		),
 	);
 }
 
 class SpeedBench {
 	@Fact
-	public encodeThroughput(): void {
-		for (const fixture of matching(CATALOG, scopedPatterns())) {
-			for (const entry of fixture.entries) {
-				if (SIZE_ONLY.includes(entry.library)) {
-					continue;
-				}
-				report("encode", fixture, entry, measure(entry.encode));
-			}
-		}
-	}
+	public throughput(): void {
+		for (const half of ["encode", "decode"] as const) {
+			for (const fixture of matching(CATALOG, scopedPatterns())) {
+				const entries = fixture.entries.filter((entry) => !SIZE_ONLY.includes(entry.library));
+				const rates = entries.map(() => new Array<number>());
 
-	@Fact
-	public decodeThroughput(): void {
-		for (const fixture of matching(CATALOG, scopedPatterns())) {
-			for (const entry of fixture.entries) {
-				if (SIZE_ONLY.includes(entry.library)) {
-					continue;
+				for (const entry of entries) {
+					warmUp(entry[half]);
 				}
-				report("decode", fixture, entry, measure(entry.decode));
+				for (const _ of $range(1, TRIALS)) {
+					entries.forEach((entry, index) => rates[index].push(trial(entry[half])));
+				}
+				entries.forEach((entry, index) => report(half, fixture, entry, rates[index]));
 			}
 		}
 	}

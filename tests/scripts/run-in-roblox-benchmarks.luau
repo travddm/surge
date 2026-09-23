@@ -7,6 +7,9 @@
 -- `MainBenchmarks` (see default.project.json) never fire on their own, so this is the only thing
 -- that runs. Reuses src/index.ts's own `runBenchmarks()` (the same function the disabled
 -- `MainBenchmarks` Script calls for a manual Play-based run) rather than reimplementing it here.
+-- `run-in-roblox` calls this file on its plugin's own thread and ends the run when it returns, so
+-- `runBenchmarks()` does not return until the verdict is printed; it waits by yielding, which is
+-- what keeps Studio from raising its "plugin has stopped responding" prompt over the run.
 --
 -- `run-in-roblox` passes no arguments into the Studio process, so this file is the only channel a
 -- scoped run (`mise run bench:speed:only`) has: scripts/record-speed-benchmarks.mjs copies this
