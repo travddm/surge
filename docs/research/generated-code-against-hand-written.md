@@ -12,12 +12,13 @@ speed suite yielded. It is above 1.00× on every encode row and readable on
 fifteen of the sixteen; the wide struct's 1.048× sits inside the band two runs
 of unchanged code differ by. On the three rows where the calls can be counted
 and the gain read, each `alloc` call it removed saved about 22 to 27 ns,
-whether the row made one such call per `serialize()`, eight, or a thousand. What it left is a gap to a hand-written Luau codec
-writing the same bytes that is small on a large payload and large on a small
-one — 1.22× on the `CFrame` array's encode, 2.20× on the flat struct's — which
-is the shape of a cost paid once per call. The generated `serialize()` makes
-two table allocations per call that the hand-written codec does not; whether
-they account for the gap is not tested here.
+whether the row made one such call per `serialize()`, eight, or a thousand.
+What it left is a gap to a hand-written Luau codec writing the same bytes that
+is small on a large payload and large on a small one — 1.22× on the `CFrame`
+array's encode, 2.20× on the flat struct's — which is the shape of a cost paid
+once per call. The generated `serialize()` makes two table allocations per
+call that the hand-written codec does not; whether they account for the gap is
+not tested here.
 
 ## Background
 
