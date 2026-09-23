@@ -50,8 +50,10 @@ Prose follows [../contributing-docs.md](../contributing-docs.md).
 | ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
 | [frame-starvation.md](frame-starvation.md)           | What a Studio benchmark run that never yields does to its own numbers, and where the onset is.                     |
 | [september-2026-review.md](september-2026-review.md) | What the review of 2026-09-18 found by executing the transformer, what has landed since, and what it did not find. |
+| [per-call-overhead.md](per-call-overhead.md)         | What surge's per-call work costs: the blob side channel at 25.7 ns a call, and `finishWrite`'s copy at nothing.    |
 
-Which papers are planned, and where the measurements behind each one are
-recorded today, are in
+A paper's own run output, where nothing else records it, is under
+[data/](data/). Which papers are planned, and where the measurements behind
+each one are recorded today, are in
 [../future-work/documentation-restructure.md](../future-work/documentation-restructure.md).
 Each is listed here as it lands.

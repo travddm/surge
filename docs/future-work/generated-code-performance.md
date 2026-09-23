@@ -245,17 +245,25 @@ otherwise, since `Serializer<T>` still declares the property. The
 `inputBlobs` parameter stays, under a leading underscore so that nothing
 reads it and a consumer's `noUnusedParameters` stays quiet.
 
-It is worth nothing measurable, and that is the useful part. surge's 21
-quiet cells moved by a median of 0.997×, between 0.968× and 1.015×, while
-the untouched libraries drifted 0.96× to 1.02× with a median of 0.989×.
-Three cross-module calls and a table allocation per call are not a cost this
-catalog can see.
+It is worth 25.7 ns per encode call, which the catalog can see on its
+fastest rows and not on its slowest. The first measurement of it, a median
+of 0.997× over 21 quiet cells, was made before the speed suite yielded, and
+the rows where a constant per-call cost is a visible fraction of a call were
+the least readable cells in that mode. Re-measured, it is 3.6% to 6.4% of an
+encode call on the five rows that encode in under 0.6 µs and a fraction of a
+percent elsewhere:
+[per-call-overhead.md](../research/per-call-overhead.md).
 
-Set against the 4.70× that removing one `alloc` call _per element_ was
-worth, that is the shape of the whole read/write cost: **per-call overhead
-does not matter and per-element overhead does.** It is the strongest
-evidence this document has for where to look next, and it settles the rest
-of the per-call list, `finishWrite`'s copy included.
+The decision stands and is better paid for than it looked. What does not
+survive is the generalization drawn from it — that per-call overhead does not
+matter, and that this result settles the rest of the per-call list,
+`finishWrite`'s copy included. Both pieces of per-call work have now been
+measured post-yield and they differ by more than an order of magnitude: a
+table allocation with three cross-module calls costs 26 ns, and a
+`buffer.copy` of up to two kilobytes costs nothing. What separates them is
+what the work is, not that it is per call, so the rest of that list is open
+rather than settled. Against the 4.70× that removing one `alloc` call _per
+element_ was worth, per-element overhead is still the larger prize by far.
 
 **`finishWrite`'s copy costs nothing, measured.** It was the one per-call
 item with a reason to be different, because it scales with the payload. It
@@ -266,6 +274,12 @@ encode cells by a median of 1.007×, between 0.986× and 1.025×, while the
 untouched libraries' encode cells drifted 0.99× to 1.05× with a median of
 1.011×. The 2004-byte large array is 1.011× of that, and the `CFrame` array
 1.025×. The probe was reverted, not committed.
+
+Re-run after the suite yielded, it is −14 ns per encode call: not merely
+small but the wrong sign for a cost removed, and the same figure two runs of
+unchanged code differ by. The payload argument is dead in the re-measurement,
+where the 2004-byte row gained the least of any
+([per-call-overhead.md](../research/per-call-overhead.md)).
 
 **What that probe does and does not rule out.** `finishWrite` is two C
 calls: a `buffer.create`, which allocates, and a `buffer.copy`. The probe
