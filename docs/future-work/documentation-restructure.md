@@ -67,19 +67,11 @@ The specs to write, and where their content is today:
 
 **Research papers** (`docs/research/`) report what was measured and never
 advise, in the format [research/README.md](../research/README.md) states.
-The papers to write, and where their content is today:
+The paper still to write, and where its content is today:
 
-| Paper                                                            | From                                                                                                    |
-| ---------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| The cost of generated serializer code against hand-written Luau  | generated-code-performance.md (baseline gap, shared reservation, inline reservation, per-element probe) |
-| What `--!native` and `--!optimize 2` are worth on generated code | generated-code-performance.md (the lab loops, What native changed, the level-2 run)                     |
-| Per-call against per-element overhead                            | generated-code-performance.md (blob channel, `finishWrite` probes)                                      |
-| Serialized size across five libraries                            | benchmark-tooling.md results, benchmarks/size.md's reading                                              |
-| Noise in the speed tier                                          | benchmark-tooling.md (the noise entry), speed-trials.tsv                                                |
-
-The numbers in the first three come after
-[speed-remeasurement.md](speed-remeasurement.md), so each paper is written
-once with corrected figures.
+| Paper                                 | From                                                       |
+| ------------------------------------- | ---------------------------------------------------------- |
+| Serialized size across five libraries | benchmark-tooling.md results, benchmarks/size.md's reading |
 
 **Future work** (`docs/future-work/`) holds open work only, per the rule in
 [contributing-docs.md](../contributing-docs.md). One document still breaks
@@ -188,8 +180,8 @@ that owns the rule rather than restating it. Candidates: add a `DataType`
 kind end to end (IR, walker, emitter, runtime, `bytes.spec.ts`, the size
 table); add a benchmark fixture (one shape per library, the Blink and Zap
 twins, `bench:definitions`); record the benchmarks; re-measure a claim
-per [speed-remeasurement.md](speed-remeasurement.md). Write one only when
-the task has been done twice by hand.
+against a control in the same run, the way the papers under `research/` do.
+Write one only when the task has been done twice by hand.
 
 ### Migration map
 
@@ -234,8 +226,7 @@ either: each remaining brand adds a row to `supported-types.md` and
 `data-types.md`, which is what the trigger table in
 [contributing-docs.md](../contributing-docs.md) is for, and holding
 the move for it would only add more of the documents it has to untangle.
-The performance papers wait on
-[speed-remeasurement.md](speed-remeasurement.md). And the move touches
+And the move touches
 every cross-reference in both repositories, so it is one unit of work
 with a sequence, not a series of opportunistic edits.
 
@@ -243,10 +234,11 @@ with a sequence, not a series of opportunistic edits.
 
 In order; each step is one change that leaves the tree consistent:
 
-1. Run [speed-remeasurement.md](speed-remeasurement.md); write the three
-   performance papers and the noise paper from its results; reduce
-   generated-code-performance.md and benchmark-tooling.md to their open
-   items.
+1. Reduce generated-code-performance.md and benchmark-tooling.md to their
+   open items, writing the size paper from benchmark-tooling.md's results
+   on the way. Every speed figure either one states has been re-measured or
+   is marked where it stands as not re-measured, so what moves out is
+   settled.
 2. Write the specs from transformer.md, serde.md, and testing.md, each
    section marked `current` or `draft` where Tier B will change it; delete
    the prose the specs restate; fix the code and test citations.

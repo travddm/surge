@@ -44,13 +44,10 @@ time:
   document records.
 - What is left of [benchmark-tooling.md](benchmark-tooling.md): widening the
   hand-written baseline to the tagged union and the packed toggles, which
-  waits on the re-measurement below and on Tier B settling the large
-  record's length prefix, and a third tier that needs a driver. Its landed
+  waits on the per-call gap to hand-written Luau being understood and on
+  Tier B settling the large record's length prefix, and a third tier that
+  needs a driver. Its landed
   steps are still struck through rather than removed, which step 1 repairs.
-- [speed-remeasurement.md](speed-remeasurement.md): the before/after ratios
-  the performance documents record were measured in the slow mode; each is
-  one checkout and one ten-minute double run per side, and the results land
-  once, in the research papers the restructure assigns them to.
 - The stale-statement checklist in
   [documentation-gaps.md](documentation-gaps.md). Every entry describes
   behavior that is already final.

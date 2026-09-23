@@ -3,10 +3,12 @@
 Part of the [surge](../architecture.md) design. Every speed figure in this
 document was read from a run made before 2026-09-23, when the suite did not
 yield and measured most of a full run's cells in a slow mode that inflated
-allocation costs by up to 19×; [speed-remeasurement.md](speed-remeasurement.md)
-says which cells that reached and which conclusions here are to be
-re-measured before they are relied on. The figures are left as they were
-recorded, except the one the slow mode itself explains. The performance
+allocation costs by up to 19×
+([frame-starvation.md](../research/frame-starvation.md)). The conclusions that
+mattered have since been re-measured, and each entry that one of them reaches
+is marked superseded or not re-measured where it stands, with the paper that
+holds the current figure. The figures are otherwise left as they were
+recorded, until this document is reduced to its open items. The performance
 goal is the project's reason to exist, and the harness in
 [benchmark-tooling.md](benchmark-tooling.md) measured it. When this document
 was written, [benchmarks/speed.md](../benchmarks/speed.md) put surge 2.87×
@@ -95,6 +97,15 @@ plus one assignment. Every variant read allocated a table and then copied
 it. The tag is a property of the literal itself now, so the copy is gone.
 No compiled file under `tests/out` has a `table.clone` left, and
 `test/golden.test.mjs` pins that.
+
+**Not re-measured.** This figure and the two reservation figures below were
+each measured as removing a package call, before the inline reservation made
+every reservation inline. Reproducing them would mean building trees two
+changes old to restate what each was worth in code no build runs today, and
+each was left as recorded, for the reason given in
+[generated-code-against-hand-written.md](../research/generated-code-against-hand-written.md).
+All three were read before the speed suite yielded, and the one pair that was
+re-measured shrank from 4.15× to 1.54×, so read each as an upper bound.
 
 **It is worth 1.39× on the row it touches.** The tagged union is the only
 row of the catalog with one, and it reads a hundred variants per decode
@@ -798,6 +809,14 @@ the catalog could not have supplied: a buffer the package still owned would
 go stale in a serializer's cached local as soon as another serializer grew
 it. Transformer Design §4 in [transformer.md](../transformer.md) carries
 that trade.
+
+**Superseded.** The measurement below was two full runs made before the
+speed suite yielded. Re-measured on a yielding suite against a mixed tree that
+restores the previous shape, the inline reservation is worth a median 1.538×
+on encode and 1.134× on decode, not 4.15× and 2.48×, and each `alloc` call it
+removed saved about 22 to 27 ns
+([generated-code-against-hand-written.md](../research/generated-code-against-hand-written.md)).
+The entry is kept until this document is reduced to its open items.
 
 **Reserving bytes inline, measured.** The change landed in
 `rbxts-transformer-surge` `7f46c81` and `surge` `91310ea`. A reservation is

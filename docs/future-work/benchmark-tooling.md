@@ -275,12 +275,12 @@ From [benchmarks/size.md](../benchmarks/size.md), which the run writes:
   gap can show is loop and cursor overhead and nothing else.
 
 And from [benchmarks/speed.md](../benchmarks/speed.md), which the Tier 2 run
-writes. Every figure in this list was read from a run made before the suite
-yielded, and most of the cells those runs measured were in the slow mode
-that [speed-remeasurement.md](speed-remeasurement.md) describes; that
-document lists which of these conclusions are to be re-measured and which
-can be re-read from the current file. Only the two entries that the slow
-mode itself explains are corrected here.
+writes. Every figure in this list was first read from a run made before the
+suite yielded, and most of the cells those runs measured were in the slow mode
+[frame-starvation.md](../research/frame-starvation.md) describes. Each has
+since been re-read from a run made on the yielding suite, and the entries
+below carry the re-read figures, with the earlier ones beside them where they
+moved.
 
 - Four of the five columns run with Luau's `--!native`, and the table measures
   the configuration surge recommends rather than the one roblox-ts emits by
@@ -365,9 +365,9 @@ mode itself explains are corrected here.
   union rows showed "measured alone" were the same thing, a scoped run
   crossing into the slow mode mid-row, and not noise the full run was free
   of. The suite yields between timed chunks since 2026-09-23, the full run
-  and a scoped run of the same rows agree within their spreads, and
-  [speed-remeasurement.md](speed-remeasurement.md) carries what follows for
-  the numbers recorded before. A scoped table is still read only against
+  and a scoped run of the same rows agree within their spreads, and the
+  numbers recorded before it have been re-measured
+  ([docs/research/](../research/README.md)). A scoped table is still read only against
   another scoped run of the same patterns, as "Either tier can be scoped to
   some fixtures" below requires, because a scoped run is a run of its own.
 - The noise that was concentrated in encode on the rows that run fastest is
@@ -497,7 +497,9 @@ stays optional, on the condition in the last step below.
    length prefix, because a baseline writes surge's exact bytes and the
    size tier checks that it does. Before either: the three rows already
    there show the encode gap as a constant of about 0.2 µs per call, not
-   per field, which [speed-remeasurement.md](speed-remeasurement.md) puts
-   first; a new row measures nothing new until that is understood.
+   per field, and a new row measures nothing new until that is understood.
+   [generated-code-against-hand-written.md](../research/generated-code-against-hand-written.md)
+   accounts for an eighth of it and names two table allocations per call as
+   the next thing to measure.
 9. Tier 3 last, only if wire cost with batching becomes a question the
    serializer comparison cannot answer.

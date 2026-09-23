@@ -170,8 +170,8 @@ read from cells in the affected region, at a factor that differs per cell and
 falls hardest on allocation — so a change that removed allocations would have
 read larger than it is, and a null result on a per-call allocation would have
 read as null under a penalty that should have exposed it.
-[speed-remeasurement.md](../future-work/speed-remeasurement.md) lists which
-conclusions those are.
+The conclusions it reaches have since been re-measured; see the other
+papers in [this directory](README.md).
 
 ## Conclusion
 
