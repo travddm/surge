@@ -36,8 +36,9 @@ READMEs point at design docs instead.
   and only benchmark automation is open (see
   [headless-ci.md](headless-ci.md)).
 - [testing.md](../testing.md) says golden checks cover "a curated set of
-  representative shapes"; there are six tests (eight assertions) over two
-  files.
+  representative shapes"; there are 13 tests in one file,
+  `test/golden.test.mjs`, each pinning one decision rather than sampling
+  shapes. The count was six when this entry was written.
 - [serde.md](../serde.md) says the factories are "declared here as
   ambient generics" with "no real runtime body"; they have a body that
   throws.

@@ -56,8 +56,9 @@ monorepo's "one repo, one version, both packages always compatible"
 convenience isn't worth shipping something that doesn't install — but
 that convenience was doing real work, worth stating plainly now that it's
 gone rather than dropping it silently: `rbxts-transformer-surge` emits
-calls straight into `@rbxts/surge`'s runtime helpers (`alloc()`, the blob
-channel) with no version-negotiation of any kind, so the two only ever
+calls straight into `@rbxts/surge`'s runtime helpers (`grow()`,
+`finishWrite()`, the packed `CFrame` codec, the blob channel) with no
+version-negotiation of any kind, so the two only ever
 work together at exactly one version each was built against, and nothing
 now enforces "released together, same version" the way one repo's
 package-lock did — see Package name and distribution in
@@ -305,7 +306,10 @@ bytes inline in the generated code instead of calling into the package.
    spike, before it was removed, so step 0 doesn't need to redo that
    part.)
 1. This package: growable scratch buffer + `alloc()` cursor helper, blob
-   side-channel, `Serializer<T>` bundled API.
+   side-channel, `Serializer<T>` bundled API. The buffer and the cursor have
+   since moved out of the package and into the code the transformer
+   generates, which is what step 9's measurements led to; see Transformer
+   Design §4 in [transformer.md](transformer.md).
 2. Transformer: primitives + plain objects + optional fields (serialize and
    deserialize), matching the spike's proof but through the real IR
    builder, with signature-based detection and name-sorted field order.

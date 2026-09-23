@@ -701,9 +701,10 @@ the call itself.
 a `backpatchU32`, or a packed `CFrame` reserves inside the package, and none
 of those is in the three fixtures. The probe also gave each serializer its own
 scratch buffer, which is a design decision the implementation has to make
-rather than inherit: today one module-scoped buffer serves every serializer in
-a place, and a buffer per serializer is a different trade in memory and in what
-happens if two serializes ever overlap. Neither is measured here.
+rather than inherit: at the time one module-scoped buffer served every
+serializer in a place, and a buffer per serializer is a different trade in
+memory and in what happens if two serializes ever overlap. Neither is measured
+here. The change that followed took the per-serializer buffer.
 
 **Reserving bytes inline, measured.** The change landed in
 `rbxts-transformer-surge` `7f46c81` and `surge` `91310ea`. A reservation is
