@@ -314,8 +314,11 @@ mode itself explains are corrected here.
   what keeps the distance between them a fact about code rather than about
   compilation mode: it moved both columns and left the gap where it was, 1.08×
   and 1.05× interpreted against 1.08× and 1.06× native.
-- surge is ahead of serio on all 32 of their measurements: by 3.17× to
-  104.76× on encode, and by 1.94× to 9.91× on decode.
+- surge is ahead of serio on all 32 of their measurements: by 3.36× to
+  33.22× on encode, and by 2.26× to 8.08× on decode. The figures were 3.17× to
+  104.76× and 1.94× to 9.91× when read from a run made before the suite
+  yielded, which depressed the allocation-heavy columns hardest and so
+  inflated surge's lead.
 - The baseline is the result this tier was built for. It writes surge's exact
   bytes, so none of its lead is format. It opened 2.87× faster on encode and
   1.63× faster on decode on the `CFrame` array, which is the one of its three
@@ -324,24 +327,29 @@ mode itself explains are corrected here.
   median or more. That gap is what the emitted code cost against straight-line
   Luau, and it is the measurement
   [generated-code-performance.md](generated-code-performance.md) was waiting
-  for. Interpreted on both sides, it closed to 1.08× and 1.05×. Compiled the
-  way surge now recommends, on both sides, it is 1.08× and 1.06× — the same
-  gap, which is the point of marking the two together. The baseline is still
-  ahead on both halves and the two columns' trials do not overlap on either.
-- surge is ahead of fbs on all 32 of their measurements now, by 1.20× to
-  17.39× on encode and 1.63× to 9.32× on decode. It was behind on 10 encode
+  for. Interpreted on both sides it read 1.08× and 1.05×, and compiled the way
+  surge recommends, on both sides, 1.08× and 1.06×. Both readings are from
+  runs made before the suite yielded. On the reference run the gap is 1.22× on
+  encode and 1.11× on decode, so it is wider than recorded and still the same
+  on both halves of the recommendation, which is the point of marking the two
+  together. The baseline is still ahead on both halves.
+- surge is ahead of fbs on all 32 of their measurements now, by 1.06× to
+  5.85× on encode and 1.03× to 2.01× on decode. It was behind on 10 encode
   rows before the inline reservation and on one before the directives were
-  matched.
+  matched. The ranges were 1.20× to 17.39× and 1.63× to 9.32× when read
+  before the suite yielded.
 - `Packed<T>` is not only smaller, and what it is worth on speed keeps moving.
-  The same shape encodes 0.96× packed against unpacked and decodes at 0.22×,
-  against 1.07× and 0.25× before the directives were matched, 1.22× and 0.46×
-  before the inline reservation, and 2.11× and 0.72× before the shared
-  reservation. Both `toggles` rows are noisy — the packed one spans a quarter
-  of its median — so read the direction and not the figures. The packed path
+  The same shape encodes 1.06× packed against unpacked and decodes at 0.58×
+  on the reference run. The earlier pairs — 0.96× and 0.22×, then 1.07× and
+  0.25× before the directives were matched, 1.22× and 0.46× before the inline
+  reservation, 2.11× and 0.72× before the shared reservation — were all read
+  before the suite yielded, and the decode figure has moved furthest of any
+  reading in this list. Neither `toggles` row is noisy any more. The packed path
   is a bit region and shares nothing, so each change to how bytes are reserved
   moves the unpacked path and leaves it where it was.
-- Blink is ahead on 1 of the 11 encode rows they share and 4 of the 11 decode
+- Blink is ahead on 2 of the 11 encode rows they share and 3 of the 11 decode
   rows, where it used to lead every decode row and 10 of the 11 encode rows.
+  A pre-yield run put it at 1 and 4.
   The one encode row it keeps is the 1000-element array, at 1.18×, and it is
   the same row on decode at 1.04×. Both codecs now carry both directives, so
   what is left between them is codec design.
@@ -362,16 +370,12 @@ mode itself explains are corrected here.
   the numbers recorded before. A scoped table is still read only against
   another scoped run of the same patterns, as "Either tier can be scoped to
   some fixtures" below requires, because a scoped run is a run of its own.
-- The noise is concentrated in encode on the rows that run fastest, where
-  10000 calls take a few milliseconds. Of the 124 cells, 27 spread more than
-  a tenth of their median between their slowest and fastest trial, 11 more
-  than three tenths, and four more than a whole median. All 11 sit on the
-  flat struct, the nested object, the wide struct, or the large array. Earlier
-  runs put the median nearer the slowest trial than the fastest on most of
-  them — the shape of a cost most trials pay and one does not — which this run
-  cannot recheck, having been measured before the trials were kept.
-  `speed-trials.tsv` carries them from the next run on. What that cost is was
-  not established. Every row whose trials take longer is quiet.
+- The noise that was concentrated in encode on the rows that run fastest is
+  gone with the protocol that produced it: no cell now spreads by more than a
+  quarter of its median where four spread by more than a whole one, and encode
+  and decode are equally quiet. What is left within a cell is a median 2.3%,
+  and the larger disagreement is between one invocation and the next. See
+  [noise-in-the-speed-tier.md](../research/noise-in-the-speed-tier.md).
 
 ### Methodology
 

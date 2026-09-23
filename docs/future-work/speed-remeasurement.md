@@ -84,19 +84,27 @@ and 1.10× ([native-on-generated-code.md](../research/native-on-generated-code.m
 The dismissals in What native changed still stand, since a third is not the
 2.25× to 11.68× inversion they needed, but two of them are reopened there.
 
+Four more needed no build, only a reading of the reference run, and three of
+them moved. The baseline gap on the `CFrame` array is 1.22× on encode and
+1.11× on decode, where it was recorded as 1.08× and 1.06×. surge still leads
+fbs and serio on all 32 measurements each, but by 1.06× to 5.85× and 3.36× to
+33.22× on encode rather than the 1.20× to 17.39× and 3.17× to 104.76× a
+pre-yield run showed: the slow mode depressed the allocation-heavy columns
+hardest and inflated surge's lead. `Packed<T>` decodes at 0.58× against the
+unpacked shape, not 0.22×. And the noise reading is superseded outright:
+[noise-in-the-speed-tier.md](../research/noise-in-the-speed-tier.md). The
+first three are corrected in place in
+[benchmark-tooling.md](benchmark-tooling.md), which is where they are stated.
+
 **Conclusions to re-measure**, with where they are stated:
 
-| Conclusion                                                                                                                       | Stated in                                                           | Rests on                                                   | Priority                                            |
-| -------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------- | ---------------------------------------------------------- | --------------------------------------------------- |
-| Reserving bytes inline: 4.15× encode, 2.48× decode across the catalog; 7.35×, 6.56×, 5.56× on the union/boolean rows             | generated-code-performance.md, Reserving bytes inline               | Full runs either side; all listed cells late or decode     | Third: the headline result                          |
-| Shared reservation: 4.70×, 3.01×, 3.96×, 1.72×, 1.51×, 1.43×, 1.17×                                                              | generated-code-performance.md, One helper call per field            | Full runs either side; mixed (wide struct encode is clean) | Third                                               |
-| `CFrame` second reservation: 1.61× encode, 1.35× decode                                                                          | generated-code-performance.md                                       | Full runs; `CFrame` array is a late encode row             | Fourth                                              |
-| Tagged-union literal: 1.39× decode, 6929 to 9608 values a second                                                                 | generated-code-performance.md                                       | Full runs; decode                                          | Fourth                                              |
-| Baseline gap: 2.87×/1.63× at the start, 1.08×/1.05× interpreted, 1.08×/1.06× native, on the `CFrame` array                       | generated-code-performance.md opening; benchmark-tooling.md results | Full runs; the end state can be read from the current file | Read from the current file; re-run only the start   |
-| Library standings: surge ahead of fbs on all 32 cells, of serio on all 32, Blink ahead on 1 of 11 encode and 4 of 11 decode rows | benchmark-tooling.md results                                        | Full run                                                   | Read from the current file                          |
-| `Packed<T>` against unpacked: 0.96× encode, 0.22× decode, and the three earlier pairs                                            | benchmark-tooling.md results                                        | Full runs; the `toggles` rows are late                     | Current pair from the file; earlier pairs if wanted |
-| Pinning `--!optimize 2` cost nothing: 1.004× encode, 1.030× decode, controls at 1.000×                                           | generated-code-performance.md                                       | Full runs either side                                      | Low: the mechanical argument stands without it      |
-| Noise is concentrated in encode on the fastest rows; 27 cells spread over a tenth, 11 over three tenths                          | benchmark-tooling.md results                                        | One full run                                               | Re-read from the current trials file                |
+| Conclusion                                                                                                           | Stated in                                                | Rests on                                                   | Priority                                       |
+| -------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------- | ---------------------------------------------------------- | ---------------------------------------------- |
+| Reserving bytes inline: 4.15× encode, 2.48× decode across the catalog; 7.35×, 6.56×, 5.56× on the union/boolean rows | generated-code-performance.md, Reserving bytes inline    | Full runs either side; all listed cells late or decode     | Third: the headline result                     |
+| Shared reservation: 4.70×, 3.01×, 3.96×, 1.72×, 1.51×, 1.43×, 1.17×                                                  | generated-code-performance.md, One helper call per field | Full runs either side; mixed (wide struct encode is clean) | Third                                          |
+| `CFrame` second reservation: 1.61× encode, 1.35× decode                                                              | generated-code-performance.md                            | Full runs; `CFrame` array is a late encode row             | Fourth                                         |
+| Tagged-union literal: 1.39× decode, 6929 to 9608 values a second                                                     | generated-code-performance.md                            | Full runs; decode                                          | Fourth                                         |
+| Pinning `--!optimize 2` cost nothing: 1.004× encode, 1.030× decode, controls at 1.000×                               | generated-code-performance.md                            | Full runs either side                                      | Low: the mechanical argument stands without it |
 
 ## Why deferred
 
