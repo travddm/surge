@@ -197,7 +197,9 @@ byte saving, and serio's has an index collision bug).
 Tier A has landed; its list above is kept as the record of what each
 item became. Tier B is API design that should be decided once, with the benchmark harness in
 [benchmark-tooling.md](benchmark-tooling.md) available to show what each
-bound actually saves; it is a separate, later step for that reason.
+bound actually saves; it is a separate, later step for that reason. That
+decision is now [data-type-surface.md](data-type-surface.md); the items below
+are what it applies to.
 
 ## How, briefly
 
@@ -205,6 +207,8 @@ bound actually saves; it is a separate, later step for that reason.
   transformer's `datatypes.ts`, with a round-trip fixture in
   `roblox.spec.ts` and a pin in `bytes.spec.ts`. The transformer's tests
   run over every row.
-- Tier B as one design note deciding the `DataType.*` names and defaults,
-  then length-typed containers first, since they dominate the size
-  comparison, then vectors and `AlignedCFrame`, then ranges.
+- The design note is [data-type-surface.md](data-type-surface.md): it decides
+  every Tier B brand's name, type-parameter convention, and defaults at once,
+  so the ones that land later match the ones that land first. Then
+  length-typed containers first, since they dominate the size comparison,
+  then vectors and `AlignedCFrame`, then ranges.
