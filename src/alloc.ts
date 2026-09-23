@@ -11,8 +11,8 @@
 // its own scratch buffer, capacity and write cursor in the closure it is
 // emitted into, so that reserving bytes is a compare and two moves inline
 // rather than a call into this module (Transformer Design §4 in
-// transformer.md). Measured, that call was the whole of the cost on a shape
-// with one field per element: 2.64x on one row's decode.
+// transformer.md). Measured, each such call removed saved about 22 to 27 ns
+// (docs/research/generated-code-against-hand-written.md).
 
 /**
  * Doubles `current` until it holds `needed` bytes and copies the first `live`

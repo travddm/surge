@@ -34,8 +34,8 @@ Three Tier B items need no brand:
 - A bit-packed set of a fixed member list (Blink's `set`) is
   `Packed<Set<"a" | "b" | ...>>`, a composition of what already exists.
 - Opt-in validation is the factory's `checks` option, not a type. Its read
-  half has landed; see What `deserialize` does with bad input in
-  [serde.md](../serde.md). `Range<Min, Max>` adds the write half.
+  half has landed; see section 4 of
+  [specs/runtime-api.md](../specs/runtime-api.md). `Range<Min, Max>` adds the write half.
 - **`AlignedCFrame` is dropped.** `Packed<T>` already gives a `CFrame` the
   1-, 13-, or 25-byte form, which is Zap's 13-byte form plus a smaller case
   and a fallback. Zap asserts on a rotation its table misses, which is the

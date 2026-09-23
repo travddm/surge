@@ -56,7 +56,11 @@ what a reader needs in order to apply a statement correctly.
 
 ## Published specifications
 
-None yet. Which specifications are planned, what each one owns, and where its
+| Specification                    | Specifies                                                                                                                          |
+| -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| [runtime-api.md](runtime-api.md) | `@rbxts/surge`'s consumer API, what `deserialize` does with bad input, the helpers generated code calls, and the version coupling. |
+
+Which specifications are still planned, what each one owns, and where its
 content lives today are in
 [../future-work/documentation-restructure.md](../future-work/documentation-restructure.md).
 Each is listed here as it lands.

@@ -28,8 +28,8 @@ the serializer redesigned when this is picked up.
   `@rbxts` scope for its own real distribution (see
   [serde.md](../serde.md)) and "surge-net" turned out to name this layer
   just as well.
-- Builds on `@rbxts/surge`'s `Serializer<T>` (see
-  [serde.md](../serde.md)) rather than re-deriving its own wire format.
+- Builds on `@rbxts/surge`'s `Serializer<T>` (Runtime API 3.1 in
+  [specs/runtime-api.md](../specs/runtime-api.md)) rather than re-deriving its own wire format.
 - Not designed further than this until picked up — gets its own design
   pass (detection/dispatch model, batching strategy, channel semantics,
   and its own repository, following the same two-repo distribution

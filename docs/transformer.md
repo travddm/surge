@@ -3,7 +3,7 @@
 Part of the [surge](architecture.md) design. This is the `transformer/`
 package: the TS transformer that walks a type and emits specialized
 serialize/deserialize code for it at compile time. It has no runtime code
-of its own — see [serde.md](serde.md) for the package its generated code
+of its own — see [specs/runtime-api.md](specs/runtime-api.md) for the package its generated code
 calls into.
 
 ## Why fbs is slower: confirmed root cause
@@ -344,8 +344,9 @@ project's own small IR is written in TypeScript.
     reads no bytes and so cannot be bounded by the payload, a fixed cap.
     That minimum is a lower bound by construction: an optional, a blob and a
     recursive reference contribute nothing, so no bound can exceed what a
-    valid value costs. See What `deserialize` does with bad input in
-    [serde.md](serde.md) for the contract this gives a caller.
+    valid value costs. See section 4 of
+    [specs/runtime-api.md](specs/runtime-api.md) for the contract this gives a
+    caller.
 
 8. **Error model**: a type the transformer cannot encode correctly is a
    build error, never a silent fallback and never a Node stack trace. The
@@ -636,7 +637,7 @@ such a field is classified as `blob`, is not written into the buffer, and
 is instead pushed onto a `blobs: defined[]` array returned alongside the
 buffer from `serialize()` — the same shape as fbs's existing
 `{ buffer, blobs }` result and `deserialize(input, inputBlobs?)`
-parameter (see [serde.md](serde.md)). This generalizes Zap's
+parameter (Runtime API 3.1 in [specs/runtime-api.md](specs/runtime-api.md)). This generalizes Zap's
 `outgoing_inst` side table (Instance-only) to any opaque value, matching
 fbs's broader scope.
 

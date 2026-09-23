@@ -61,7 +61,6 @@ The specs to write, and where their content is today:
 | ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------- |
 | `specs/wire-format.md`       | Byte layout per kind, length widths and `Length<T, L>`, the packed region, `CFrame` forms, enum index width, the blob channel, determinism | transformer.md Type Coverage and Wire format, serde.md, `bytes.spec.ts`, data-type-surface.md              |
 | `specs/transformer.md`       | Detection, type walk, classification rules, the diagnostics list, emission rules (reservation runs, block splitting, directive hoisting)   | transformer.md Transformer Design §1–9 and Risks                                                           |
-| `specs/runtime-api.md`       | `@rbxts/surge` exports, `createBinarySerializer`, the version coupling between the two packages                                            | serde.md                                                                                                   |
 | `specs/benchmark-harness.md` | The catalog, adapters, tiers, protocol (chunked timing, yields, trials, scoped runs), and what each results file records                   | testing.md Benchmarking strategy and the run-in-roblox section, benchmark-tooling.md, the recorder scripts |
 | `specs/test-harness.md`      | The Lune shim contract, the sentinel lines, what each suite root covers                                                                    | testing.md                                                                                                 |
 
@@ -190,7 +189,7 @@ Write one only when the task has been done twice by hand.
 | `README.md` (both repos)                    | Rewritten to one screen, plus a getting-started and task-reference section for contributors and the mirrored index                      |                                                  |
 | `architecture.md`                           | Shrunk to repository shape and cross-cutting decisions; goal and build history to the review paper                                      | Implementation status, build order               |
 | `transformer.md`                            | `specs/transformer.md`, `specs/wire-format.md`, `supported-types.md`; the fbs/Zap source reading and the spike to a short research note | Prose the specs restate                          |
-| `serde.md`                                  | `specs/runtime-api.md`, `getting-started.md` (install and version pinning)                                                              |                                                  |
+| `serde.md`                                  | `getting-started.md` (install and version pinning); `specs/runtime-api.md` has taken the contract                                       |                                                  |
 | `coding-standards.md`                       | Kept and shortened; gains file organization, comments, and generated files per Conventions to adopt                                     | The editor-window narrative (to contributing.md) |
 | `testing.md`                                | Kept, in the fixed shape above; `specs/test-harness.md` and `specs/benchmark-harness.md` take the contracts                             | The history of why each runner exists            |
 | `benchmarks/*`                              | Unchanged; their generated prose shortened to point at the harness spec                                                                 |                                                  |
@@ -218,8 +217,8 @@ Write one only when the task has been done twice by hand.
 
 The user pages should describe fixed behavior, and nothing still moves it.
 `deserialize`'s error contract, which `errors-and-guarantees.md` is the
-page for, is settled (What `deserialize` does with bad input in
-[serde.md](../serde.md)). What is left of Tier B of
+page for, is settled (section 4 of
+[specs/runtime-api.md](../specs/runtime-api.md)). What is left of Tier B of
 [type-coverage-parity.md](type-coverage-parity.md) is not a reason to wait
 either: each remaining brand adds a row to `supported-types.md` and
 `data-types.md`, which is what the trigger table in
@@ -233,7 +232,7 @@ with a sequence, not a series of opportunistic edits.
 
 In order; each step is one change that leaves the tree consistent:
 
-1. Write the specs from transformer.md, serde.md, and testing.md, each
+1. Write the remaining specs from transformer.md and testing.md, each
    section marked `current` or `draft` where Tier B will change it; delete
    the prose the specs restate; fix the code and test citations.
 2. Write the user pages, `contributing.md`, and the shortened

@@ -22,8 +22,9 @@ own doc for the detail that belongs to it:
   schema-time-specialization approach works (including the fbs/Zap source
   reading and the spike that proved it compiles), the transformer's
   detection/type-walk/codegen design, and the full type coverage table.
-- [serde.md](serde.md) — `@rbxts/surge`: the runtime package the
-  generated code calls into, and its public API surface.
+- [serde.md](serde.md) — how a consumer installs `@rbxts/surge` and the
+  transformer. What the runtime package guarantees is in
+  [specs/runtime-api.md](specs/runtime-api.md).
 - [coding-standards.md](coding-standards.md) — lint/format/spell tooling
   and style conventions (each repo keeps its own copy — see below).
 - [testing.md](testing.md) — testing and verification strategy for the
@@ -35,7 +36,7 @@ own doc for the detail that belongs to it:
   `mise run bench:size`, and [speed.md](benchmarks/speed.md), values per
   second, written by `mise run bench:speed` from a real Roblox process.
 - [specs/](specs/) — normative specifications, versioned with the code;
-  [specs/README.md](specs/README.md) states the format. None published yet.
+  [specs/README.md](specs/README.md) states the format and indexes them.
 - [research/](research/) — papers reporting what was measured, dated and
   never edited after the fact; [research/README.md](research/README.md)
   states the format and indexes them.
@@ -111,7 +112,7 @@ Node/CommonJS package — no roblox-ts, no `tests/`. See
 - **`@rbxts/surge`** (this repo) — the runtime support package the
   transformer's generated code calls into, _and_ the `@rbxts/runit`
   round-trip/benchmark suite that exercises both packages together. See
-  [serde.md](serde.md) and [testing.md](testing.md).
+  [specs/runtime-api.md](specs/runtime-api.md) and [testing.md](testing.md).
 - **`rbxts-transformer-surge`** (sibling repo) — the TS transformer. No
   runtime code. See [transformer.md](transformer.md) for its design.
 - **`surge-net`** (future-work, not started) — the deferred networking

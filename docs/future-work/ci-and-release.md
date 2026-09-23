@@ -13,9 +13,10 @@ Part of the [surge](../architecture.md) design.
   at a pinned commit, so a `surge` build can break or start passing
   because of an unrelated push to the other repository, and a `surge`
   commit's CI result is not reproducible later.
-- **No version backstop.** serde.md states that nothing checks, at
-  compile time or at runtime, that a consumer's two `github:` refs match,
-  and calls it release-process discipline. The transformer already reads
+- **No version backstop.** Nothing checks, at compile time or at run time,
+  that a consumer's two `github:` refs match (Runtime API 6.2 in
+  [specs/runtime-api.md](../specs/runtime-api.md)); keeping them matched is
+  release-process discipline. The transformer already reads
   `@rbxts/surge`'s `package.json` (`nearestPackageName` in `detect.ts`)
   to identify the package; reading its `version` too and reporting a
   diagnostic when it differs from the transformer's own version is a

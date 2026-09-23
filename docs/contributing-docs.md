@@ -26,7 +26,7 @@ the reader who needs it and never current for the reader who wrote it.
 | [../README.md](../README.md)               | What surge is, how to install it, and where to go next. The transformer repository's own `README.md` does the same for it, and points here. |
 | [architecture.md](architecture.md)         | How the two repositories fit together, the cross-cutting decisions behind that shape, and the index of the documents below.                 |
 | [transformer.md](transformer.md)           | `rbxts-transformer-surge`: detection, the type walk, classification, emission, the type coverage table, and the diagnostics.                |
-| [serde.md](serde.md)                       | `@rbxts/surge`: the package's exports, `createBinarySerializer` and its options, and what `deserialize` does with bad input.                |
+| [serde.md](serde.md)                       | How a consumer installs the two packages, until a user page takes it.                                                                       |
 | [coding-standards.md](coding-standards.md) | TypeScript conventions, and the tooling that enforces them.                                                                                 |
 | [testing.md](testing.md)                   | What each step of `mise run ci` checks, the runtime suites and the shim they run under, and how the benchmarks are run and recorded.        |
 | `contributing-docs.md`                     | This document.                                                                                                                              |
@@ -47,7 +47,7 @@ would be confused or misled, that document is part of the change.
 | --------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
 | Added, removed, or renamed a mise task or an npm script                                             | The `README.md` of the repository that has it, and [testing.md](testing.md) if `mise run ci` runs it |
 | Changed the repository split, the sibling-checkout arrangement, or where a package lives            | [architecture.md](architecture.md)                                                                   |
-| Changed the runtime package's exports, or the contract of `createBinarySerializer` or `deserialize` | [serde.md](serde.md)                                                                                 |
+| Changed the runtime package's exports, or the contract of `createBinarySerializer` or `deserialize` | [specs/runtime-api.md](specs/runtime-api.md)                                                         |
 | Changed any byte an encoding writes: a width, a length prefix, the packed region, an enum index     | [transformer.md](transformer.md), `tests/src/tests/bytes.spec.ts`, and `mise run bench:size`         |
 | Changed type classification, a diagnostic, or an emission rule                                      | [transformer.md](transformer.md)                                                                     |
 | Changed the benchmark catalog, an adapter, the timing protocol, or a recorder                       | [testing.md](testing.md), and re-record the results file it affects                                  |

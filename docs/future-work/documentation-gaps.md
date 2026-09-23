@@ -47,9 +47,6 @@ file states what was measured and does not advise.
   representative shapes"; there are 13 tests in one file,
   `test/golden.test.mjs`, each pinning one decision rather than sampling
   shapes. The count was six when this entry was written.
-- [serde.md](../serde.md) says the factories are "declared here as
-  ambient generics" with "no real runtime body"; they have a body that
-  throws.
 - Comments name future-work documents that were deleted when their fixes
   landed: `test/golden.test.mjs` (`recursive-union-types.md`,
   `wire-format-determinism.md`) and `tests/src/tests/coverage.spec.ts`
@@ -74,8 +71,8 @@ the tooling description, no statement of which Roblox, roblox-ts, and
 ## Why deferred
 
 User documentation should be written against fixed behavior. What moved it
-has since landed: `deserialize`'s error contract is settled (What
-`deserialize` does with bad input in [serde.md](../serde.md)), and what is
+has since landed: `deserialize`'s error contract is settled (section 4 of
+[specs/runtime-api.md](../specs/runtime-api.md)), and what is
 left of Tier B in [type-coverage-parity.md](type-coverage-parity.md) adds a
 row to the supported-types table rather than changing one.
 

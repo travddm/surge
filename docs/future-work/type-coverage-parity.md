@@ -221,8 +221,8 @@ bound without a helper type.
    write, and narrowing to the smallest width that fits (which neither
    Blink nor Zap does; serio validates but does not narrow).
 5. Opt-in write-side validation. The read-side half has landed as the
-   factory's `checks` option (What `deserialize` does with bad input in
-   [serde.md](../serde.md)); what is left is checking a value on the way
+   factory's `checks` option (section 4 of
+   [specs/runtime-api.md](../specs/runtime-api.md)); what is left is checking a value on the way
    in, which is the same option's other half and is what `Range<Min, Max>`
    above needs. Every other library has at least one of the two.
 6. A quantized rotation option for `CFrame` (serio's 18-byte form, with
