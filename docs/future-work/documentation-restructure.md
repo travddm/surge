@@ -69,29 +69,23 @@ The specs to write, and where their content is today:
 advise, in the format [research/README.md](../research/README.md) states.
 The papers to write, and where their content is today:
 
-| Paper                                                            | From                                                                                                          |
-| ---------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
-| The cost of generated serializer code against hand-written Luau  | generated-code-performance.md (baseline gap, shared reservation, inline reservation, per-element probe)       |
-| What `--!native` and `--!optimize 2` are worth on generated code | generated-code-performance.md (the lab loops, What native changed, the level-2 run)                           |
-| Per-call against per-element overhead                            | generated-code-performance.md (blob channel, `finishWrite` probes)                                            |
-| Serialized size across five libraries                            | benchmark-tooling.md results, benchmarks/size.md's reading                                                    |
-| Frame starvation in a Studio benchmark run                       | the A/B of 2026-09-23 in `speed.spec.ts` and testing.md, and [speed-remeasurement.md](speed-remeasurement.md) |
-| Noise in the speed tier                                          | benchmark-tooling.md (the noise entry), speed-trials.tsv                                                      |
-| The September 2026 review: findings and what landed              | future-work/README.md's narrative, the landed halves of the review documents                                  |
+| Paper                                                            | From                                                                                                    |
+| ---------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| The cost of generated serializer code against hand-written Luau  | generated-code-performance.md (baseline gap, shared reservation, inline reservation, per-element probe) |
+| What `--!native` and `--!optimize 2` are worth on generated code | generated-code-performance.md (the lab loops, What native changed, the level-2 run)                     |
+| Per-call against per-element overhead                            | generated-code-performance.md (blob channel, `finishWrite` probes)                                      |
+| Serialized size across five libraries                            | benchmark-tooling.md results, benchmarks/size.md's reading                                              |
+| Noise in the speed tier                                          | benchmark-tooling.md (the noise entry), speed-trials.tsv                                                |
 
 The numbers in the first three come after
 [speed-remeasurement.md](speed-remeasurement.md), so each paper is written
 once with corrected figures.
 
 **Future work** (`docs/future-work/`) holds open work only, per the rule in
-[contributing-docs.md](../contributing-docs.md). This directory breaks that
-rule in two ways that the sequence below repairs. The first is the
-380-line narrative of landed work at the head of [README.md](README.md),
-which moves into the review paper and the git log, leaving the index the
-three lists it ends with today (ordered steps, no step of its own,
-deferred). The second is
-[benchmark-tooling.md](benchmark-tooling.md), which keeps its landed steps
-as struck-through entries.
+[contributing-docs.md](../contributing-docs.md). One document still breaks
+that rule, and the sequence below repairs it:
+[benchmark-tooling.md](benchmark-tooling.md) keeps its landed steps as
+struck-through entries.
 
 ### Conventions to adopt
 
@@ -211,7 +205,6 @@ the task has been done twice by hand.
 | `benchmarks/*`                              | Unchanged; their generated prose shortened to point at the harness spec                                                                 |                                                  |
 | `future-work/generated-code-performance.md` | Three papers; the open items stay as a short future-work document                                                                       | The narrative                                    |
 | `future-work/benchmark-tooling.md`          | `specs/benchmark-harness.md`, the size paper; the open tier stays as a short future-work document                                       | The landed steps                                 |
-| `future-work/README.md`                     | The review paper (narrative); an index of open work only                                                                                |                                                  |
 | `future-work/documentation-gaps.md`         | The user pages it lists, then deleted; its stale-statement checklist is worked off during the move                                      |                                                  |
 | Other `future-work/*.md`                    | Unchanged if open; deleted if landed, with a spec or paper carrying the record                                                          |                                                  |
 
@@ -246,32 +239,24 @@ The performance papers wait on
 every cross-reference in both repositories, so it is one unit of work
 with a sequence, not a series of opportunistic edits.
 
-Two parts do not wait: the frame-starvation paper, and the review paper
-that absorbs the future-work narrative. Neither depends on open behavior or
-on a re-measurement.
-
 ## How, briefly
 
 In order; each step is one change that leaves the tree consistent:
 
-1. Write the frame-starvation paper from the A/B already recorded, and the
-   review paper from the future-work narrative; cut the narrative from
-   `future-work/README.md` and leave the three lists.
-2. Run [speed-remeasurement.md](speed-remeasurement.md); write the three
+1. Run [speed-remeasurement.md](speed-remeasurement.md); write the three
    performance papers and the noise paper from its results; reduce
    generated-code-performance.md and benchmark-tooling.md to their open
    items.
-3. Write the specs from transformer.md, serde.md, and testing.md, each
-   section marked `current` or `draft` where Tier B or hardening will
-   change it; delete the prose the specs restate; fix the code and test
-   citations.
-4. Write the user pages, `contributing.md`, and the shortened
+2. Write the specs from transformer.md, serde.md, and testing.md, each
+   section marked `current` or `draft` where Tier B will change it; delete
+   the prose the specs restate; fix the code and test citations.
+3. Write the user pages, `contributing.md`, and the shortened
    `coding-standards.md` and `testing.md`, working off
    documentation-gaps.md's checklist as each statement is rewritten;
    write `AGENTS.md` and `CLAUDE.md` in both repositories, moving the
    trigger table into `AGENTS.md`; rewrite both READMEs and
    architecture.md; delete documentation-gaps.md.
-5. Final sweep: link check across both repositories, `mise run ci`, and a
+4. Final sweep: link check across both repositories, `mise run ci`, and a
    read of every page under `docs/*.md` against
    [contributing-docs.md](../contributing-docs.md).
 
