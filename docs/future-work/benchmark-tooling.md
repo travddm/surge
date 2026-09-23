@@ -275,21 +275,23 @@ From [benchmarks/size.md](../benchmarks/size.md), which the run writes:
 And from [benchmarks/speed.md](../benchmarks/speed.md), which the Tier 2 run
 writes:
 
-- Two of the five columns run with Luau's `--!native` and three without.
-  fbs carries it on `createSerializer` and `createDeserializer`, which is
-  where its codec runs, and Blink's generated module carries it; nothing puts
-  it on surge's generated code, serio or the baseline, so those three are
-  interpreted. `--!optimize 2` is on every column but serio's now.
-  Whether the process
-  honours them was measured rather than assumed: two modules built at run
-  time from one source, differing only in the directives, ran the same tight
-  buffer loop, and the one carrying `--!native` was 11.68 times faster in the
-  same Studio build; on a loop shaped like a codec, with an allocation per
-  call and a string write, it was 2.25 times faster. What `--!native` is
-  worth on surge's own generated code is a third number and a much smaller one: 1.02×
-  across the catalog, from a throwaway build that marked the twelve fixture
-  modules and left every other column a control. `--!optimize 2` was
-  worth nothing either way, for a mechanical reason recorded in
+- Four of the five columns run with Luau's `--!native`, and the table measures
+  the configuration surge recommends rather than the one roblox-ts emits by
+  default. Each benchmark fixture carries it, because that is where the
+  generated serializers live and what a consumer is told to mark; so does the
+  hand-written baseline, so the two stay compiled alike. fbs carries it on
+  `createSerializer` and `createDeserializer` and Blink on its generated
+  module, as both ship. serio carries neither directive and is the one column
+  a level below. `--!optimize 2` is on every column but serio's.
+  Whether the process honours them was measured rather than assumed: two
+  modules built at run time from one source, differing only in the directives,
+  ran the same tight buffer loop, and the one carrying `--!native` was 11.68
+  times faster in the same Studio build; on a loop shaped like a codec, with
+  an allocation per call and a string write, it was 2.25 times faster. What it
+  is worth on surge's own generated code is a third number and a smaller one,
+  measured twice: about 1.10× on decode and 1.03× to 1.07× on encode, and
+  1.70× on the 1000-element array's encode. `--!optimize 2` was worth nothing
+  either way, for a mechanical reason recorded in
   [generated-code-performance.md](generated-code-performance.md), which
   carries this whole thread.
 - Everything this repository compiles has since taken `//!optimize 2`: the
@@ -300,10 +302,13 @@ writes:
   measured: nothing the catalog can see, with fbs and Blink flat at 1.000× as
   the control and surge's encode at 1.004×. The table by column is in
   [generated-code-performance.md](generated-code-performance.md).
-- The baseline is the column compiled the way surge's generated code is:
-  `--!optimize 2` and no `--!native`.
-- surge is ahead of serio on all 32 of their measurements: by 2.89× to
-  69.40× on encode, and by 1.99× to 8.35× on decode.
+- The baseline is the column compiled the way surge's generated code is, which
+  is now `--!optimize 2` and `--!native` on both. Marking the two together is
+  what keeps the distance between them a fact about code rather than about
+  compilation mode: it moved both columns and left the gap where it was, 1.08×
+  and 1.05× interpreted against 1.08× and 1.06× native.
+- surge is ahead of serio on all 32 of their measurements: by 3.17× to
+  104.76× on encode, and by 1.94× to 9.91× on decode.
 - The baseline is the result this tier was built for. It writes surge's exact
   bytes, so none of its lead is format. It opened 2.87× faster on encode and
   1.63× faster on decode on the `CFrame` array, which is the one of its three
@@ -312,33 +317,27 @@ writes:
   median or more. That gap is what the emitted code cost against straight-line
   Luau, and it is the measurement
   [generated-code-performance.md](generated-code-performance.md) was waiting
-  for. It is 1.08× and 1.05× now, on the same row, with the baseline still
-  ahead on both halves and the two columns' trials not overlapping on either.
-- Against fbs, which is compiled differently, surge is ahead on 15 of the 16
-  encode rows and all 16 decode rows. It was behind on 10 encode rows before
-  the inline reservation. The one it still loses is the 1000-element array, at
-  0.95×. The widest are the two union rows and `Blink: Entities`, where fbs
-  encodes at 0.08× to 0.14× of surge's rate.
+  for. Interpreted on both sides, it closed to 1.08× and 1.05×. Compiled the
+  way surge now recommends, on both sides, it is 1.08× and 1.06× — the same
+  gap, which is the point of marking the two together. The baseline is still
+  ahead on both halves and the two columns' trials do not overlap on either.
+- surge is ahead of fbs on all 32 of their measurements now, by 1.20× to
+  17.39× on encode and 1.63× to 9.32× on decode. It was behind on 10 encode
+  rows before the inline reservation and on one before the directives were
+  matched.
 - `Packed<T>` is not only smaller, and what it is worth on speed keeps moving.
-  The same shape encodes 1.07× faster packed than unpacked and decodes at
-  0.25×, against 1.22× and 0.46× before the inline reservation and 2.11× and
-  0.72× before the shared-reservation change. Both `toggles` rows are noisy —
-  ±13% to ±28% — so read the direction and not the figures. The packed path is
-  a bit region and shares nothing, so each change to how bytes are reserved
-  moves the unpacked path and leaves it where it was. Read this as a snapshot
-  of two paths that move independently, not as a property of `Packed<T>`.
-- Blink is ahead on 6 of the 11 encode rows they share and 4 of the 11 decode
+  The same shape encodes 0.96× packed against unpacked and decodes at 0.22×,
+  against 1.07× and 0.25× before the directives were matched, 1.22× and 0.46×
+  before the inline reservation, and 2.11× and 0.72× before the shared
+  reservation. Both `toggles` rows are noisy — the packed one spans a quarter
+  of its median — so read the direction and not the figures. The packed path
+  is a bit region and shares nothing, so each change to how bytes are reserved
+  moves the unpacked path and leaves it where it was.
+- Blink is ahead on 1 of the 11 encode rows they share and 4 of the 11 decode
   rows, where it used to lead every decode row and 10 of the 11 encode rows.
-  Its widest remaining lead is the 1000-element array, at 2.11× on encode. Its
-  `Entities` bench was a 23× lead, then 4.86× after the shared reservation,
-  and is 1.19× now. Blink's generated module carries `--!native` and surge's
-  does not, and nothing here separates how much of what is left is that.
-  The 1000-element array is also where a full run and a scoped run used to
-  disagree by an order of magnitude on Blink's encode: the full run put it at
-  0.20× of surge's rate on trials spanning 89%, where measuring it alone put
-  it five times ahead. The run after the inline reservation agrees with the
-  scoped one, at 143.5k values per second on ±3%, so that cell reads now. See
-  the next entry for the disagreement itself, which is not resolved.
+  The one encode row it keeps is the 1000-element array, at 1.18×, and it is
+  the same row on decode at 1.04×. Both codecs now carry both directives, so
+  what is left between them is codec design.
 - A scoped run and a full run do not agree on every cell, and where they
   disagree it is by an order of magnitude. Measured against the run checked
   in at `1b1ec9f`, encode on the two union rows was 13× and 14× faster alone

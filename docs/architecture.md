@@ -282,7 +282,7 @@ generated code is not, which that file states before its tables. What that gap
 was made of is
 [future-work/generated-code-performance.md](future-work/generated-code-performance.md),
 which the run moved to the head of the plan and which has since closed it: the
-same row is 1.08× on encode and 1.05× on decode, after a change that reserves
+same row is 1.08× on encode and 1.06× on decode, after a change that reserves
 bytes inline in the generated code instead of calling into the package.
 
 0. This repo's `package.json` (the `@rbxts/surge` manifest itself), the

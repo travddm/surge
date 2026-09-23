@@ -1,135 +1,135 @@
 # Trials behind speed.md. Written by `mise run bench:speed`; do not edit by hand.
-# Date: 2026-09-22
+# Date: 2026-09-23
 # Roblox: 0.739.0.7390687
 # Machine: 12th Gen Intel(R) Core(TM) i9-12900KF, 16 threads, win32 10.0.26200
-# surge: 9f6ff4c
-# rbxts-transformer-surge: 7f46c81
+# surge: 0b4a259 (uncommitted changes)
+# rbxts-transformer-surge: 14d9e27
 # roblox-ts: 3.0.0
 # @rbxts/flamework-binary-serializer: 0.7.0
 # @rbxts/serio: 1.2.7
 # Blink: 0.18.8
 fixture	library	half	median	slowest	fastest
-small flat struct	surge	encode	2236186	1507182	4438723
-small flat struct	surge	decode	1067236	971770	1108279
-small flat struct	fbs	encode	1793979	1247334	1829793
-small flat struct	fbs	decode	314012	295945	332659
-small flat struct	serio	encode	774287	758564	927007
-small flat struct	serio	decode	288123	273724	298342
-small flat struct	blink	encode	2401422	1866438	5780013
-small flat struct	blink	decode	784092	730460	835206
-small flat struct	baseline	encode	5110907	2336067	8742023
-small flat struct	baseline	decode	1075755	911021	1231451
-deeply nested object	surge	encode	1609736	1321790	2194763
-deeply nested object	surge	decode	616789	554262	631668
-deeply nested object	fbs	encode	1520913	1469745	2411324
-deeply nested object	fbs	decode	167549	156245	173314
-deeply nested object	serio	encode	444769	403761	461208
-deeply nested object	serio	decode	128792	122419	129375
-deeply nested object	blink	encode	1664641	1304751	3775294
-deeply nested object	blink	decode	535338	489409	624844
-deeply nested object	baseline	encode	3041085	2601457	4967957
-deeply nested object	baseline	decode	654035	607648	780975
-wide struct	surge	encode	1059670	851687	1655794
-wide struct	surge	decode	381250	325781	412659
-wide struct	fbs	encode	722225	643397	928721
-wide struct	fbs	decode	50112	49068	50525
-wide struct	serio	encode	112451	110274	114886
-wide struct	serio	decode	46821	45721	47046
-wide struct	blink	encode	1517128	914077	3191931
-wide struct	blink	decode	303626	278033	326419
-large array	surge	encode	67995	66627	69134
-large array	surge	decode	7164	7121	7198
-large array	fbs	encode	71228	69787	73177
-large array	fbs	decode	2822	2814	2829
-large array	serio	encode	7756	7680	7767
-large array	serio	decode	2671	2654	2677
-large array	blink	encode	143543	140546	144484
-large array	blink	decode	8089	8008	8162
-large record	surge	encode	81196	34226	83328
-large record	surge	decode	14564	14517	14614
-large record	fbs	encode	7018	3253	7044
-large record	fbs	decode	6199	6128	6242
-large record	serio	encode	1170	1004	1170
-large record	serio	decode	3648	3644	3663
-large record	blink	encode	4878	4860	4897
-large record	blink	decode	14981	14804	15144
-string-heavy	surge	encode	32922	32496	33335
-string-heavy	surge	decode	31253	31043	31594
-string-heavy	fbs	encode	18727	18509	18883
-string-heavy	fbs	decode	18157	17962	18244
-string-heavy	serio	encode	3314	3293	3318
-string-heavy	serio	decode	8834	8746	8889
-string-heavy	blink	encode	16728	16563	16753
-string-heavy	blink	decode	33405	32906	33598
-enum-heavy	surge	encode	52308	51134	52588
-enum-heavy	surge	decode	61802	61305	62878
-enum-heavy	fbs	encode	16379	16153	16505
-enum-heavy	fbs	decode	24473	24436	24760
-enum-heavy	serio	encode	6842	6818	6888
-enum-heavy	serio	decode	22261	22146	22513
-tagged union	surge	encode	44074	42590	44585
-tagged union	surge	decode	31072	30524	31473
-tagged union	fbs	encode	6211	6166	6232
-tagged union	fbs	decode	6240	6238	6260
-tagged union	serio	encode	1612	1609	1620
-tagged union	serio	decode	4435	4405	4451
-tagged union	blink	encode	17894	17761	17931
-tagged union	blink	decode	26120	26052	26336
-guarded union	surge	encode	46584	45340	47399
-guarded union	surge	decode	44598	43898	45365
-guarded union	fbs	encode	4663	4657	4700
-guarded union	fbs	decode	14568	14425	14704
-guarded union	serio	encode	2187	2166	2192
-guarded union	serio	decode	10112	10060	10141
-toggles (unpacked)	surge	encode	448742	439151	495688
-toggles (unpacked)	surge	decode	696835	643662	836666
-toggles (unpacked)	fbs	encode	133316	130135	142257
-toggles (unpacked)	fbs	decode	143506	141862	149948
-toggles (unpacked)	serio	encode	51021	50701	51673
-toggles (unpacked)	serio	decode	118942	115044	123236
-toggles (unpacked)	blink	encode	334126	332251	375081
-toggles (unpacked)	blink	decode	588692	558229	725795
-toggles (packed)	surge	encode	479554	424247	544037
-toggles (packed)	surge	decode	171043	166707	186671
-toggles (packed)	fbs	encode	103414	101000	104329
-toggles (packed)	fbs	decode	106150	101829	106672
-toggles (packed)	serio	encode	43288	42858	43655
-toggles (packed)	serio	decode	86048	80330	89395
-CFrame array	surge	encode	54008	53863	54113
-CFrame array	surge	decode	41372	40944	41648
-CFrame array	fbs	encode	32404	31735	32870
-CFrame array	fbs	decode	22315	21993	22424
-CFrame array	serio	encode	2078	2074	2086
-CFrame array	serio	decode	6455	6405	6480
-CFrame array	blink	encode	50405	48723	51344
-CFrame array	blink	decode	35200	34824	35682
-CFrame array	baseline	encode	58359	56481	60541
-CFrame array	baseline	decode	43448	42236	43763
-CFrame array (packed, axis-aligned)	surge	encode	20175	20087	20279
-CFrame array (packed, axis-aligned)	surge	decode	42942	42761	43721
-CFrame array (packed, axis-aligned)	fbs	encode	13516	13350	13549
-CFrame array (packed, axis-aligned)	fbs	decode	18988	18879	19211
-CFrame array (packed, axis-aligned)	serio	encode	597	596	598
-CFrame array (packed, axis-aligned)	serio	decode	5858	5838	5901
-CFrame array (packed, arbitrary)	surge	encode	17407	17352	17660
-CFrame array (packed, arbitrary)	surge	decode	29860	29184	30177
-CFrame array (packed, arbitrary)	fbs	encode	13199	12966	13236
-CFrame array (packed, arbitrary)	fbs	decode	18732	18577	18822
-CFrame array (packed, arbitrary)	serio	encode	593	593	594
-CFrame array (packed, arbitrary)	serio	decode	5769	5750	5780
-Blink: Booleans	surge	encode	7784	7705	7796
-Blink: Booleans	surge	decode	6769	6724	6809
-Blink: Booleans	fbs	encode	2834	2819	2847
-Blink: Booleans	fbs	decode	2766	2759	2776
-Blink: Booleans	serio	encode	1139	1135	1142
-Blink: Booleans	serio	decode	2417	2407	2423
-Blink: Booleans	blink	encode	8264	8222	8304
-Blink: Booleans	blink	decode	8113	8044	8200
-Blink: Entities	surge	encode	52918	51762	54646
-Blink: Entities	surge	decode	28228	28203	28447
-Blink: Entities	fbs	encode	4023	4013	4046
-Blink: Entities	fbs	decode	3567	3566	3575
-Blink: Entities	serio	encode	1066	1064	1068
-Blink: Entities	serio	decode	3382	3363	3388
-Blink: Entities	blink	encode	63003	61810	63223
-Blink: Entities	blink	decode	20644	20507	20807
+small flat struct	surge	encode	2478991	1894298	6164468
+small flat struct	surge	decode	982898	892889	1040182
+small flat struct	fbs	encode	1685857	1465244	2020488
+small flat struct	fbs	decode	328527	304113	344480
+small flat struct	serio	encode	783239	730300	974089
+small flat struct	serio	decode	288880	278872	294360
+small flat struct	blink	encode	2428127	2074517	2601931
+small flat struct	blink	decode	893887	719466	976257
+small flat struct	baseline	encode	5545697	5174644	10305029
+small flat struct	baseline	decode	978790	935848	1253620
+deeply nested object	surge	encode	1876806	1765755	2433208
+deeply nested object	surge	decode	669671	582228	699898
+deeply nested object	fbs	encode	1567374	1230466	2020120
+deeply nested object	fbs	decode	167052	159324	167663
+deeply nested object	serio	encode	451378	435855	495651
+deeply nested object	serio	decode	128794	125663	133188
+deeply nested object	blink	encode	1777114	1564725	3893020
+deeply nested object	blink	decode	556007	521564	661437
+deeply nested object	baseline	encode	4373879	4174494	7435497
+deeply nested object	baseline	decode	685627	653036	788053
+wide struct	surge	encode	1785555	1512653	4195335
+wide struct	surge	decode	404081	386312	422547
+wide struct	fbs	encode	665562	596139	710687
+wide struct	fbs	decode	49871	49690	51165
+wide struct	serio	encode	116212	112971	118451
+wide struct	serio	decode	46500	46296	47200
+wide struct	blink	encode	1461817	885528	3399048
+wide struct	blink	decode	328530	290457	347441
+large array	surge	encode	115674	112548	117251
+large array	surge	decode	7650	7628	7690
+large array	fbs	encode	68919	67950	70235
+large array	fbs	decode	2785	2783	2794
+large array	serio	encode	7723	7676	7744
+large array	serio	decode	2652	2628	2660
+large array	blink	encode	136066	130492	139970
+large array	blink	decode	7989	7953	8051
+large record	surge	encode	122355	117689	125998
+large record	surge	decode	15129	14852	15275
+large record	fbs	encode	87828	6915	88676
+large record	fbs	decode	6267	6188	6305
+large record	serio	encode	1168	737	1174
+large record	serio	decode	3655	3652	3669
+large record	blink	encode	4864	4840	4872
+large record	blink	decode	15219	15128	15300
+string-heavy	surge	encode	34293	33978	34804
+string-heavy	surge	decode	33048	32570	33121
+string-heavy	fbs	encode	18590	18540	18690
+string-heavy	fbs	decode	18313	17921	18451
+string-heavy	serio	encode	3328	3318	3349
+string-heavy	serio	decode	8931	8856	8955
+string-heavy	blink	encode	16686	16549	16717
+string-heavy	blink	decode	33865	33539	34071
+enum-heavy	surge	encode	54267	52267	55700
+enum-heavy	surge	decode	70356	69832	71421
+enum-heavy	fbs	encode	16355	16331	16390
+enum-heavy	fbs	decode	24900	24670	25026
+enum-heavy	serio	encode	6887	6884	6917
+enum-heavy	serio	decode	22202	22140	22372
+tagged union	surge	encode	50417	50185	51024
+tagged union	surge	decode	35622	35317	36040
+tagged union	fbs	encode	6201	6191	6219
+tagged union	fbs	decode	6313	6293	6320
+tagged union	serio	encode	1626	1625	1630
+tagged union	serio	decode	4527	4517	4548
+tagged union	blink	encode	17881	17789	17958
+tagged union	blink	decode	26728	26602	26984
+guarded union	surge	encode	51049	49706	51963
+guarded union	surge	decode	49212	49165	50120
+guarded union	fbs	encode	4610	4569	4635
+guarded union	fbs	decode	14477	14399	14595
+guarded union	serio	encode	2178	2175	2189
+guarded union	serio	decode	10171	10052	10200
+toggles (unpacked)	surge	encode	514467	480834	594820
+toggles (unpacked)	surge	decode	759555	688061	971865
+toggles (unpacked)	fbs	encode	134201	131916	135859
+toggles (unpacked)	fbs	decode	143813	140804	152778
+toggles (unpacked)	serio	encode	51254	50813	52728
+toggles (unpacked)	serio	decode	120148	115929	123658
+toggles (unpacked)	blink	encode	365726	302848	372627
+toggles (unpacked)	blink	decode	614602	544440	735705
+toggles (packed)	surge	encode	493954	488594	562208
+toggles (packed)	surge	decode	169891	164725	180977
+toggles (packed)	fbs	encode	104601	101806	105495
+toggles (packed)	fbs	decode	104129	101540	108017
+toggles (packed)	serio	encode	43409	43055	44240
+toggles (packed)	serio	decode	87640	83431	89163
+CFrame array	surge	encode	54882	53995	55842
+CFrame array	surge	decode	48166	47734	48950
+CFrame array	fbs	encode	32344	32147	32913
+CFrame array	fbs	decode	22147	21988	22296
+CFrame array	serio	encode	2105	2097	2113
+CFrame array	serio	decode	6553	6492	6614
+CFrame array	blink	encode	49993	49431	51509
+CFrame array	blink	decode	35506	34921	35791
+CFrame array	baseline	encode	59087	58738	59567
+CFrame array	baseline	decode	50852	49954	51347
+CFrame array (packed, axis-aligned)	surge	encode	20525	20382	20733
+CFrame array (packed, axis-aligned)	surge	decode	44183	43842	45009
+CFrame array (packed, axis-aligned)	fbs	encode	13599	13495	13734
+CFrame array (packed, axis-aligned)	fbs	decode	18953	18878	19087
+CFrame array (packed, axis-aligned)	serio	encode	595	592	595
+CFrame array (packed, axis-aligned)	serio	decode	5951	5888	5979
+CFrame array (packed, arbitrary)	surge	encode	17669	17611	17900
+CFrame array (packed, arbitrary)	surge	decode	30704	29898	30867
+CFrame array (packed, arbitrary)	fbs	encode	13244	13165	13258
+CFrame array (packed, arbitrary)	fbs	decode	18808	18761	18928
+CFrame array (packed, arbitrary)	serio	encode	589	588	591
+CFrame array (packed, arbitrary)	serio	decode	5831	5785	5862
+Blink: Booleans	surge	encode	8550	8512	8575
+Blink: Booleans	surge	decode	7784	7685	7799
+Blink: Booleans	fbs	encode	2813	2805	2821
+Blink: Booleans	fbs	decode	2770	2769	2776
+Blink: Booleans	serio	encode	1136	1134	1137
+Blink: Booleans	serio	decode	2439	2433	2443
+Blink: Booleans	blink	encode	8194	8136	8225
+Blink: Booleans	blink	decode	8022	8012	8093
+Blink: Entities	surge	encode	70292	68742	71003
+Blink: Entities	surge	decode	33520	33197	34858
+Blink: Entities	fbs	encode	4041	4029	4062
+Blink: Entities	fbs	decode	3595	3571	3607
+Blink: Entities	serio	encode	1070	1067	1072
+Blink: Entities	serio	decode	3382	3356	3397
+Blink: Entities	blink	encode	62712	60907	64810
+Blink: Entities	blink	decode	20905	19954	21328

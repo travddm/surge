@@ -150,8 +150,8 @@ The speed tier has since run, through `run-in-roblox`, and
 [benchmarks/speed.md](../benchmarks/speed.md) records it. It opened with surge
 encoding 2.87× slower than that baseline and decoding 1.63× slower on
 identical bytes, on the one of its three rows whose trials are quiet. Those
-two figures are 1.08× and 1.05× now, with the baseline still ahead on both
-halves by a margin its trials can still separate. Its columns are not all compiled alike,
+two figures are 1.08× and 1.05× now, and 1.08× and 1.06× once both sides took
+the directives surge recommends, with the baseline still ahead on both
 which that file states first — fbs and Blink carry `--!native` where
 roblox-ts emits none.
 
@@ -386,7 +386,7 @@ The order below has changed: its first step is done.
 [generated-code-performance.md](generated-code-performance.md) was first
 because the hand-written baseline had put a number on it. Every large item in
 it has now landed, the last being the inline reservation, and the gap it was
-written about is 1.08× on encode and 1.05× on decode where it was 2.87× and
+written about is 1.08× on encode and 1.06× on decode where it was 2.87× and
 1.63×. What is left there is the smaller items and one coalescing case, none
 of them the size of what landed, so the document moves to No step of its own
 and stops being a step.

@@ -12,25 +12,24 @@ The `±` figure is the whole gap between that cell's slowest and fastest
 trial, as a fraction of its median. It is not a confidence interval: it
 is the raw noise, and a difference narrower than it says nothing.
 
-**The columns are not compiled alike.** Every module this repository
-compiles carries `--!optimize 2`, which is the level a published place
-compiles at and Studio does not: surge's package, each fixture, the
-adapters, and the hand-written baseline. fbs carries it on the two
-modules its codec runs in and Blink's generated module carries it too,
-with `--!native` alongside, so both of those codecs are natively
-compiled where surge's generated code is not. surge's package carries
-`//!native` on four modules, but nothing the generated code does per
-field goes there any more: it reserves its own bytes inline, so what is
-left in the package runs once per doubling or once per call. serio
-carries nothing at all.
-`--!native` is worth a large multiple on the kind of loop a codec is
-made of, and 1.02× on surge's generated code, measured before its
-reservations moved inline — both recorded in
+**This table measures the configuration surge recommends.** Every module
+this repository compiles carries `--!optimize 2`, which is the level a
+published place compiles at and Studio does not. Each benchmark fixture,
+where the generated serializers live, carries `--!native` as well, and so
+does the hand-written baseline, so the two stay compiled alike and the
+distance between them is still code and not compilation mode. That is the
+shape surge tells a consumer to use: a module holding the serializers and
+the types they are built from, and nothing else, marked with both
+directives.
+`--!native` is worth about 1.10× on decode and 1.03× to 1.07× on encode on
+surge's generated code, measured twice with every other column as a control,
+and 1.70× on the one row whose single call runs a thousand-element loop. Both
+measurements are recorded in
 [future-work/generated-code-performance.md](../future-work/generated-code-performance.md).
-So the fbs and Blink columns are not a like-for-like comparison of codec
-design, and nothing here separates how much of their lead is the
-directives. The baseline column is like for like; serio is a level
-below.
+fbs and Blink carry both directives as they ship, on the modules their
+codecs run in. serio carries neither, and is the one column a level below
+the rest. So nothing here separates how much of any lead is codec design
+from how much is the directives, except against serio, where it is both.
 
 One value is encoded over and over and every result is discarded, so a
 number here is throughput for one shape in a warm loop, not an
@@ -50,11 +49,11 @@ other columns of the same run, never against a number from another file.
 
 The run:
 
-- Date: 2026-09-22
+- Date: 2026-09-23
 - Roblox: 0.739.0.7390687
 - Machine: 12th Gen Intel(R) Core(TM) i9-12900KF, 16 threads, win32 10.0.26200
-- surge: 9f6ff4c
-- rbxts-transformer-surge: 7f46c81
+- surge: 0b4a259 (uncommitted changes)
+- rbxts-transformer-surge: 14d9e27
 - roblox-ts: 3.0.0
 - @rbxts/flamework-binary-serializer: 0.7.0
 - @rbxts/serio: 1.2.7
@@ -62,42 +61,42 @@ The run:
 
 ## Encode
 
-| Fixture                             | surge       | fbs                 | serio               | blink               | baseline            |
-| ----------------------------------- | ----------- | ------------------- | ------------------- | ------------------- | ------------------- |
-| small flat struct                   | 2.24M ±131% | 1.79M (0.80×) ±32%  | 774.3k (0.35×) ±22% | 2.40M (1.07×) ±163% | 5.11M (2.29×) ±125% |
-| deeply nested object                | 1.61M ±54%  | 1.52M (0.94×) ±62%  | 444.8k (0.28×) ±13% | 1.66M (1.03×) ±148% | 3.04M (1.89×) ±78%  |
-| wide struct                         | 1.06M ±76%  | 722.2k (0.68×) ±40% | 112.5k (0.11×) ±4%  | 1.52M (1.43×) ±150% | —                   |
-| large array                         | 68.0k ±4%   | 71.2k (1.05×) ±5%   | 7.8k (0.11×) ±1%    | 143.5k (2.11×) ±3%  | —                   |
-| large record                        | 81.2k ±60%  | 7.0k (0.09×) ±54%   | 1.2k (0.01×) ±14%   | 4.9k (0.06×) ±0.8%  | —                   |
-| string-heavy                        | 32.9k ±3%   | 18.7k (0.57×) ±2%   | 3.3k (0.10×) ±0.8%  | 16.7k (0.51×) ±1%   | —                   |
-| enum-heavy                          | 52.3k ±3%   | 16.4k (0.31×) ±2%   | 6.8k (0.13×) ±1%    | —                   | —                   |
-| tagged union                        | 44.1k ±5%   | 6.2k (0.14×) ±1%    | 1.6k (0.04×) ±0.7%  | 17.9k (0.41×) ±1.0% | —                   |
-| guarded union                       | 46.6k ±4%   | 4.7k (0.10×) ±0.9%  | 2.2k (0.05×) ±1%    | —                   | —                   |
-| toggles (unpacked)                  | 448.7k ±13% | 133.3k (0.30×) ±9%  | 51.0k (0.11×) ±2%   | 334.1k (0.74×) ±13% | —                   |
-| toggles (packed)                    | 479.6k ±25% | 103.4k (0.22×) ±3%  | 43.3k (0.09×) ±2%   | —                   | —                   |
-| CFrame array                        | 54.0k ±0.5% | 32.4k (0.60×) ±4%   | 2.1k (0.04×) ±0.6%  | 50.4k (0.93×) ±5%   | 58.4k (1.08×) ±7%   |
-| CFrame array (packed, axis-aligned) | 20.2k ±1.0% | 13.5k (0.67×) ±1%   | 597 (0.03×) ±0.3%   | —                   | —                   |
-| CFrame array (packed, arbitrary)    | 17.4k ±2%   | 13.2k (0.76×) ±2%   | 593 (0.03×) ±0.2%   | —                   | —                   |
-| Blink: Booleans                     | 7.8k ±1%    | 2.8k (0.36×) ±1.0%  | 1.1k (0.15×) ±0.6%  | 8.3k (1.06×) ±1.0%  | —                   |
-| Blink: Entities                     | 52.9k ±5%   | 4.0k (0.08×) ±0.8%  | 1.1k (0.02×) ±0.4%  | 63.0k (1.19×) ±2%   | —                   |
+| Fixture                             | surge       | fbs                 | serio               | blink               | baseline           |
+| ----------------------------------- | ----------- | ------------------- | ------------------- | ------------------- | ------------------ |
+| small flat struct                   | 2.48M ±172% | 1.69M (0.68×) ±33%  | 783.2k (0.32×) ±31% | 2.43M (0.98×) ±22%  | 5.55M (2.24×) ±93% |
+| deeply nested object                | 1.88M ±36%  | 1.57M (0.84×) ±50%  | 451.4k (0.24×) ±13% | 1.78M (0.95×) ±131% | 4.37M (2.33×) ±75% |
+| wide struct                         | 1.79M ±150% | 665.6k (0.37×) ±17% | 116.2k (0.07×) ±5%  | 1.46M (0.82×) ±172% | —                  |
+| large array                         | 115.7k ±4%  | 68.9k (0.60×) ±3%   | 7.7k (0.07×) ±0.9%  | 136.1k (1.18×) ±7%  | —                  |
+| large record                        | 122.4k ±7%  | 87.8k (0.72×) ±93%  | 1.2k (0.01×) ±37%   | 4.9k (0.04×) ±0.7%  | —                  |
+| string-heavy                        | 34.3k ±2%   | 18.6k (0.54×) ±0.8% | 3.3k (0.10×) ±0.9%  | 16.7k (0.49×) ±1%   | —                  |
+| enum-heavy                          | 54.3k ±6%   | 16.4k (0.30×) ±0.4% | 6.9k (0.13×) ±0.5%  | —                   | —                  |
+| tagged union                        | 50.4k ±2%   | 6.2k (0.12×) ±0.5%  | 1.6k (0.03×) ±0.3%  | 17.9k (0.35×) ±0.9% | —                  |
+| guarded union                       | 51.0k ±4%   | 4.6k (0.09×) ±1%    | 2.2k (0.04×) ±0.6%  | —                   | —                  |
+| toggles (unpacked)                  | 514.5k ±22% | 134.2k (0.26×) ±3%  | 51.3k (0.10×) ±4%   | 365.7k (0.71×) ±19% | —                  |
+| toggles (packed)                    | 494.0k ±15% | 104.6k (0.21×) ±4%  | 43.4k (0.09×) ±3%   | —                   | —                  |
+| CFrame array                        | 54.9k ±3%   | 32.3k (0.59×) ±2%   | 2.1k (0.04×) ±0.8%  | 50.0k (0.91×) ±4%   | 59.1k (1.08×) ±1%  |
+| CFrame array (packed, axis-aligned) | 20.5k ±2%   | 13.6k (0.66×) ±2%   | 595 (0.03×) ±0.5%   | —                   | —                  |
+| CFrame array (packed, arbitrary)    | 17.7k ±2%   | 13.2k (0.75×) ±0.7% | 589 (0.03×) ±0.5%   | —                   | —                  |
+| Blink: Booleans                     | 8.6k ±0.7%  | 2.8k (0.33×) ±0.6%  | 1.1k (0.13×) ±0.3%  | 8.2k (0.96×) ±1%    | —                  |
+| Blink: Entities                     | 70.3k ±3%   | 4.0k (0.06×) ±0.8%  | 1.1k (0.02×) ±0.5%  | 62.7k (0.89×) ±6%   | —                  |
 
 ## Decode
 
-| Fixture                             | surge       | fbs                 | serio               | blink               | baseline            |
-| ----------------------------------- | ----------- | ------------------- | ------------------- | ------------------- | ------------------- |
-| small flat struct                   | 1.07M ±13%  | 314.0k (0.29×) ±12% | 288.1k (0.27×) ±9%  | 784.1k (0.73×) ±13% | 1.08M (1.01×) ±30%  |
-| deeply nested object                | 616.8k ±13% | 167.5k (0.27×) ±10% | 128.8k (0.21×) ±5%  | 535.3k (0.87×) ±25% | 654.0k (1.06×) ±27% |
-| wide struct                         | 381.3k ±23% | 50.1k (0.13×) ±3%   | 46.8k (0.12×) ±3%   | 303.6k (0.80×) ±16% | —                   |
-| large array                         | 7.2k ±1%    | 2.8k (0.39×) ±0.5%  | 2.7k (0.37×) ±0.9%  | 8.1k (1.13×) ±2%    | —                   |
-| large record                        | 14.6k ±0.7% | 6.2k (0.43×) ±2%    | 3.6k (0.25×) ±0.5%  | 15.0k (1.03×) ±2%   | —                   |
-| string-heavy                        | 31.3k ±2%   | 18.2k (0.58×) ±2%   | 8.8k (0.28×) ±2%    | 33.4k (1.07×) ±2%   | —                   |
-| enum-heavy                          | 61.8k ±3%   | 24.5k (0.40×) ±1%   | 22.3k (0.36×) ±2%   | —                   | —                   |
-| tagged union                        | 31.1k ±3%   | 6.2k (0.20×) ±0.4%  | 4.4k (0.14×) ±1%    | 26.1k (0.84×) ±1%   | —                   |
-| guarded union                       | 44.6k ±3%   | 14.6k (0.33×) ±2%   | 10.1k (0.23×) ±0.8% | —                   | —                   |
-| toggles (unpacked)                  | 696.8k ±28% | 143.5k (0.21×) ±6%  | 118.9k (0.17×) ±7%  | 588.7k (0.84×) ±28% | —                   |
-| toggles (packed)                    | 171.0k ±12% | 106.2k (0.62×) ±5%  | 86.0k (0.50×) ±11%  | —                   | —                   |
-| CFrame array                        | 41.4k ±2%   | 22.3k (0.54×) ±2%   | 6.5k (0.16×) ±1%    | 35.2k (0.85×) ±2%   | 43.4k (1.05×) ±4%   |
-| CFrame array (packed, axis-aligned) | 42.9k ±2%   | 19.0k (0.44×) ±2%   | 5.9k (0.14×) ±1%    | —                   | —                   |
-| CFrame array (packed, arbitrary)    | 29.9k ±3%   | 18.7k (0.63×) ±1%   | 5.8k (0.19×) ±0.5%  | —                   | —                   |
-| Blink: Booleans                     | 6.8k ±1%    | 2.8k (0.41×) ±0.6%  | 2.4k (0.36×) ±0.7%  | 8.1k (1.20×) ±2%    | —                   |
-| Blink: Entities                     | 28.2k ±0.9% | 3.6k (0.13×) ±0.3%  | 3.4k (0.12×) ±0.7%  | 20.6k (0.73×) ±1%   | —                   |
+| Fixture                             | surge       | fbs                 | serio              | blink               | baseline            |
+| ----------------------------------- | ----------- | ------------------- | ------------------ | ------------------- | ------------------- |
+| small flat struct                   | 982.9k ±15% | 328.5k (0.33×) ±12% | 288.9k (0.29×) ±5% | 893.9k (0.91×) ±29% | 978.8k (1.00×) ±32% |
+| deeply nested object                | 669.7k ±18% | 167.1k (0.25×) ±5%  | 128.8k (0.19×) ±6% | 556.0k (0.83×) ±25% | 685.6k (1.02×) ±20% |
+| wide struct                         | 404.1k ±9%  | 49.9k (0.12×) ±3%   | 46.5k (0.12×) ±2%  | 328.5k (0.81×) ±17% | —                   |
+| large array                         | 7.7k ±0.8%  | 2.8k (0.36×) ±0.4%  | 2.7k (0.35×) ±1%   | 8.0k (1.04×) ±1%    | —                   |
+| large record                        | 15.1k ±3%   | 6.3k (0.41×) ±2%    | 3.7k (0.24×) ±0.5% | 15.2k (1.01×) ±1%   | —                   |
+| string-heavy                        | 33.0k ±2%   | 18.3k (0.55×) ±3%   | 8.9k (0.27×) ±1%   | 33.9k (1.02×) ±2%   | —                   |
+| enum-heavy                          | 70.4k ±2%   | 24.9k (0.35×) ±1%   | 22.2k (0.32×) ±1%  | —                   | —                   |
+| tagged union                        | 35.6k ±2%   | 6.3k (0.18×) ±0.4%  | 4.5k (0.13×) ±0.7% | 26.7k (0.75×) ±1%   | —                   |
+| guarded union                       | 49.2k ±2%   | 14.5k (0.29×) ±1%   | 10.2k (0.21×) ±1%  | —                   | —                   |
+| toggles (unpacked)                  | 759.6k ±37% | 143.8k (0.19×) ±8%  | 120.1k (0.16×) ±6% | 614.6k (0.81×) ±31% | —                   |
+| toggles (packed)                    | 169.9k ±10% | 104.1k (0.61×) ±6%  | 87.6k (0.52×) ±7%  | —                   | —                   |
+| CFrame array                        | 48.2k ±3%   | 22.1k (0.46×) ±1%   | 6.6k (0.14×) ±2%   | 35.5k (0.74×) ±2%   | 50.9k (1.06×) ±3%   |
+| CFrame array (packed, axis-aligned) | 44.2k ±3%   | 19.0k (0.43×) ±1%   | 6.0k (0.13×) ±2%   | —                   | —                   |
+| CFrame array (packed, arbitrary)    | 30.7k ±3%   | 18.8k (0.61×) ±0.9% | 5.8k (0.19×) ±1%   | —                   | —                   |
+| Blink: Booleans                     | 7.8k ±1%    | 2.8k (0.36×) ±0.3%  | 2.4k (0.31×) ±0.4% | 8.0k (1.03×) ±1%    | —                   |
+| Blink: Entities                     | 33.5k ±5%   | 3.6k (0.11×) ±1%    | 3.4k (0.10×) ±1%   | 20.9k (0.62×) ±7%   | —                   |

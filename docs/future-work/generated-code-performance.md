@@ -7,8 +7,9 @@ was written, [benchmarks/speed.md](../benchmarks/speed.md) put surge 2.87×
 behind a hand-written codec that writes its exact bytes on encode, and 1.63×
 behind it on decode, on the `CFrame` array — the one of the baseline's three
 rows whose trials are quiet enough to read. That gap is what the document was
-about. It is 1.08× and 1.05× now. The baseline is still ahead on both
-halves, and separably so: the two columns' trials do not overlap on either.
+about. It is 1.08× and 1.05× now with both sides interpreted, and 1.08× and
+1.06× with both compiled the way surge recommends, which is what the catalog
+measures since. The baseline is still ahead on both
 
 Eleven things were measured on their own to get there. Seven are changes that
 landed: the read loop, worth nothing; the tagged-union read's table copy,
@@ -572,6 +573,13 @@ it at all. The write path still has a capacity compare per reservation, a
 call wrapping two C calls, which is exactly the shape the copy-collapse table
 above shows native cannot help.
 
+The run that took the catalog to that configuration measured the same
+directive on the hand-written baseline at the same time, since both were
+marked together: its one readable cell moved 1.170× on decode, against surge's
+1.103×. Native is worth a little more to straight-line hand-written Luau than
+to the generated code, and marking only one of the two would have put that
+difference into the gap between them.
+
 **What it does not settle.** Fourteen surge cells are too noisy to read, and
 three of them carry the largest apparent gains in the run: the large array's
 encode at 1.66× on trials that widened from 3.7% to 9%, the large record's at
@@ -819,9 +827,13 @@ throwaway build and once by the emitter:
 **What it closes.** On the `CFrame` array, the one baseline row quiet in both
 halves, a hand-written codec writing surge's exact bytes encoded 2.87× faster
 and decoded 1.63× faster. It encodes 1.08× faster now and decodes 1.05×
-faster. Both are real rather than noise: the trials do not overlap on either
+faster, with both sides interpreted, which is the pair that isolates the
+change. Both are real rather than noise: the trials do not overlap on either
 half — 53.9k to 54.1k against 56.5k to 60.5k on encode, and 40.9k to 41.6k
-against 42.2k to 43.8k on decode. The baseline is still the fastest column
+against 42.2k to 43.8k on decode. The catalog has since moved to the
+configuration surge recommends, `--!native` on the fixtures and on the
+baseline together, where the same row reads 1.08× and 1.06× — the same gap,
+moved up on both sides. The baseline is still the fastest column
 on the rows it has, by a margin the harness can still see, and what changed
 is its size. Against the other libraries, surge
 leads fbs on 15 of 16 encode rows and all 16 decode rows, where it was behind
@@ -990,7 +1002,13 @@ generation compiles.
   every number above 1.02× came off a per-element cost, and every one below
   came off a per-call cost. Read only the cells whose trials span a few
   percent, and pick the protocol from the row: a scoped pair where its trials
-  are quiet scoped, a full pair where they are not.
+  are quiet scoped, a full pair where they are not. Compare a full run against
+  the checked-in table and not against a figure quoted in this document: the
+  catalog carried `--!native` on the fixtures and the baseline from the run
+  after `0b4a259`, so a comparison reaching back past it measures a change of
+  compilation mode as well as whatever else moved. That is the same mistake
+  the first native run made one level down, when it treated the baseline as a
+  control while marking it.
 - Recommend both directives as defaults, and recommend the file shape that
   makes them safe: a module holding the serializers and the types they are
   built from, and nothing else. A TypeScript type emits no Luau, and roblox-ts
