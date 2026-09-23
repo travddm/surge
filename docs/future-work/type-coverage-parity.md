@@ -126,8 +126,8 @@ These differences are design choices, not bugs, and should stay:
 ## Gaps to close
 
 **Tier A: walker and emitter work on the existing type surface.** These
-are TypeScript types fbs or serio already handle and surge currently
-mishandles or drops.
+were TypeScript types fbs or serio already handle and surge mishandled or
+dropped.
 
 1. Every Roblox datatype that surge's column above marks `side`. fbs and
    serio both use the `_nominal_*` brand key `@rbxts/types` puts on every

@@ -8,10 +8,11 @@ match the ones that land first.
 
 ## What
 
-Today `DataType` is ten width brands plus `Packed<T>`
-(`@rbxts/surge`'s `src/data-type.ts`). Tier B adds bounds, per-component
-widths, and ranges, which a TypeScript type has nowhere to put without a
-helper type.
+`DataType` began as ten width brands plus `Packed<T>` (`@rbxts/surge`'s
+`src/data-type.ts`). Tier B adds bounds, per-component widths, and ranges,
+which a TypeScript type has nowhere to put without a helper type. The table
+below decides all of them at once; Order at the end records which have
+landed.
 
 | Brand                | Applies to                                                  | Defaults                | Why this name                                                                                         |
 | -------------------- | ----------------------------------------------------------- | ----------------------- | ----------------------------------------------------------------------------------------------------- |
@@ -123,17 +124,16 @@ would say so.
   only. A parameterized brand also needs `aliasTypeArguments`, plus the
   brand-property fallback for a re-alias
   (`type Ids = DataType.Length<string[], u16>`), which carries its own
-  `aliasSymbol`. `getPackedInnerType` already has both paths; they generalize.
+  `aliasSymbol`. `getSurgeBrand` has both paths, and a brand added later is
+  one row of its `PARAMETERIZED_BRANDS` table.
 - **Every brand's alias-identity check must run before any brand-property
-  fallback.** `Length<Packed<T>, u16>` is
-  `T & { _surge_packed?: [T] } & { _surge_length?: ... }`. `walk()` calls
-  `getPackedInnerType` first; its alias check sees `Length` and misses, then
-  its property fallback finds `_surge_packed` and returns `T`, dropping the
-  length brand with no error. Today `Packed` is the only brand with a
-  fallback, so this cannot happen; it appears with the second one. The other
-  order, `Packed<Length<T, u16>>`, is safe: the alias check matches `Packed`,
-  and the `Length<T, u16>` it recurses into carries no `_surge_packed`. Write
-  the failing order's test first.
+  fallback.** `Length<Packed<T>, u16>` flattens to one intersection carrying
+  both brand properties, so a property check made one brand at a time answers
+  "Packed" and drops the length with no error. `getSurgeBrand` tries alias
+  identity for every brand before any property, and `Length<T, L>` in
+  [transformer.md](../transformer.md) describes how it then resolves a
+  re-aliased composition. A brand added later inherits this by joining
+  `PARAMETERIZED_BRANDS`; `walk.test.ts` pins both orders.
 - The IR (`field.ts`): `str`, `array`, `dict`, `buffer`, and `tuple`'s `rest`
   each take an optional length width. Absent means u32, per rule 4.
 - Exact-length semantics, which the note fixes because the emitter cannot.
