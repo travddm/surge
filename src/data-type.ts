@@ -21,6 +21,24 @@ export namespace DataType {
 	export type i32 = number & { readonly _surge_i32?: never };
 
 	/**
+	 * Sets the width of the count `T`'s encoding writes ahead of its
+	 * contents. Applies to a `string`, an array, a `Map`, a `Set`, a
+	 * `Record`, a `buffer`, and a tuple's rest element; on anything else the
+	 * transformer reports a diagnostic. `L` must be one of {@link u8},
+	 * {@link u16}, {@link u24}, or {@link u32}.
+	 *
+	 * The default is `u32`, which is what an unbranded container writes, so
+	 * `Length<T>` and `T` encode identically. A narrower width saves the
+	 * difference on every value and truncates silently above what it can
+	 * count, so it states a bound the shape is known to keep.
+	 *
+	 * Unlike {@link Packed}, this applies to the container it wraps and not
+	 * to the subtree under it: in `Length<Array<Array<string>>, u16>` the
+	 * outer array takes the u16 count and the inner ones keep `u32`.
+	 */
+	export type Length<T, L extends u8 | u16 | u24 | u32 = u32> = T & { readonly _surge_length?: [T, L] };
+
+	/**
 	 * Opts a subtree into the smaller encodings. As a direct property of an
 	 * object inside it, a `boolean`, an `optional`'s presence, and the tag of
 	 * a two-variant tagged union are 1 bit each, not 1 byte. A `CFrame`

@@ -1,6 +1,6 @@
 //!optimize 2
 import { Assert, Fact } from "@rbxts/runit";
-import { createBinarySerializer } from "@rbxts/surge";
+import { DataType, createBinarySerializer } from "@rbxts/surge";
 
 import { Rng, difference } from "../support";
 
@@ -34,6 +34,20 @@ const optionalsSerializer = createBinarySerializer<WithNestedOptionals>();
 
 type Grid = number[][];
 const gridSerializer = createBinarySerializer<Grid>();
+
+// Every kind that writes a count, each bounded to a narrower one. The
+// counts are read back at the same width they were written at, which a byte
+// pin alone would not show (see future-work/data-type-surface.md).
+interface WithBounds {
+	bytes: DataType.Length<buffer, DataType.u8>;
+	list: DataType.Length<Point[], DataType.u8>;
+	nested: DataType.Length<Array<DataType.Length<string, DataType.u8>>, DataType.u16>;
+	pair: DataType.Length<[string, ...number[]], DataType.u8>;
+	record: DataType.Length<Record<string, DataType.u8>, DataType.u8>;
+	set: DataType.Length<Set<string>, DataType.u8>;
+	text: DataType.Length<string, DataType.u16>;
+}
+const boundsSerializer = createBinarySerializer<WithBounds>();
 
 const FUZZ_ITERATIONS = 100;
 
@@ -160,6 +174,36 @@ class CollectionsTest {
 			};
 			const { buffer, blobs } = optionalsSerializer.serialize(value);
 			Assert.equal(undefined, difference(value, optionalsSerializer.deserialize(buffer, blobs)));
+		}
+	}
+
+	@Fact
+	public roundTripsRandomBoundedContainers(): void {
+		const rng = new Rng(11);
+		for (const _ of $range(1, FUZZ_ITERATIONS)) {
+			const rest = new Array<number>();
+			for (const __ of $range(1, rng.int(0, 6))) {
+				rest.push(rng.f64());
+			}
+			const list = new Array<Point>();
+			for (const __ of $range(1, rng.int(0, 6))) {
+				list.push(randomPoint(rng));
+			}
+			const nested = new Array<string>();
+			for (const __ of $range(1, rng.int(0, 6))) {
+				nested.push(rng.str());
+			}
+			const value: WithBounds = {
+				bytes: buffer.fromstring(rng.str()),
+				list,
+				nested,
+				pair: [rng.str(), ...rest],
+				record: { [rng.str()]: rng.int(0, 255) },
+				set: new Set([rng.str(), rng.str()]),
+				text: rng.str(),
+			};
+			const { buffer: written, blobs } = boundsSerializer.serialize(value);
+			Assert.equal(undefined, difference(value, boundsSerializer.deserialize(written, blobs)));
 		}
 	}
 }

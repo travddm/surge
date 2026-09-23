@@ -167,11 +167,16 @@ exist in a type-driven design.** Blink and Zap get their size advantage
 from bounds declared in the IDL; a TypeScript type has nowhere to put a
 bound without a helper type.
 
-1. Length-typed containers: `DataType.String<L>`, `List<T, L>`,
-   `Map<K, V, L>`, `Set<T, L>` choosing the prefix width (serio's shape),
-   plus an exact-length form that omits the prefix (Blink and Zap). This is
-   the single biggest bandwidth lever: every string, array, map, and set
-   costs 4 bytes of prefix today versus 2 in Blink and Zap by default.
+1. Length-typed containers. The width form has **landed** as one brand,
+   `DataType.Length<T, L>`, over all five kinds that write a count — `string`,
+   array, `Map`/`Set`/`Record`, `buffer`, and a tuple's rest element — rather
+   than serio's four; [data-type-surface.md](data-type-surface.md) records
+   why, and `Length<T, L>` in [transformer.md](../transformer.md) describes
+   it. `L` defaults to `u32`, so nothing moves until a shape asks. Still open:
+   the exact-length form that omits the prefix entirely (Blink and Zap), whose
+   truncation contract that note fixes. This is the single biggest bandwidth
+   lever: every unbounded string, array, map, and set costs 4 bytes of prefix
+   against 2 in Blink and Zap by default.
 2. Per-component widths for `Vector3` and `CFrame`
    (`Vector<X, Y, Z>`, `Transform<...>` in serio; `vector<T>` in Blink and
    Zap). Zap's `AlignedCFrame` (u8 index + position, 13 bytes) is decided

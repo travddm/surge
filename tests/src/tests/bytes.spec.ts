@@ -32,6 +32,28 @@ interface Containers {
 }
 const containersSerializer = createBinarySerializer<Containers>();
 
+// The same five count-writing kinds as `Containers`, each with a narrower
+// count. `record`'s key stays unbranded, so its own u32 length prefix is the
+// check that `Length` applies to the container it wraps and not to the
+// subtree under it.
+interface Bounded {
+	bytes: DataType.Length<buffer, DataType.u8>;
+	list: DataType.Length<DataType.u16[], DataType.u8>;
+	pair: DataType.Length<[DataType.u8, boolean, ...DataType.u8[]], DataType.u8>;
+	record: DataType.Length<Record<string, DataType.u8>, DataType.u8>;
+	text: DataType.Length<string, DataType.u16>;
+}
+const boundedSerializer = createBinarySerializer<Bounded>();
+
+// Every argument defaulted. Rule 4 of future-work/data-type-surface.md says
+// this has to write exactly what `Containers` writes.
+interface DefaultedContainers {
+	list: DataType.Length<DataType.u16[]>;
+	pair: DataType.Length<[DataType.u8, boolean, ...DataType.u8[]], DataType.u32>;
+	record: DataType.Length<Record<string, DataType.u8>>;
+}
+const defaultedSerializer = createBinarySerializer<DefaultedContainers>();
+
 interface WithOptional {
 	n?: DataType.u8;
 }
@@ -111,6 +133,34 @@ class BytesTest {
 		// u32 count, then key (u32 length + bytes) and value per entry.
 		const record = "01000000" + "01000000" + "6b" + "03";
 		Assert.equal(list + pair + record, hex(buffer));
+	}
+
+	@Fact
+	public pinsBoundedContainers(): void {
+		const { buffer: buf } = boundedSerializer.serialize({
+			bytes: buffer.fromstring(string.char(170, 187)),
+			list: [1, 258],
+			pair: [9, true, 4, 5],
+			record: { k: 3 },
+			text: "hi",
+		});
+		// Fields in name order, each count at the width its brand asked for.
+		const bytes = "02" + "aabb";
+		const list = "02" + "0100" + "0201";
+		const pair = "09" + "01" + "02" + "04" + "05";
+		// The dict's own count is a u8; the key string's length is still a u32.
+		const record = "01" + "01000000" + "6b" + "03";
+		const text = "0200" + "6869";
+		Assert.equal(bytes + list + pair + record + text, hex(buf));
+	}
+
+	@Fact
+	public pinsDefaultedLengthAsUnbranded(): void {
+		const value: Containers = { list: [1, 258], pair: [9, true, 4, 5], record: { k: 3 } };
+		Assert.equal(
+			hex(containersSerializer.serialize(value).buffer),
+			hex(defaultedSerializer.serialize(value).buffer),
+		);
 	}
 
 	@Fact

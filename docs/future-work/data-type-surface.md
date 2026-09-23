@@ -148,3 +148,10 @@ would say so.
 
 Length-typed containers first: they are the whole of the measured size gap.
 Then `Vector` and `Transform`, then `Range`, then `Quantized`.
+
+`Length<T, L>`'s width form has landed, over all five counting kinds, with
+`getSurgeBrand` resolving every brand by alias identity before any brand
+property. What is left of this item is the exact-length form above. Nothing
+in the checked-in catalog moved: `bytes.spec.ts` pins an unbranded and a
+fully defaulted shape to the same bytes, and
+[benchmarks/size.md](../benchmarks/size.md) regenerated unchanged.
