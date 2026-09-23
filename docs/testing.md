@@ -268,11 +268,14 @@ The concrete plan for everything else:
     the dependency snapshot) to pick the change up.
 
     The snapshot is a copy of the transformer's `lib/`, and `tsc` never
-    deletes output for a source file that no longer exists. After renaming
-    or moving a transformer source file, delete `lib/` and `.tsbuildinfo`
-    and recompile before `npm run tests:install`. A leftover `lib/x.js`
-    beside a new `lib/x/` is the case that bites: Node resolves `./x` to
-    the file, so every suite here runs the previous code and passes.
+    deletes output for a source file that was renamed or deleted. A
+    leftover `lib/x.js` beside a new `lib/x/` is the case that bites:
+    Node resolves `./x` to the file, so every suite here would run the
+    previous transformer and pass. The transformer's own `npm run compile`
+    deletes output with no source before it builds, in
+    `scripts/clear-orphaned-output.mjs` (`rbxts-transformer-surge`
+    `aa6f04b`), so there is no manual step — but a `lib/` built by a bare
+    `tsc` has not had that run.
 
 - **Transformer unit tests** live in `rbxts-transformer-surge`'s own
   `test/` and run in plain Node/Jest, no Luau or Roblox involved — the
