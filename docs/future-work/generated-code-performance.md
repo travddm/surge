@@ -135,8 +135,10 @@ every line of it the code the directives are meant for. Checked against
 compiled `cframes.luau`. The objection to `//!native` — a whole file compiled
 natively whether the rest of it should be or not — is an objection about file
 layout, and the layout is the recommendation. `//!optimize 2` needs no such
-care and goes on every module a consumer writes: it is the level a published
-place compiles at, which Studio's default is recorded as not being.
+care and goes on every module a consumer writes. Roblox documents level 1 as
+the default in Studio testing and level 2 as the default in live games
+([Luau comments](https://create.roblox.com/docs/luau/comments)), so pinning 2
+makes a profile taken in Studio a profile of what a published place runs.
 
 What the directives are worth on the generated code, which is the number to
 quote with the recommendation, is in

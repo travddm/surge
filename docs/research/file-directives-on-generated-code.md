@@ -211,3 +211,16 @@ need their arithmetic redone.
   `data/without-native-on-the-fixtures.md` and
   `data/without-optimize-2-on-the-fixtures.md` in this directory. Neither
   probe is in any build that shipped.
+
+## Correction, 2026-09-23
+
+The Discussion names one assumption the `--!optimize 2` result rests on and
+does not verify: that Studio does not already compile at level 2. Roblox's
+documentation of the directive states it: level 1 is "default in Studio
+testing" and level 2 is "default in live games"
+([Luau comments](https://create.roblox.com/docs/luau/comments)). The probe's
+un-pinned fixtures therefore ran at the documented Studio default of level 1,
+against level 2 in the reference, and the null result is a comparison between
+two levels rather than an empty one. That `run-in-roblox`'s injected script
+takes the same default as a Studio test session is the documented default
+applied to it, not something this run observed.
