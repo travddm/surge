@@ -244,9 +244,18 @@ project's own small IR is written in TypeScript.
    one field per element (What rolling the hot paths into the generated code
    is worth, in
    [future-work/generated-code-performance.md](future-work/generated-code-performance.md)).
-   One buffer per serializer rather than one per place also means two
-   serializers can be in flight at once — unless either carries a blob field,
-   because the blob side channel is still module state in the package. At the
+   One buffer per serializer, rather than one shared buffer the package still
+   owns and each serializer caches: a cached local would go stale the moment
+   another serializer grew the shared buffer, so keeping one would cost a
+   re-fetch per `serialize()` call and a rule about who may grow it and when.
+   The memory it trades away is bounded either way — the sum of each
+   serializer's own largest payload against one global largest — and a place
+   with one large shape pays for that shape once here instead of on every
+   serializer. It also means two serializers can be in flight at once, which a
+   single module-scoped buffer never allowed — unless either carries a blob
+   field, because the blob side channel is still module state in the package.
+   Neither of those was measured; the reasoning is recorded here because
+   nothing in the benchmark catalog would have separated them. At the
    end of a top-level
    `serialize()` call, the used region is copied into an exact-size result via
    `buffer.copy`. This was chosen over a two-pass

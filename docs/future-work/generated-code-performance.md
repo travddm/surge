@@ -704,7 +704,11 @@ scratch buffer, which is a design decision the implementation has to make
 rather than inherit: at the time one module-scoped buffer served every
 serializer in a place, and a buffer per serializer is a different trade in
 memory and in what happens if two serializes ever overlap. Neither is measured
-here. The change that followed took the per-serializer buffer.
+here. The change that followed took the per-serializer buffer, for a reason
+the catalog could not have supplied: a buffer the package still owned would
+go stale in a serializer's cached local as soon as another serializer grew
+it. Transformer Design §4 in [transformer.md](../transformer.md) carries
+that trade.
 
 **Reserving bytes inline, measured.** The change landed in
 `rbxts-transformer-surge` `7f46c81` and `surge` `91310ea`. A reservation is
