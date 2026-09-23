@@ -174,7 +174,10 @@ bound without a helper type.
    costs 4 bytes of prefix today versus 2 in Blink and Zap by default.
 2. Per-component widths for `Vector3` and `CFrame`
    (`Vector<X, Y, Z>`, `Transform<...>` in serio; `vector<T>` in Blink and
-   Zap), and an `AlignedCFrame` form (Zap: u8 index + position, 13 bytes).
+   Zap). Zap's `AlignedCFrame` (u8 index + position, 13 bytes) is decided
+   against in [data-type-surface.md](data-type-surface.md): `Packed<T>`
+   already has that form, plus a 1-byte case and a fallback where Zap
+   asserts.
 3. A bit-packed set of a fixed member list (Blink's `set`), expressible as
    `Packed<Set<"a" | "b" | ...>>` with one bit per member.
 4. Numeric ranges as a brand (`DataType.Range<Min, Max>`): validation on

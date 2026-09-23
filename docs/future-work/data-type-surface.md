@@ -17,16 +17,31 @@ helper type.
 | -------------------- | ----------------------------------------------------------- | ----------------------- | ----------------------------------------------------------------------------------------------------- |
 | `Length<T, L>`       | `string`, array, `Map`/`Set`/`Record`, `buffer`, tuple rest | `L = u32`               | One brand for one concept: all five write one count today. See The container brand below.             |
 | `Vector<X, Y, Z>`    | `Vector3`                                                   | `X = f32, Y = X, Z = X` | serio's name and its defaulting. No TypeScript global to shadow.                                      |
-| `Transform<X, Y, Z>` | `CFrame` position                                           | `X = f32, Y = X, Z = X` | serio's name. The rotation is not a component and keeps its axis-angle f32 triple.                    |
-| `AlignedCFrame`      | `CFrame`                                                    | none                    | Zap's name. The 13-byte form (u8 rotation index + position) outside `Packed<T>`, asserting on a miss. |
+| `Transform<X, Y, Z>` | `CFrame` position                                           | `X = f32, Y = X, Z = X` | serio's name, and its parameters mean the same thing. See the note below.                             |
 | `Range<Min, Max>`    | `number`                                                    | none                    | serio's concept, spelled as a brand. Narrows to the smallest width that fits, and validates on write. |
 | `Quantized<T>`       | `CFrame` rotation                                           | none                    | serio's 18-byte form (~0.05 rad). Lossy, so opt-in only, per Deliberate non-gaps.                     |
 
-Two Tier B items need no brand. A bit-packed set of a fixed member list
-(Blink's `set`) is `Packed<Set<"a" | "b" | ...>>`, a composition of what
-already exists. Opt-in write and read validation is a factory or compiler
-option, not a type: see
-[deserialize-hardening.md](deserialize-hardening.md).
+`Transform<X, Y, Z>` sets the position's component widths, exactly as serio's
+does. What it does not carry over is serio's rotation: surge writes an
+axis-angle f32 triple where serio writes its 6-byte quantized one, so the same
+brand costs 24 bytes here and 18 there. That difference is not the brand's —
+surge's plain `CFrame` already differs from serio's plain `CFrame` the same
+way — and `Quantized<T>` is how a consumer asks for serio's form on purpose.
+
+Three Tier B items need no brand:
+
+- A bit-packed set of a fixed member list (Blink's `set`) is
+  `Packed<Set<"a" | "b" | ...>>`, a composition of what already exists.
+- Opt-in write and read validation is a factory or compiler option, not a
+  type: see [deserialize-hardening.md](deserialize-hardening.md).
+- **`AlignedCFrame` is dropped.** `Packed<T>` already gives a `CFrame` the
+  1-, 13-, or 25-byte form, which is Zap's 13-byte form plus a smaller case
+  and a fallback. Zap asserts on a rotation its table misses, which is the
+  defect that leaves it with no cell at all on the benchmark's axis-aligned
+  row (the measurements under the matrix in
+  [type-coverage-parity.md](type-coverage-parity.md)). Adopting that contract
+  would be taking the worse of the two behaviors, and a brand that only moved
+  the same encoding outside `Packed<T>` would buy nothing.
 
 ## The convention
 
@@ -105,13 +120,17 @@ would say so.
   `getPackedInnerType` first; its alias check sees `Length` and misses, then
   its property fallback finds `_surge_packed` and returns `T`, dropping the
   length brand with no error. Today `Packed` is the only brand with a
-  fallback, so this cannot happen; it appears with the second one.
+  fallback, so this cannot happen; it appears with the second one. The other
+  order, `Packed<Length<T, u16>>`, is safe: the alias check matches `Packed`,
+  and the `Length<T, u16>` it recurses into carries no `_surge_packed`. Write
+  the failing order's test first.
 - The IR (`field.ts`): `str`, `array`, `dict`, `buffer`, and `tuple`'s `rest`
   each take an optional length width. Absent means u32, per rule 4.
-- Exact-length semantics, which the note fixes because the emitter cannot:
+- Exact-length semantics, which the note fixes because the emitter cannot.
   `buffer.writestring(b, pos, s, N)` writes N **bytes**, not characters, and
-  `s.size()` is bytes. A value longer than N is truncated silently; a shorter
-  one raises a Luau error. Until write validation lands, that is the contract.
+  `s.size()` is bytes. Measured under Lune 0.10.5: a value longer than N is
+  truncated silently, and a shorter one raises `string length overflow`.
+  Until write validation lands, that is the contract.
 - `Range<Min, Max>` and an explicit width brand can disagree. The explicit
   width wins, and a range that does not fit it is a diagnostic rather than a
   silent widening.
@@ -119,4 +138,4 @@ would say so.
 ## Order
 
 Length-typed containers first: they are the whole of the measured size gap.
-Then `Vector`/`Transform`/`AlignedCFrame`, then `Range`, then `Quantized`.
+Then `Vector` and `Transform`, then `Range`, then `Quantized`.
