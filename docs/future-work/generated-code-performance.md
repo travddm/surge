@@ -501,6 +501,14 @@ all:
 So annotating both sides is worth about 1.09× on top of `--!native`, and
 nothing without it. Neither is reachable, for the AST reason above.
 
+**Superseded.** Both entries below were measured before the speed suite
+yielded. `--!native` is worth a median 1.335× on encode and 1.180× on decode,
+not the 1.02× to 1.10× they record:
+[native-on-generated-code.md](../research/native-on-generated-code.md). They
+are kept until this document is reduced to its open items, because the
+controls and the per-column method they describe are what the re-measurement
+reused.
+
 **What `--!native` is worth on the generated code, measured with controls.**
 The emission fix made this a line of source in each fixture rather than a
 hoist by hand, so this run has the controls the earlier one did not. The
@@ -920,36 +928,50 @@ such check exists.
 ## What native changed
 
 Every measurement in this document was taken on interpreted code, and the
-question this section used to ask was which of them survive the generated
-code compiling natively. That has been measured: 1.02× across the catalog and
-1.18× on one row, with every other column a control. So the answer is that
-they survive, and it is the same answer in each case. Each rested on a ratio
-— "X is invisible against an interpreted total, and native shrinks that total
-2.25× to 11.68× while leaving X where it is" — and the ratio is not there. On
-surge's generated code native code generation was worth two percent when this
-section was written, and is worth 1.10× on decode and 1.03× on encode since
-the inline reservation. Neither is the 2.25× to 11.68× the conditional needed,
-so nothing below changes; what the code spends its time on was a call into the
-package per field and two C calls per `serialize()`, and neither was an
-instruction native code generation compiles.
-generation compiles.
+question this section asks is which of them survive the generated code
+compiling natively. Each rested on the same ratio — "X is invisible against an
+interpreted total, and native shrinks that total 2.25× to 11.68× while leaving
+X where it is".
+
+The figure that answers it has been re-measured on a suite that yields, and it
+moved: `--!native` is worth a median 1.335× on encode and 1.180× on decode
+across the catalog, on every one of its rows, where every earlier measurement
+of it put it between 1.02× and 1.10×
+([native-on-generated-code.md](../research/native-on-generated-code.md)). The
+earlier figures were taken in the mode
+[frame-starvation.md](../research/frame-starvation.md) describes, where
+allocation dominates the loop and native code generation cannot make
+allocation faster, so they were biased toward 1.00× by construction.
+
+A third is still not the 2.25× to 11.68× the conditional needed, so the
+dismissals below stand on their arithmetic — with a margin of three rather
+than of a hundred. Two of them do not survive unchanged, and are marked.
 
 **Answered — the conditional is gone and the dismissal stands.**
 
-- The read loop, the blob side channel, and `finishWrite`'s copy. Each
-  measured 1.00× against an interpreted total. Native moves that total by two
-  percent, and by ten on the decode side since the inline reservation, so each
-  is 1.00× against a total that is at most a tenth smaller. There is
+- **Reopened in part.** The read loop, the blob side channel, and
+  `finishWrite`'s copy. Each measured 1.00× against an interpreted total, and
+  native shrinks that total by a third on encode rather than by two percent —
+  still not the inversion the conditional needed. Two of the three are
+  unaffected for a better reason: `finishWrite`'s copy has since been
+  re-measured at nothing on a yielding run, and the blob side channel at
+  25.7 ns an encode call, which is not 1.00× at all
+  ([per-call-overhead.md](../research/per-call-overhead.md)). The read loop is
+  the one of the three still resting only on its original 1.00×.
 - The two-pass exact-sizing design that Transformer Design §4 in
   [transformer.md](../transformer.md) rejected, for one traversal of the
   value instead of two. The inversion it needed was the extra traversal
   getting 2× to 11× cheaper while the `buffer.copy` it removes stayed put.
-  The traversal gets two percent cheaper.
-- The package pragma, which this document records as worth nothing. The
-  helper and caller table above predicts 1.47× once the caller is native as
-  well — 0.04278s to 0.02909s — and the caller was native in this run. The
-  catalog says 1.02×. That prediction belongs to a loop whose work sits
-  inside the native region, and surge's does not.
+  The traversal gets a third cheaper on encode, which is not the inversion.
+- **Reopened.** The package pragma, which this document records as worth
+  nothing. The helper and caller table above predicts 1.47× once the caller is
+  native as well — 0.04278s to 0.02909s — and the caller was native in this
+  run. This entry dismissed that prediction because it belongs to a loop whose
+  work sits inside the native region and surge's did not. The catalog now says
+  1.335× on encode, most of the way to the prediction, and since the inline
+  reservation surge's work does largely sit inside the native region. The
+  entry needs re-arguing against the current figure rather than the 1.02× it
+  was written against.
 - `Packed<T>`'s advantage over the same shape unpacked: 1.22× on encode
   before and 1.23× after. Bit packing is Luau arithmetic, and it is still not
   enough of the total to move.
@@ -974,9 +996,9 @@ generation compiles.
   was worth on the generated code and conclude the route did not pay. That
   denominator was measured before the inline reservation removed the per-field
   crossing out of the native region. Measured again after it, `--!native` is
-  worth 1.10× on decode, so a ninth of that is about 1.01× — still not a
+  worth 1.180× on decode, so a ninth of that is about 1.04× — still not a
   number that pays for a pass which rewrites files roblox-ts has written, and
-  now said against a current denominator rather than a stale one. The
+  now said against a re-measured denominator rather than a stale one. The
   per-function `@native` attribute is a different case and stays open: what it
   buys is not the 1.09× of annotations but the ability to mark the generated
   functions instead of the module, which is what would make the file-shape
