@@ -6,36 +6,28 @@ Part of the [surge](../architecture.md) design.
 
 Until 2026-09-23 the speed suite (`tests/src/bench/speed.spec.ts`) never
 yielded, so a full run held Studio's plugin thread for the whole catalog
-with no frame in between. After roughly ten seconds without a frame, every
-path that allocates per call slows by an order of magnitude and stays slow.
-The A/B that established this is recorded in the comment block of
-`speed.spec.ts` and in "Running the speed tier via run-in-roblox" in
-[testing.md](../testing.md): with the yield disabled, serio's large record
-decode fell from 24k values a second on its first trial to 1.9k on its
-last; with it enabled, the same cell held 24k across all five. The suite
-yields between timed chunks now, and re-recording
-[benchmarks/speed.md](../benchmarks/speed.md) that way moved 105 of its 124
-cells by more than 1.2×, up to 19× (fbs encode on `Blink: Entities`).
+with no frame in between, and about ten seconds in every path that
+allocates per call slowed by close to an order of magnitude and stayed
+slow. The suite yields between timed chunks now.
+[Frame starvation in a Studio benchmark run](../research/frame-starvation.md)
+reports the A/B that established it, where the onset falls, and how far
+each cell of the catalog moved when it was re-recorded with the loops
+yielding.
 
 Every conclusion below was drawn from runs made before that change. The
 numbers in the current `speed.md` are sound; the numbers quoted in the
 documents are not, and the documents still state them.
 
 **Which cells a pre-change run got wrong.** A full run measured its encode
-half first, in catalog order, and its decode half after it. So:
+half first, in catalog order, and its decode half after it, so the onset
+lands inside the large record's encode row. So:
 
-- Unaffected: the encode cells of the first three fixtures (small flat
-  struct, deeply nested object, wide struct), which finished inside the
-  first second; and any scoped run whose measured time stayed under about
-  ten seconds.
-- Affected: every encode cell from the fourth fixture on, and every decode
-  cell. The onset is not sharp: the earlier trials put it about nine to
-  ten seconds into a run, which lands inside the large array's encode or
-  at the large record's, where the old file shows its first clearly slow
-  trial (fbs encode, one trial twelve times slower than its four
-  neighbors). The factor differs per cell and per library — 19× on one
-  cell, under 1.2× on 19 others — and falls hardest on the paths that
-  allocate most, which are decodes, serio, and Blink's encode.
+- Unaffected: every encode cell through the large array's, and the first
+  two of the large record's, each within 1.21× of a yielding run; and any
+  scoped run whose measured calls stayed under about ten seconds.
+- Affected: the rest of the encode half and the whole decode half, 104
+  cells at 1.33× to 19.62×, falling hardest on the paths that allocate
+  most — decodes, serio, and Blink's encode.
 - A scoped run that ran longer than ten seconds crossed into the slow mode
   mid-run. That is what the union rows' 91% and 302% decode spreads
   "measured alone" were, and what the order-of-magnitude disagreement

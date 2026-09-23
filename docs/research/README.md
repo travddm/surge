@@ -46,7 +46,11 @@ Prose follows [../contributing-docs.md](../contributing-docs.md).
 
 ## Published papers
 
-None yet. Which papers are planned, and where the measurements behind each one
-are recorded today, are in
+| Paper                                      | Reports                                                                                        |
+| ------------------------------------------ | ---------------------------------------------------------------------------------------------- |
+| [frame-starvation.md](frame-starvation.md) | What a Studio benchmark run that never yields does to its own numbers, and where the onset is. |
+
+Which papers are planned, and where the measurements behind each one are
+recorded today, are in
 [../future-work/documentation-restructure.md](../future-work/documentation-restructure.md).
 Each is listed here as it lands.

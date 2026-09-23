@@ -59,16 +59,11 @@ import { matching, scopedPatterns } from "./selection";
  * catalog -- about thirteen minutes by the earlier speed-trials.tsv -- with
  * no frame in between. Studio raised its "plugin has stopped responding"
  * prompt over that, which is how it was noticed, but the prompt is not the
- * damage. After some seconds without a frame, every path that allocates per
- * call slows by an order of magnitude: in a scoped run of the large record
- * with the yield below disabled, serio's decode fell from 24,000 values a
- * second on its first trial to 1,900 on its last, and with the yield it held
- * 24,000 across all five; the rows the full catalog recorded that way were
- * that slow mode for most cells after the first few fixtures, at up to a
- * nineteenth of what a yielding run measures. A likely cause is that the
- * engine does its garbage-collection step per frame, so a run with no frames
- * lets the heap grow until allocation is what the loop measures, but that
- * mechanism is not established here; the A/B is.
+ * damage. About ten seconds in, every path that allocates per call slows by
+ * close to an order of magnitude and stays slow for the rest of the run,
+ * which is most of the catalog. docs/research/frame-starvation.md reports
+ * the A/B that establishes it, what it cost each cell, and why the mechanism
+ * behind it is not established.
  *
  * Yielding once per row or per trial would not be enough: in that slow mode
  * a cell spends up to ninety seconds on one row and seventeen on one trial.

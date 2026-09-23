@@ -503,23 +503,17 @@ Confirmed empirically, not assumed:
 `run-in-roblox` calls the injected script on its plugin's own thread and
 ends the run when that call returns, so the suite yields on purpose: its
 timing loop yields between timed chunks of calls once a quarter second of
-measured work has passed, and `runBenchmarks` waits for runit's verdict
-before it returns. A suite that never yielded held the plugin thread for
-the whole catalog with no frame in between, and Studio raised its "plugin
-has stopped responding" prompt over it. The prompt was the symptom; the
-damage was to the numbers. After some seconds without a frame, every path
-that allocates per call slows by an order of magnitude — in a scoped run
-of the large record with the yield disabled, serio's decode fell from 24k
-values a second on its first trial to 1.9k on its last, and with the yield
-it held 24k across all five — and the full catalog recorded that slow mode
-for most cells after its first few fixtures, at up to a nineteenth of what
-a yielding run measures. The likely cause is that the engine runs its
-garbage-collection step per frame, so a run with no frames lets the heap
-grow until allocation is what the loop measures; the A/B is what is
-established, not the mechanism (see the comment block in
-`tests/src/bench/speed.spec.ts`). The yield is never inside a timed chunk.
-It also means the rows reach the terminal as they are measured, since the
-plugin flushes its output on `Heartbeat`.
+measured work has passed, never inside a timed chunk, and `runBenchmarks`
+waits for runit's verdict before it returns. A suite that never yielded
+held the plugin thread for the whole catalog with no frame in between, and
+about ten seconds in, every path that allocates per call slowed by close to
+an order of magnitude and stayed slow for the rest of the run — Studio's
+"plugin has stopped responding" prompt was the symptom, and the numbers
+were the damage. See
+[Frame starvation in a Studio benchmark run](research/frame-starvation.md)
+for what that cost each cell of the catalog and what it leaves unexplained.
+Yielding also means the rows reach the terminal as they are measured, since
+the plugin flushes its output on `Heartbeat`.
 
 This is a different mechanism from the Lune runner above, not a
 replacement for it: `run-in-roblox` drives the actual Roblox engine, so
