@@ -73,8 +73,10 @@ behavior that is already final.
 ## How, briefly
 
 - `docs/usage.md` (install, plugin entry, example, supported types, wire
-  format, errors, non-guarantees, the `--!native`/`//!native` opt-in noted
-  in [generated-code-performance.md](generated-code-performance.md)),
+  format, errors, non-guarantees, and the two Luau file directives — both
+  recommended as defaults, with the module shape that makes `//!native` safe
+  to default to, per How, briefly in
+  [generated-code-performance.md](generated-code-performance.md)),
   linked from both READMEs.
 - Correct each stale statement in place as its fix lands; the list above
   is the checklist.

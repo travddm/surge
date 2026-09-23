@@ -878,15 +878,20 @@ generation compiles.
   post-emit route above could emit it, but Lune 0.10.5 cannot parse it and
   the round-trip suite runs under Lune.
 
-**Reachable, and now plainly not worth the machinery.**
+**Reachable, and no longer dismissed on arithmetic.**
 
 - Type annotations on the generated write and read functions, worth about
   1.09× on top of `--!native` — on a synthetic writer whose work sits inside
-  the native region. On the generated code `--!native` itself is worth 1.02×,
-  so a ninth of that is not a number that pays for a pass which rewrites
-  files roblox-ts has written. The same goes for the per-function `@native`
-  attribute. The route is real, and `rbxts-transform-luau` is proof of it;
-  the value is not there.
+  the native region. This entry used to divide that by the 1.02× `--!native`
+  was worth on the generated code and conclude the route did not pay. That
+  denominator was measured before the inline reservation removed the per-field
+  crossing out of the native region, which is the effect the same section
+  named as one of the two readings of it, so the division no longer settles
+  anything. The same goes for the per-function `@native` attribute, which is
+  the route that would let a consumer mark the generated functions rather than
+  a whole file. The route is real and `rbxts-transform-luau` is proof of it;
+  what it is worth is now an open question rather than a closed one, and it
+  reopens on a re-measurement of `--!native`, not on its own.
 
 **What it leaves.** The cost native code generation could not touch was the
 cost that was left: a cross-module call per field, and `buffer.create` plus
@@ -930,21 +935,42 @@ percent.
   came off a per-call cost. Read only the cells whose trials span a few
   percent, and pick the protocol from the row: a scoped pair where its trials
   are quiet scoped, a full pair where they are not.
-- Do not recommend `//!native` to a user as a default. It was measured at
-  1.02× across the catalog, and 1.18× on the one row where a single
-  `serialize()` call runs a thousand-element loop, in exchange for a whole
-  file compiled natively whether the rest of it should be or not. That
-  measurement predates the inline reservation, which took out the per-field
-  crossing the second reading of it blamed, so what the directive is worth on
-  the generated code as it stands is unmeasured. Until it is measured again,
-  `docs/usage.md` should say what was measured and when, rather than offer a
-  recommendation the numbers no longer cover. `//!optimize 2`
-  is the other way round: recommend it, because a published place compiles at
-  that level and Studio does not, and because it works in a transformed file
-  now.
-- If an automatic default is ever pursued: design a "this file is safe to
-  mark file-wide native" check (for example, restrict it to a mode where the
-  whole file is one `createBinarySerializer`-style call and its export,
-  nothing else) before surge injects the pragma itself, since there is no way
-  to scope the directive to the generated functions — and weigh the work
-  against the 1.02× that is what it would buy.
+- Recommend both directives as defaults, and recommend the file shape that
+  makes them safe: a module holding the serializers and the types they are
+  built from, and nothing else. A TypeScript type emits no Luau, and roblox-ts
+  elides an import used only as a type, so such a module compiles to the
+  injected `@rbxts/surge` import, one closure per serializer, and the export
+  table — every line of it the code the directives are meant for. Checked
+  against `tests/src/bench/fixtures/cframes.ts`, whose `import type * as
+Serio`, `import type { Fixture }` and `DataType` produce nothing at all in
+  the compiled `cframes.luau`. The objection this bullet used to raise against
+  `//!native` — a whole file compiled natively whether the rest of it should
+  be or not — is an objection about file layout, and the layout is the
+  recommendation. `//!optimize 2` needs no such care and goes on every module
+  a consumer writes: it is the level a published place compiles at and Studio
+  does not.
+- Re-measure what `//!native` is worth before `docs/usage.md` quotes a number.
+  1.02× was measured on the generated code as it stood before the inline
+  reservation, and the second reading of that result blamed the per-field
+  crossing out of the native region — which is exactly what the inline
+  reservation removed. The figure is stale in the direction that matters. The
+  emission fix made re-measuring it one run, since `//!native` is a line of
+  source in a fixture now, and the protocol is the one that measured it
+  before: mark the twelve fixture modules, leave every other column a control,
+  revert the build rather than commit it.
+- If surge is ever to inject `//!native` itself, the check is not "one
+  serializer call and its export", which is what this bullet used to propose.
+  A module may declare several serializers — three of the benchmark fixtures
+  do — and may import types from anywhere, since none of that reaches the
+  Luau. What a check would have to establish is that the module emits no other
+  runtime code, which is a statement about what its statements compile to and
+  not about how many serializers it declares.
+- The narrower route is the per-function `@native` attribute, which would make
+  the file shape irrelevant. It is valid before a function expression
+  (`Parser::parseAttributedFunction`, no FFlag gate), so it can sit on the
+  generated `serialize = function(value)` and on nothing else in the file. It
+  has no `ts.factory` representation, so it needs the post-emit rewrite
+  `rbxts-transform-luau` is the prior art for — and that package matches
+  `local function NAME(` by name, which does not reach an anonymous function
+  expression inside a table constructor. So it is a contribution there or a
+  pass of surge's own, not something that works for a consumer today.
