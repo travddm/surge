@@ -49,6 +49,18 @@ interface WithBounds {
 }
 const boundsSerializer = createBinarySerializer<WithBounds>();
 
+// The exact form, where the count lives in the type and not in the buffer.
+// The value has to have exactly this many; these always do.
+const EXACT_ELEMENTS = 3;
+const EXACT_BYTES = 5;
+interface WithExactLengths {
+	bytes: DataType.Length<buffer, 5>;
+	list: DataType.Length<Point[], 3>;
+	pair: DataType.Length<[string, ...number[]], 3>;
+	text: DataType.Length<string, 5>;
+}
+const exactSerializer = createBinarySerializer<WithExactLengths>();
+
 const FUZZ_ITERATIONS = 100;
 
 function randomPoint(rng: Rng): Point {
@@ -204,6 +216,30 @@ class CollectionsTest {
 			};
 			const { buffer: written, blobs } = boundsSerializer.serialize(value);
 			Assert.equal(undefined, difference(value, boundsSerializer.deserialize(written, blobs)));
+		}
+	}
+
+	@Fact
+	public roundTripsRandomExactLengthContainers(): void {
+		const rng = new Rng(12);
+		for (const _ of $range(1, FUZZ_ITERATIONS)) {
+			const list = new Array<Point>();
+			const rest = new Array<number>();
+			for (const __ of $range(1, EXACT_ELEMENTS)) {
+				list.push(randomPoint(rng));
+				rest.push(rng.f64());
+			}
+			// Exactly EXACT_BYTES bytes: the brand states the length and
+			// nothing checks it, so a shorter value would raise.
+			const text = string.rep("x", EXACT_BYTES);
+			const value: WithExactLengths = {
+				bytes: buffer.fromstring(text),
+				list,
+				pair: [text, ...rest],
+				text,
+			};
+			const { buffer: written, blobs } = exactSerializer.serialize(value);
+			Assert.equal(undefined, difference(value, exactSerializer.deserialize(written, blobs)));
 		}
 	}
 }

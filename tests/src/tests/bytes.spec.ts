@@ -45,6 +45,16 @@ interface Bounded {
 }
 const boundedSerializer = createBinarySerializer<Bounded>();
 
+// The exact form: a numeric literal instead of a width, so no count is
+// written at all and both sides use exactly that many bytes or elements.
+interface Exact {
+	bytes: DataType.Length<buffer, 3>;
+	list: DataType.Length<DataType.u16[], 2>;
+	pair: DataType.Length<[DataType.u8, ...DataType.u8[]], 2>;
+	text: DataType.Length<string, 4>;
+}
+const exactSerializer = createBinarySerializer<Exact>();
+
 // Every argument defaulted. Rule 4 of future-work/data-type-surface.md says
 // this has to write exactly what `Containers` writes.
 interface DefaultedContainers {
@@ -152,6 +162,18 @@ class BytesTest {
 		const record = "01" + "01000000" + "6b" + "03";
 		const text = "0200" + "6869";
 		Assert.equal(bytes + list + pair + record + text, hex(buf));
+	}
+
+	@Fact
+	public pinsExactLengthContainers(): void {
+		const { buffer: buf } = exactSerializer.serialize({
+			bytes: buffer.fromstring(string.char(1, 2, 3)),
+			list: [1, 258],
+			pair: [9, 4, 5],
+			text: "abcd",
+		});
+		// Fields in name order, and not one count byte among them.
+		Assert.equal("010203" + "0100" + "0201" + "09" + "04" + "05" + "61626364", hex(buf));
 	}
 
 	@Fact

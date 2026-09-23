@@ -78,7 +78,8 @@ That is worth one brand instead of five.
 `L` is either a width brand or a numeric literal. `Length<string[], u16>` is a
 u16 count; `Length<string[], 8>` is the exact form Blink and Zap have, with no
 prefix written at all. Both are types, and `isNumberLiteral()` separates them
-in the walker, so one brand covers both forms.
+in the walker, so one brand covers both forms. A `Map`, `Set`, or `Record`
+takes the width form only; see Order below for why.
 
 Outermost only: `Length<string[][], u16>` bounds the outer array. Reaching an
 inner one means branding the inner type. This is the deliberate difference
@@ -149,9 +150,16 @@ would say so.
 Length-typed containers first: they are the whole of the measured size gap.
 Then `Vector` and `Transform`, then `Range`, then `Quantized`.
 
-`Length<T, L>`'s width form has landed, over all five counting kinds, with
-`getSurgeBrand` resolving every brand by alias identity before any brand
-property. What is left of this item is the exact-length form above. Nothing
-in the checked-in catalog moved: `bytes.spec.ts` pins an unbranded and a
-fully defaulted shape to the same bytes, and
-[benchmarks/size.md](../benchmarks/size.md) regenerated unchanged.
+`Length<T, L>` has landed in full — both the width form and the exact form,
+over all five counting kinds, with `getSurgeBrand` resolving every brand by
+alias identity before any brand property. Nothing in the checked-in catalog
+moved: `bytes.spec.ts` pins an unbranded and a fully defaulted shape to the
+same bytes, and [benchmarks/size.md](../benchmarks/size.md) regenerated
+unchanged.
+
+One decision the exact form forced, which this note did not anticipate: a
+`Map`, `Set`, or `Record` takes the width form only. Its write side counts
+entries as it iterates them, so it cannot promise a compile-time number, and
+unlike a string — where an exact count truncates that field and nothing else
+— a miscount there shifts every field after it. Blink and Zap bound a map by
+width and not by an exact count either.

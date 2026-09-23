@@ -453,15 +453,31 @@ do`. So `dict` needs exactly one codegen path for `Map` and `Record`
 
 Five kinds write a count ahead of their contents: `str`, `buffer`, `array`,
 `dict`, and a `tuple`'s rest element. `DataType.Length<T, L> = T &
-{ _surge_length?: [T, L] }` sets that count's width to `L`, which must be
-`u8`, `u16`, `u24`, or `u32` — a count is never negative and never
-fractional, so a signed or floating width is a diagnostic, as is a `T` that
-writes no count at all.
+{ _surge_length?: [T, L] }` says how `T` records how much follows. A `T`
+that writes no count at all is a diagnostic.
 
-`L` defaults to `u32`, which is what all five wrote before the brand
-existed, so `Length<T>` and `T` produce the same bytes. The walker records
-that default as no width at all rather than as `u32`, so a fully defaulted
-brand also produces the same IR, and an unbranded shape cannot drift.
+**Counted, `L` a width.** `u8`, `u16`, `u24`, or `u32` — a count is never
+negative and never fractional, so a signed or floating width is a
+diagnostic. `L` defaults to `u32`, which is what all five wrote before the
+brand existed, so `Length<T>` and `T` produce the same bytes. The walker
+records that default as no width at all rather than as `u32`, so a fully
+defaulted brand also produces the same IR, and an unbranded shape cannot
+drift.
+
+**Exact, `L` a whole number literal.** No count is written at all; both
+sides use exactly `L` bytes or elements, which is Blink's and Zap's exact
+form. The write side stops caring what the value's own length is: a string
+passes `L` to `buffer.writestring` as a **byte** count, an array and a
+tuple's rest run an indexed loop of exactly `L`, and a `buffer` copies `L`
+bytes. So a longer value is truncated and a shorter one raises — nothing
+checks it until write-side validation lands (see
+[deserialize-hardening.md](future-work/deserialize-hardening.md)), and the
+brand is a statement that the length is fixed by construction.
+
+A `dict` takes a width but never an exact count. Its write side counts
+entries as it iterates them, so it cannot promise a compile-time number,
+and a mismatch would misread every field after it rather than only that
+field. Blink and Zap bound a map by width for the same reason.
 
 Unlike `Packed<T>`, this applies to the container it wraps and not to the
 subtree under it: in `Length<Array<Array<string>>, u16>` the outer array

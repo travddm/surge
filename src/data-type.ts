@@ -21,16 +21,24 @@ export namespace DataType {
 	export type i32 = number & { readonly _surge_i32?: never };
 
 	/**
-	 * Sets the width of the count `T`'s encoding writes ahead of its
-	 * contents. Applies to a `string`, an array, a `Map`, a `Set`, a
-	 * `Record`, a `buffer`, and a tuple's rest element; on anything else the
-	 * transformer reports a diagnostic. `L` must be one of {@link u8},
-	 * {@link u16}, {@link u24}, or {@link u32}.
+	 * Sets how `T`'s encoding says how much follows. Applies to a `string`,
+	 * an array, a `Map`, a `Set`, a `Record`, a `buffer`, and a tuple's rest
+	 * element; on anything else the transformer reports a diagnostic.
 	 *
-	 * The default is `u32`, which is what an unbranded container writes, so
-	 * `Length<T>` and `T` encode identically. A narrower width saves the
-	 * difference on every value and truncates silently above what it can
-	 * count, so it states a bound the shape is known to keep.
+	 * With a width — {@link u8}, {@link u16}, {@link u24}, or {@link u32} —
+	 * a count of that width is written ahead of the contents. The default is
+	 * `u32`, which is what an unbranded container writes, so `Length<T>` and
+	 * `T` encode identically. A narrower width saves the difference on every
+	 * value and truncates silently above what it can count, so it states a
+	 * bound the shape is known to keep.
+	 *
+	 * With a whole number literal (`Length<string, 8>`) no count is written
+	 * at all and both sides use exactly that many bytes or elements. The
+	 * value must have exactly that many: a longer one is truncated and a
+	 * shorter one raises. Nothing checks this until write-side validation
+	 * exists, so use it only where the length is fixed by construction. A
+	 * `Map`, `Set`, or `Record` cannot take this form — the write side counts
+	 * entries as it iterates them, so it cannot promise a fixed number.
 	 *
 	 * Unlike {@link Packed}, this applies to the container it wraps and not
 	 * to the subtree under it: in `Length<Array<Array<string>>, u16>` the
