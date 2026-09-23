@@ -225,7 +225,9 @@ From [benchmarks/size.md](../benchmarks/size.md), which the run writes:
   encoding costs on an arbitrary rotation.
 - No row puts a value in any library's side table, so no cell carries a
   `+N side` marker. The catalog has no `Instance`, `unknown`, or datatype
-  that any of the four passes outside the buffer.
+  that any of the four passes outside the buffer. The runner writes the
+  paragraph explaining that marker only when some cell carries one, so
+  size.md does not currently describe it.
 - Blink is at or below surge on all 11 rows it can express, and every byte
   of every difference is a length prefix: it defaults an unbounded string,
   array, and map to a u16 count where surge writes u32. Each delta is that

@@ -377,9 +377,9 @@ surge does not own.
 this concrete, and not in surge's favour. fbs carries `--!native` and
 `--!optimize 2` on the two modules its codec runs in, and Blink's generated
 module carries both, where roblox-ts emits neither: two of the five columns
-of [benchmarks/speed.md](../benchmarks/speed.md) are natively compiled and
-three are not, which is why that file opens by saying its columns are not a
-comparison of codec design. How much that is worth was measured in the same
+of [benchmarks/speed.md](../benchmarks/speed.md) were natively compiled and
+three were not, so nothing in that table separated codec design from
+compilation mode. How much that is worth was measured in the same
 Studio build, on four modules built at run time from one source and differing
 only in their first lines, over four alternating passes:
 

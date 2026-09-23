@@ -277,13 +277,13 @@ Roblox process through `run-in-roblox`, and
 [benchmarks/speed.md](benchmarks/speed.md) records it. The timings opened
 unflattering: surge encoded 2.87× slower than a hand-written codec
 writing its exact bytes on the one row of three whose trials can be read, and
-the two columns ahead of it on most rows are natively compiled where surge's
-generated code is not, which that file states before its tables. What that gap
-was made of is
+the two columns ahead of it on most rows were natively compiled where surge's
+generated code was not. What that gap was made of is
 [future-work/generated-code-performance.md](future-work/generated-code-performance.md),
 which the run moved to the head of the plan and which has since closed it: the
 same row is 1.08× on encode and 1.06× on decode, after a change that reserves
-bytes inline in the generated code instead of calling into the package.
+bytes inline in the generated code instead of calling into the package, and
+with the fixtures and the baseline both marked `--!native`.
 
 0. This repo's `package.json` (the `@rbxts/surge` manifest itself), the
    `mise`-pinned toolchain (`node`, `rojo`), the `tests/` Rojo place and

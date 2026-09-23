@@ -150,10 +150,9 @@ The speed tier has since run, through `run-in-roblox`, and
 [benchmarks/speed.md](../benchmarks/speed.md) records it. It opened with surge
 encoding 2.87× slower than that baseline and decoding 1.63× slower on
 identical bytes, on the one of its three rows whose trials are quiet. Those
-two figures are 1.08× and 1.05× now, and 1.08× and 1.06× once both sides took
-the directives surge recommends, with the baseline still ahead on both
-which that file states first — fbs and Blink carry `--!native` where
-roblox-ts emits none.
+two figures are 1.08× and 1.05× now, and 1.08× and 1.06× once the fixtures
+and the baseline both took `--!native` as well, with the baseline still ahead
+on both halves.
 
 The fbs, serio, Blink, and Zap adapters, and the per-library size table they
 produce, landed after everything above, in this repository's `tests/`,
@@ -410,11 +409,13 @@ time:
 
 - What is left of
   [generated-code-performance.md](generated-code-performance.md): coalescing a
-  tuple's consecutive fixed-size elements, which no fixture measures yet, and
-  three smaller items -- `s.size()` evaluated twice, the scratch buffer never
-  shrinking, and a block-object's table sizing. Every large item in that
-  document has landed, and on the evidence these are the per-call and
-  Luau-side kind that measured at 1.00×.
+  tuple's consecutive fixed-size elements, and three smaller items — `s.size()`
+  evaluated twice, the scratch buffer never shrinking, and a block-object's
+  table sizing. Every large item in that document has landed, and every
+  per-call cost it measured came back at 1.00×; evaluating `s.size()` twice is
+  Luau work that native code generation makes _cheaper_ to leave alone, and a
+  tuple's consecutive fixed-size elements are the same mechanism an object's
+  fields already use, with no fixture serializing a tuple to measure it with.
 - [enum-and-opaque-union-members.md](enum-and-opaque-union-members.md).
   Its stage 1 has landed: a union of items from two enums is a diagnostic,
   where two items of the same name used to produce a wrong value with no
@@ -425,6 +426,13 @@ time:
 - The stale-statement checklist in
   [documentation-gaps.md](documentation-gaps.md). Every entry describes
   behavior that is already final.
+- The Luau file directives, also from
+  [documentation-gaps.md](documentation-gaps.md): a consumer-facing statement
+  that a module holding generated serializers should carry `//!native` and
+  `//!optimize 2`, and what else that module may hold. It is the one piece of
+  `docs/usage.md` that depends on neither step 1 nor step 2, and since
+  `benchmarks/speed.md` stopped advising, it is the only recommendation with
+  no home outside this directory.
 - The CI items in [ci-and-release.md](ci-and-release.md): the transformer
   workflow running the integration suite, the pinned sibling ref, `npm ci`,
   and the Windows job. The transformer's CI cannot see a broken
@@ -433,13 +441,6 @@ time:
   each remaining case lands with the fix or fixture it pins.
 - [enum-encoding.md](enum-encoding.md): a one-byte saving that needs an IR
   change. Do it with a broader `literalConst` cleanup, not alone.
-- The smaller items and the tuple elements in
-  [generated-code-performance.md](generated-code-performance.md). Every
-  per-call cost that document measured came back at 1.00×, and evaluating
-  `s.size()` twice is Luau work that native code generation would make
-  _cheaper_ to leave alone. A tuple's consecutive fixed-size elements are
-  the same mechanism an object's fields already use, and no fixture
-  serializes a tuple to measure it with.
 
 ## Deferred indefinitely
 

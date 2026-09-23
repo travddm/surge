@@ -14,7 +14,11 @@ format per kind (needed to interoperate with anything else and to reason
 about [schema-versioning.md](schema-versioning.md)), the error contract
 of `deserialize`, and the non-guarantees (dict order, no bounds checks,
 sparse arrays, `@rbxts/types` version coupling of enum indices). The two
-READMEs point at design docs instead.
+READMEs point at design docs instead. Until `docs/usage.md` exists,
+nothing outside this directory tells a consumer to mark a serializer
+module `//!native` and `//!optimize 2`: `benchmarks/speed.md` used to
+carry the recommendation and no longer does, because a generated results
+file states what was measured and does not advise.
 
 **Statements the code contradicts** (each checked against the source):
 
@@ -66,9 +70,16 @@ the tooling description, no statement of which Roblox, roblox-ts, and
 ## Why deferred
 
 User documentation should be written against fixed behavior, so
-`docs/usage.md` comes late in [README.md](README.md)'s order. The
-stale-statement checklist does not need to wait: every entry describes
-behavior that is already final.
+`docs/usage.md` comes late in [README.md](README.md)'s order: Tier B of
+[type-coverage-parity.md](type-coverage-parity.md) adds to the
+supported-types table and [deserialize-hardening.md](deserialize-hardening.md)
+changes the error contract of `deserialize`.
+
+Two parts of this document do not wait, and README.md lists both under No
+step of its own. The stale-statement checklist does not, because every entry
+describes behavior that is already final. Neither do the two Luau file
+directives, because they depend on neither step and nothing outside this
+directory states them.
 
 ## How, briefly
 
@@ -77,7 +88,8 @@ behavior that is already final.
   recommended as defaults, with the module shape that makes `//!native` safe
   to default to, per How, briefly in
   [generated-code-performance.md](generated-code-performance.md)),
-  linked from both READMEs.
+  linked from both READMEs. The directives section can be written and
+  linked before the rest, since it depends on no open step.
 - Correct each stale statement in place as its fix lands; the list above
   is the checklist.
 - `CHANGELOG.md` and a short release section in serde.md (tag both

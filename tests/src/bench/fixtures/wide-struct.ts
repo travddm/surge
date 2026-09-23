@@ -238,7 +238,7 @@ const value = {
 
 export const wideStruct: Fixture = {
 	name: "wide struct",
-	note: "50 f32 fields, just under the emitter's block-split threshold",
+	note: "50 f32 fields, no container",
 	entries: [
 		defineEntry<WideStruct>("surge", value, surgeAdapter(serializer)),
 		defineEntry<FbsWideStruct>("fbs", value, fbsAdapter(fbsSerializer)),
