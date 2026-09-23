@@ -91,6 +91,33 @@ boolean)` -- and dispatches with `typeof`, as the row says.
   `(1 - x²)^0.5`, is zero. On an arbitrary rotation that same form costs
   about 1e-4.
 
+## Libraries considered and not compared
+
+Surveyed September 2026 from each project's repository and package listing,
+so that the question of which libraries belong in the matrix and in the
+benchmark's columns is answered once rather than from scratch. A library
+earns a column by being one a consumer would plausibly choose instead of
+surge, and by expressing enough of the catalog for its cells to mean
+something. The four above cover the two designs surge is measured against:
+a runtime schema interpreter reached through a Flamework macro, which fbs
+and serio both are, and an IDL compiler, which Blink and Zap both are. The
+hand-written baseline is the floor beneath all of them.
+
+| Library                          | State at the survey                                                   | Why not compared                                                                                                                                                                                                                                                                  |
+| -------------------------------- | --------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Sera (`MadStudioRoblox/Sera`)    | 43 stars, Apache-2.0, last pushed 2025-03-25; no npm or Wally listing | Flat dictionaries of primitives only, so it has no cell on most of the catalog; its schema tables are the design fbs and serio already stand for, written by hand rather than read off a type; and a raw `.luau` file is a dependency shape this repository has no convention for |
+| ByteBuf (`DarkOnGithub/ByteBuf`) | 0 stars, last pushed 2025-08-16; `@rbxts/bytebuf` 1.0.0, one release  | No adoption to speak of, and it describes itself as self-describing on npm and as schema-based on GitHub, which are opposite wire formats                                                                                                                                         |
+
+Sera is worth reading once for a different reason. Its `LossyCFrame` and
+`Angle8` are a second reference for the quantized rotation of Tier B item 6,
+where serio is otherwise the only one, and its delta serialization is a
+feature nothing in the catalog has. Neither is a reason for a column.
+
+A networking library with its own serializer (ByteNet and the like) is the
+category Blink and Zap already stand for, and Tier 3 of
+[benchmark-tooling.md](benchmark-tooling.md) is where a wire-cost comparison
+against one would go if anything ever asks for it.
+
 ## Deliberate non-gaps
 
 These differences are design choices, not bugs, and should stay:

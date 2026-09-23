@@ -11,6 +11,8 @@
 		"backpatches",
 		"backpatching",
 		"blox",
+		"bytebuf",
+		"ByteNet",
 		"cframe",
 		"cframes",
 		"cli",
