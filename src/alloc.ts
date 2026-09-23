@@ -5,7 +5,7 @@
 // `serialize()` at most, and the per-field work they used to do is four instructions in the
 // caller's own generated file now. `optimize 2` is the level a published place compiles at, where
 // Studio compiles at 1, so it is what makes a profile taken in Studio a profile of what runs live,
-// and every module this repository compiles carries it. See Native code generation in
+// and every module this repository compiles carries it. See the package pragma entry in
 // docs/future-work/generated-code-performance.md.
 // This module owns no cursor and no buffer. A generated serializer declares
 // its own scratch buffer, capacity and write cursor in the closure it is

@@ -69,8 +69,8 @@ test("a count-driven read is a numeric for loop, not a _shouldIncrement flag loo
 	assert.doesNotMatch(luau, /_shouldIncrement/);
 });
 
-// Regression check for the tagged-union item in
-// docs/future-work/generated-code-performance.md.
+// Regression check for the tagged-union literal. What it was measured as worth is in
+// docs/research/generated-code-against-hand-written.md.
 test("a tagged-union read builds the variant literal with its tag, not a copy of it", () => {
 	const luau = readCompiledLuau("tests/coverage.spec.luau");
 	// The positive control: `Expr`'s `num` variant, whose discriminant is part
@@ -80,8 +80,8 @@ test("a tagged-union read builds the variant literal with its tag, not a copy of
 	assert.doesNotMatch(luau, /table\.clone/);
 });
 
-// Regression check for the one-helper-call-per-field item in
-// docs/future-work/generated-code-performance.md.
+// Regression check for the single CFrame reservation. What it was measured as worth is in
+// docs/research/generated-code-against-hand-written.md.
 test("an unpacked CFrame reserves its 24 bytes once, not 12 bytes twice", () => {
 	const luau = readCompiledLuau("tests/coverage.spec.luau");
 	// A reservation is inline now: the cursor advances by 24 in one step,
@@ -95,8 +95,8 @@ test("an unpacked CFrame reserves its 24 bytes once, not 12 bytes twice", () => 
 	assert.match(luau, /buffer[.]readf32[(]__surge_input, pos[0-9]+ [+] 20[)]/);
 });
 
-// Regression check for the shared-reservation item in
-// docs/future-work/generated-code-performance.md.
+// Regression check for the shared reservation. What it was measured as worth is in
+// docs/research/generated-code-against-hand-written.md.
 test("consecutive fixed-size fields share one reservation", () => {
 	const luau = readCompiledLuau("tests/basic.spec.luau");
 	// `Basic` starts with a `number` (f64, 8 bytes) and a `boolean` (1), so
@@ -108,8 +108,8 @@ test("consecutive fixed-size fields share one reservation", () => {
 	assert.match(luau, /local pos\d+ = pos\d+ \+ \d+/);
 });
 
-// Regression check for the blob side-channel item in
-// docs/future-work/generated-code-performance.md.
+// Regression check for the conditional blob side channel. What it is worth is in
+// docs/research/per-call-overhead.md.
 test("a shape with no blob field pays nothing for the blob side channel", () => {
 	const luau = readCompiledLuau("tests/basic.spec.luau");
 	// `Basic` has no Instance, `unknown` or `any` field, so none of the three
@@ -123,7 +123,7 @@ test("a shape with no blob field pays nothing for the blob side channel", () => 
 	assert.match(withBlobs, /__surge_beginWriteBlobs\(/);
 });
 
-// Regression check for the file-pragma item in
+// Regression check for the file-directive recommendation in
 // docs/future-work/generated-code-performance.md. These two read @rbxts/surge's
 // own compiled output and the transformed tests place, not one or the other.
 test("every compiled module of the package opens with its Luau file pragmas", () => {

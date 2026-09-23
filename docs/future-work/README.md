@@ -23,15 +23,13 @@ and what has landed since, is in
 These are small, have no dependency on the order above, and can land at any
 time:
 
-- What is left of
-  [generated-code-performance.md](generated-code-performance.md): coalescing a
-  tuple's consecutive fixed-size elements, and three smaller items — `s.size()`
-  evaluated twice, the scratch buffer never shrinking, and a block-object's
-  table sizing. Every large item in that document has landed, and every
-  per-call cost it measured came back at 1.00×; evaluating `s.size()` twice is
-  Luau work that native code generation makes _cheaper_ to leave alone, and a
-  tuple's consecutive fixed-size elements are the same mechanism an object's
-  fields already use, with no fixture serializing a tuple to measure it with.
+- [generated-code-performance.md](generated-code-performance.md): the
+  per-call gap of about 0.2 µs to hand-written Luau, with two table
+  allocations per `serialize()` named as the next thing to measure; the
+  package pragma and the read loop, both reopened by the re-measurement;
+  coalescing a tuple's fixed-size elements, which needs a fixture; three
+  smaller items; and the per-function `@native` attribute. It also holds the
+  file-directive recommendation until `performance.md` is written.
 - [enum-and-opaque-union-members.md](enum-and-opaque-union-members.md).
   Its stage 1 has landed: a union of items from two enums is a diagnostic,
   where two items of the same name used to produce a wrong value with no

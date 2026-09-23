@@ -90,7 +90,7 @@ directory states them.
 - `docs/usage.md` (install, plugin entry, example, supported types, wire
   format, errors, non-guarantees, and the two Luau file directives — both
   recommended as defaults, with the module shape that makes `//!native` safe
-  to default to, per How, briefly in
+  to default to, per The file-directive recommendation in
   [generated-code-performance.md](generated-code-performance.md)),
   linked from both READMEs. The directives section can be written and
   linked before the rest, since it depends on no open step. The wire-format

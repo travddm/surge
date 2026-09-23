@@ -104,7 +104,7 @@ const chainSerializer = createBinarySerializer<Chain>();
 type PackedPair = DataType.Packed<{ first: boolean; second: boolean }>;
 const packedPairSerializer = createBinarySerializer<PackedPair>();
 
-// generated-code-performance.md: 100 fixed-size fields in one function used to
+// Risks in docs/transformer.md: 100 fixed-size fields in one function used to
 // exceed Luau's 200 registers, which fails when the module loads.
 type Digit = "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9";
 type Wide = { [K in `f${"0" | "1"}${Digit}${Digit}`]: number };

@@ -1,7 +1,7 @@
 //!native
 //!optimize 2
 // Native code generation, and an optimization level pinned rather than inherited; neither is
-// worth anything here on its own. See Native code generation in
+// worth anything here on its own. See the package pragma entry in
 // docs/future-work/generated-code-performance.md.
 // Bit-packing for `boolean` values, `optional` presence, and two-variant
 // tagged-union tags inside a `DataType.Packed<T>` subtree (Type Coverage ->

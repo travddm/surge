@@ -151,7 +151,8 @@ arguments were built on.
 
 What the dismissals needed was an inversion: a total shrinking by 2.25× to
 11.68× while the dismissed item stayed put. A third is not that, so the six
-entries in What native changed survive on their arithmetic. But they survive
+dismissals generated-code-performance.md built on this figure survive on their
+arithmetic. But they survive
 with a margin of three, not of a hundred, and one of them changes character.
 The package pragma entry predicted 1.47× "once the caller is native as well"
 from a helper-and-caller table, and dismissed that prediction on the grounds

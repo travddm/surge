@@ -263,9 +263,10 @@ project's own small IR is written in TypeScript.
    per shape, sized first, written with no copy) because it needs one
    traversal of the value instead of two. Native code generation looked like
    it would invert that trade, since the extra traversal is Luau work and
-   the copy it removes is a C call; measured, it is worth two percent on the
-   generated code, so the trade stands (see What native changed in
-   [future-work/generated-code-performance.md](future-work/generated-code-performance.md)).
+   the copy it removes is a C call. It does not: the copy measures at
+   nothing at any payload size, so there is no saving on that side for a
+   cheaper traversal to be weighed against
+   ([research/per-call-overhead.md](research/per-call-overhead.md)).
    It also emits the same
    reservation regardless of whether a shape is all-fixed-size or has
    variable-length fields — the `Field` IR does not need to branch on that
