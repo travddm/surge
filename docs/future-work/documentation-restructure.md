@@ -14,15 +14,8 @@ content that have different readers and age at different rates, so each
 one is too long for the reader who needs it and never quite current for
 the reader who wrote it.
 
-- **What a user needs.** Install, configure, write a serializer, know what
-  is supported and what the bytes and errors are. Short, stable, no
-  history.
-- **What was established by experiment.** A gap measured, a probe run, a
-  mode of the harness found. Dated, with its method and numbers, never
-  edited after the fact except to add a later result.
-- **What the implementation guarantees.** The wire format, the
-  transformer's classification and emission rules, the runtime API. Exact,
-  versioned with the code, pinned by tests.
+The three kinds, and which document owns each, are in
+[contributing-docs.md](../contributing-docs.md).
 
 This document is the plan for separating them. Nothing in it changes
 behavior, and none of it should be done piecemeal without the migration
@@ -56,37 +49,12 @@ The transformer repository gets the same `AGENTS.md`, `CLAUDE.md`, and
 `README.md` shape, with its own commands and rules; its detailed
 documentation stays here, and its `AGENTS.md` index points across.
 
-**User-facing pages** (`docs/*.md`) follow these rules:
-
-- Lead with the task and a code sample. Explanation follows the sample.
-- Under about 150 lines each. Depth is a link into `specs/` or
-  `research/`, not a section.
-- No history: no "landed", "since", "used to", dates, commit hashes, or
-  review findings.
-- No numbers except ones the reader acts on (a width, a limit, a default).
-  A benchmark figure is a link to `benchmarks/` or a paper.
-- One term per concept, matching the specs' terms. The prose rules already
-  in [coding-standards.md](../coding-standards.md) apply.
-- Never duplicate a statement; link to the one place it lives. File and
-  symbol names in backticks, cross-references as Markdown links.
+**User-facing pages** (`docs/*.md`) are written to the rules in
+[contributing-docs.md](../contributing-docs.md), and every page this plan
+produces is held to them.
 
 **Specifications** (`docs/specs/`) are normative and versioned with the
-code. Proposed format, defined once in `docs/specs/README.md` and used by
-every spec:
-
-```text
-# <Name> specification
-Status: <draft | current>   Applies to: @rbxts/surge x.y, rbxts-transformer-surge x.y
-1. Scope            what this specifies and what it leaves to another spec
-2. Terms            each term once, with the identifier the code uses
-3. <Normative sections>   numbered statements; MUST / SHOULD / MAY as in
-                    coding-standards.md; tables and byte diagrams where
-                    they read better than prose
-n. Conformance      which test pins each statement (bytes.spec.ts, golden
-                    checks, transformer tests), or which source implements it
-Changes             one line per change, newest first
-```
-
+code, in the format [specs/README.md](../specs/README.md) states.
 The specs to write, and where their content is today:
 
 | Spec                         | Content                                                                                                                                    | From                                                                                                       |
@@ -98,23 +66,8 @@ The specs to write, and where their content is today:
 | `specs/test-harness.md`      | The Lune shim contract, the sentinel lines, what each suite root covers                                                                    | testing.md                                                                                                 |
 
 **Research papers** (`docs/research/`) report what was measured and never
-advise. Proposed format, defined once in `docs/research/README.md`:
-
-```text
-# <Title>
-<date>  ·  surge <commit>  ·  rbxts-transformer-surge <commit>  ·  Roblox <version>
-Abstract        the question and the answer, five sentences at most
-Background      what was known and why the question mattered
-Method          harness, protocol, what was varied, what was held as control
-Results         tables; every number with its spread; data file named
-Discussion      what the result does and does not show; threats to validity
-Conclusion      one paragraph
-Data            the trials file or run output the tables were made from
-```
-
-A paper is not edited after publication except to append a correction
-with its own date. A later measurement is a new paper or a numbered
-revision. The papers to write, and where their content is today:
+advise, in the format [research/README.md](../research/README.md) states.
+The papers to write, and where their content is today:
 
 | Paper                                                            | From                                                                                                          |
 | ---------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
@@ -130,20 +83,26 @@ The numbers in the first three come after
 [speed-remeasurement.md](speed-remeasurement.md), so each paper is written
 once with corrected figures.
 
-**Future work** (`docs/future-work/`) keeps its one-document-per-unit
-form but holds only open work. The 380-line narrative of landed work at
-the head of [README.md](README.md) moves into the review paper and the
-git log; the index becomes the three lists it ends with today (ordered
-steps, no step of its own, deferred). A document whose work has landed is
-deleted, as the convention already says, and its record is the paper or
-spec that absorbed it.
+**Future work** (`docs/future-work/`) holds open work only, per the rule in
+[contributing-docs.md](../contributing-docs.md). This directory breaks that
+rule in two ways that the sequence below repairs. The first is the
+380-line narrative of landed work at the head of [README.md](README.md),
+which moves into the review paper and the git log, leaving the index the
+three lists it ends with today (ordered steps, no step of its own,
+deferred). The second is
+[benchmark-tooling.md](benchmark-tooling.md), which keeps its landed steps
+as struck-through entries.
 
 ### Conventions to adopt
 
 The maintainer's other roblox-ts repositories settled on a set of
 documentation and repository conventions that this repository lacks. They
-are restated here in full, adapted to this project's shape, so that nothing
-in this plan depends on a file outside this repository.
+were restated here in full, adapted to this project's shape, so that
+nothing in this plan depends on a file outside this repository. What has
+since been adopted has moved out of it: the documentation rules and the
+trigger table are in [contributing-docs.md](../contributing-docs.md), and
+the two format definitions are in the READMEs of [specs/](../specs/) and
+[research/](../research/). What is left to adopt:
 
 **An `AGENTS.md` in each repository is the entry point.** It is read first
 by a contributor or an agent, and it links out rather than explaining. Its
@@ -170,65 +129,20 @@ sections, in order:
    change is a `bytes.spec.ts` change and a size-table change in the same
    commit; a measurement is a paper, never an edit to a number in a page.
    Review-only conventions: one responsibility per module, generated files
-   are never hand-edited, and `future-work/` stays current (the rule
-   below).
+   are never hand-edited, and `future-work/` stays current (the rule in
+   [contributing-docs.md](../contributing-docs.md)).
 6. **Verifying changes.** `mise run ci` before a change is complete, in
    whichever repository was touched, and `lint:fix` and `format:fix`
    before that; `testing.md` says what each step checks and how to fix a
    failure.
-7. **Updating documentation.** The trigger table below, and the rule that
-   documentation changes in the same commit that makes it necessary. When
-   in doubt: if a reader of the docs after the change would be confused
-   or misled, update the relevant file.
+7. **Updating documentation.** The trigger table, which moves here from
+   [contributing-docs.md](../contributing-docs.md) and is linked, not
+   copied, from there afterwards, with its rows rewritten as the specs and
+   the user pages take over from today's documents.
 
 `CLAUDE.md` is a pointer to `AGENTS.md` with only what is specific to
 Claude Code (the shell to use on Windows, for instance); where the two
 conflict, `AGENTS.md` wins.
-
-**`docs/contributing-docs.md` says how documentation is maintained.**
-Three sections: a "what lives where" table (one row per document,
-including `specs/`, `research/`, and `future-work/`, stating what each
-owns), "when to update docs" (same change; the trigger table lives in
-`AGENTS.md` and is linked, not copied), and "style guidelines": plain
-direct prose, short sentences and bullets over paragraphs, no duplication,
-`AGENTS.md` kept concise and actionable with detail in `docs/`, names in
-backticks, cross-references as links, plus the reader-kind rules of this
-plan.
-
-**The documentation-update trigger table** for this repository, to be
-carried in `AGENTS.md`:
-
-| Trigger                                                                                         | Update                                                                                                      |
-| ----------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
-| Added, removed, or renamed a mise task or npm script                                            | `README.md`, and `AGENTS.md` if it is one of the essentials                                                 |
-| Changed the repository split, the sibling-checkout arrangement, or where a package lives        | `architecture.md`                                                                                           |
-| Changed the runtime package's exports or the contract of `createBinarySerializer`               | `specs/runtime-api.md`; `data-types.md` if the `DataType` surface changed                                   |
-| Changed any byte an encoding writes: a width, a length prefix, the packed region, an enum index | `specs/wire-format.md`, `bytes.spec.ts`, `supported-types.md` or `data-types.md`, and `mise run bench:size` |
-| Changed type classification, a diagnostic, or an emission rule                                  | `specs/transformer.md`; `supported-types.md` if a user can see it                                           |
-| Changed what `deserialize` does on bad input                                                    | `errors-and-guarantees.md` and `specs/runtime-api.md`                                                       |
-| Changed the benchmark catalog, an adapter, the timing protocol, or a recorder                   | `specs/benchmark-harness.md`, and re-record the results file it affects                                     |
-| Measured something: a probe, an A/B, a re-measurement, a full run worth keeping                 | A paper under `research/`; a user page links to it and never carries the number                             |
-| Changed a lint rule, formatter setting, type rule, or file-organization convention              | `coding-standards.md`                                                                                       |
-| Changed the file-directive recommendation or what a user should expect of speed                 | `performance.md`                                                                                            |
-| Changed how `ci` runs, the Lune shim, a sentinel line, or an exit code                          | `testing.md`; `specs/test-harness.md` for the contract                                                      |
-| Changed how or when docs are updated                                                            | `AGENTS.md` and `contributing-docs.md`                                                                      |
-| Changed a task a skill documents                                                                | `.claude/skills/`                                                                                           |
-| Started, finished, or re-scoped deferred work                                                   | `future-work/`, per the rule below                                                                          |
-
-**`future-work/` stays current and prunes itself.** One file per unit of
-work, with the What / Why deferred / How, briefly shape this directory
-already uses. Its `README.md` states the order and the dependencies
-between documents, and is updated in the same change that starts,
-finishes, or reorders any of them; where units are independent it says so,
-as parallel tracks. When work lands, in whole or in part, it is removed
-from its document, never left as a struck-through line, and anything a
-future reader needs is promoted: a decision or a guarantee to the spec
-that owns it, a measurement to a paper, a contributor gotcha to
-`contributing.md` or `testing.md`. A document that empties is deleted and
-dropped from the index. This directory currently breaks the rule in two
-ways that the sequence below repairs: [benchmark-tooling.md](benchmark-tooling.md)
-keeps its landed steps as struck-through entries, and
-[README.md](README.md) opens with a narrative of landed work.
 
 **`coding-standards.md` gains three sections it does not have.** The
 existing tooling, formatting, types, naming, and package-boundary sections
@@ -249,8 +163,9 @@ to `contributing.md`). Added:
   and types for what a caller needs, never how it is implemented; `//`
   only for intent, an invariant, or a workaround; a comment should stay
   correct if the implementation changes but the intent does not; `TODO`
-  only with a clear follow-up. The prose rules for comments already in
-  this file apply.
+  only with a clear follow-up. The prose rules in
+  [contributing-docs.md](../contributing-docs.md) apply to a comment as
+  much as to a document.
 - **Generated files**, with the canonical list: `out/`, `dist/`,
   `include/`, `node_modules/`, `package-lock.json`, `tests/out/`,
   `tests/dist/`, `tests/include/`, the compiled Blink and Zap modules
@@ -292,7 +207,6 @@ the task has been done twice by hand.
 | `transformer.md`                            | `specs/transformer.md`, `specs/wire-format.md`, `supported-types.md`; the fbs/Zap source reading and the spike to a short research note | Prose the specs restate                          |
 | `serde.md`                                  | `specs/runtime-api.md`, `getting-started.md` (install and version pinning)                                                              |                                                  |
 | `coding-standards.md`                       | Kept and shortened; gains file organization, comments, and generated files per Conventions to adopt                                     | The editor-window narrative (to contributing.md) |
-| `contributing-docs.md`                      | New, per Conventions to adopt                                                                                                           |                                                  |
 | `testing.md`                                | Kept, in the fixed shape above; `specs/test-harness.md` and `specs/benchmark-harness.md` take the contracts                             | The history of why each runner exists            |
 | `benchmarks/*`                              | Unchanged; their generated prose shortened to point at the harness spec                                                                 |                                                  |
 | `future-work/generated-code-performance.md` | Three papers; the open items stay as a short future-work document                                                                       | The narrative                                    |
@@ -311,9 +225,6 @@ the task has been done twice by hand.
   `README.md`s, and the transformer repository for `.md` mentions and
   update each to the new location and section. Do not leave redirect
   stubs; a stub is a second place the statement lives.
-- `.markdownlint.json` (line length 100, tables and code exempt) and
-  `cspell.json` apply to every new file; a spec's byte diagrams go in code
-  blocks.
 - `architecture.md`'s "Documents in this design" list is the entry point
   and must be rewritten with the layout above, not appended to.
 - Nothing is duplicated between an old and a new location for longer than
@@ -327,45 +238,42 @@ page for, is settled (What `deserialize` does with bad input in
 [serde.md](../serde.md)). What is left of Tier B of
 [type-coverage-parity.md](type-coverage-parity.md) is not a reason to wait
 either: each remaining brand adds a row to `supported-types.md` and
-`data-types.md`, which is what the trigger table above is for, and holding
+`data-types.md`, which is what the trigger table in
+[contributing-docs.md](../contributing-docs.md) is for, and holding
 the move for it would only add more of the documents it has to untangle.
 The performance papers wait on
 [speed-remeasurement.md](speed-remeasurement.md). And the move touches
 every cross-reference in both repositories, so it is one unit of work
 with a sequence, not a series of opportunistic edits.
 
-Three parts do not wait: the two format READMEs (`specs/README.md`,
-`research/README.md`), the frame-starvation paper, and the review paper
-that absorbs the future-work narrative. None depends on open behavior or
+Two parts do not wait: the frame-starvation paper, and the review paper
+that absorbs the future-work narrative. Neither depends on open behavior or
 on a re-measurement.
 
 ## How, briefly
 
 In order; each step is one change that leaves the tree consistent:
 
-1. Write `docs/specs/README.md` and `docs/research/README.md`: the two
-   formats above, and an index each. Write `docs/contributing-docs.md`,
-   and put the `future-work/` rule into effect from this step on, since
-   both govern the move itself. Add the new directories to
-   architecture.md's document list until `AGENTS.md` replaces it.
-2. Write the frame-starvation paper from the A/B already recorded, and the
+1. Write the frame-starvation paper from the A/B already recorded, and the
    review paper from the future-work narrative; cut the narrative from
    `future-work/README.md` and leave the three lists.
-3. Run [speed-remeasurement.md](speed-remeasurement.md); write the three
+2. Run [speed-remeasurement.md](speed-remeasurement.md); write the three
    performance papers and the noise paper from its results; reduce
    generated-code-performance.md and benchmark-tooling.md to their open
    items.
-4. Write the specs from transformer.md, serde.md, and testing.md, each
+3. Write the specs from transformer.md, serde.md, and testing.md, each
    section marked `current` or `draft` where Tier B or hardening will
    change it; delete the prose the specs restate; fix the code and test
    citations.
-5. Write the user pages, `contributing.md`, and the shortened
+4. Write the user pages, `contributing.md`, and the shortened
    `coding-standards.md` and `testing.md`, working off
    documentation-gaps.md's checklist as each statement is rewritten;
-   write `AGENTS.md` and `CLAUDE.md` in both repositories; rewrite both
-   READMEs and architecture.md; delete documentation-gaps.md.
-6. Final sweep: link check across both repositories, `mise run ci`, and a
-   read of every page under `docs/*.md` against the rules above.
+   write `AGENTS.md` and `CLAUDE.md` in both repositories, moving the
+   trigger table into `AGENTS.md`; rewrite both READMEs and
+   architecture.md; delete documentation-gaps.md.
+5. Final sweep: link check across both repositories, `mise run ci`, and a
+   read of every page under `docs/*.md` against
+   [contributing-docs.md](../contributing-docs.md).
 
 **Done when:** a consumer can install and use surge from `README.md` and
 `getting-started.md` without opening a spec; every number under `docs/`

@@ -452,7 +452,7 @@ before the move only adds to the documents it has to untangle.
 
 | Step | Document                                                                                                                                  | Why here                                                                                                                                                                                                                                                                                                                                                         |
 | ---- | ----------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1    | [documentation-restructure.md](documentation-restructure.md), delivering the user pages of [documentation-gaps.md](documentation-gaps.md) | User pages, specs under `docs/specs/`, and research papers under `docs/research/`, written against fixed behavior and corrected numbers. Its format READMEs, the frame-starvation paper, and the review paper do not wait; see below.                                                                                                                            |
+| 1    | [documentation-restructure.md](documentation-restructure.md), delivering the user pages of [documentation-gaps.md](documentation-gaps.md) | User pages, specs under `docs/specs/`, and research papers under `docs/research/`, written against fixed behavior and corrected numbers. The frame-starvation paper and the review paper do not wait; see below.                                                                                                                                                 |
 | 2    | [type-coverage-parity.md](type-coverage-parity.md) Tier B, designed in [data-type-surface.md](data-type-surface.md)                       | New `DataType.*` surface. The length-typed containers and the per-component widths have landed, and with them the measured reason this came first; what is left is numeric ranges, a bit-packed set of a fixed member list, and a quantized `CFrame` rotation. `Range<Min, Max>` needs step 1's validation switch, and none of the three rests on a measurement. |
 | 3    | [ci-and-release.md](ci-and-release.md): version backstop and first tagged release                                                         | The backstop lands with the release it protects. The CI-only items do not wait; see below.                                                                                                                                                                                                                                                                       |
 
@@ -481,12 +481,11 @@ time:
   ratios recorded above were measured in the slow mode; each is one
   checkout and one ten-minute double run per side, and the results land once, in
   the research papers the restructure assigns them to.
-- The first two steps of
-  [documentation-restructure.md](documentation-restructure.md): the two
-  format READMEs, `contributing-docs.md` and the future-work rule it
-  states, the frame-starvation paper, and the review paper that absorbs
-  the narrative at the head of this file. None depends on open behavior
-  or on a re-measurement.
+- The first step of
+  [documentation-restructure.md](documentation-restructure.md): the
+  frame-starvation paper, and the review paper that absorbs the narrative
+  at the head of this file. Neither depends on open behavior nor on a
+  re-measurement.
 - The stale-statement checklist in
   [documentation-gaps.md](documentation-gaps.md). Every entry describes
   behavior that is already final.

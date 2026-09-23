@@ -28,10 +28,17 @@ own doc for the detail that belongs to it:
   and style conventions (each repo keeps its own copy — see below).
 - [testing.md](testing.md) — testing and verification strategy for the
   whole stack.
+- [contributing-docs.md](contributing-docs.md) — what each document owns,
+  when a change has to update one, and how to write one.
 - [benchmarks/](benchmarks/) — recorded results:
   [size.md](benchmarks/size.md), bytes per value, written by
   `mise run bench:size`, and [speed.md](benchmarks/speed.md), values per
   second, written by `mise run bench:speed` from a real Roblox process.
+- [specs/](specs/) — normative specifications, versioned with the code;
+  [specs/README.md](specs/README.md) states the format. None published yet.
+- [research/](research/) — papers reporting what was measured, dated and
+  never edited after the fact; [research/README.md](research/README.md)
+  states the format. None published yet.
 - [future-work/](future-work/) — deferred capabilities with no design yet
   (the `surge-net` networking layer, schema evolution/versioning, and a
   headless CI runner), plus the findings of the September 2026 adversarial
