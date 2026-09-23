@@ -4,7 +4,7 @@ Part of the [surge](../architecture.md) design.
 
 ## What
 
-`readDict` (the transformer's `emit.ts`) rebuilds a `Map`, `Set`, or
+`readDict` (the transformer's `emit/read.ts`) rebuilds a `Map`, `Set`, or
 `Record` into a local it declares as `Record<K, V>`, starting from `{}` and
 filled by `result[key] = value` in the read loop. That type node is the
 problem, not the code it types: the Luau it compiles to is correct for every
@@ -49,7 +49,7 @@ a `Set<string>` to keep that unit to its own subject.
   the change is the declaration and not the loop.
 - Whatever the declaration becomes, it has to keep the `source` distinction
   it exists for: a `Record` must still come back as a `Record` and not as a
-  non-functional `Map` (see the note above `recordType` in `emit.ts`).
+  non-functional `Map` (see the note above `recordType` in `emit/read.ts`).
 - One case per key kind in `transform.test.ts`'s type-check-the-generated-
   code suite, which is where every earlier instance of this class of bug is
   pinned, plus a round-trip fixture for a datatype key and a literal-union

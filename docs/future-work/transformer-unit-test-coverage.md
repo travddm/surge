@@ -13,12 +13,12 @@ Step 0 (the fixture harness) has landed: `test/harness.ts` exposes
 [architecture.md](../architecture.md) for why this can't be a real
 cross-repo dependency), and `@rbxts/types`/`@rbxts/compiler-types` are
 dev-installed so a `noLib`/`typeRoots` program can resolve `Instance`,
-`Enum.*`, `Vector3`, and sequences. `emit.ts`, `detect.ts`, and `index.ts`
+`Enum.*`, `Vector3`, and sequences. `emit/`, `detect.ts`, and `index.ts`
 each have an initial test file now
 (`test/emit.test.ts`/`test/detect.test.ts`/`test/transform.test.ts`), but
 coverage is still far from complete:
 
-- **`emit.ts`:** one printed-output snapshot per `Field` kind (write and
+- **`emit/`:** one printed-output snapshot per `Field` kind (write and
   read statements), plus dedicated cases for the read-order fix (a
   helper-object/blob field followed by a field whose read needs a
   statement), packed-boolean padding, enum index width/table lookup,

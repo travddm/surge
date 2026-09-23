@@ -302,6 +302,19 @@ project's own small IR is written in TypeScript.
       they can be referenced from many events; this project has no
       equivalent multi-root-shape registry, since each `createSerializer<T>()`
       call site is transformed independently.
+    - The emitter is `src/emit/` in the transformer repository, one module
+      per concern rather than one file: `constants.ts` (the fixed numbers
+      and the injected names), `layout.ts` (what a `Field` costs, off the
+      IR alone, with no emitter state), `context.ts` (the state one emitted
+      pair of functions shares, and the statement- and expression-level
+      plumbing), `types.ts` (the TypeScript types the generated code
+      declares), `write.ts` and `read.ts` (one function per `Field` kind,
+      mirroring each other), and `index.ts` (the `Emitter` class, which is
+      all that leaves the directory, and `ensureHelper`, the one place that
+      holds both sides). A new `Field` kind therefore adds a case to the
+      dispatch in `write.ts` and in `read.ts`, a row to `layout.ts`'s
+      `fixedBytes`/`minBytes`, and a branch to `types.ts`'s
+      `fieldToTypeNode`.
 6. **Recursive/self-referential types**: detected during the type walk (a
    type reappearing on its own path); these compile to a **named helper
    function** (module-scoped local) instead of infinite inlining, with

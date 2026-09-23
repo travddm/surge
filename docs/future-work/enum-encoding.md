@@ -30,8 +30,9 @@ for a single literal value. Minor; not a correctness issue.
 `literalConst.value` is typed `string | number | boolean` (`field.ts`), so
 representing a specific `EnumItem` there means widening that type (or
 adding a new `Field` kind) and touching every place that already
-pattern-matches on it: `literalValueExpr`/`fieldToTypeNode`/`guardFor` in
-`emit.ts`, plus whatever `walk.ts` call site would produce it. That IR
+pattern-matches on it: `literalValueExpr` (`emit/context.ts`),
+`fieldToTypeNode` (`emit/types.ts`), and `guardFor` (`emit/write.ts`), plus
+whatever `walk.ts` call site would produce it. That IR
 change is larger than the one-byte saving justifies on its own; worth
 doing together with a broader `literalConst` cleanup if one comes up,
 not as a standalone change.
@@ -40,7 +41,7 @@ not as a standalone change.
 
 - Either widen `literalConst`'s `value` to admit an `{ enumName, member }`
   shape, or add a dedicated `Field` kind for a single enum item constant.
-- Update `emit.ts`'s `literalValueExpr`, `fieldToTypeNode`, and `guardFor`
+- Update `literalValueExpr`, `fieldToTypeNode`, and `guardFor`
   (and any other exhaustive switch over `Field["kind"]`/`literalConst.value`)
   to handle it.
 - Classify a single-item enum union (`walkEnum` called with one

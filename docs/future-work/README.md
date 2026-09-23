@@ -395,6 +395,18 @@ above from a full run before this was read from cells in that slow mode;
 that reaches and how to re-measure them, and the figures above are left as
 recorded until it does.
 
+The transformer's emitter is now `src/emit/`, one module per concern, where
+it was a single 3,000-line `emit.ts`. `writeField`/`readField` dispatch to one
+function per `Field` kind, and those functions live in `write.ts`/`read.ts`
+over a shared `context.ts`, with `layout.ts` answering what a `Field` costs
+and `types.ts` building the types the generated code declares. See the
+emission step in [transformer.md](../transformer.md) for where a new kind
+goes. The move changed no emitted byte: it was gated on an identical printed
+corpus, the round-trip suite, and a regenerated
+[benchmarks/size.md](../benchmarks/size.md). It is not a step of its own and
+reorders nothing below; it landed before Tier B, in `rbxts-transformer-surge`
+`28a64de` and `9687ea5`, so that Tier B's three new kinds land into it.
+
 Every claim in this directory was checked against both repositories at
 `surge` `7cce55e` and `rbxts-transformer-surge` `0e7c10d`. The order below
 changed as a result; each row states why. The robustness work described

@@ -267,6 +267,13 @@ The concrete plan for everything else:
     `mise run tests:compile:watch`, which watches `tests/src/` only, never
     the dependency snapshot) to pick the change up.
 
+    The snapshot is a copy of the transformer's `lib/`, and `tsc` never
+    deletes output for a source file that no longer exists. After renaming
+    or moving a transformer source file, delete `lib/` and `.tsbuildinfo`
+    and recompile before `npm run tests:install`. A leftover `lib/x.js`
+    beside a new `lib/x/` is the case that bites: Node resolves `./x` to
+    the file, so every suite here runs the previous code and passes.
+
 - **Transformer unit tests** live in `rbxts-transformer-surge`'s own
   `test/` and run in plain Node/Jest, no Luau or Roblox involved — the
   transformer is ordinary code operating on the TypeScript compiler API.
