@@ -12,8 +12,7 @@ with the largest absolute difference between the value's components and its
 round trip's: the number that separates f32 rounding from an encoding that
 quantizes on purpose. surge, fbs, and the baseline store a `CFrame` rotation as
 an axis-angle triple in f32, which rounding alone makes inexact. serio
-quantizes that triple into 6 bytes, which is why its `CFrame` rows are both
-smaller and less exact.
+quantizes that triple into 6 bytes where the others write 12.
 
 fbs and serio each recognize an axis-aligned rotation by exact `CFrame`
 equality against a table built from `CFrame.Angles`, which the axis-aligned

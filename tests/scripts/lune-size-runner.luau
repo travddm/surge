@@ -93,8 +93,7 @@ paragraph(
 	"round trip's: the number that separates f32 rounding from an encoding that",
 	"quantizes on purpose. surge, fbs, and the baseline store a `CFrame` rotation as",
 	"an axis-angle triple in f32, which rounding alone makes inexact. serio",
-	"quantizes that triple into 6 bytes, which is why its `CFrame` rows are both",
-	"smaller and less exact."
+	"quantizes that triple into 6 bytes where the others write 12."
 )
 
 paragraph(
