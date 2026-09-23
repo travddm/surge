@@ -59,6 +59,7 @@ what a reader needs in order to apply a statement correctly.
 | Specification                    | Specifies                                                                                                                          |
 | -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
 | [runtime-api.md](runtime-api.md) | `@rbxts/surge`'s consumer API, what `deserialize` does with bad input, the helpers generated code calls, and the version coupling. |
+| [wire-format.md](wire-format.md) | The bytes each `Field` kind writes, the brands that change them, `Packed<T>`, the blob channel, and determinism.                   |
 
 Which specifications are still planned, what each one owns, and where its
 content lives today are in

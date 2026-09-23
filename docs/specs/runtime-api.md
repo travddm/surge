@@ -9,10 +9,10 @@ commit `05b267b` (no tagged release yet)
 This specifies `@rbxts/surge`, the runtime package: the API a consumer calls,
 what `deserialize` does with input it did not write, the helpers generated
 code calls into, and how the package's version is coupled to the
-transformer's. The bytes an encoding writes, and what the transformer emits
-for a call, are specified in Type coverage and Transformer design in
-[../transformer.md](../transformer.md) until `wire-format.md` and
-`transformer.md` are written in this directory. How to install the two
+transformer's. The bytes an encoding writes are in
+[wire-format.md](wire-format.md). What the transformer emits for a call is
+specified in Transformer design in [../transformer.md](../transformer.md)
+until `transformer.md` is written in this directory. How to install the two
 packages is in [../serde.md](../serde.md) until a user page takes it.
 
 ## 2. Terms
@@ -70,8 +70,8 @@ site, because the transformer decides from it what to emit. It defaults to
 `false`.
 
 **3.9** The package exports the `DataType` namespace of width, length and
-packing brands. What each brand does to the bytes is in Type coverage in
-[../transformer.md](../transformer.md).
+packing brands. What each brand does to the bytes is in
+[wire-format.md](wire-format.md).
 
 ## 4. What `deserialize` does with input it did not write
 
@@ -128,8 +128,9 @@ part of the coupling in section 6.
 serializer declares its own scratch buffer, capacity, write cursor and read
 cursor in the closure it is emitted into, and reserves bytes inline.
 
-**5.3** `packBit` is exported and is not called by generated code: the write
-side of a `Packed<T>` bit region is emitted inline.
+**5.3** `packBit` is exported as a public primitive for hand-written callers
+and is not called by generated code: the write side of a `Packed<T>` bit
+region is emitted inline, one whole byte at a time.
 
 ## 6. Version coupling
 

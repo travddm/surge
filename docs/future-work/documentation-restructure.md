@@ -57,12 +57,11 @@ produces is held to them.
 code, in the format [specs/README.md](../specs/README.md) states.
 The specs to write, and where their content is today:
 
-| Spec                         | Content                                                                                                                                    | From                                                                                                       |
-| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------- |
-| `specs/wire-format.md`       | Byte layout per kind, length widths and `Length<T, L>`, the packed region, `CFrame` forms, enum index width, the blob channel, determinism | transformer.md Type Coverage and Wire format, serde.md, `bytes.spec.ts`, data-type-surface.md              |
-| `specs/transformer.md`       | Detection, type walk, classification rules, the diagnostics list, emission rules (reservation runs, block splitting, directive hoisting)   | transformer.md Transformer Design §1–9 and Risks                                                           |
-| `specs/benchmark-harness.md` | The catalog, adapters, tiers, protocol (chunked timing, yields, trials, scoped runs), and what each results file records                   | testing.md Benchmarking strategy and the run-in-roblox section, benchmark-tooling.md, the recorder scripts |
-| `specs/test-harness.md`      | The Lune shim contract, the sentinel lines, what each suite root covers                                                                    | testing.md                                                                                                 |
+| Spec                         | Content                                                                                                                                  | From                                                                                                       |
+| ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| `specs/transformer.md`       | Detection, type walk, classification rules, the diagnostics list, emission rules (reservation runs, block splitting, directive hoisting) | transformer.md Transformer Design §1–9 and Risks                                                           |
+| `specs/benchmark-harness.md` | The catalog, adapters, tiers, protocol (chunked timing, yields, trials, scoped runs), and what each results file records                 | testing.md Benchmarking strategy and the run-in-roblox section, benchmark-tooling.md, the recorder scripts |
+| `specs/test-harness.md`      | The Lune shim contract, the sentinel lines, what each suite root covers                                                                  | testing.md                                                                                                 |
 
 **Research papers** (`docs/research/`) report what was measured and never
 advise, in the format [research/README.md](../research/README.md) states.

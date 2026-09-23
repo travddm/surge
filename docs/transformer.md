@@ -389,6 +389,11 @@ project's own small IR is written in TypeScript.
 
 ## Type coverage
 
+The bytes each kind below writes are specified in
+[specs/wire-format.md](specs/wire-format.md), which this section's Encoding
+column, `Length<T, L>`, per-component widths, `Packed<T>` and blob channel
+subsections restate until the transformer specification takes the rest.
+
 Parity target is fbs's complete supported surface, confirmed by reading
 `src/metadata/index.ts`, `unions.ts`, `dataType.ts`,
 `processSerializerData.ts`, `createBinarySerializer.ts`, and both
