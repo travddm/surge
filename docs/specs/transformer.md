@@ -2,7 +2,7 @@
 
 Status: current
 Applies to: `@rbxts/surge` at commit `ca7bb09`, `rbxts-transformer-surge` at
-commit `8792c27` (no tagged release yet)
+commit `f7270b3` (no tagged release yet)
 
 ## 1. Scope
 
@@ -225,8 +225,9 @@ no state its closure does not declare (5.3).
 
 **5.14** Write-side checks are emitted only at a call site that sets
 `writeChecks: true`: a comparison of each exact-form value's length with its
-`N` before it is written, which is `>` for an `array` or tuple rest of
-`optional` elements and `!==` otherwise, and a comparison of each count with
+`N` before it is written, which is `>` for an `array` or tuple rest whose
+element is `optional` or a `literal` that includes `undefined`, and `!==`
+otherwise, and a comparison of each count with
 the largest its `u8`, `u16` or `u24` width holds. A `dict`'s count is compared
 once the entries are written, before it is written back. A `u32` count is not
 compared.
@@ -345,7 +346,7 @@ of `rbxts-transformer-surge`, cited by `describe` block. Source paths are in
 
 ## Changes
 
-- `ca7bb09` / `8792c27`: 3.3 (the options each factory takes, now
+- `ca7bb09` / `f7270b3`: 3.3 (the options each factory takes, now
   with `writeChecks`); adds 5.14 (the write-side checks).
 - `1ed333b` / `33e2082`: 4.7 (every `dict` key kind type-checks) now
   states a guarantee; adds 4.13 (a width-branded `Record` key).

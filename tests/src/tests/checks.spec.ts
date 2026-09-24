@@ -75,6 +75,7 @@ interface Exact {
 	triple: DataType.Length<Array<DataType.u8>, 3>;
 	bytes: DataType.Length<buffer, 2>;
 	slots: DataType.Length<Array<DataType.u8 | undefined>, 3>;
+	marks: DataType.Length<Array<"a" | "b" | undefined>, 3>;
 }
 const exact = createBinarySerializer<Exact>({ writeChecks: true });
 
@@ -93,7 +94,7 @@ interface NarrowList {
 const narrowListUnchecked = createBinarySerializer<NarrowList>();
 
 function exactValue(): Exact {
-	return { code: "abcd", triple: [1, 2, 3], bytes: buffer.create(2), slots: [1, 2, 3] };
+	return { code: "abcd", triple: [1, 2, 3], bytes: buffer.create(2), slots: [1, 2, 3], marks: ["a", "b", "a"] };
 }
 
 function narrowValue(size: number): Narrow {
@@ -257,12 +258,16 @@ class ChecksTest {
 		assertRejected(() => exact.serialize({ ...exactValue(), bytes: buffer.create(3) }));
 	}
 
-	// An absent optional is what a missing element writes, so an array of
-	// optionals may be shorter (Wire format 6.6); only a longer one is rejected.
+	// An absent value is what a missing element writes, so an array of optionals,
+	// or of a literal that includes `undefined`, may be shorter (Wire format
+	// 6.6); only a longer one is rejected.
 	@Fact
 	public letsAnExactArrayOfOptionalsBeShorterButNotLonger(): void {
 		Assert.undefined(rejection(() => exact.serialize({ ...exactValue(), slots: [1] })));
 		assertRejected(() => exact.serialize({ ...exactValue(), slots: [1, 2, 3, 4] }));
+		const written = exact.serialize({ ...exactValue(), marks: ["b"] });
+		Assert.equal(1, exact.deserialize(written.buffer, written.blobs).marks.size());
+		assertRejected(() => exact.serialize({ ...exactValue(), marks: ["a", "a", "a", "a"] }));
 	}
 
 	@Fact

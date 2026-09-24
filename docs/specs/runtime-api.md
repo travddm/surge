@@ -2,7 +2,7 @@
 
 Status: current
 Applies to: `@rbxts/surge` at commit `ca7bb09`, `rbxts-transformer-surge` at
-commit `8792c27` (no tagged release yet)
+commit `f7270b3` (no tagged release yet)
 
 ## 1. Scope
 
@@ -77,9 +77,9 @@ packing brands. What each brand does to the bytes is in
 `@rbxts/surge:` for a value whose length or count does not fit its type: a
 value in the exact form of `DataType.Length<T, N>` that is not `N` long, and a
 count larger than the `u8`, `u16` or `u24` width `DataType.Length<T, L>` gives
-it. An `array` or tuple rest of `optional` elements in the exact form may be
-shorter than `N`, which [wire-format.md](wire-format.md) 6.6 makes valid; only
-a longer one raises.
+it. An `array` or tuple rest in the exact form whose element is `optional`, or
+a `literal` that includes `undefined`, may be shorter than `N`, which
+[wire-format.md](wire-format.md) 6.6 makes valid; only a longer one raises.
 
 **3.11** Without `writeChecks`, `serialize` does not examine lengths or counts:
 a value in the exact form is truncated or padded as
@@ -221,7 +221,7 @@ A test file named `*.spec.ts` is under `tests/src/tests/`. A path starting
 
 ## Changes
 
-- `ca7bb09` / `8792c27`: adds `writeChecks`. 3.2, 3.3 and 3.8 give
+- `ca7bb09` / `f7270b3`: adds `writeChecks`. 3.2, 3.3 and 3.8 give
   each factory the options of its own side; adds 3.10 (what `writeChecks`
   rejects) and 3.11 (what `serialize` does without it).
 - `f0b68ef` / `b954fd2`: the two gaps in `checks` closed. 4.2 (a
