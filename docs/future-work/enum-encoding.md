@@ -19,8 +19,11 @@ type, or adding a new `Field` kind, and touching every place that already
 pattern-matches on it: `literalValueExpr` (`emit/context.ts`),
 `fieldToTypeNode` (`emit/types.ts`), and `guardFor` (`emit/write.ts`), plus
 whatever `walk.ts` call site would produce it. That IR change is larger than
-the one-byte saving justifies on its own. It is worth doing together with a
-broader `literalConst` cleanup, not as a standalone change.
+the one-byte saving justifies on its own, so it is worth doing together with a
+broader `literalConst` cleanup where one is ready. It must land before the
+first release ([ci-and-release.md](ci-and-release.md)) either way: it changes
+what a type that works today writes, which breaks persisted bytes once a
+release exists.
 
 ## How, briefly
 

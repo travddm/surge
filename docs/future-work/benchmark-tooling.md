@@ -35,8 +35,9 @@ to one.
 
 ## Why deferred
 
-None of the four can start yet. Widening the baseline measures nothing new
-until the per-call gap the three existing rows already show is understood:
+The first two are step 2 of the [index](README.md), after the per-call gap.
+Widening the baseline measures nothing new until the gap the three existing
+rows already show is understood:
 surge's encode has a gap to the hand-written codec that is paid once per call
 ([generated-code-against-hand-written.md](../research/generated-code-against-hand-written.md)),
 the per-call costs measured so far do not explain it, and

@@ -12,54 +12,26 @@ and what has landed since, is in
 
 ## Order
 
-| Step | Document                                                                          | Why here                                                                                   |
-| ---- | --------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
-| 1    | [ci-and-release.md](ci-and-release.md): version backstop and first tagged release | The backstop lands with the release it protects. The CI-only items do not wait; see below. |
+| Step | Document                                                                                                                                                                                                                                                          | Why here                                                                                                                                                                                                                                                                                                |
+| ---- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1    | [generated-code-performance.md](generated-code-performance.md): the per-call gap first, with the two tables each `serialize()` returns as the next measurement; then fewer reservations and exact sizing, each measured on its own; then the rest of the document | The per-call gap is the largest open item, and its next measurement is named. Its result may change what `serialize()` returns, or which helpers the generated code calls, and both are free to change before the first release. Step 2 waits on it.                                                    |
+| 2    | [benchmark-tooling.md](benchmark-tooling.md): the hand-written baseline widened to the tagged union and the packed toggles, and the generated Luau's size measured                                                                                                | Waits on step 1: its own document says a wider baseline measures nothing new until the per-call gap is understood. The size measurement gives exact sizing and the other code changes of step 1 their cost in code as well as in time.                                                                  |
+| 3    | [enum-and-opaque-union-members.md](enum-and-opaque-union-members.md): `Enum.X \| string`, a union of items from two enums, and `Instance \| string`                                                                                                               | Type coverage. Independent of the order above, so it may run alongside steps 1 and 2. It supports shapes that are diagnostics today and moves no pinned byte.                                                                                                                                           |
+| 4    | [native-code-limits.md](native-code-limits.md): where a large serializer, or a large module of them, runs interpreted                                                                                                                                             | Research. Independent of the order above, and it needs Studio. It measures the emitted code, so it reads best after step 1 has changed that code.                                                                                                                                                       |
+| 5    | [blob-channel-state.md](blob-channel-state.md), [enum-encoding.md](enum-encoding.md) and [blob-classification.md](blob-classification.md)                                                                                                                         | Each changes the helper ABI or what a type that works today writes. That is free before the first release and a breaking change after it, so all three come before step 6. They are independent of steps 1 to 4 and of each other. `blob-classification.md` starts with the design decision it records. |
+| 6    | [ci-and-release.md](ci-and-release.md): version backstop and first tagged release                                                                                                                                                                                 | The backstop lands with the release it protects, after every step above that can change the consumer API, the helper ABI or the bytes. The CI-only items do not wait; see below.                                                                                                                        |
 
 ## No step of its own
 
 These are small, have no dependency on the order above, and can land at any
 time:
 
-- [generated-code-performance.md](generated-code-performance.md): the
-  per-call gap to hand-written Luau, with two table
-  allocations per `serialize()` named as the next thing to measure, and exact
-  sizing for a shape with no loop over elements of varying size; the
-  package pragma and the read loop, both reopened by the re-measurement;
-  fewer reservations, across a nested object, for a string's count and bytes,
-  for an array of fixed-size elements, and for a tuple's fixed-size elements,
-  which needs a fixture; three smaller items; the per-function `@native`
-  attribute; and whether surge should ever add the file directives itself.
-- [blob-channel-state.md](blob-channel-state.md): the blob channel's state
-  moved from the package into each serializer's closure, as the scratch
-  buffer's was. It removes the rule that two serializers with blob fields must
-  not overlap. It changes the helper ABI, so it ships in a release of both
-  packages.
-- [native-code-limits.md](native-code-limits.md): where a large serializer, or
-  a large module of them, passes a native code generation limit and runs
-  interpreted. Measure first.
-- [enum-and-opaque-union-members.md](enum-and-opaque-union-members.md):
-  support for `Enum.X | string`, a union of items from two enums, and
-  `Instance | string`, each a diagnostic. Support changes `guardedUnion`
-  variant order, but `bytes.spec.ts` pins no union with an enum or opaque
-  member, so it moves no pinned buffer.
-- [blob-classification.md](blob-classification.md): whether an empty object
-  type should encode as zero bytes, which waits on the design decision that
-  document records.
-- What is left of [benchmark-tooling.md](benchmark-tooling.md): widening the
-  hand-written baseline to the tagged union and the packed toggles, which
-  waits on the per-call gap to hand-written Luau being understood; measuring
-  the generated Luau's size, which needs each factory call in a module of its
-  own; a third tier, for wire cost, that needs a driver; and a Zap-shaped
-  timing, which needs one too.
 - The CI items in [ci-and-release.md](ci-and-release.md): the transformer
   workflow running the integration suite, the pinned sibling ref, `npm ci`,
   and the Windows job. The transformer's CI cannot see a broken
   serializer today.
 - [transformer-unit-test-coverage.md](transformer-unit-test-coverage.md): a
   test of the package-name cache in `detect.ts`, which needs `fs` mocking.
-- [enum-encoding.md](enum-encoding.md): a one-byte saving that needs an IR
-  change. Do it with a broader `literalConst` cleanup, not alone.
 
 ## Deferred indefinitely
 
@@ -80,6 +52,8 @@ above depends on them:
   of a type's encoding, optional and off by default, so a game can detect
   bytes that a build with a different type wrote. It waits for a consumer,
   such as a game that persists surge bytes across releases.
+- What is left of [benchmark-tooling.md](benchmark-tooling.md) after step 2:
+  a third tier, for wire cost, and a Zap-shaped timing. Each needs a driver.
 - [headless-ci.md](headless-ci.md): automated benchmark runs in CI. The
   harness in [benchmark-tooling.md](benchmark-tooling.md) is run by hand;
   gating on its numbers is a separate decision.
