@@ -102,9 +102,10 @@ beginning `@rbxts/surge:`.
 beginning `@rbxts/surge:`, with or without checks.
 
 **4.7** Checks examine lengths and counts, and the two indexes of 4.9. An input
-that passes them deserializes to a value of the right type. Which value of
-that type it is, such as a number outside the range a caller expects, is the
-caller's to check.
+that passes them deserializes to a value of the right type, except in its blob
+fields: each holds whatever `inputBlobs` holds at its position, which checks
+do not examine. Which value of the right type it is, such as a number outside
+the range a caller expects, is the caller's to check.
 
 **4.8** The input buffer and the read cursor are reset at the start of every
 `deserialize` of a `T` that reads bytes, and the blob index at the start of
@@ -191,7 +192,7 @@ A test file named `*.spec.ts` is under `tests/src/tests/`. A path starting
 | 4.3 (minimum size, lengths) | Source only: `minBytes` in `emit/layout.ts`; `readStr`, `readBuffer` and `readSequence` in `emit/read.ts` check no count                                                                                                                                |
 | 4.5                         | With checks: `checks.spec.ts`: `rejectsAReadPastTheEndOfTheBlobs`. Without: source only, `nextBlob` in `src/blobs.ts`, which `checks` does not change                                                                                                   |
 | 4.6                         | Source only: `nextBlob` in `src/blobs.ts`                                                                                                                                                                                                               |
-| 4.7                         | `checks.spec.ts`: `acceptsWhatSerializeWrote`. Source only for the values checks do not examine: the emitter compares no value but the two indexes of 4.9                                                                                               |
+| 4.7                         | `checks.spec.ts`: `acceptsWhatSerializeWrote`. Source only for what checks do not examine: the emitter compares no value but the two indexes of 4.9, and `nextBlob` in `src/blobs.ts` returns the element of `inputBlobs` as it is                      |
 | 4.8                         | Source only: the generated `deserialize` prologue and `beginReadBlobs`; no test raises and then deserializes again                                                                                                                                      |
 | 4.9                         | `checks.spec.ts`: `rejectsAnEnumIndexPastItsItems`, `rejectsAPackedRotationCodeThatNamesNoRotation`                                                                                                                                                     |
 | 4.10                        | Source only: `enumFromIndexExpr` in `emit/read.ts`; `readPackedCFrame` in `src/cframe.ts`                                                                                                                                                               |
@@ -207,7 +208,7 @@ A test file named `*.spec.ts` is under `tests/src/tests/`. A path starting
 - `f0b68ef` / `b954fd2`: the two gaps in `checks` closed. 4.2 (a
   packed `CFrame` is bounded) and 4.9 (checks reject an `enum` index past its
   items and a rotation code that names no rotation) now state guarantees;
-  4.7 and 4.10 follow them.
+  4.7 (a value of the right type, blob fields excepted) and 4.10 follow them.
 - `38b634f` / `6967359`: 4.9 and 4.10 name the future-work document that tracks them.
 - `8c4d5f5` / `87813e5`: corrected against the code: 4.2 (a packed `CFrame`
   read is not bounded), 4.3 (which counts are bounded, and how), 4.7 (unchecked

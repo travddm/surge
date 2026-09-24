@@ -57,7 +57,7 @@ const everything = createBinarySerializer<Everything>({ checks: true });
 
 // A packed `CFrame`'s size is in its own header, and an enum index names one of
 // a fixed list of items. Checks bound both before the value is read (Runtime
-// API 4.2 and 4.3 in docs/specs/runtime-api.md).
+// API 4.2 and 4.9 in docs/specs/runtime-api.md).
 interface WithPackedCFrame {
 	placement: DataType.Packed<{ at: CFrame }>;
 }
