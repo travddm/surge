@@ -17,6 +17,17 @@ interface WithDictionaries {
 }
 const dictionariesSerializer = createBinarySerializer<WithDictionaries>();
 
+// Keys a `Record` cannot type, which the read side used to rebuild into one
+// (Transformer 4.7 in docs/specs/transformer.md), and a branded key, written at
+// its width. A `Vector3` or enum item key is left to the transformer's type
+// check (Test harness 4.5 in docs/specs/test-harness.md).
+interface WithUncommonKeys {
+	byFlag: Map<boolean, string>;
+	flags: Set<"on" | "off">;
+	bySlot: Record<DataType.u8, string>;
+}
+const uncommonKeysSerializer = createBinarySerializer<WithUncommonKeys>();
+
 interface WithTuples {
 	rest: [string, ...number[]];
 	optionalTail: [number, string?];
@@ -84,6 +95,21 @@ class CollectionsTest {
 		};
 		const { buffer, blobs } = dictionariesSerializer.serialize(value);
 		Assert.equal(undefined, difference(value, dictionariesSerializer.deserialize(buffer, blobs)));
+	}
+
+	@Fact
+	public roundTripsDictionariesKeyedByWhatARecordCannotType(): void {
+		const value: WithUncommonKeys = {
+			byFlag: new Map([
+				[true, "yes"],
+				[false, "no"],
+			]),
+			flags: new Set(["on"]),
+			// A branded key is a number with a brand no literal carries, so the table is cast.
+			bySlot: { [0]: "first", [255]: "last" } as Record<DataType.u8, string>,
+		};
+		const { buffer: written, blobs } = uncommonKeysSerializer.serialize(value);
+		Assert.equal(undefined, difference(value, uncommonKeysSerializer.deserialize(written, blobs)));
 	}
 
 	@Fact

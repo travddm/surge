@@ -58,11 +58,6 @@ time:
   step 2, and since
   `benchmarks/speed.md` stopped advising, it is the only recommendation with
   no home outside this directory.
-- [dict-key-typing.md](dict-key-typing.md): a `Map` or `Set` keyed by a
-  Roblox datatype, or by a literal union, generates Luau that is correct
-  and TypeScript that does not check, so the build fails with no
-  diagnostic and nothing the user can open. The coverage table promises
-  those keys today. Found while writing the `checks` fixtures.
 - The CI items in [ci-and-release.md](ci-and-release.md): the transformer
   workflow running the integration suite, the pinned sibling ref, `npm ci`,
   and the Windows job. The transformer's CI cannot see a broken

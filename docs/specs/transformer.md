@@ -1,8 +1,8 @@
 # Transformer specification
 
 Status: current
-Applies to: `@rbxts/surge` at commit `f0b68ef`, `rbxts-transformer-surge` at
-commit `b954fd2` (no tagged release yet)
+Applies to: `@rbxts/surge` at commit `1ed333b`, `rbxts-transformer-surge` at
+commit `33e2082` (no tagged release yet)
 
 ## 1. Scope
 
@@ -119,13 +119,9 @@ union whose constituents are all opaque is a `blob` (4.1).
 **4.6** A `Record` whose key is a finite union of literals is an `object` with
 one property per key, not a `dict`.
 
-**4.7** Known defect, not a guarantee: a `Map` or `Set` whose key walks to
-anything other than `str`, `num` or a `guardedUnion` of the two is classified
-as a `dict` per 4.1, but the generated TypeScript does not type-check, so the
-build fails on a type error in generated code, with no diagnostic. This
-covers a `boolean`, enum, object, `buffer` or Roblox datatype key, and a key
-of one literal value or a literal union. It is tracked in
-[../future-work/dict-key-typing.md](../future-work/dict-key-typing.md).
+**4.7** A `dict`'s key may be of any kind the walk produces, including a
+`bool`, `enum`, `object`, `buffer`, Roblox datatype, `literalConst` or
+`literal` key, and the generated code type-checks whatever the key's kind.
 
 **4.8** `undefined` and `void` walk to a `literalConst` of `undefined`, which
 writes nothing and reads back as `undefined`. `never` is a diagnostic (7.2).
@@ -147,6 +143,9 @@ by 4.2, and its helper's body is the array or tuple (5.2).
 **4.12** A tuple or an array is never a `taggedUnion` constituent: its
 `length` is not a discriminant. A union of two or more of them has two or
 more table-shaped constituents and is a diagnostic (4.4, 7.2).
+
+**4.13** A `Record` whose key is a `DataType` width brand, such as
+`Record<DataType.u8, V>`, is a `dict` whose key is written at that width.
 
 ## 5. Emission
 
@@ -304,12 +303,13 @@ of `rbxts-transformer-surge`, cited by `describe` block. Source paths are in
 | 4.4       | `walk`: `TypeWalker union guards`, `TypeWalker wire-format determinism` (two literal values of one runtime type), `TypeWalker classification with fixture packages` (a union of `Instance` subclasses is a `blob`); `emit`: `Emitter union guards`                                                                              |
 | 4.5       | `walk`: `TypeWalker generic instantiation identity`                                                                                                                                                                                                                                                                             |
 | 4.6       | `walk`: `TypeWalker classification` (a finite key union walks as a fixed-property object)                                                                                                                                                                                                                                       |
-| 4.7       | Source only: `readDict` in `src/emit/read.ts`                                                                                                                                                                                                                                                                                   |
+| 4.7       | `transform`: `transform generated code` (a dictionary keyed by each kind); `tests/src/tests/collections.spec.ts`: `roundTripsDictionariesKeyedByWhatARecordCannotType`                                                                                                                                                          |
 | 4.8       | `walk`: `TypeWalker undefined, void and never`; `tests/src/tests/roblox.spec.ts`: `writesNothingForUndefinedAndVoidProperties`                                                                                                                                                                                                  |
 | 4.9       | `walk`: `TypeWalker type parameters`; `transform`: `transform diagnostics` (a call site inside a generic function)                                                                                                                                                                                                              |
 | 4.10      | `walk`: `TypeWalker Map and Set by declaration`                                                                                                                                                                                                                                                                                 |
 | 4.11      | `walk`: `TypeWalker recursion through arrays and tuples`; `transform`: `transform generated code` (an array of itself, a tuple holding an array of itself); `tests/src/tests/recursion.spec.ts`: `roundTripsRecursionThroughArraysAndTuplesAlone`                                                                               |
 | 4.12      | `walk`: `TypeWalker unions of tuples`                                                                                                                                                                                                                                                                                           |
+| 4.13      | `walk`: `TypeWalker Record keys`; `tests/src/tests/collections.spec.ts`: `roundTripsDictionariesKeyedByWhatARecordCannotType`                                                                                                                                                                                                   |
 | 5.1       | `emit`: `Emitter read-order for side-effecting fields`; every round trip under `tests/src/tests/`                                                                                                                                                                                                                               |
 | 5.2       | `emit`: `Emitter per-kind write/read snapshots`; `test/golden.test.mjs`: a non-recursive shape never calls a helper. Source only for the closure the helpers are declared in: `buildReplacement` in `src/index.ts`                                                                                                              |
 | 5.3       | `emit`: `Emitter read-side checks` (the read state); `transform`: `transform injected imports` (the scratch buffer). Source only for the state a side with no bytes omits: `writeStateDecls` and `readStateDecls` in `src/emit/context.ts`                                                                                      |
@@ -335,6 +335,8 @@ of `rbxts-transformer-surge`, cited by `describe` block. Source paths are in
 
 ## Changes
 
+- `1ed333b` / `33e2082`: 4.7 (every `dict` key kind type-checks) now
+  states a guarantee; adds 4.13 (a width-branded `Record` key).
 - `f0b68ef` / `b954fd2`: the remaining known defects of the walk
   fixed. 4.8 (`undefined` and `void` are constants, `never` a diagnostic),
   4.11 (a cycle through arrays or tuples is a recursion helper), 4.12 (a
