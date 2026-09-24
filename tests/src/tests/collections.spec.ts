@@ -246,11 +246,10 @@ class CollectionsTest {
 		}
 	}
 
-	// The exact form says a shorter value raises, and that holds wherever
-	// writing the missing element touches it. An optional element is the one
-	// exception: `arr[i]` past the end is `nil`, which is exactly what an
-	// absent optional writes, so the missing elements are written as absent
-	// and nothing raises. The read side then pushes `undefined`, which appends
+	// Wire format 6.6 in docs/specs/wire-format.md: in the exact form, an
+	// optional element pads a shorter array instead of raising. `arr[i]` past
+	// the end is `nil`, which is exactly what an absent optional writes, so the
+	// missing elements are written as absent and nothing raises. The read side then pushes `undefined`, which appends
 	// nothing to a Luau array, so the value comes back at its own length.
 	@Fact
 	public padsAShortExactArrayOfOptionalsInsteadOfRaising(): void {

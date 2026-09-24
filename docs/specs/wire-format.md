@@ -1,8 +1,8 @@
 # Wire format specification
 
 Status: current
-Applies to: `@rbxts/surge` at commit `7fc35db`, `rbxts-transformer-surge` at
-commit `05b267b` (no tagged release yet)
+Applies to: `@rbxts/surge` at commit `8c4d5f5`, `rbxts-transformer-surge` at
+commit `87813e5` (no tagged release yet)
 
 ## 1. Scope
 
@@ -79,9 +79,10 @@ side returns a new buffer, not a view of the input.
 **4.7** `vector3` is 3×`f32`: `X`, `Y`, `Z`, unless `Vector<X, Y, Z>` sets their
 widths (section 7).
 
-**4.8** `cframe` outside a packed subtree is 24 bytes: the position as 3×`f32`
-(`X`, `Y`, `Z`, unless `Transform<X, Y, Z>` sets their widths), then the
-rotation as an axis-angle, the unit axis scaled by the angle, as 3×`f32`.
+**4.8** `cframe` outside a packed subtree is the position, then the rotation.
+The position is 3×`f32`: `X`, `Y`, `Z`, unless `Transform<X, Y, Z>` sets their
+widths (section 7). The rotation is an axis-angle, the unit axis scaled by the
+angle, as 3×`f32`. Without `Transform`, a `cframe` is 24 bytes.
 
 **4.9** `color3` is 3×`u8`: `R`, `G`, `B`, each written as
 `math.floor(channel × 255)`. Nothing clamps a channel, so a channel outside
@@ -104,8 +105,11 @@ rebuilds it on read:
 each keypoint: an `f32` time and 3×`u8` color for a `ColorSequence`; an `f32`
 time, `f32` value and `f32` envelope for a `NumberSequence`.
 
-**4.12** `enum` is an index, at the index width, into the enum's member names
-in name order.
+**4.12** `enum` is an index, at the index width, into the names of the items
+its type admits, in name order. A whole enum, such as `Enum.KeyCode`, admits
+every item. A union of some of its items, such as
+`Enum.KeyCode.A | Enum.KeyCode.B`, admits only those, and is indexed from `0`
+among them.
 
 **4.13** `literal` is an index, at the index width, into its values in
 canonical literal order.
@@ -137,9 +141,10 @@ properties as an `object`, without the tag property, which the read side
 restores from the index. Where two properties could each serve as the tag,
 the first in name order is the tag.
 
-**5.7** `guardedUnion` is a 1-byte index into its variants, then the chosen
-variant's bytes. Variants are ordered by `Field` kind name, and two
-`literalConst` variants by canonical literal order.
+**5.7** `guardedUnion` is an index, at the index width, into its variants, then
+the chosen variant's bytes. Variants are ordered by `Field` kind name in name
+order. Two `literalConst` variants are ordered by canonical literal order, and
+two `datatype` variants by the datatype's name in name order.
 
 **5.8** `recursiveRef` writes exactly what the type it refers to writes.
 
@@ -153,15 +158,37 @@ at that width. `Length<T>` and `Length<T, u32>` produce the same bytes as `T`.
 
 **6.3** With `L` a whole number literal, no count is written and both sides
 use exactly `L` bytes (for `str` and `buffer`) or elements (for `array` and a
-tuple's rest). A longer value is truncated to `L`. A shorter value raises
-where writing its missing part touches it — except an array or tuple rest
-whose element is `optional`, whose missing elements are written as absent and
-which reads back at its own length.
+tuple's rest). Nothing checks the value's length. A longer value is truncated
+to `L`, and a shorter `str` or `buffer` raises. A shorter `array` or tuple rest
+is in 6.6 and 6.7.
 
 **6.4** A `dict` takes a width but not a whole number literal.
 
 **6.5** `Length<T, L>` applies to the container it wraps, not to containers
 nested inside it.
+
+**6.6** In the exact form of 6.3, a shorter `array` or tuple rest writes each
+missing element as `nil`. An `optional` element, or a `literal` element whose
+last value in canonical literal order is `undefined`, writes `nil` as absent,
+and the value reads back at its own length.
+
+**6.7** Known defect, not a guarantee: in the exact form of 6.3, a missing
+element that 6.6 does not cover raises or changes the value without raising:
+
+- a `bool` is written as `false`;
+- a `literal` is written as its last value in canonical literal order;
+- a `literalConst` writes nothing and reads back as its constant;
+- a `guardedUnion` is written as its last variant in the order of 5.7, which
+  raises unless that variant is a `literalConst`;
+- a `blob` appends nothing to `blobs`, so a `deserialize` given those `blobs`
+  reads past the end of `inputBlobs` and raises
+  ([runtime-api.md](runtime-api.md) 4.5);
+- every other kind raises when its write reads the missing element. One whose
+  write does not read it, such as an `object` whose properties are all
+  `literalConst`, reads back as a present value.
+
+Each element that does not raise and is not a `blob` reads back present, so
+the value reads back at length `L`.
 
 ## 7. Per-component widths
 
@@ -180,19 +207,21 @@ modulo its range. Nothing raises.
 **8.1** Inside a packed subtree, a `bool` property, an `optional` property's
 presence, and the tag of a two-variant `taggedUnion` property are bits in the
 enclosing object's packed region rather than bytes. This applies only to
-direct properties of an object; a `bool` or `optional` anywhere else in the
-subtree is encoded as outside it.
+direct properties of an object; a `bool`, an `optional` or a two-variant
+`taggedUnion` anywhere else in the subtree is encoded as outside it.
 
-**8.2** An object in a packed subtree begins with its packed region: one bit
-per packed property in name order, rounded up to whole bytes. Its other
-properties follow in name order.
+**8.2** An object in a packed subtree begins with its packed region: the bits of
+8.4 and 8.5 for each of its properties, in name order, rounded up to whole
+bytes. The bytes of its properties follow in name order.
 
 **8.3** Bit `i` of a region is the bit of value `2^(i mod 8)` in byte
 `floor(i / 8)`: least significant first. Bits past the last property are `0`.
 
-**8.4** A packed `bool` is `1` for `true`. A packed `optional` is a presence
-bit, `1` present, followed by its value's bytes when present and not a
-`bool`. An `optional` `bool` is two adjacent bits, presence then value.
+**8.4** A packed `bool` is one bit, `1` for `true`, and writes no bytes. A
+packed `optional` is a presence bit, `1` present. When present, its value's
+bytes are the property's bytes in the order of 8.2. An `optional` `bool` is two
+adjacent bits, presence then value, with the value bit `0` when absent, and
+writes no bytes.
 
 **8.5** A packed two-variant tag bit is `1` for the second variant in the
 order of 5.6. A `taggedUnion` with more than two variants keeps its index.
@@ -209,12 +238,15 @@ or not it is a direct property:
 So a packed `cframe` is 1, 13 or 25 bytes. `Transform<X, Y, Z>` does not
 apply inside a packed subtree.
 
-**8.7** The rotation index is `xCode × 4 + rank`, where `xCode` is
-`axis × 2 + negative` for the direction of the rotation's X vector (6 codes),
-and `rank` is which of the 4 directions perpendicular to that axis its Y
-vector takes. A vector is axis-aligned when both of its other components are
-within `1e-6` of zero, and an axis-aligned rotation is written as the exact
-rotation its index names.
+**8.7** The rotation index is `xCode × 4 + rank`. The code of an axis-aligned
+unit vector is `axis × 2 + negative`, where `axis` is `0` for X, `1` for Y and
+`2` for Z, and `negative` is `1` when the vector points along the negative
+axis. `xCode` is the code of the rotation's X vector. `rank` is the position,
+from `0`, of the Y vector's code among the four codes not on the X vector's
+axis, in ascending order. A vector is axis-aligned when both of its other
+components are within `1e-6` of zero. A rotation is axis-aligned when its X
+and Y vectors both are, and it is written as the exact rotation its index
+names.
 
 ## 9. The blob channel
 
@@ -225,9 +257,10 @@ in encounter order, and read back from `inputBlobs` in the same order.
 inner value, or one variant of a `taggedUnion` or `guardedUnion` — is appended
 only when that branch is taken.
 
-**9.3** `unknown` and `any` are `optional(blob)`: a presence byte, then an
-appended blob when the value is not `undefined`. Every other `blob` has no
-presence byte.
+**9.3** `unknown` and `any` are `optional(blob)`: the `optional`'s presence,
+then an appended blob when the value is not `undefined`. The presence is a
+byte (5.5), or a bit where 8.1 applies. A `blob` has no presence of its own;
+one inside another `optional`, such as `a?: Instance`, has that `optional`'s.
 
 **9.4** A blob inside an `array`, a tuple's rest, or a `dict` is appended once
 per element or entry, in the order the elements or entries are written.
@@ -246,38 +279,59 @@ values.
 
 ## 11. Conformance
 
-`bytes.spec.ts` below is `tests/src/tests/bytes.spec.ts`, which compares whole
-buffers against pinned bytes.
+A test file named `*.spec.ts` is under `tests/src/tests/`; `bytes.spec.ts`
+compares whole buffers against pinned bytes. `walk.ts` and a path starting
+`emit/` are under `src/` of `rbxts-transformer-surge`, and `walk.test.ts` is
+its `test/walk.test.ts`, cited by `describe` block. A path starting `src/` is
+in `@rbxts/surge`.
 
-| Statement              | Pinned by                                                                                                                                                                        |
-| ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 3.1, 4.1               | `bytes.spec.ts`: `pinsPrimitivesInNameOrder`, `pinsFloats`, `pinsFixedSizeDatatypes`                                                                                             |
-| 3.2, 5.1               | `bytes.spec.ts`: `pinsPrimitivesInNameOrder`                                                                                                                                     |
-| 3.3                    | Source only: the emitter writes no header                                                                                                                                        |
-| 4.2                    | `bytes.spec.ts`: `pinsThe24BitWidths`                                                                                                                                            |
-| 4.3, 5.5               | `bytes.spec.ts`: `pinsPrimitivesInNameOrder`, `pinsAnOptional`                                                                                                                   |
-| 4.4, 4.5, 5.2–5.4, 6.1 | `bytes.spec.ts`: `pinsContainers`, `pinsABuffer`                                                                                                                                 |
-| 4.6–4.9                | `bytes.spec.ts`: `pinsFixedSizeDatatypes`, `pinsACFrameWithNoRotation`                                                                                                           |
-| 4.10                   | `bytes.spec.ts`: `pinsVector3int16`, `pinsUDim`, `pinsUDim2`, `pinsBrickColor`, `pinsNumberRange`, `pinsRect`, `pinsDateTime`                                                    |
-| 4.11                   | `bytes.spec.ts`: `pinsSequences`                                                                                                                                                 |
-| 4.12, 4.13             | `bytes.spec.ts`: `pinsLiteralAndEnumIndexes`                                                                                                                                     |
-| 4.14                   | Source only: `literalConst` in `rbxts-transformer-surge` `src/emit/write.ts` writes nothing                                                                                      |
-| 5.6                    | `bytes.spec.ts`: `pinsATaggedUnion`                                                                                                                                              |
-| 5.7                    | `bytes.spec.ts`: `pinsAGuardedUnion`                                                                                                                                             |
-| 5.8                    | `tests/src/tests/recursion.spec.ts`                                                                                                                                              |
-| 6.2                    | `bytes.spec.ts`: `pinsBoundedContainers`, `pinsDefaultedLengthAsUnbranded`                                                                                                       |
-| 6.3                    | `bytes.spec.ts`: `pinsExactLengthContainers`                                                                                                                                     |
-| 6.4                    | Source only: the walker's diagnostic for an exact `Length` on a `dict`                                                                                                           |
-| 6.5                    | `bytes.spec.ts`: `pinsBoundedContainers`                                                                                                                                         |
-| 7.1–7.3                | `bytes.spec.ts`: `pinsPerComponentWidths`, `pinsThatDefaultedComponentWidthsMoveNoBytes`                                                                                         |
-| 8.1–8.4                | `bytes.spec.ts`: `pinsPackedBooleans`, `pinsPackedOptionals`                                                                                                                     |
-| 8.5                    | `bytes.spec.ts`: `pinsAPackedTagBit`                                                                                                                                             |
-| 8.6, 8.7               | `bytes.spec.ts`: `pinsAPackedCFrame`; the rotation index in `src/cframe.ts`                                                                                                      |
-| 9.1–9.4                | `tests/src/tests/roblox.spec.ts`: `passesUnknownAndInstanceValuesThroughTheBlobChannel`, `keepsLaterBlobsInPlaceWhenAnUnknownIsUndefined`, `writesNoBlobForAnAbsentOptionalBlob` |
-| 10.1                   | `rbxts-transformer-surge` `test/walk.test.ts`: literal, numeric-literal and `guardedUnion` order are each sorted canonically, independent of unrelated earlier declarations      |
-| 10.2                   | Source only: `dict` iterates its value with no sort                                                                                                                              |
+| Statement          | Pinned by                                                                                                                                                                                                                                                                                                                                          |
+| ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 3.1, 4.1           | `bytes.spec.ts`: `pinsPrimitivesInNameOrder`, `pinsFloats`, `pinsFixedSizeDatatypes`                                                                                                                                                                                                                                                               |
+| 3.2, 5.1           | `bytes.spec.ts`: `pinsPrimitivesInNameOrder`                                                                                                                                                                                                                                                                                                       |
+| 3.3                | Source only: the emitter writes no header                                                                                                                                                                                                                                                                                                          |
+| 4.2                | `bytes.spec.ts`: `pinsThe24BitWidths`; the sign extension on read: `numbers.spec.ts`: `roundTripsRandomIntegers`                                                                                                                                                                                                                                   |
+| 4.3, 5.5           | `bytes.spec.ts`: `pinsPrimitivesInNameOrder`, `pinsAnOptional`                                                                                                                                                                                                                                                                                     |
+| 4.4, 5.2, 5.3, 6.1 | `bytes.spec.ts`: `pinsContainers`, `pinsABuffer`                                                                                                                                                                                                                                                                                                   |
+| 4.5                | `bytes.spec.ts`: `pinsABuffer`; the new buffer: `strings.spec.ts`: `roundTripsBuffers`                                                                                                                                                                                                                                                             |
+| 4.6, 4.7           | `bytes.spec.ts`: `pinsFixedSizeDatatypes`                                                                                                                                                                                                                                                                                                          |
+| 4.8                | The position: `bytes.spec.ts`: `pinsACFrameWithNoRotation`. The rotation: source only, `writeCFrame` in `emit/write.ts`; `roblox.spec.ts`: `roundTripsACFrameRotationWithinF32Precision` round-trips it                                                                                                                                            |
+| 4.9                | The layout: `bytes.spec.ts`: `pinsFixedSizeDatatypes`. The `math.floor`: source only, `writeColor3` in `emit/write.ts`                                                                                                                                                                                                                             |
+| 4.10               | `bytes.spec.ts`: `pinsVector3int16`, `pinsUDim`, `pinsUDim2`, `pinsBrickColor`, `pinsNumberRange`, `pinsRect`, `pinsDateTime`                                                                                                                                                                                                                      |
+| 4.11               | `bytes.spec.ts`: `pinsSequences`                                                                                                                                                                                                                                                                                                                   |
+| 4.12               | A whole enum: `bytes.spec.ts`: `pinsLiteralAndEnumIndexes`; `walk.test.ts`, `TypeWalker classification with fixture packages`. A union of some items: source only, `walkEnum` in `walk.ts` takes the members from the union's items                                                                                                                |
+| 4.13               | `bytes.spec.ts`: `pinsLiteralAndEnumIndexes`; `walk.test.ts`, `TypeWalker wire-format determinism`                                                                                                                                                                                                                                                 |
+| 4.14               | `bytes.spec.ts`: `pinsLiteralAndEnumIndexes`; `literals.spec.ts`: `writesNoBytesForASingleLiteral`                                                                                                                                                                                                                                                 |
+| 5.4                | A `Record`: `bytes.spec.ts`: `pinsContainers`. A `Set`: source only, `writeDict` in `emit/write.ts` writes the key alone, and `readDict` in `emit/read.ts` sets it to `true`; `collections.spec.ts`: `roundTripsDictionaries` round-trips one                                                                                                      |
+| 5.6                | `bytes.spec.ts`: `pinsATaggedUnion`; the choice of tag: `walk.test.ts`, `TypeWalker wire-format determinism`                                                                                                                                                                                                                                       |
+| 5.7                | `bytes.spec.ts`: `pinsAGuardedUnion`; the `literalConst` and `datatype` order: `walk.test.ts`, `TypeWalker wire-format determinism` and `TypeWalker classification with fixture packages`. The `u16` index: source only, `writeGuardedUnion` in `emit/write.ts`                                                                                    |
+| 5.8                | Source only: `ensureHelper` in `emit/index.ts` builds the helper from the write functions an inlined field uses; `recursion.spec.ts` round-trips recursive shapes                                                                                                                                                                                  |
+| 6.2                | `bytes.spec.ts`: `pinsBoundedContainers`, `pinsDefaultedLengthAsUnbranded`                                                                                                                                                                                                                                                                         |
+| 6.3                | `bytes.spec.ts`: `pinsExactLengthContainers`. Truncation and a shorter `str` or `buffer`: source only, `writeStr`, `writeBuffer`, `writeArray` and `writeTuple` in `emit/write.ts` write exactly `L`                                                                                                                                               |
+| 6.4                | `walk.test.ts`, `TypeWalker Length<T, L>`                                                                                                                                                                                                                                                                                                          |
+| 6.5                | `bytes.spec.ts`: `pinsBoundedContainers`                                                                                                                                                                                                                                                                                                           |
+| 6.6                | An `optional`: `collections.spec.ts`: `padsAShortExactArrayOfOptionalsInsteadOfRaising`. A `literal`: source only, `literalIndexExpr` in `emit/write.ts` maps `nil` to the last index                                                                                                                                                              |
+| 6.7                | Source only: `writeBool`, `literalIndexExpr` and `writeGuardedUnion` in `emit/write.ts`; `pushBlob` in `src/blobs.ts` appends nothing for `nil`                                                                                                                                                                                                    |
+| 7.1, 7.2           | `bytes.spec.ts`: `pinsPerComponentWidths`, `pinsThatDefaultedComponentWidthsMoveNoBytes`                                                                                                                                                                                                                                                           |
+| 7.3                | Source only: `writeNumberAt` in `emit/context.ts` passes the component unconverted to Luau's `buffer` writes and `bit32`                                                                                                                                                                                                                           |
+| 8.1–8.4            | `bytes.spec.ts`: `pinsPackedBooleans`, `pinsPackedOptionals`, `pinsAPackedTagBit`                                                                                                                                                                                                                                                                  |
+| 8.5                | `bytes.spec.ts`: `pinsAPackedTagBit`                                                                                                                                                                                                                                                                                                               |
+| 8.6, 8.7           | `bytes.spec.ts`: `pinsAPackedCFrame`; `packed.spec.ts`: `packsEachAxisAlignedRotationIntoItsOwnHeaderByte`, `writesOnlyThePartsOfACFrameThatTheHeaderDoesNotGive`, `doesNotSnapARotationThatIsOnlyNearlyAxisAligned`. The rest of the rotation index: source only, `rotationIndex` in `src/cframe.ts`                                              |
+| 9.1                | `roblox.spec.ts`: `passesUnknownAndInstanceValuesThroughTheBlobChannel`, `keepsLaterBlobsInPlaceWhenAnUnknownIsUndefined`, `writesNoBlobForAnAbsentOptionalBlob`                                                                                                                                                                                   |
+| 9.2                | The `optional` branch: `roblox.spec.ts`: `writesNoBlobForAnAbsentOptionalBlob`. The union branches: source only, `writeTaggedUnion` and `writeGuardedUnion` in `emit/write.ts` write each variant inside its branch                                                                                                                                |
+| 9.3                | Outside `Packed<T>`: `roblox.spec.ts`: `passesUnknownAndInstanceValuesThroughTheBlobChannel`, `keepsLaterBlobsInPlaceWhenAnUnknownIsUndefined`; `walk.test.ts`, `TypeWalker classification with fixture packages`. The presence bit: source only, `walk.ts` gives `unknown` the `packed` flag, and `packedBits` in `emit/layout.ts` makes it a bit |
+| 9.4                | An `array`: `roblox.spec.ts`: `keepsLaterBlobsInPlaceWhenAnUnknownIsUndefined`. A tuple's rest and a `dict`: source only, `writeTuple` and `writeDict` in `emit/write.ts`                                                                                                                                                                          |
+| 10.1               | `walk.test.ts`, `TypeWalker wire-format determinism`: literal, numeric-literal and `guardedUnion` order are each sorted canonically, independent of unrelated earlier declarations                                                                                                                                                                 |
+| 10.2               | Source only: `writeDict` in `emit/write.ts` iterates the value with no sort                                                                                                                                                                                                                                                                        |
 
 ## Changes
 
+- `8c4d5f5` / `87813e5`: corrected against the code: 4.8 (24 bytes only without
+  `Transform`), 4.12 (a union of some items indexes those items), 5.7 (index
+  width; `datatype` order), 6.3 (a shorter `array` or tuple rest moves to the
+  new 6.6 and 6.7), 8.1 (a two-variant `taggedUnion` elsewhere), 8.2 and 8.4
+  (bits per property; where a packed `optional`'s value goes), 8.7 (codes and
+  `rank` order defined), 9.3 (presence bit inside `Packed<T>`); Conformance
+  rows corrected.
 - `7fc35db` / `05b267b`: first version, from Type coverage in the former
   `docs/transformer.md`.

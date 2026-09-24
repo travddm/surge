@@ -36,8 +36,9 @@ Changes           one line per change, newest first
   together at the version each was built against (see Package name and
   distribution in [../serde.md](../serde.md)). Until the first tagged
   release, it names a commit in each repository instead: the code the
-  statements were checked against, which is the commit before the one that
-  adds or changes the specification. That later commit is in `Changes`.
+  statements were checked against. A commit cannot name its own hash, so this
+  is the commit before the one that adds or changes the specification, and
+  the `Changes` line for that edit is keyed by the same pair.
 - Every normative statement is numbered, so a test, a comment, or another
   document can cite it as `4.2`. One statement states one requirement.
 - **must** is a requirement: an implementation that does otherwise is wrong.

@@ -34,15 +34,23 @@ export namespace DataType {
 	 *
 	 * With a whole number literal (`Length<string, 8>`) no count is written
 	 * at all and both sides use exactly that many bytes or elements. The
-	 * value must have exactly that many: a longer one is truncated, and a
-	 * shorter one raises wherever writing the missing part touches it. The
-	 * one exception is an array or tuple rest whose element is optional,
-	 * where the missing elements are written as absent and the value comes
-	 * back at its own length. Nothing checks any of this until write-side
-	 * validation exists, so use the exact form only where the length is
-	 * fixed by construction. A `Map`, `Set`, or `Record` cannot take it —
-	 * the write side counts entries as it iterates them, so it cannot
-	 * promise a fixed number.
+	 * value must have exactly that many, and nothing checks it. A longer one
+	 * is truncated. A shorter string or buffer raises. A shorter array or
+	 * tuple rest writes each missing element as `nil` (Wire format 6.6 and
+	 * 6.7 in docs/specs/wire-format.md):
+	 *
+	 * - an optional element, or a literal union that includes `undefined`,
+	 *   is written as absent, and the value comes back at its own length;
+	 * - a `boolean` comes back as `false`, a literal union as its last value
+	 *   in canonical literal order, and a single literal as itself, each at
+	 *   the full length, without raising;
+	 * - a blob appends nothing, so `deserialize` raises past the end of the
+	 *   blobs;
+	 * - any other element raises, except those Wire format 6.7 lists.
+	 *
+	 * So use the exact form only where the length is fixed by construction.
+	 * A `Map`, `Set`, or `Record` cannot take it — the write side counts
+	 * entries as it iterates them, so it cannot promise a fixed number.
 	 *
 	 * Unlike {@link Packed}, this applies to the container it wraps and not
 	 * to the subtree under it: in `Length<Array<Array<string>>, u16>` the
