@@ -29,7 +29,8 @@ read blobs inline.
 ## Why deferred
 
 Only the value being serialized can break the rule, because a serializer runs
-code it did not generate only through a value's metamethods. In Luau:
+code it did not generate only through a value's metamethods (Runtime API 5.7).
+In Luau:
 
 - `__index` and `__len` cannot yield. The VM calls them through `luaD_call`,
   and `lua_yield` raises "attempt to yield across metamethod/C-call boundary"
@@ -58,16 +59,15 @@ benchmark catalog has no type with a blob field.
   and `nextBlob` from the helper ABI (Runtime API 5.1). The helper ABI is what
   both packages must agree on (Runtime API 6.1), so the change ships in a
   release of both.
-- Update Runtime API 5.2 and 5.5, Transformer 5.9 and 6.4, and the blob
-  section of [errors-and-guarantees.md](../errors-and-guarantees.md).
+- Update Runtime API 5.2, 5.5 and 5.7, Transformer 5.9 and 6.4, and the
+  blob paragraph of [errors-and-guarantees.md](../errors-and-guarantees.md).
 - Measure it with a benchmark catalog row that has blob fields.
 
 This does not make a serializer re-entrant. The scratch buffer and the
 cursors are closure state too. A `serialize` that starts while the same
 serializer is running resets the write cursor and overwrites the bytes of the
-call it interrupted. That is true today for every type, with or without a
-blob field, and neither Runtime API 5.5 nor
-[errors-and-guarantees.md](../errors-and-guarantees.md) states it. Moving the
-blob state removes only the rule between different serializers.
+call it interrupted, for every type, with or without a blob field (Runtime
+API 5.6). Moving the blob state removes only the rule between different
+serializers.
 [caller-buffers.md](caller-buffers.md) goes further for blobs, because a
 caller that passes its own blob list makes the list state per call.

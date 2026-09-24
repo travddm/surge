@@ -84,13 +84,22 @@ holds whole numbers. To have `serialize` check a number, give it a `Range`.
   Luau does not define for an array with `nil` holes. Use a `Map` keyed by
   index for a sparse list.
 
-## One call at a time with blobs
+## One call at a time
+
+A serializer keeps its buffer and cursors between calls. A `serialize` must
+not start while the same serializer's `serialize` is running, whatever its
+type: the second call resets the cursor the first one uses, and the first then
+returns wrong bytes without an error. The same holds for `deserialize`.
 
 The `blobs` array is built and read through state the package shares between
-all serializers. A `serialize` of a type with a blob field must not start
-while another such `serialize` is running, and the same holds for
-`deserialize`. A serializer only runs code it did not generate through a
-value's metamethods, so this matters only when a metamethod serializes.
+all serializers. A `serialize` of a type with a blob field must therefore not
+start while any other such `serialize` is running, and the same holds for
+`deserialize`.
+
+A serializer runs code it did not generate only through the metamethods of a
+table it is given, so both rules matter only for a value with a metatable:
+when one of its metamethods serializes, or when the iterator its `__iter`
+metamethod returns yields and another thread serializes before it resumes.
 
 ## Build errors
 
@@ -101,4 +110,4 @@ call that runs untransformed at run time raises an error that says the
 transformer is not registered in `tsconfig.json`.
 
 The full contract is [specs/runtime-api.md](specs/runtime-api.md) sections 3
-and 4.
+and 4, and 5.5 to 5.7 for calls that overlap.

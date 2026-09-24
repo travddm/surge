@@ -1,8 +1,8 @@
 # Runtime API specification
 
 Status: current
-Applies to: `@rbxts/surge` at commit `86f729b`, `rbxts-transformer-surge` at
-commit `c8481d3` (no tagged release yet)
+Applies to: `@rbxts/surge` at commit `1bfb702`, `rbxts-transformer-surge` at
+commit `0710f5d` (no tagged release yet)
 
 ## 1. Scope
 
@@ -177,8 +177,21 @@ every field is a `blob`, has no scratch buffer. It calls neither `grow` nor
 state in this package, shared by every serializer. A `serialize` of a `T`
 that has a blob field must not start while another such `serialize` is
 running. A `deserialize` of a `T` that has a blob field must not start while
-another such `deserialize` is running. Only code a serializer calls while it
-runs, such as a metamethod of the value, can start one.
+another such `deserialize` is running. 5.7 states what can start one.
+
+**5.6** The state of 5.2 belongs to a serializer, not to a call. A `serialize`
+must not start while a `serialize` of the same serializer is running, and a
+`deserialize` must not start while a `deserialize` of the same serializer is
+running, whatever `T` is. A call that starts anyway resets the cursor that the
+running call uses. The running `serialize` then returns wrong bytes without
+an error, and the running `deserialize` reads the rest of its value from the
+other call's input.
+
+**5.7** A serializer runs code that it did not generate only through the
+metamethods of a table it is given. Only a metamethod can therefore start a
+call that 5.5 or 5.6 forbids: by calling a serializer itself, or, in the case
+of the iterator function that an `__iter` metamethod returns, by yielding
+while another thread calls one. `__index` and `__len` cannot yield.
 
 ## 6. Version coupling
 
@@ -222,10 +235,15 @@ A test file named `*.spec.ts` is under `tests/src/tests/`. A path starting
 | 5.3                         | `test/golden.test.mjs`: packed booleans never call a per-bit `packBit` helper                                                                                                                                                                                                                                                      |
 | 5.4                         | Source only: `finishWriteExpression` and `writeStateDecls` in `emit/context.ts`                                                                                                                                                                                                                                                    |
 | 5.5                         | Source only: the module state in `src/blobs.ts`                                                                                                                                                                                                                                                                                    |
+| 5.6                         | Source only: `writeStateDecls` and `readStateDecls` in `emit/context.ts` declare the state once per closure, and `beginWriteStatements` and `beginReadStatements` reset it per call; no test re-enters a serializer                                                                                                                |
+| 5.7                         | Source only: the emitter reads a value's properties, lengths and `for … in` iterations under `emit/`, and calls nothing else of the value's. Which metamethods may yield is Luau's: `luaD_call` and `luaD_performcally` in its `VM/src/ldo.cpp`                                                                                    |
 | 6.1–6.2                     | Source only: no version field is read or written by either package                                                                                                                                                                                                                                                                 |
 
 ## Changes
 
+- `1bfb702` / `0710f5d`: adds 5.6 (a serializer is not re-entrant, whatever
+  `T` is) and 5.7 (what can start a second call, including an `__iter`
+  iterator that yields); 5.5 points at 5.7.
 - `86f729b` / `c8481d3`: 3.9 names the range and quantization brands; 3.10
   and 3.11 add a number under `DataType.Range<T, Min, Max>` to what
   `writeChecks` examines, and 4.7 states that checks do not.
