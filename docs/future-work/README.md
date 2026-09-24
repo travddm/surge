@@ -35,10 +35,6 @@ time:
   buffer's was. It removes the rule that two serializers with blob fields must
   not overlap. It changes the helper ABI, so it ships in a release of both
   packages.
-- [schema-fingerprint.md](schema-fingerprint.md): a compile-time fingerprint
-  of a type's encoding, so a game can detect bytes that a build with a
-  different type wrote. It changes no byte. It is most useful once there is a
-  release whose bytes a later release reads.
 - [native-code-limits.md](native-code-limits.md): where a large serializer, or
   a large module of them, passes a native code generation limit and runs
   interpreted. Measure first.
@@ -80,6 +76,10 @@ above depends on them:
   [generated-code-performance.md](generated-code-performance.md).
 - [schema-versioning.md](schema-versioning.md): schema evolution. Only
   needed once a deployment runs two builds against one shape.
+- [schema-fingerprint.md](schema-fingerprint.md): a compile-time fingerprint
+  of a type's encoding, optional and off by default, so a game can detect
+  bytes that a build with a different type wrote. It waits for a consumer,
+  such as a game that persists surge bytes across releases.
 - [headless-ci.md](headless-ci.md): automated benchmark runs in CI. The
   harness in [benchmark-tooling.md](benchmark-tooling.md) is run by hand;
   gating on its numbers is a separate decision.

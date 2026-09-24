@@ -16,18 +16,41 @@ indexes after it ([schema-versioning.md](schema-versioning.md)).
 
 The work is a value that the transformer computes from a type at compile
 time, and that changes whenever the bytes the type writes would change. A game
-stores it with persisted bytes, or exchanges it when a connection opens, and
-compares it before reading. It changes no byte and costs nothing at run time.
-It detects a mismatch. Reading the old bytes anyway is
+compares it before reading bytes that another build may have written. It
+detects a mismatch. Reading the old bytes anyway is
 [schema-versioning.md](schema-versioning.md).
+
+It must be optional and off by default. A call site that does not ask for it
+emits nothing for it, writes the same bytes, and costs nothing at run time.
+Asking for it must take one change at the call site.
 
 ## Why deferred
 
-Nothing persists surge bytes across releases yet, because neither package has
-a release ([ci-and-release.md](ci-and-release.md)). The design is small and
-depends on nothing else in this directory.
+It needs a consumer. Nothing persists surge bytes across releases yet,
+because neither package has a release
+([ci-and-release.md](ci-and-release.md)), and no game has asked to detect a
+changed type. The consumer also decides between the two ways to enable it
+below. The design is small and depends on nothing else in this directory.
 
 ## How, briefly
+
+- **Enable it in one of two ways.** Either meets the requirement above:
+    - A factory of its own, such as `createFingerprint<T>()`, which the
+      transformer replaces with a string literal. The game stores the value
+      with its bytes, or exchanges it when a connection opens, and compares it
+      itself. A call site that never calls the factory is unchanged.
+    - An option on the existing factories, such as `fingerprint: true`, written
+      as a literal like `checks` (Runtime API 3.8 in
+      [specs/runtime-api.md](../specs/runtime-api.md)). `serialize` writes the
+      fingerprint ahead of the value, and `deserialize` raises a string
+      beginning `@rbxts/surge:` when it differs. The game compares nothing
+      itself, and each value costs the fingerprint's bytes where the option is
+      on.
+
+    The factory leaves `Serializer<T>` as fbs defines it, and suits a caller
+    that stores one fingerprint for many values. The option suits a caller that
+    wants every read checked. Either updates Transformer 3 and Runtime API 3;
+    the option also updates Wire format 3.3 for the call sites that set it.
 
 - **Hash the `Field` tree**, not the TypeScript type. The tree is what the
   emitter writes from, so two types that walk to the same tree write the same
@@ -47,11 +70,6 @@ depends on nothing else in this directory.
   unchanged. [AGENTS.md](../../AGENTS.md) already requires such a change to
   update `bytes.spec.ts` and the size table in the same commit. The revision
   bump belongs to the same rule.
-- **Expose it through its own factory**, such as `createFingerprint<T>()`,
-  which the transformer replaces with a string literal. `createSerializer` and
-  `createDeserializer` return bare functions, which cannot carry a property,
-  and a new factory leaves `Serializer<T>` as fbs defines it. The factory
-  updates Transformer 3.1 and Runtime API 3.
 - **Compute it in Node at compile time** with `node:crypto`, truncated to 64
   bits and written as hex. It guards against an accidental mismatch, not
   against an adversary.
