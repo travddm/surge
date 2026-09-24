@@ -191,8 +191,7 @@ are what it applies to.
   transformer's `datatypes.ts`, with a round-trip fixture in
   `roblox.spec.ts` and a pin in `bytes.spec.ts`. The transformer's tests
   run over every row.
-- The design note is [data-type-surface.md](data-type-surface.md): it decides
-  every Tier B brand's name, type-parameter convention, and defaults at once,
-  so the ones that land later match the ones that land first. Then
-  length-typed containers first, since they dominate the size comparison,
-  then vectors and `AlignedCFrame`, then ranges.
+- The design note is [data-type-surface.md](data-type-surface.md): it holds
+  the convention every brand follows and the order of the work,
+  `Range<Min, Max>` and then `Quantized<T>`, with the bit-packed set
+  independent of both.

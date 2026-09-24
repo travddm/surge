@@ -12,11 +12,10 @@ and what has landed since, is in
 
 ## Order
 
-| Step | Document                                                                                                            | Why here                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
-| ---- | ------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1    | [documentation-restructure.md](documentation-restructure.md): the final sweep                                       | The user pages, specifications and papers are written; what is left is removing landed work from five future-work documents and checking the whole tree against the plan's done criteria.                                                                                                                                                                                                                                                                 |
-| 2    | [type-coverage-parity.md](type-coverage-parity.md) Tier B, designed in [data-type-surface.md](data-type-surface.md) | New `DataType.*` surface. The length-typed containers and the per-component widths have landed, and with them the measured reason this came first; what is left is numeric ranges, a bit-packed set of a fixed member list, and a quantized `CFrame` rotation. `Range<Min, Max>` extends what the `writeChecks` option rejects from lengths and counts to a value's range, which is the same tier's item 3, and none of the three rests on a measurement. |
-| 3    | [ci-and-release.md](ci-and-release.md): version backstop and first tagged release                                   | The backstop lands with the release it protects. The CI-only items do not wait; see below.                                                                                                                                                                                                                                                                                                                                                                |
+| Step | Document                                                                                                            | Why here                                                                                                                                                                                                                                                                                                         |
+| ---- | ------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1    | [type-coverage-parity.md](type-coverage-parity.md) Tier B, designed in [data-type-surface.md](data-type-surface.md) | New `DataType.*` surface: numeric ranges, a bit-packed set of a fixed member list, and a quantized `CFrame` rotation. `Range<Min, Max>` extends what the `writeChecks` option rejects from lengths and counts to a value's range, which is the same tier's item 3, and none of the three rests on a measurement. |
+| 2    | [ci-and-release.md](ci-and-release.md): version backstop and first tagged release                                   | The backstop lands with the release it protects. The CI-only items do not wait; see below.                                                                                                                                                                                                                       |
 
 ## No step of its own
 
@@ -24,19 +23,17 @@ These are small, have no dependency on the order above, and can land at any
 time:
 
 - [generated-code-performance.md](generated-code-performance.md): the
-  per-call gap of about 0.2 µs to hand-written Luau, with two table
+  per-call gap to hand-written Luau, with two table
   allocations per `serialize()` named as the next thing to measure; the
   package pragma and the read loop, both reopened by the re-measurement;
   coalescing a tuple's fixed-size elements, which needs a fixture; three
   smaller items; the per-function `@native` attribute; and whether surge
   should ever add the file directives itself.
-- [enum-and-opaque-union-members.md](enum-and-opaque-union-members.md).
-  Its stage 1 has landed: a union of items from two enums is a diagnostic,
-  where two items of the same name used to produce a wrong value with no
-  error. The later stages add support for `Enum.X | string`
-  and `Instance | string`, which are diagnostics today; they change
-  `guardedUnion` variant order. `bytes.spec.ts` pins no union with an
-  enum or opaque member, so they move no pinned buffer today.
+- [enum-and-opaque-union-members.md](enum-and-opaque-union-members.md):
+  support for `Enum.X | string`, a union of items from two enums, and
+  `Instance | string`, each a diagnostic, and one rejection that reports
+  twice. Support changes `guardedUnion` variant order, but `bytes.spec.ts`
+  pins no union with an enum or opaque member, so it moves no pinned buffer.
 - [blob-classification.md](blob-classification.md): whether an empty object
   type should encode as zero bytes, which waits on the design decision that
   document records.
@@ -68,3 +65,5 @@ above depends on them:
 - [headless-ci.md](headless-ci.md): automated benchmark runs in CI. The
   harness in [benchmark-tooling.md](benchmark-tooling.md) is run by hand;
   gating on its numbers is a separate decision.
+- [agent-conventions.md](agent-conventions.md): a hook that blocks an agent's
+  edits to generated files, and task skills. Each waits for a reason.

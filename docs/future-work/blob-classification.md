@@ -1,83 +1,28 @@
-# Future work: blob classification of Instances and opaque types
+# Future work: an empty object type as zero bytes
 
 Part of the [surge](../architecture.md) design.
 
 ## What
 
-The correctness bug is fixed: `Instance` and its subclasses, `unknown`,
-and every other Roblox datatype not already in the walker's scalar-kind
-table or in `FIXED_DATATYPES` (`Vector2int16`, `Region3`, `TweenInfo`,
-`Font`, `Ray`, ...) now classify as `blob` instead of being walked
-structurally
-(`unknown` and `any` as `optional(blob)`, because they can hold
-`undefined`; see Wire format 9.3 in
-[specs/wire-format.md](../specs/wire-format.md)). The fix
-is identity-based, not name-matching: `@rbxts/types` brands `Instance`
-(and every subclass) and every datatype interface with its own uniquely
-named `_nominal_<TypeName>: unique symbol` property (`isRobloxNominalType`
-in `detect.ts`), and the walker routes any type carrying one, declared in
-`@rbxts/types`, to `blob` before any structural check can reach its
-declared properties (`walk.ts`). `ROBLOX_SCALAR_KINDS` (`Vector2`,
-`Vector3`, `CFrame`, `Color3`, `ColorSequence`, `NumberSequence`) was the
-one name-matching spot this design already had; it's now gated on the same
-`@rbxts/types` declaration-origin check, so a user-declared `interface
-Vector3 { foo: string }` no longer misclassifies as the Roblox scalar.
-
-The other silent misclassifications are fixed with a diagnostic (the
-walker's `report()`/`WalkDiagnostic` mechanism, surfaced as a
-`ts.Diagnostic`; see section 7 of
-[specs/transformer.md](../specs/transformer.md)) instead of a silent `blob`:
-function types (detected via `checker.getSignaturesOfType`, covering both plain function-typed fields
-and methods), `symbol`, `bigint`, `null`, template literal types, and a
-type with both declared properties and an index signature. Each points the
-caller at `unknown` as the explicit opt-in. A union where every constituent
-resolves to `blob` (for example `BasePart | Model`, which share the
-inherited `_nominal_Instance` brand) collapses to one `blob` instead of a
-`guardedUnion`. A `blob` next to any other variant (`Instance | string`)
-is rejected with a diagnostic, because an opaque value has no runtime type
-for the write side to check.
-
-Tests: `test/walk.test.ts` in the transformer repo covers `Instance`, an
-`Instance` subclass, an `Instance`-subclass union, an uncovered datatype
-(`Vector2`), `unknown`, the `Vector3`-name-collision case, and one
-diagnostic fixture per silently-misclassified kind above.
-
-One item from the original review remains open:
-
-- **An empty object type (`{}`, `interface Empty {}`) still classifies as
-  `blob`** instead of a zero-byte object. Deferred, not merely unimplemented:
-  `@rbxts/compiler-types` declares `type defined = {}`, so a bare structural
-  check can't tell "the user meant an empty object" from "the user meant
-  `defined`, i.e. any non-nil value" — and encoding the latter as a
-  zero-byte object would deserialize a `defined` field holding a primitive
-  (`5`, `"str"`) back as `{}`, silently discarding it. Needs a way to
-  distinguish the two (for example gating on `aliasSymbol.name === "defined"`
-  declared in `@rbxts/compiler-types`, mirroring the `@rbxts/types`
-  declaration-origin checks above) before it's safe to implement.
-
-`tests/`'s own `coverage.spec.ts` now has two end-to-end fixtures.
-`roundTripsVector2` round-trips a real Lune `Vector2` through the new
-`vector2` scalar kind with an asserted 8-byte (2×f32) buffer, confirmed
-against the real compiled transformer output (`npm run tests:compile &&
-npm run tests:test`), not just the transformer repo's own unit tests.
-`roundTripsUnencodedDatatypeAsAnOpaqueBlob` covers the still-unencoded case
-with a real Lune `Vector2int16` (`Vector3int16` until that type got its
-own encoding; the Lune runner didn't expose either type
-as a global before this doc; added alongside `CFrame`/`Vector3`/`Color3` in
-the Lune runner's fake-Instance shim, following its own "cast because Lune
-0.10.5's type definitions omit these constructors" pattern) round-tripping through the
-blob side channel with an asserted zero-byte buffer. `roblox.spec.ts`
-passes a Lune data-model `Part` through the blob channel as an `Instance`,
-an optional `Part`, and an `unknown`.
+An empty object type, such as `{}` or `interface Empty {}`, walks to `blob`
+(the last row of Transformer 4.1 in
+[specs/transformer.md](../specs/transformer.md)), so its value goes through
+the blob channel. It could encode as a zero-byte object instead.
 
 ## Why deferred
 
-The empty-object case doesn't need the identity-based classification this
-doc was blocked on. It has no step in [README.md](README.md); it waits on
-the `defined` decision below.
+`@rbxts/compiler-types` declares `type defined = {}`, so a structural check
+cannot tell an empty object type from `defined`, which admits any value
+other than `nil`. A zero-byte encoding of `defined` would read a field that
+holds a primitive, such as `5` or `"str"`, back as `{}`, and discard the value
+without an error.
 
 ## How, briefly
 
-- Decide the `defined`-vs-`{}` distinction (declaration-origin check on the
-  alias symbol, or leave `defined` as a documented exception) before adding
-  the zero-byte empty-object encoding.
+- Decide how the walk tells the two apart before adding the zero-byte
+  encoding: for example, a declaration-origin check on the alias symbol
+  (`aliasSymbol.name === "defined"`, declared in `@rbxts/compiler-types`), as
+  `detect.ts` already checks declarations in `@rbxts/types`, or `defined` left
+  as a documented exception.
+- Update Transformer 4.1 and [supported-types.md](../supported-types.md),
+  which list `{}` as a blob, in the same change.

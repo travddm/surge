@@ -39,7 +39,7 @@ in the order the transformer applies it, is
 | a union of object types that share a literal tag, such as `kind`                 | an index into the variants, then the variant's other properties                              |
 | any other union the code can tell apart at run time (below)                      | a 1-byte index into the variants, 2 beyond 256, then the variant                             |
 | a type that refers to itself, such as a tree node                                | the same bytes as the structure, through a helper function                                   |
-| `Vector2`, `Vector3`                                                             | 2 or 3 floats of 4 bytes; `DataType.Vector` chooses other widths                             |
+| `Vector2`, `Vector3`                                                             | 2 or 3 floats of 4 bytes; `DataType.Vector` chooses a `Vector3`'s widths                     |
 | `CFrame`                                                                         | 24 bytes: position and rotation. 1, 13 or 25 bytes inside `Packed<T>`                        |
 | `Color3`                                                                         | 3 bytes, one per channel from 0 to 1; a channel outside that range is not representable      |
 | `ColorSequence`, `NumberSequence`                                                | a 1-byte keypoint count, then each keypoint                                                  |

@@ -19,12 +19,12 @@ This document holds what is still open.
 ## What
 
 **The per-call gap to hand-written Luau.** On the three rows the hand-written
-baseline covers, surge's encode is behind a Luau codec writing the same bytes:
-2.20× on the flat struct, 2.02× on the nested object, 1.22× on the fifty-element
-`CFrame` array. The gap has a part paid once per call, about 0.2 µs, which is
-most of it on the two small rows, and a part paid per element, which is most
-of it on the `CFrame` array (the correction in
-[generated-code-against-hand-written.md](../research/generated-code-against-hand-written.md)).
+baseline covers, surge's encode is behind a Luau codec writing the same bytes.
+The gap has a part paid once per call, which is most of it on the flat struct
+and the nested object, and a part paid per element, which is most of it on
+the fifty-element `CFrame` array
+([generated-code-against-hand-written.md](../research/generated-code-against-hand-written.md)
+and its correction).
 Two per-call costs have been measured
 ([per-call-overhead.md](../research/per-call-overhead.md)), and neither
 explains the gap: the blob side channel is emitted only where a shape uses it,
@@ -36,10 +36,10 @@ hand-written codec creates one buffer and returns it. The generated code
 writes into a scratch buffer, calls into the package for `finishWrite`, and
 returns a new table `{ buffer = …, blobs = {} }` — one allocation for the
 wrapper and one for the empty `blobs` array, which the transformer emits
-because `Serializer<T>` declares the property. The blob probe put one table
-allocation and three cross-module calls at about 26 ns, so two tables and one
-call are a plausible share of 0.2 µs and not plausibly all of it. None of this
-is measured.
+because `Serializer<T>` declares the property. From what the blob probe cost
+([per-call-overhead.md](../research/per-call-overhead.md)), two tables and one
+call are a plausible share of the per-call part and not plausibly all of it.
+None of this is measured.
 
 One design the `finishWrite` probe did not reach: handing the caller a buffer
 surge owns and reuses, which removes the allocation as well as the copy. It
@@ -57,33 +57,24 @@ correction).
 
 **Reopened: the package pragma.** The package's hot modules carry
 `--!native`, and this was recorded as worth nothing, because marking only the
-package moves almost no work into the native region — its functions were a
-cursor bump. A helper standing in for `alloc()`, called in a loop by a module
-standing in for generated code:
-
-| helper     | caller | time     |
-| ---------- | ------ | -------- |
-| plain      | plain  | 0.04233s |
-| plain      | native | 0.04278s |
-| **native** | plain  | 0.04253s |
-| native     | native | 0.02909s |
-
-That predicts 1.47× once the caller is native as well. The prediction was set
-aside because surge's generated work did not sit inside the native region.
-Since the inline reservation it largely does, and the catalog now measures
-native on the generated code at 1.335× on encode, most of the way to the
-prediction. The entry needs re-arguing against the current figure. The loop
-timings above are from before the speed suite yielded, and this loop
-allocates nothing, so the slow mode had nothing to act on.
+package moved almost no work into the native region. A loop benchmark of a
+helper standing in for the old `alloc()` predicted a gain once the caller is
+native as well, and set the entry aside because surge's generated work did
+not sit inside the native region. It now largely does, and what native is
+worth on the generated code
+([file-directives-on-generated-code.md](../research/file-directives-on-generated-code.md))
+is most of the way to that prediction, so the entry needs re-arguing against
+the current figure. The loop's timings are not a result: they were taken
+before the speed suite yielded, and no data file was kept.
 
 **Reopened: the read loop.** Count-driven reads (`array`, `tuple` rest,
 `dict`, sequences) are emitted as `for (const _i of $range(1, count))`, which
 roblox-ts lowers to a numeric `for`, instead of a C-style loop it lowers to a
 `while` with a `_shouldIncrement` flag; `test/golden.test.mjs` pins that no
-compiled file has the flag. It measured at 0.98× to 1.02× on the six decode
-rows quiet enough to read, on a scoped pair taken before the suite yielded and
-with the fixtures compiled interpreted. Neither condition holds now, and it
-was not measured again. The change stays for what the emitted code says,
+compiled file has the flag. It measured as no change on the decode rows quiet
+enough to read, on a scoped pair taken before the suite yielded and with the
+fixtures compiled interpreted. Neither condition holds now, and it was not
+measured again. The change stays for what the emitted code says,
 whatever it is worth.
 
 **Tuple elements.** Coalesce a tuple's consecutive fixed-size elements into
@@ -120,11 +111,12 @@ rewrites the emitted text — hoisting a `--!` line, annotating
   works for a consumer today. This stays open.
 - **Type annotations** pay only where inference fails, and on surge's shape
   that is a value arriving through `TS.import`. Annotating both sides of a
-  synthetic writer and helper was worth about 1.09× on top of `--!native`, and
-  nothing without it. Against the 1.180× native is worth on decode, a ninth of
-  that is about 1.02× — not a number that pays for a pass which rewrites files
-  roblox-ts has written.
-- **`const`** measured at 1.00× against `local`, with the directive and
+  synthetic writer and helper was worth a small fraction of what `--!native`
+  is worth on the generated code, and nothing without it
+  ([file-directives-on-generated-code.md](../research/file-directives-on-generated-code.md)
+  and its second correction): not enough to pay for a pass which rewrites
+  files roblox-ts has written.
+- **`const`** measured as no change against `local`, with the directive and
   without, and Lune 0.10.5 cannot parse it, so emitting it would break the
   round-trip suite. Nothing is lost by its absence.
 
@@ -154,19 +146,18 @@ The rest is small, or needs a fixture before anything can measure it.
 ## How, briefly
 
 - Measure each change on its own, as a probe or a before-and-after pair,
-  with the four untouched columns in the same run as the control. Two runs of
-  unchanged code agree to about 3% on a column median and differ by up to a
-  quarter on a single cell, so read medians; a single cell below about 1.3× is
-  not readable from one pair.
+  with the four untouched columns in the same run as the control. Read medians,
+  not single cells: how far two runs of unchanged code differ, on a column and
+  on a cell, is [noise-in-the-speed-tier.md](../research/noise-in-the-speed-tier.md).
 - A golden check in `test/golden.test.mjs` for each change that lands. The
   read loop's, the tagged union's, the `CFrame`'s, the shared reservation's
   and the blob channel's are there already, and so are the file pragmas on
   both sides.
 - Predict nothing from the compiled output. Whether a cost is paid per element
   or per call was the heuristic this document used to lean on, and the blob
-  channel broke it: a per-call cost is measurable when the work is an
-  allocation, and a per-call `buffer.copy` of two kilobytes is not. Which
+  channel broke it: a per-call allocation was measurable, and whether a
+  per-call `buffer.copy` of two kilobytes costs anything is not settled. Which
   kind of work a change removes says more than when it happens.
 - Keep a before-and-after pair within one compilation mode. The fixtures and
-  the baseline carry `--!native` from surge `afde7bc` on, so a comparison
-  reaching back past it measures a change of compilation mode as well.
+  the baseline carry `--!native`, so a comparison with a build that did not
+  measures a change of compilation mode as well.

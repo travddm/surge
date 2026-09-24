@@ -51,9 +51,14 @@ Prose, in every document and in code comments:
   blocks, and `mise run spell` checks every word — add a real one to
   `cspell.json`.
 
-**User-facing pages** (`docs/*.md`):
+**Pages** (`docs/*.md`):
 
-- Lead with the task and a code sample. Explanation follows the sample.
+- A user page ([getting-started.md](getting-started.md) and the four it links
+  to) leads with the task and a code sample; explanation follows the sample. A
+  contributor page ([contributing.md](contributing.md),
+  [coding-standards.md](coding-standards.md), [testing.md](testing.md),
+  [architecture.md](architecture.md), this one) leads with what a contributor
+  does or needs to know.
 - Under about 150 lines. Depth is a link into [specs/](specs/) or
   [research/](research/), not a section.
 - No history: no "landed", "since", or "used to", and no dates, commit
@@ -74,6 +79,6 @@ is updated in the same change that starts, finishes, or reorders any of them.
 When work lands, in whole or in part, it is removed from its document rather
 than struck through, and anything a future reader needs is promoted first: a
 decision or a guarantee to the specification that owns it, a measurement to a
-paper, a contributor gotcha to [testing.md](testing.md) or
-[coding-standards.md](coding-standards.md). A document that empties is
+paper, a contributor gotcha to [contributing.md](contributing.md),
+[testing.md](testing.md) or [coding-standards.md](coding-standards.md). A document that empties is
 deleted, and dropped from the index.

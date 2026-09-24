@@ -28,7 +28,7 @@ interface WithVector2 {
 }
 const vector2Serializer = createBinarySerializer<WithVector2>();
 
-// blob-classification.md: a Roblox datatype with no encoding of its own
+// Transformer 4.1 in docs/specs/transformer.md: a Roblox datatype with no encoding of its own
 // (unlike Vector2/Vector3/CFrame/Color3 above) must still round-trip, via its
 // `_nominal_Vector2int16` brand routing it to the blob passthrough channel
 // instead of being walked structurally.
@@ -121,7 +121,7 @@ function alloc(): string {
 }
 
 // The enum-encoding finding's `Enum.KeyCode` width/O(1)-table fixture intentionally
-// does not live here: the generated `{[EnumItem]: index}`/`EnumItem[]`
+// does not live here: the generated `{[name]: index}`/`EnumItem[]`
 // tables are module constants built from *every* member up front (matching
 // real Roblox), and this suite's headless Lune harness (Test harness 4.5 in
 // docs/specs/test-harness.md) doesn't implement every

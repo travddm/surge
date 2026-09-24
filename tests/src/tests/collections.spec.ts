@@ -48,7 +48,7 @@ const gridSerializer = createBinarySerializer<Grid>();
 
 // Every kind that writes a count, each bounded to a narrower one. The
 // counts are read back at the same width they were written at, which a byte
-// pin alone would not show (see future-work/data-type-surface.md).
+// pin alone would not show (Wire format 6.2 in docs/specs/wire-format.md).
 interface WithBounds {
 	bytes: DataType.Length<buffer, DataType.u8>;
 	list: DataType.Length<Point[], DataType.u8>;

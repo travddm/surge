@@ -1,43 +1,33 @@
 # Future work: the Tier B `DataType.*` surface
 
 Part of the [surge](../architecture.md) design. Tier B of
-[type-coverage-parity.md](type-coverage-parity.md) adds several brands that
-land at different times. This decides their names, their type-parameter
-convention, and their defaults in one place, so the ones that land later
-match the ones that land first.
+[type-coverage-parity.md](type-coverage-parity.md) adds `DataType` brands.
+This note decides their names, their type-parameter convention, and their
+defaults in one place, so that the brands still to be built match the
+existing ones, which [data-types.md](../data-types.md) documents.
 
 ## What
 
-`DataType` began as ten width brands plus `Packed<T>` (`@rbxts/surge`'s
-`src/data-type.ts`). Tier B adds bounds, per-component widths, and ranges,
-which a TypeScript type has nowhere to put without a helper type. The table
-below decides all of them at once; Order at the end records which have
-landed.
+| Brand             | Applies to        | Defaults | Why this name                                                                                                               |
+| ----------------- | ----------------- | -------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `Range<Min, Max>` | `number`          | none     | serio's concept, spelled as a brand. Narrows to the smallest width that fits, and validates on write.                       |
+| `Quantized<T>`    | `CFrame` rotation | none     | serio's 18-byte form. Lossy, so opt-in only, per Deliberate non-gaps in [type-coverage-parity.md](type-coverage-parity.md). |
 
-| Brand                | Applies to                                                  | Defaults                | Why this name                                                                                         |
-| -------------------- | ----------------------------------------------------------- | ----------------------- | ----------------------------------------------------------------------------------------------------- |
-| `Length<T, L>`       | `string`, array, `Map`/`Set`/`Record`, `buffer`, tuple rest | `L = u32`               | One brand for one concept: all five write one count today. See The container brand below.             |
-| `Vector<X, Y, Z>`    | `Vector3`                                                   | `X = f32, Y = X, Z = X` | serio's name and its defaulting. No TypeScript global to shadow.                                      |
-| `Transform<X, Y, Z>` | `CFrame` position                                           | `X = f32, Y = X, Z = X` | serio's name, and its parameters mean the same thing. See the note below.                             |
-| `Range<Min, Max>`    | `number`                                                    | none                    | serio's concept, spelled as a brand. Narrows to the smallest width that fits, and validates on write. |
-| `Quantized<T>`       | `CFrame` rotation                                           | none                    | serio's 18-byte form (~0.05 rad). Lossy, so opt-in only, per Deliberate non-gaps.                     |
-
-`Transform<X, Y, Z>` sets the position's component widths, exactly as serio's
-does. What it does not carry over is serio's rotation: surge writes an
-axis-angle f32 triple where serio writes its 6-byte quantized one, so the same
-brand costs 24 bytes here and 18 there. That difference is not the brand's —
-surge's plain `CFrame` already differs from serio's plain `CFrame` the same
-way — and `Quantized<T>` is how a consumer asks for serio's form on purpose.
+`Transform<X, Y, Z>` sets only a `CFrame`'s position widths, and leaves the
+rotation an axis-angle f32 triple (Wire format 7.1 in
+[specs/wire-format.md](../specs/wire-format.md)). serio writes a 6-byte
+quantized rotation instead, and `Quantized<T>` is how a consumer asks for
+that form on purpose. What it loses in precision is measured in
+[serialized-size-across-libraries.md](../research/serialized-size-across-libraries.md).
 
 Three Tier B items need no brand:
 
 - A bit-packed set of a fixed member list (Blink's `set`) is
   `Packed<Set<"a" | "b" | ...>>`, a composition of what already exists.
 - Opt-in validation is the factory's `checks` and `writeChecks` options, not
-  a type. Both have landed: `checks` for what `deserialize` reads (section 4
-  of [specs/runtime-api.md](../specs/runtime-api.md)), and `writeChecks` for
-  lengths and counts on `serialize` (3.10 there). `Range<Min, Max>` adds a
-  value's range to what `writeChecks` rejects.
+  a type. `writeChecks` rejects lengths and counts on `serialize` (Runtime
+  API 3.10 in [specs/runtime-api.md](../specs/runtime-api.md)), and
+  `Range<Min, Max>` adds a value's range to what it rejects.
 - **`AlignedCFrame` is dropped.** `Packed<T>` already gives a `CFrame` the
   1-, 13-, or 25-byte form, which is Zap's 13-byte form plus a smaller case
   and a fallback. Zap asserts on a rotation its table misses, which is the
@@ -56,141 +46,44 @@ not have to invent an answer.
    unbranded value still assigns to a branded field.
 2. Parameters are types, never values. A width is one of the existing width
    brands; a count or a bound is a numeric literal type.
-3. The first parameter is the value type. Configuration follows it.
+3. The first parameter is the value type. Configuration follows it. A brand
+   that fixes its own value type, as `Vector<X, Y, Z>` and
+   `Transform<X, Y, Z>` do, takes configuration only, and so is never the
+   outer brand of a composition.
 4. **Every parameter has a default, and a brand with all of its defaults
-   encodes exactly what the unbranded type encodes today.** This is what
-   keeps every pinned buffer in `bytes.spec.ts` green as each brand lands.
+   encodes exactly what the unbranded type encodes.** This is what keeps
+   every pinned buffer in `bytes.spec.ts` green as each brand lands.
 5. A brand applies to the type it wraps, not to that type's subtree.
    `Packed<T>` is the one exception and stays the only one.
 
-## The container brand
+A default is part of the brand, never a project-wide setting in
+`tsconfig.json`: two projects compiled with different settings could not
+exchange bytes, and nothing in the type would say so. A brand is not named
+after a TypeScript global such as `String`, `Map` or `Set`: declared inside
+`namespace DataType`, it would shadow the global for the rest of the
+namespace body.
 
-`Length<T, L>` rather than serio's four (`String<L>`, `List<T, L>`,
-`HashMap<K, V, L>`, `HashSet<T, L>`):
+## Why deferred
 
-- surge's IR already treats the prefix as one concept. `str`, `array`,
-  `dict`, `buffer`, and a tuple's `rest` all write one u32 count, and
-  `dict`'s `source` (`map | set | record`) does not affect the encoding.
-- Inside `namespace DataType`, `String`, `Map`, and `Set` shadow the
-  TypeScript globals for the rest of the namespace body. serio's
-  `HashMap`/`HashSet` are that collision worked around; one brand avoids it.
-- A `Record` gets a bound for free, which serio cannot express.
+No measured gap requires `Range<Min, Max>`, `Quantized<T>` or the bit-packed
+set. The size gap to Blink and Zap is count width alone, which `Length<T, L>`
+covers, and serio's smaller `CFrame` is quantization, paid for in precision
+([serialized-size-across-libraries.md](../research/serialized-size-across-libraries.md)).
 
-The cost is that an fbs or serio migrant does not find `String<u16>` by name.
-That is worth one brand instead of five.
+## How, briefly
 
-`L` is either a width brand or a numeric literal. `Length<string[], u16>` is a
-u16 count; `Length<string[], 8>` is the exact form Blink and Zap have, with no
-prefix written at all. Both are types, and `isNumberLiteral()` separates them
-in the walker, so one brand covers both forms. A `Map`, `Set`, or `Record`
-takes the width form only; see Order below for why.
-
-Outermost only: `Length<string[][], u16>` bounds the outer array. Reaching an
-inner one means branding the inner type. This is the deliberate difference
-from `Packed<T>`, which does propagate — a propagating length has no way to
-say different widths at different depths.
-
-## The default is u32, and it is documented rather than assumed
-
-Blink and Zap default an unbounded string, array, and map to u16, and
-[benchmarks/size.md](../benchmarks/size.md) shows every byte they save against
-surge is that prefix and nothing else. Matching them by default would close
-the whole measured gap at once.
-
-Either default is defensible, and the choice is close. What makes it safe
-either way is that the default is stated to the consumer and overridable one
-container at a time, which `Length<T, L>` is whichever way it falls. Given
-that, u32 wins on two things that are not about bandwidth:
-
-- Rule 4. u32 is what an unbranded container writes today, so every pinned
-  buffer in `bytes.spec.ts` stays green and no existing wire format moves.
-- A u16 default wraps the count of a container above 65535 entries, which
-  only a call site that sets `writeChecks` detects (Wire format 6.8). A u32
-  default has no matching failure: its cost is two bytes, paid visibly.
-
-So the trade is two bytes per container against a silent ceiling, and a
-consumer takes the two bytes back per container with `Length<T, u16>`.
-
-**The default is therefore user documentation, not an implementation
-detail**, and [data-types.md](../data-types.md) states what every unbranded
-container's count costs and that `Length<T, L>` is how to change it.
-
-A project-wide default in `tsconfig.json` is rejected: two projects compiled
-with different settings could not exchange bytes, and nothing in the type
-would say so.
-
-## Implementation notes
-
-- `getDataTypeBrand` (the transformer's `detect.ts`) returns the alias name
-  only. A parameterized brand also needs `aliasTypeArguments`, plus the
-  brand-property fallback for a re-alias
-  (`type Ids = DataType.Length<string[], u16>`), which carries its own
-  `aliasSymbol`. `getSurgeBrand` has both paths, and a brand added later is
-  one row of its `PARAMETERIZED_BRANDS` table.
-- **Every brand's alias-identity check must run before any brand-property
-  fallback.** `Length<Packed<T>, u16>` flattens to one intersection carrying
-  both brand properties, so a property check made one brand at a time answers
-  "Packed" and drops the length with no error. `getSurgeBrand` tries alias
-  identity for every brand before any property, and Transformer 4.3 in
-  [specs/transformer.md](../specs/transformer.md) describes how it then resolves a
-  re-aliased composition. A brand added later inherits this by joining
-  `PARAMETERIZED_BRANDS`; `walk.test.ts` pins both orders.
-- The IR (`field.ts`): `str`, `array`, `dict`, `buffer`, and `tuple`'s `rest`
-  each take an optional length width. Absent means u32, per rule 4.
-- Exact-length semantics, which the note fixes because the emitter cannot.
-  `buffer.writestring(b, pos, s, N)` writes N **bytes**, not characters, and
-  `s.size()` is bytes. Measured under Lune 0.10.5: a value longer than N is
-  truncated silently, a shorter string raises `string length overflow`, and
-  a `buffer.copy` past the source's end raises `buffer access out of
-bounds`. A short array or tuple rest writes each missing element as `nil`,
-  and Wire format 6.6 and 6.7 state what each element kind does with it: an
-  `optional` pads as absent and reads back at its own length, which is the
-  contract; a `bool`, a `literal`, a `literalConst` and some `guardedUnion`s
-  pad silently and read back changed; a `blob` appends nothing, so the blob
-  channel falls out of step; every other kind raises. `writeChecks` closes the
-  silent cases: with it on, a value of any other length raises before anything
-  is written (Runtime API 3.10).
-- What an integer component width does to a value outside it, which
-  `Vector<X, Y, Z>` and `Transform<X, Y, Z>` leave to the `buffer` call.
-  Measured under Lune 0.10.5: `buffer.writeu8` of `3.7` reads back 3, of
-  `-1` reads back 255, and of `300` reads back 44; `buffer.writei16` of
-  `-1.5` reads back -1 and of `40000` reads back -25536; a NaN and an
-  infinity both read back 0. None of them raises, so truncation toward
-  zero and wrapping modulo the range is the contract. `writeChecks` examines
-  lengths and counts, not these; `Range<Min, Max>` is what would reject them.
+- A new parameterized brand is one row of `PARAMETERIZED_BRANDS` in the
+  transformer's `detect.ts`. `getSurgeBrand` then resolves it by alias
+  identity before any brand property, as Transformer 4.3 in
+  [specs/transformer.md](../specs/transformer.md) states for the existing
+  brands, and by its brand property for a re-alias. `walk.test.ts` pins both
+  orders of a composition.
+- `writeChecks` examines lengths and counts, not values. An integer width
+  truncates and wraps a value outside it (Wire format 4.15), and writes a NaN
+  or an infinity as 0, without raising (measured under Lune 0.10.5).
+  `Range<Min, Max>` is what would reject them.
 - `Range<Min, Max>` and an explicit width brand can disagree. The explicit
   width wins, and a range that does not fit it is a diagnostic rather than a
   silent widening.
-
-## Order
-
-Length-typed containers first: they are the whole of the measured size gap.
-Then `Vector` and `Transform`, then `Range`, then `Quantized`.
-
-`Length<T, L>` has landed in full — both the width form and the exact form,
-over all five counting kinds, with `getSurgeBrand` resolving every brand by
-alias identity before any brand property. Nothing in the checked-in catalog
-moved: `bytes.spec.ts` pins an unbranded and a fully defaulted shape to the
-same bytes, and [benchmarks/size.md](../benchmarks/size.md) regenerated
-unchanged.
-
-One decision the exact form forced, which this note did not anticipate: a
-`Map`, `Set`, or `Record` takes the width form only. Its write side counts
-entries as it iterates them, so it cannot promise a compile-time number, and
-unlike a string — where an exact count truncates that field and nothing else
-— a miscount there shifts every field after it. Blink and Zap bound a map by
-width and not by an exact count either.
-
-`Vector<X, Y, Z>` and `Transform<X, Y, Z>` have landed after it, each
-defaulting `Y` and `Z` to `X` and `X` to `f32`, so a defaulted brand leaves
-both the IR and the bytes where they were and `bytes.spec.ts` pins that.
-Two things this note did not anticipate about them:
-
-- Neither takes a value type, because each fixes its own, so rule 3's first
-  parameter is a width. That costs nothing: a brand that wraps nothing can
-  never be the outer one, which is the answer `getSurgeBrand`'s
-  outermost-brand check already gives for it.
-- `Transform` has no form inside `Packed<T>`. That `CFrame`'s position goes
-  through `writePackedCFrame`, at a layout of its own and only when the
-  header does not already give it, so a width other than the default there
-  is a diagnostic rather than a silent drop.
+- Order: `Range<Min, Max>`, then `Quantized<T>`. The bit-packed set depends
+  on neither.

@@ -11,7 +11,7 @@ jobs:
         name: Lint + Format + Spell Check + Compile + Test
         runs-on: ubuntu-latest
         timeout-minutes: 15
-        # tests/'s file: dependencies on both packages (see testing.md) mean every mise/npm
+        # tests/'s file: dependencies on both packages (see architecture.md) mean every mise/npm
         # command below needs to run from inside surge/, not $GITHUB_WORKSPACE itself.
         defaults:
             run:
@@ -23,7 +23,7 @@ jobs:
                   path: surge
 
             # A sibling checkout, not a submodule: tests/package.json's
-            # `"rbxts-transformer-surge": "file:../../rbxts-transformer-surge"` (see testing.md)
+            # `"rbxts-transformer-surge": "file:../../rbxts-transformer-surge"` (see architecture.md)
             # resolves relative to surge/tests/, exactly matching local sibling-checkout dev.
             - name: Checkout rbxts-transformer-surge
               uses: actions/checkout@v7

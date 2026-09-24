@@ -118,7 +118,7 @@ under [research/](research/README.md).
 Read a scoped size table against `size.md` directly. Read a scoped speed
 table only against another scoped run of the same patterns, with the
 untouched columns as the control: a column is comparable only within one run,
-and two runs of unchanged code can differ by a quarter on a single cell
+and two runs of unchanged code can differ widely on a single cell
 ([research/noise-in-the-speed-tier.md](research/noise-in-the-speed-tier.md)).
 A measurement worth keeping is a paper under `research/`, never an edit to a
 number in a page.

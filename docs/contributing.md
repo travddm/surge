@@ -51,8 +51,8 @@ surge only:
 - A change that moves bytes changes `tests/src/tests/bytes.spec.ts` and the
   size table in the same commit.
 - Documentation changes in the same commit as the code it describes; the
-  table of which document each kind of change updates is in
-  [contributing-docs.md](contributing-docs.md).
+  table of which document each kind of change updates is Updating
+  documentation in [AGENTS.md](../AGENTS.md).
 
 ## Editors
 

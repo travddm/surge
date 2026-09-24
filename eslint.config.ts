@@ -45,8 +45,9 @@ export default [
 		},
 	},
 	{
-		// The plain Node/ESM script that turns the Lune test runner's sentinel
-		// output into a process exit code (see testing.md), outside any tsconfig.
+		// The plain Node/ESM scripts, such as the one that turns the Lune test runner's
+		// sentinel output into a process exit code (Test harness 5 in
+		// docs/specs/test-harness.md), outside any tsconfig.
 		files: ["tests/scripts/*.mjs"],
 		languageOptions: {
 			sourceType: "module",

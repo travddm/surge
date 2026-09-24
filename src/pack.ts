@@ -7,7 +7,7 @@
 // tagged-union tags inside a `DataType.Packed<T>` subtree (section 8 of
 // docs/specs/wire-format.md). The transformer
 // knows at compile time exactly how many packed bits a subtree needs, so it
-// `alloc()`s that many bytes once (like any other fixed-size field) and
+// reserves that many bytes once (like any other fixed-size field) and
 // passes the resulting buffer/byte-offset here with a compile-time-known bit
 // index within that region -- no separate cursor needed, since Luau's
 // `buffer.writebits`/`readbits` already address an arbitrary bit offset

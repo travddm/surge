@@ -123,9 +123,10 @@ test("a shape with no blob field pays nothing for the blob side channel", () => 
 	assert.match(withBlobs, /__surge_beginWriteBlobs\(/);
 });
 
-// Regression check for the file-directive recommendation in
-// docs/future-work/generated-code-performance.md. These two read @rbxts/surge's
-// own compiled output and the transformed tests place, not one or the other.
+// Regression checks for the file directives: the package pragma entry in
+// docs/future-work/generated-code-performance.md, and Transformer 6.3 in
+// docs/specs/transformer.md. These two read @rbxts/surge's own compiled output
+// and the transformed tests place, not one or the other.
 test("every compiled module of the package opens with its Luau file pragmas", () => {
 	// A hot comment is honoured anywhere ahead of the first line of code, so
 	// what this pins is that each one survives a header edit: `--!native` on

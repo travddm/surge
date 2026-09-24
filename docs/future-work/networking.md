@@ -20,14 +20,9 @@ the serializer redesigned when this is picked up.
 
 ## How, briefly
 
-- Its own repository and package, `surge-net` — not `@rbxts/surge`, which
-  is now the serializer runtime itself (see Repository layout in
-  [architecture.md](../architecture.md)). An earlier draft of this design
-  reserved the bare `@rbxts/surge` name for this networking layer instead;
-  that reservation was dropped once the serializer runtime needed the
-  `@rbxts` scope for its own real distribution (see
-  [getting-started.md](../getting-started.md)) and "surge-net" turned out to name this layer
-  just as well.
+- Its own repository and package, `surge-net`: `@rbxts/surge` is the
+  serializer's runtime package (Two packages, two repositories in
+  [architecture.md](../architecture.md)).
 - Builds on `@rbxts/surge`'s `Serializer<T>` (Runtime API 3.1 in
   [specs/runtime-api.md](../specs/runtime-api.md)) rather than re-deriving its own wire format.
 - Not designed further than this until picked up — gets its own design
