@@ -56,6 +56,18 @@ const deviceSerializer = createBinarySerializer<DataType.Packed<Device>>();
 // At the root there is no enclosing object, so the tag stays an index byte.
 const toggleSerializer = createBinarySerializer<DataType.Packed<Toggle>>();
 
+// A set of literal values is one bit per value it can hold (Wire format 8.8
+// in docs/specs/wire-format.md): nine members cross a byte boundary, and the
+// set need not be a direct property to be packed.
+type Letter = "a" | "b" | "c" | "d" | "e" | "f" | "g" | "h" | "i";
+interface WithBitSets {
+	letters: Set<Letter>;
+	modes?: ReadonlySet<-1 | 2 | false>;
+	each: Array<Set<"x" | "y">>;
+}
+const bitSetsSerializer = createBinarySerializer<DataType.Packed<WithBitSets>>();
+const LETTERS: ReadonlyArray<Letter> = ["a", "b", "c", "d", "e", "f", "g", "h", "i"];
+
 const packedCFrameSerializer = createBinarySerializer<DataType.Packed<CFrame>>();
 const packedCFramesSerializer = createBinarySerializer<DataType.Packed<{ list: CFrame[]; maybe?: CFrame }>>();
 
@@ -254,6 +266,36 @@ class PackedTest {
 			Assert.equal(undefined, difference(value, deviceSerializer.deserialize(buffer, blobs)));
 			const alone = toggleSerializer.serialize(value.primary);
 			Assert.equal(undefined, difference(value.primary, toggleSerializer.deserialize(alone.buffer, alone.blobs)));
+		}
+	}
+
+	@Fact
+	public roundTripsRandomBitSets(): void {
+		const rng = new Rng(41);
+		for (const _ of $range(1, 100)) {
+			const letters = new Set<Letter>();
+			for (const letter of LETTERS) {
+				if (rng.bool()) {
+					letters.add(letter);
+				}
+			}
+			const each = new Array<Set<"x" | "y">>();
+			for (const __ of $range(1, rng.int(0, 3))) {
+				const pair = new Set<"x" | "y">();
+				if (rng.bool()) pair.add("x");
+				if (rng.bool()) pair.add("y");
+				each.push(pair);
+			}
+			const value: WithBitSets = {
+				letters,
+				modes: rng.bool() ? new Set<-1 | 2 | false>(rng.bool() ? [-1, false] : [2]) : undefined,
+				each,
+			};
+			const { buffer: bytes, blobs } = bitSetsSerializer.serialize(value);
+			// A presence bit, two bytes of letters, a u32 count, a byte per
+			// element, and a byte of modes when present.
+			Assert.equal(1 + 2 + 4 + each.size() + (value.modes === undefined ? 0 : 1), buffer.len(bytes));
+			Assert.equal(undefined, difference(value, bitSetsSerializer.deserialize(bytes, blobs)));
 		}
 	}
 }

@@ -93,6 +93,20 @@ interface NarrowList {
 }
 const narrowListUnchecked = createBinarySerializer<NarrowList>();
 
+// `writeChecks` holds a number to its `Range` (Runtime API 3.10): outside the
+// bounds, a NaN, and a fraction where the range holds whole numbers.
+interface Ranged {
+	health: DataType.Range<number, 0, 100>;
+	offset: DataType.Range<DataType.i16, -1000, 1000>;
+	ratio: DataType.Range<DataType.f32, 0, 1>;
+}
+const ranged = createBinarySerializer<Ranged>({ writeChecks: true });
+const rangedUnchecked = createBinarySerializer<Ranged>();
+
+function rangedValue(): Ranged {
+	return { health: 100, offset: -1000, ratio: 0.5 };
+}
+
 function exactValue(): Exact {
 	return { code: "abcd", triple: [1, 2, 3], bytes: buffer.create(2), slots: [1, 2, 3], marks: ["a", "b", "a"] };
 }
@@ -288,6 +302,30 @@ class ChecksTest {
 	public wrapsACountPastItsWidthWithoutWriteChecks(): void {
 		const written = narrowListUnchecked.serialize({ list: narrowValue(256).list });
 		Assert.equal(0, narrowListUnchecked.deserialize(written.buffer, written.blobs).list.size());
+	}
+
+	@Fact
+	public rejectsANumberItsRangeDoesNotAdmit(): void {
+		Assert.undefined(rejection(() => ranged.serialize(rangedValue())));
+		Assert.undefined(rejection(() => ranged.serialize({ health: 0, offset: 1000, ratio: 0 })));
+		assertRejected(() => ranged.serialize({ ...rangedValue(), health: 101 }));
+		assertRejected(() => ranged.serialize({ ...rangedValue(), health: -1 }));
+		assertRejected(() => ranged.serialize({ ...rangedValue(), health: 0 / 0 }));
+		assertRejected(() => ranged.serialize({ ...rangedValue(), health: 50.5 }));
+		assertRejected(() => ranged.serialize({ ...rangedValue(), offset: -1001 }));
+		assertRejected(() => ranged.serialize({ ...rangedValue(), offset: 0.5 }));
+		assertRejected(() => ranged.serialize({ ...rangedValue(), ratio: 1.5 }));
+		assertRejected(() => ranged.serialize({ ...rangedValue(), ratio: 0 / 0 }));
+		// A float width admits a fraction inside the range.
+		Assert.undefined(rejection(() => ranged.serialize({ ...rangedValue(), ratio: 0.25 })));
+	}
+
+	// Unchecked, the value is written at its width, which wraps it (Wire
+	// format 4.15): 300 under a range narrowed to u8 reads back as 44.
+	@Fact
+	public wrapsANumberOutsideItsRangeWithoutWriteChecks(): void {
+		const written = rangedUnchecked.serialize({ ...rangedValue(), health: 300 });
+		Assert.equal(44, rangedUnchecked.deserialize(written.buffer, written.blobs).health);
 	}
 
 	@Fact

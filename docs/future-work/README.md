@@ -12,10 +12,9 @@ and what has landed since, is in
 
 ## Order
 
-| Step | Document                                                                                                            | Why here                                                                                                                                                                                                                                                                                                         |
-| ---- | ------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1    | [type-coverage-parity.md](type-coverage-parity.md) Tier B, designed in [data-type-surface.md](data-type-surface.md) | New `DataType.*` surface: numeric ranges, a bit-packed set of a fixed member list, and a quantized `CFrame` rotation. `Range<Min, Max>` extends what the `writeChecks` option rejects from lengths and counts to a value's range, which is the same tier's item 3, and none of the three rests on a measurement. |
-| 2    | [ci-and-release.md](ci-and-release.md): version backstop and first tagged release                                   | The backstop lands with the release it protects. The CI-only items do not wait; see below.                                                                                                                                                                                                                       |
+| Step | Document                                                                          | Why here                                                                                   |
+| ---- | --------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| 1    | [ci-and-release.md](ci-and-release.md): version backstop and first tagged release | The backstop lands with the release it protects. The CI-only items do not wait; see below. |
 
 ## No step of its own
 
@@ -39,11 +38,10 @@ time:
   document records.
 - What is left of [benchmark-tooling.md](benchmark-tooling.md): widening the
   hand-written baseline to the tagged union and the packed toggles, which
-  waits on the per-call gap to hand-written Luau being understood and on
-  Tier B settling the large record's length prefix; measuring the generated
-  Luau's size, which needs each factory call in a module of its own; a
-  third tier, for wire cost, that needs a driver; and a Zap-shaped timing,
-  which needs one too.
+  waits on the per-call gap to hand-written Luau being understood; measuring
+  the generated Luau's size, which needs each factory call in a module of its
+  own; a third tier, for wire cost, that needs a driver; and a Zap-shaped
+  timing, which needs one too.
 - The CI items in [ci-and-release.md](ci-and-release.md): the transformer
   workflow running the integration suite, the pinned sibling ref, `npm ci`,
   and the Windows job. The transformer's CI cannot see a broken

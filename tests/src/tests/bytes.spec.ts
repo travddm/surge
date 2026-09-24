@@ -55,8 +55,9 @@ interface Exact {
 }
 const exactSerializer = createBinarySerializer<Exact>();
 
-// Every argument defaulted. Rule 4 of future-work/data-type-surface.md says
-// this has to write exactly what `Containers` writes.
+// Every argument defaulted. Rule 4 of the brand convention in
+// docs/coding-standards.md says this has to write exactly what `Containers`
+// writes.
 interface DefaultedContainers {
 	list: DataType.Length<DataType.u16[]>;
 	pair: DataType.Length<[DataType.u8, boolean, ...DataType.u8[]], DataType.u32>;
@@ -127,13 +128,31 @@ interface Narrowed {
 }
 const narrowedSerializer = createBinarySerializer<Narrowed>();
 
-// Every argument defaulted. Rule 4 of future-work/data-type-surface.md says
-// this has to write what an unbranded `Vector3` and `CFrame` write.
+// Every argument defaulted. Rule 4 of the brand convention in
+// docs/coding-standards.md says this has to write what an unbranded `Vector3`
+// and `CFrame` write.
 interface DefaultedComponents {
 	cell: DataType.Vector;
 	placement: DataType.Transform<DataType.f32>;
 }
 const defaultedComponentsSerializer = createBinarySerializer<DefaultedComponents>();
+
+// `number` narrows to the narrowest width that holds the range, and a width
+// brand is kept. The range itself writes nothing.
+interface Ranged {
+	health: DataType.Range<number, 0, 100>;
+	offset: DataType.Range<number, -1000, 1000>;
+	ratio: DataType.Range<DataType.f32, 0, 1>;
+	turn: DataType.Range<number, -1, 1>;
+}
+const rangedSerializer = createBinarySerializer<Ranged>();
+
+const quantizedSerializer = createBinarySerializer<DataType.Quantized<CFrame>>();
+
+const tagsSerializer = createBinarySerializer<DataType.Packed<{ tags: Set<"c" | "a" | "b"> }>>();
+const lettersSerializer =
+	createBinarySerializer<DataType.Packed<Set<"a" | "b" | "c" | "d" | "e" | "f" | "g" | "h" | "i">>>();
+const mixedSerializer = createBinarySerializer<DataType.Packed<Set<"x" | 2 | true>>>();
 
 class BytesTest {
 	@Fact
@@ -357,6 +376,42 @@ class BytesTest {
 			placement: new CFrame(1, 2, 3),
 		});
 		Assert.equal(cell + position + string.rep("00", 12), hex(buffer));
+	}
+
+	@Fact
+	public pinsRangeWidths(): void {
+		const { buffer } = rangedSerializer.serialize({ health: 100, offset: -2, ratio: 0.5, turn: -1 });
+		// health: u8 | offset: i16 | ratio: f32, as its brand asks | turn: i8
+		Assert.equal("64" + "feff" + "0000003f" + "ff", hex(buffer));
+	}
+
+	@Fact
+	public pinsAQuantizedRotation(): void {
+		// 3 x f32 position, then the axis-angle vector, each component times
+		// 32767 / pi and rounded to an i16: an eighth turn about X is 8191.75,
+		// which rounds to 8192.
+		const position = "0000803f" + "00000040" + "00004040";
+		const eighth = CFrame.fromAxisAngle(Vector3.xAxis, math.pi / 4).add(new Vector3(1, 2, 3));
+		Assert.equal(position + "0020" + "0000" + "0000", hex(quantizedSerializer.serialize(eighth).buffer));
+		// Five eighths of a turn about Y is folded to three eighths the other way
+		// round: -24575.25, which rounds to -24575, 0xa001.
+		const folded = CFrame.fromAxisAngle(Vector3.yAxis, (math.pi * 5) / 4);
+		Assert.equal(
+			string.rep("00", 12) + "0000" + "01a0" + "0000",
+			hex(quantizedSerializer.serialize(folded).buffer),
+		);
+	}
+
+	@Fact
+	public pinsABitSet(): void {
+		// One bit per member in canonical literal order, least significant first,
+		// and no count: a and c are bits 0 and 2.
+		Assert.equal("05", hex(tagsSerializer.serialize({ tags: new Set(["a", "c"]) }).buffer));
+		Assert.equal("00", hex(tagsSerializer.serialize({ tags: new Set() }).buffer));
+		// Nine members take two bytes, and i is bit 8, the first bit of the second.
+		Assert.equal("01" + "01", hex(lettersSerializer.serialize(new Set(["a", "i"])).buffer));
+		// Booleans, then numbers, then strings: true, 2, "x".
+		Assert.equal("05", hex(mixedSerializer.serialize(new Set<"x" | 2 | true>([true, "x"])).buffer));
 	}
 
 	@Fact

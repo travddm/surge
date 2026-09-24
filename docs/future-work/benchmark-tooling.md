@@ -13,12 +13,7 @@ a straight run of writes: the tagged union, which branches on the tag and
 builds each variant, and the packed `toggles`, whose bit region runs through a
 runtime function rather than inline code. Not the large array, since the
 `CFrame` array already prices a per-element loop (see the correction in
-[generated-code-against-hand-written.md](../research/generated-code-against-hand-written.md));
-and
-not the large record until Tier B of
-[type-coverage-parity.md](type-coverage-parity.md) has settled its length
-prefix, because a baseline writes surge's exact bytes and the size tier
-checks that it does.
+[generated-code-against-hand-written.md](../research/generated-code-against-hand-written.md)).
 
 **Measure the generated Luau's size.** Each fixture module holds its shape,
 its sample value and three factory calls, so its compiled size is not any one
@@ -46,12 +41,12 @@ surge's encode has a gap to the hand-written codec that is paid once per call
 ([generated-code-against-hand-written.md](../research/generated-code-against-hand-written.md)),
 the per-call costs measured so far do not explain it, and
 [generated-code-performance.md](generated-code-performance.md) names two table
-allocations per call as the next thing to measure. The large record also waits
-on Tier B. The code-size measurement needs the fixtures restructured, one call
-per module. Tier 3 has no driver: nothing yet asks what a serializer costs on
-the wire once a networking layer batches it, and [networking.md](networking.md)
-is where that would come from. A Zap-shaped timing has no driver either, and a
-transcription would measure the transcription as much as Zap.
+allocations per call as the next thing to measure. The code-size measurement
+needs the fixtures restructured, one call per module. Tier 3 has no driver:
+nothing yet asks what a serializer costs on the wire once a networking layer
+batches it, and [networking.md](networking.md) is where that would come from.
+A Zap-shaped timing has no driver either, and a transcription would measure
+the transcription as much as Zap.
 
 ## How, briefly
 

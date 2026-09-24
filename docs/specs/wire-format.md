@@ -1,8 +1,8 @@
 # Wire format specification
 
 Status: current
-Applies to: `@rbxts/surge` at commit `be5d3e6`, `rbxts-transformer-surge` at
-commit `04cda66` (no tagged release yet)
+Applies to: `@rbxts/surge` at commit `86f729b`, `rbxts-transformer-surge` at
+commit `c8481d3` (no tagged release yet)
 
 ## 1. Scope
 
@@ -18,7 +18,7 @@ and is specified in [transformer.md](transformer.md). What `serialize` and
 - **`Field` kind**: the intermediate form the transformer walks a type to —
   `num`, `bool`, `str`, `buffer`, `vector2`, `vector3`, `cframe`, `color3`,
   `datatype`, `colorSequence`, `numberSequence`, `enum`, `literal`,
-  `literalConst`, `object`, `array`, `tuple`, `dict`, `optional`,
+  `literalConst`, `object`, `array`, `tuple`, `dict`, `bitSet`, `optional`,
   `taggedUnion`, `guardedUnion`, `blob`, `recursiveRef`.
 - **Count**: a number written ahead of a container's contents, saying how many
   bytes or elements follow.
@@ -41,7 +41,7 @@ writes it.
 
 **3.2** A value's bytes are its fields' bytes concatenated in the order this
 specification gives, with no padding and no alignment, except that a packed
-region (section 8) is rounded up to whole bytes.
+region and a `bitSet` (section 8) are rounded up to whole bytes.
 
 **3.3** The bytes identify neither the shape nor a version. Reading them
 requires a deserializer generated for the same type.
@@ -60,7 +60,7 @@ requires a deserializer generated for the same type.
 | `u32` / `i32` | 4     | unsigned / two's complement |
 
 A plain `number` is `f64`. A width brand (`DataType.u8` and the rest) selects
-another.
+another, and so does `DataType.Range<T, Min, Max>` (4.16).
 
 **4.2** A `u24` or `i24` is a `u16` holding the low 16 bits followed by a `u8`
 holding the high 8. An `i24` is stored in two's complement and sign-extended
@@ -82,7 +82,8 @@ widths (section 7).
 **4.8** `cframe` outside a packed subtree is the position, then the rotation.
 The position is 3×`f32`: `X`, `Y`, `Z`, unless `Transform<X, Y, Z>` sets their
 widths (section 7). The rotation is an axis-angle, the unit axis scaled by the
-angle, as 3×`f32`. Without `Transform`, a `cframe` is 24 bytes.
+angle, as 3×`f32`, unless `Quantized<T>` sets it (7.4). Without either brand,
+a `cframe` is 24 bytes.
 
 **4.9** `color3` is 3×`u8`: `R`, `G`, `B`, each written as
 `math.floor(channel × 255)`. Nothing clamps a channel, so a channel outside
@@ -119,7 +120,21 @@ both sides.
 
 **4.15** An integer width truncates a number toward zero and wraps it modulo
 its range, as 7.3 states for a component. Nothing raises, with or without
-`writeChecks` ([runtime-api.md](runtime-api.md) 3.11).
+`writeChecks` ([runtime-api.md](runtime-api.md) 3.11), except as 4.17 states
+for a number under `DataType.Range<T, Min, Max>`.
+
+**4.16** `DataType.Range<T, Min, Max>` writes a `num` at a width that `T`
+chooses. With `T` a width brand, the width is that brand's. With `T`
+`number`, it is the first width that holds every whole number from `Min` to
+`Max`: of `u8`, `u16`, `u24` and `u32` when `Min` is not negative, of `i8`,
+`i16`, `i24` and `i32` otherwise, and `f64` when none of the four does. The
+range writes nothing of its own.
+
+**4.17** With `writeChecks` ([runtime-api.md](runtime-api.md) 3.10), a `num`
+under `DataType.Range<T, Min, Max>` raises before it is written when the value
+is not both at least `Min` and at most `Max`, which a NaN never is. Unless `T`
+is `DataType.f32` or `DataType.f64`, it also raises when the value is not a
+whole number.
 
 ## 5. Composites
 
@@ -214,6 +229,14 @@ produces the same bytes as the unbranded type.
 **7.3** An integer width truncates a component toward zero and wraps it
 modulo its range. Nothing raises.
 
+**7.4** `DataType.Quantized<T>` writes a `cframe`'s rotation as 3×`i16` in
+place of the 3×`f32` of 4.8. Each is a component of the axis-angle vector,
+with an angle above π replaced by the angle minus 2π, multiplied by 32767/π
+and rounded to the nearest integer, a half away from zero. The read side
+multiplies each by π/32767 and rebuilds the rotation from that vector as 4.8
+does. The position is as 4.8 and 7.1 state, so `Quantized<CFrame>` is 18
+bytes.
+
 ## 8. `Packed<T>`
 
 **8.1** Inside a packed subtree, a `bool` property, an `optional` property's
@@ -247,8 +270,8 @@ or not it is a direct property:
 - then the position as 3×`f32`, unless the header gives it;
 - then the rotation as in 4.8, unless the header gives it.
 
-So a packed `cframe` is 1, 13 or 25 bytes. `Transform<X, Y, Z>` does not
-apply inside a packed subtree.
+So a packed `cframe` is 1, 13 or 25 bytes. Neither `Transform<X, Y, Z>` nor
+`Quantized<T>` applies inside a packed subtree.
 
 **8.7** The rotation index is `xCode × 4 + rank`. The code of an axis-aligned
 unit vector is `axis × 2 + negative`, where `axis` is `0` for X, `1` for Y and
@@ -259,6 +282,13 @@ axis, in ascending order. A vector is axis-aligned when both of its other
 components are within `1e-6` of zero. A rotation is axis-aligned when its X
 and Y vectors both are, and it is written as the exact rotation its index
 names.
+
+**8.8** A `Set` anywhere in a packed subtree whose key is a `literal` without
+`undefined`, or a `literalConst` other than `undefined`, is a `bitSet`: one bit
+per value the key admits, in canonical literal order, `1` when the set holds
+that value. The bits are numbered as 8.3 numbers a region's, rounded up to
+whole bytes, and bits past the last value are `0`. A `bitSet` writes no
+count. Any other `Set` in a packed subtree is a `dict` (5.4).
 
 ## 9. The blob channel
 
@@ -314,7 +344,9 @@ in `@rbxts/surge`.
 | 4.12               | A whole enum: `bytes.spec.ts`: `pinsLiteralAndEnumIndexes`; `walk.test.ts`, `TypeWalker classification with fixture packages`. A union of some items: source only, `walkEnum` in `walk.ts` takes the members from the union's items                                                                                                                |
 | 4.13               | `bytes.spec.ts`: `pinsLiteralAndEnumIndexes`; `walk.test.ts`, `TypeWalker wire-format determinism`                                                                                                                                                                                                                                                 |
 | 4.14               | `bytes.spec.ts`: `pinsLiteralAndEnumIndexes`; `literals.spec.ts`: `writesNoBytesForASingleLiteral`                                                                                                                                                                                                                                                 |
-| 4.15               | Source only: `writeNumberAt` in `emit/context.ts` passes the number unconverted to Luau's `buffer` writes and `bit32`                                                                                                                                                                                                                              |
+| 4.15               | Source only: `writeNumberAt` in `emit/context.ts` passes the number unconverted to Luau's `buffer` writes and `bit32`. Under `DataType.Range`: `checks.spec.ts`: `wrapsANumberOutsideItsRangeWithoutWriteChecks`                                                                                                                                   |
+| 4.16               | `bytes.spec.ts`: `pinsRangeWidths`; `numbers.spec.ts`: `roundTripsRangesAtTheirNarrowedWidths`; each width's edge: `walk.test.ts`, `TypeWalker Range<T, Min, Max>`                                                                                                                                                                                 |
+| 4.17               | `checks.spec.ts`: `rejectsANumberItsRangeDoesNotAdmit`                                                                                                                                                                                                                                                                                             |
 | 5.4                | A `Record`: `bytes.spec.ts`: `pinsContainers`. A `Set`: source only, `writeDict` in `emit/write.ts` writes the key alone, and `readDict` in `emit/read.ts` sets it to `true`; `collections.spec.ts`: `roundTripsDictionaries` round-trips one                                                                                                      |
 | 5.6                | `bytes.spec.ts`: `pinsATaggedUnion`; the choice of tag: `walk.test.ts`, `TypeWalker wire-format determinism`                                                                                                                                                                                                                                       |
 | 5.7                | `bytes.spec.ts`: `pinsAGuardedUnion`; the `literalConst` and `datatype` order: `walk.test.ts`, `TypeWalker wire-format determinism` and `TypeWalker classification with fixture packages`. The `u16` index: source only, `writeGuardedUnion` in `emit/write.ts`                                                                                    |
@@ -328,9 +360,11 @@ in `@rbxts/surge`.
 | 6.8                | `checks.spec.ts`: `wrapsACountPastItsWidthWithoutWriteChecks`, `rejectsACountPastItsWidth`                                                                                                                                                                                                                                                         |
 | 7.1, 7.2           | `bytes.spec.ts`: `pinsPerComponentWidths`, `pinsThatDefaultedComponentWidthsMoveNoBytes`                                                                                                                                                                                                                                                           |
 | 7.3                | Source only: `writeNumberAt` in `emit/context.ts` passes the component unconverted to Luau's `buffer` writes and `bit32`                                                                                                                                                                                                                           |
+| 7.4                | `bytes.spec.ts`: `pinsAQuantizedRotation`; `roblox.spec.ts`: `roundTripsAQuantizedRotationWithinItsStep`                                                                                                                                                                                                                                           |
 | 8.1–8.4            | `bytes.spec.ts`: `pinsPackedBooleans`, `pinsPackedOptionals`, `pinsAPackedTagBit`                                                                                                                                                                                                                                                                  |
 | 8.5                | `bytes.spec.ts`: `pinsAPackedTagBit`                                                                                                                                                                                                                                                                                                               |
 | 8.6, 8.7           | `bytes.spec.ts`: `pinsAPackedCFrame`; `packed.spec.ts`: `packsEachAxisAlignedRotationIntoItsOwnHeaderByte`, `writesOnlyThePartsOfACFrameThatTheHeaderDoesNotGive`, `doesNotSnapARotationThatIsOnlyNearlyAxisAligned`. The rest of the rotation index: source only, `rotationIndex` in `src/cframe.ts`                                              |
+| 8.8                | `bytes.spec.ts`: `pinsABitSet`; `packed.spec.ts`: `roundTripsRandomBitSets`; which sets: `walk.test.ts`, `TypeWalker bit sets inside Packed<T>`                                                                                                                                                                                                    |
 | 9.1                | `roblox.spec.ts`: `passesUnknownAndInstanceValuesThroughTheBlobChannel`, `keepsLaterBlobsInPlaceWhenAnUnknownIsUndefined`, `writesNoBlobForAnAbsentOptionalBlob`                                                                                                                                                                                   |
 | 9.2                | The `optional` branch: `roblox.spec.ts`: `writesNoBlobForAnAbsentOptionalBlob`. The union branches: source only, `writeTaggedUnion` and `writeGuardedUnion` in `emit/write.ts` write each variant inside its branch                                                                                                                                |
 | 9.3                | Outside `Packed<T>`: `roblox.spec.ts`: `passesUnknownAndInstanceValuesThroughTheBlobChannel`, `keepsLaterBlobsInPlaceWhenAnUnknownIsUndefined`; `walk.test.ts`, `TypeWalker classification with fixture packages`. The presence bit: source only, `walk.ts` gives `unknown` the `packed` flag, and `packedBits` in `emit/layout.ts` makes it a bit |
@@ -340,6 +374,9 @@ in `@rbxts/surge`.
 
 ## Changes
 
+- `86f729b` / `c8481d3`: adds 4.16 and 4.17 (`DataType.Range<T, Min, Max>`),
+  7.4 (`DataType.Quantized<T>`) and 8.8 (a `bitSet`); 2, 3.2, 4.1, 4.8, 4.15 and
+  8.6 follow them.
 - `be5d3e6` / `04cda66`: adds 4.15 (an integer width truncates and wraps a
   number, as 7.3 states for a component).
 - `fec89a8` / `e402a49`: 6.3 and 6.7 state what `writeChecks`

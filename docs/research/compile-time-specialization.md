@@ -153,3 +153,13 @@ encode.
 - Behaviors 1–6 are pinned by `rbxts-transformer-surge`'s `test/` suites;
   behavior 4 also by the packed-boolean size assertion in
   `tests/src/tests/coverage.spec.ts`.
+
+## Correction, 2026-09-24
+
+This corrects two links, in the Method and the Data, both to
+`../future-work/type-coverage-parity.md` for the fbs and Zap commits this paper
+read. That document left `future-work/` when its last open work landed, and the
+commits it pinned are now in the Method of
+[type-coverage-across-libraries.md](type-coverage-across-libraries.md).
+`git show 86f729b:docs/future-work/type-coverage-parity.md` is the version these
+links pointed at.

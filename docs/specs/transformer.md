@@ -1,8 +1,8 @@
 # Transformer specification
 
 Status: current
-Applies to: `@rbxts/surge` at commit `bbd55c4`, `rbxts-transformer-surge` at
-commit `04cda66` (no tagged release yet)
+Applies to: `@rbxts/surge` at commit `86f729b`, `rbxts-transformer-surge` at
+commit `c8481d3` (no tagged release yet)
 
 ## 1. Scope
 
@@ -66,6 +66,8 @@ declarations (4.10).
 | `DataType.Packed<T>`                                                                                                                             | `T`'s kind, with `T` walked as a packed subtree                |
 | `DataType.Length<T, L>`                                                                                                                          | `T`'s kind, with the count `L` sets                            |
 | `DataType.Vector<X, Y, Z>`, `DataType.Transform<X, Y, Z>`                                                                                        | `vector3` with component widths, `cframe` with position widths |
+| `DataType.Range<T, Min, Max>`                                                                                                                    | `num` with a range (4.14)                                      |
+| `DataType.Quantized<T>`                                                                                                                          | `cframe` with a quantized rotation (4.15)                      |
 | a `DataType` width brand: `f32`, `f64`, `u8`, `u16`, `u24`, `u32`, `i8`, `i16`, `i24`, `i32`                                                     | `num(width)`                                                   |
 | `boolean`                                                                                                                                        | `bool`                                                         |
 | `boolean \| undefined`, including an optional `boolean` property                                                                                 | `optional(bool)`                                               |
@@ -90,6 +92,7 @@ declarations (4.10).
 | `T[]`, `ReadonlyArray<T>`                                                                                                                        | `array`                                                        |
 | a tuple whose rest element, if it has one, is last                                                                                               | `tuple`                                                        |
 | `Map<K, V>`, `ReadonlyMap<K, V>`                                                                                                                 | `dict` with a key and a value                                  |
+| `Set<V>`, `ReadonlySet<V>` in a packed subtree, with `V` a union of literal values or one literal value, and not `undefined` (4.16)              | `bitSet`                                                       |
 | `Set<V>`, `ReadonlySet<V>`                                                                                                                       | `dict` with a key only                                         |
 | a type with both declared properties and an index signature                                                                                      | a diagnostic (7.2)                                             |
 | an interface or object type with declared properties                                                                                             | `object`                                                       |
@@ -99,12 +102,14 @@ declarations (4.10).
 **4.2** An object type, a union, an array or a tuple that reappears on its own
 walk path is a `recursiveRef` to its first occurrence.
 
-**4.3** `DataType.Packed<T>`, `DataType.Length<T, L>`, `DataType.Vector<X, Y, Z>`
-and `DataType.Transform<X, Y, Z>` are recognized both by alias identity and,
-for a re-aliased brand, by their brand property. Alias identity is tried for
-all four brands before any brand property. In a composition of brands, the
-walk resolves the outermost brand and then walks its inner type, which
-resolves the next.
+**4.3** `DataType.Packed<T>`, `DataType.Length<T, L>`, `DataType.Vector<X, Y, Z>`,
+`DataType.Transform<X, Y, Z>`, `DataType.Range<T, Min, Max>` and
+`DataType.Quantized<T>` are recognized both by alias identity and, for a
+re-aliased brand, by their brand property. Alias identity is tried for all six
+brands before any brand property, and a width brand's property is tried after
+theirs, because `Range<T, Min, Max>` over a width brand carries both. In a
+composition of brands, the walk resolves the outermost brand and then walks
+its inner type, which resolves the next.
 
 **4.4** A union is a `guardedUnion` only if the write side can tell every
 constituent apart at run time: at most one constituent is table-shaped, no two
@@ -148,6 +153,21 @@ more table-shaped constituents and is a diagnostic (4.4, 7.2).
 **4.13** A `Record` whose key is a `DataType` width brand, such as
 `Record<DataType.u8, V>`, is a `dict` whose key is written at that width.
 
+**4.14** `DataType.Range<T, Min, Max>` walks to a `num` at the width of Wire
+format 4.16, carrying `Min` and `Max` for 5.14. `T` must be `number` or a
+width brand, and `Min` and `Max` number literals, with `Min` not greater than
+`Max`. Unless `T` is `DataType.f32` or `DataType.f64`, both must be whole
+numbers, and a width brand `T` must hold both.
+
+**4.15** `DataType.Quantized<T>` walks `T`, which must walk to a `cframe`
+outside a packed subtree, and quantizes that `cframe`'s rotation (Wire format
+7.4). `T` may be a `DataType.Transform<X, Y, Z>`.
+
+**4.16** In a packed subtree, a `Set` or `ReadonlySet` whose key walks to a
+`literal` without `undefined`, or to a `literalConst` other than `undefined`,
+is a `bitSet` of those values (Wire format 8.8). Any other `Set`, and every
+`Set` outside a packed subtree, is a `dict`.
+
 ## 5. Emission
 
 **5.1** A call site is replaced by generated code for its type: a
@@ -175,9 +195,9 @@ shape reserves none, such as a shape of only `blob` fields, returns
 
 **5.5** A run of consecutive fixed-size properties of one object shares one
 reservation, and a run ends at 31 properties. A fixed-size property is a
-`num`, `vector2`, `vector3`, `color3`, `datatype`, `enum`, `literal` or
-`literalConst`, a `bool` outside the packed region, or a `cframe` outside a
-packed subtree. A tuple's fixed elements do not share a reservation.
+`num`, `vector2`, `vector3`, `color3`, `datatype`, `enum`, `literal`,
+`literalConst` or `bitSet`, a `bool` outside the packed region, or a `cframe`
+outside a packed subtree. A tuple's fixed elements do not share a reservation.
 
 **5.6** A `dict`'s count is reserved before its entries, the entries are
 counted as they are written, and the count is written back once known. Every
@@ -230,7 +250,9 @@ element is `optional` or a `literal` that includes `undefined`, and `!==`
 otherwise, and a comparison of each count with
 the largest its `u8`, `u16` or `u24` width holds. A `dict`'s count is compared
 once the entries are written, before it is written back. A `u32` count is not
-compared.
+compared. A `num` under `DataType.Range<T, Min, Max>` is compared with `Min`
+and `Max` as `!(n >= Min && n <= Max)`, which a NaN fails, and, unless `T` is
+a float width, with its whole part, before it is written (Wire format 4.17).
 
 **5.15** The value a generated `deserialize` returns is asserted as the call
 site's type argument, so it types as that argument, literal properties
@@ -280,12 +302,16 @@ is the string `" surge"`, with a leading space, so roblox-ts prints it as
   one that is not opaque, a constituent of a kind no guard covers, two or more
   table-shaped constituents with no discriminant, or two or more constituents
   other than literal values with the same runtime type;
-- a `Length<T, L>` whose `T` writes no count, whose `L` is not `u8`, `u16`,
-  `u24`, `u32` or a whole number that is not negative, whose `T` is a tuple
-  with no rest element, or whose exact form is applied to a `dict`;
+- a `Length<T, L>` whose `T` writes no count, a `bitSet` included, whose `L`
+  is not `u8`, `u16`, `u24`, `u32` or a whole number that is not negative,
+  whose `T` is a tuple with no rest element, or whose exact form is applied to
+  a `dict`;
 - a `Vector<X, Y, Z>` or `Transform<X, Y, Z>` component width that is not a
   `DataType` number width;
 - a `Transform<X, Y, Z>` with a width other than the default inside a packed
+  subtree;
+- a `Range<T, Min, Max>` that breaks 4.14;
+- a `Quantized<T>` whose `T` is not a `CFrame`, or that is inside a packed
   subtree.
 
 **7.3** The entry point reports a diagnostic for a call site that breaks 3.2
@@ -306,51 +332,57 @@ throws only on a broken internal invariant.
 of `rbxts-transformer-surge`, cited by `describe` block. Source paths are in
 `rbxts-transformer-surge` unless they name `@rbxts/surge`.
 
-| Statement | Pinned by                                                                                                                                                                                                                                                                                                                       |
-| --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 3.1       | `detect`: `resolveFactoryName`; `tests/src/tests/factories.spec.ts`: `transformsAFactoryImportedUnderAnotherName`                                                                                                                                                                                                               |
-| 3.2, 3.3  | `transform`: `transform diagnostics`, `transform checks option`, `transform writeChecks option`. Source only for more than one argument, options that are not an object literal, and a quoted or shorthand `checks`: `readChecksOption` in `src/index.ts`                                                                       |
-| 3.4       | `tests/src/tests/factories.spec.ts`: `writesTheSameBytesFromTwoCallSitesForOneType`                                                                                                                                                                                                                                             |
-| 4.1       | `walk`: `TypeWalker classification`, `TypeWalker classification with fixture packages`, `TypeWalker blob classification`, `TypeWalker tuples`, `TypeWalker union guards`, `TypeWalker wire-format determinism`, and the brand blocks under 4.3                                                                                  |
-| 4.2       | `walk`: `TypeWalker recursion through unions`, `TypeWalker union guards` (a recursive object type); `test/golden.test.mjs`: the recursion-helper checks; `walk`: `TypeWalker recursion through arrays and tuples`                                                                                                               |
-| 4.3       | `detect`: `getDataTypeBrand / getSurgeBrand`; `walk`: `TypeWalker Packed<T>`, `TypeWalker Length<T, L>`, `TypeWalker Vector<X, Y, Z> and Transform<X, Y, Z>`                                                                                                                                                                    |
-| 4.4       | `walk`: `TypeWalker union guards`, `TypeWalker wire-format determinism` (two literal values of one runtime type), `TypeWalker classification with fixture packages` (a union of `Instance` subclasses is a `blob`); `emit`: `Emitter union guards`                                                                              |
-| 4.5       | `walk`: `TypeWalker generic instantiation identity`                                                                                                                                                                                                                                                                             |
-| 4.6       | `walk`: `TypeWalker classification` (a finite key union walks as a fixed-property object)                                                                                                                                                                                                                                       |
-| 4.7       | `transform`: `transform generated code` (a dictionary keyed by each kind); `tests/src/tests/collections.spec.ts`: `roundTripsDictionariesKeyedByWhatARecordCannotType`                                                                                                                                                          |
-| 4.8       | `walk`: `TypeWalker undefined, void and never`; `tests/src/tests/roblox.spec.ts`: `writesNothingForUndefinedAndVoidProperties`                                                                                                                                                                                                  |
-| 4.9       | `walk`: `TypeWalker type parameters`; `transform`: `transform diagnostics` (a call site inside a generic function)                                                                                                                                                                                                              |
-| 4.10      | `walk`: `TypeWalker Map and Set by declaration`                                                                                                                                                                                                                                                                                 |
-| 4.11      | `walk`: `TypeWalker recursion through arrays and tuples`; `transform`: `transform generated code` (an array of itself, a tuple holding an array of itself); `tests/src/tests/recursion.spec.ts`: `roundTripsRecursionThroughArraysAndTuplesAlone`                                                                               |
-| 4.12      | `walk`: `TypeWalker unions of tuples`                                                                                                                                                                                                                                                                                           |
-| 4.13      | `walk`: `TypeWalker Record keys`; `tests/src/tests/collections.spec.ts`: `roundTripsDictionariesKeyedByWhatARecordCannotType`                                                                                                                                                                                                   |
-| 5.1       | `emit`: `Emitter read-order for side-effecting fields`; every round trip under `tests/src/tests/`                                                                                                                                                                                                                               |
-| 5.2       | `emit`: `Emitter per-kind write/read snapshots`; `test/golden.test.mjs`: a non-recursive shape never calls a helper. Source only for the closure the helpers are declared in: `buildReplacement` in `src/index.ts`                                                                                                              |
-| 5.3       | `emit`: `Emitter read-side checks` (the read state); `transform`: `transform injected imports` (the scratch buffer). Source only for the state a side with no bytes omits: `writeStateDecls` and `readStateDecls` in `src/emit/context.ts`                                                                                      |
-| 5.4       | `emit`: `Emitter per-kind write/read snapshots` (the inline reservation); `transform`: `transform (end-to-end)` (the `finishWrite` import). Source only for the `buffer.create(0)` return: `finishWriteExpression` in `src/emit/context.ts`                                                                                     |
-| 5.5       | `emit`: `Emitter shared reservations`; `test/golden.test.mjs`: consecutive fixed-size fields share one reservation. Source only for the 31-property bound and tuple elements: `allocRuns` and `fixedBytes` in `src/emit/layout.ts`                                                                                              |
-| 5.6       | `tests/src/tests/bytes.spec.ts`: `pinsContainers` (each count ahead of its contents). Source only for the `dict` count written back: `writeDict` in `src/emit/write.ts`                                                                                                                                                         |
-| 5.7       | `test/golden.test.mjs`: a count-driven read is a numeric for loop                                                                                                                                                                                                                                                               |
-| 5.8       | `emit`: `Emitter local-register ceiling`; `tests/src/tests/coverage.spec.ts`: `roundTripsAnObjectWiderThanTheLocalRegisterLimit`                                                                                                                                                                                                |
-| 5.9       | `transform`: `transform (end-to-end)` (no blob field, a blob field, and a blob reachable only through a recursion helper); `test/golden.test.mjs`: a shape with no blob field pays nothing for the blob side channel                                                                                                            |
-| 5.10      | `emit`: `Emitter read-side checks`; `test/golden.test.mjs`: the two `checks` checks; `tests/src/tests/checks.spec.ts`: `rejectsAnEnumIndexPastItsItems`. Source only for the sequence keypoint count: `readSequence` in `src/emit/read.ts`                                                                                      |
-| 5.11      | `tests/src/tests/roblox.spec.ts`: `keepsLaterBlobsInPlaceWhenAnUnknownIsUndefined`, `writesNoBlobForAnAbsentOptionalBlob`                                                                                                                                                                                                       |
-| 5.12      | `emit`: `Emitter read-side checks` (a packed CFrame); `tests/src/tests/checks.spec.ts`: `rejectsATruncatedPackedCFrame`, `rejectsAPackedRotationCodeThatNamesNoRotation`                                                                                                                                                        |
-| 5.13      | `transform`: `transform generated code` (the single-sided factories on a recursive type); `tests/src/tests/factories.spec.ts`: `roundTripsARecursiveTypeThroughASeparateSerializerAndDeserializer`                                                                                                                              |
-| 5.14      | `emit`: `Emitter write-side checks`; `transform`: `transform writeChecks option`; `tests/src/tests/checks.spec.ts`: `rejectsAnExactLengthValueOfAnyOtherLength`, `letsAnExactArrayOfOptionalsBeShorterButNotLonger`, `rejectsACountPastItsWidth`                                                                                |
-| 5.15      | `transform`: `transform generated code` (a deserialize result with each of seven shapes is assignable to its type argument)                                                                                                                                                                                                     |
-| 6.1, 6.2  | `transform`: `transform injected imports`, and in `transform (end-to-end)` the single shared import and the same-named local function; `tests/src/tests/coverage.spec.ts`: `leavesAUserDeclarationNamedAfterAnInjectedImportAlone`                                                                                              |
-| 6.3       | `test/golden.test.mjs`: a file directive survives the transformer's injected imports; `transform`: `transform generated code` (the three directive tests)                                                                                                                                                                       |
-| 6.4       | `transform`: `transform injected imports` (a `createDeserializer` call site)                                                                                                                                                                                                                                                    |
-| 6.5       | Source only: `src/emit/`                                                                                                                                                                                                                                                                                                        |
-| 7.1       | `transform`: `transform diagnostics` (the category). Source only for the code string: `report` in `src/index.ts`                                                                                                                                                                                                                |
-| 7.2       | `walk`: `TypeWalker blob classification`, `TypeWalker bare EnumItem`, `TypeWalker classification with fixture packages`, `TypeWalker tuples`, `TypeWalker classification`, `TypeWalker union guards`, and the brand blocks under 4.3. Source only for a constituent of a kind no guard covers: `classifyUnion` in `src/walk.ts` |
-| 7.3       | `transform`: `transform diagnostics`, `transform checks option`. Source only: the cases listed under 3.2 and 3.3                                                                                                                                                                                                                |
-| 7.4       | `walk`: `TypeWalker diagnostic position`; `transform`: `transform diagnostics`, `transform checks option` (the positions). Source only for a property declared in another file: `nodeForProperty` in `src/walk.ts`                                                                                                              |
-| 7.5       | `transform`: `transform diagnostics`                                                                                                                                                                                                                                                                                            |
+| Statement | Pinned by                                                                                                                                                                                                                                                                                                                                                               |
+| --------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 3.1       | `detect`: `resolveFactoryName`; `tests/src/tests/factories.spec.ts`: `transformsAFactoryImportedUnderAnotherName`                                                                                                                                                                                                                                                       |
+| 3.2, 3.3  | `transform`: `transform diagnostics`, `transform checks option`, `transform writeChecks option`. Source only for more than one argument, options that are not an object literal, and a quoted or shorthand `checks`: `readChecksOption` in `src/index.ts`                                                                                                               |
+| 3.4       | `tests/src/tests/factories.spec.ts`: `writesTheSameBytesFromTwoCallSitesForOneType`                                                                                                                                                                                                                                                                                     |
+| 4.1       | `walk`: `TypeWalker classification`, `TypeWalker classification with fixture packages`, `TypeWalker blob classification`, `TypeWalker tuples`, `TypeWalker union guards`, `TypeWalker wire-format determinism`, and the brand blocks under 4.3                                                                                                                          |
+| 4.2       | `walk`: `TypeWalker recursion through unions`, `TypeWalker union guards` (a recursive object type); `test/golden.test.mjs`: the recursion-helper checks; `walk`: `TypeWalker recursion through arrays and tuples`                                                                                                                                                       |
+| 4.3       | `detect`: `getDataTypeBrand / getSurgeBrand`; `walk`: `TypeWalker Packed<T>`, `TypeWalker Length<T, L>`, `TypeWalker Vector<X, Y, Z> and Transform<X, Y, Z>`, `TypeWalker Range<T, Min, Max>`, `TypeWalker Quantized<T>`                                                                                                                                                |
+| 4.4       | `walk`: `TypeWalker union guards`, `TypeWalker wire-format determinism` (two literal values of one runtime type), `TypeWalker classification with fixture packages` (a union of `Instance` subclasses is a `blob`); `emit`: `Emitter union guards`                                                                                                                      |
+| 4.5       | `walk`: `TypeWalker generic instantiation identity`                                                                                                                                                                                                                                                                                                                     |
+| 4.6       | `walk`: `TypeWalker classification` (a finite key union walks as a fixed-property object)                                                                                                                                                                                                                                                                               |
+| 4.7       | `transform`: `transform generated code` (a dictionary keyed by each kind); `tests/src/tests/collections.spec.ts`: `roundTripsDictionariesKeyedByWhatARecordCannotType`                                                                                                                                                                                                  |
+| 4.8       | `walk`: `TypeWalker undefined, void and never`; `tests/src/tests/roblox.spec.ts`: `writesNothingForUndefinedAndVoidProperties`                                                                                                                                                                                                                                          |
+| 4.9       | `walk`: `TypeWalker type parameters`; `transform`: `transform diagnostics` (a call site inside a generic function)                                                                                                                                                                                                                                                      |
+| 4.10      | `walk`: `TypeWalker Map and Set by declaration`                                                                                                                                                                                                                                                                                                                         |
+| 4.11      | `walk`: `TypeWalker recursion through arrays and tuples`; `transform`: `transform generated code` (an array of itself, a tuple holding an array of itself); `tests/src/tests/recursion.spec.ts`: `roundTripsRecursionThroughArraysAndTuplesAlone`                                                                                                                       |
+| 4.12      | `walk`: `TypeWalker unions of tuples`                                                                                                                                                                                                                                                                                                                                   |
+| 4.13      | `walk`: `TypeWalker Record keys`; `tests/src/tests/collections.spec.ts`: `roundTripsDictionariesKeyedByWhatARecordCannotType`                                                                                                                                                                                                                                           |
+| 4.14      | `walk`: `TypeWalker Range<T, Min, Max>`                                                                                                                                                                                                                                                                                                                                 |
+| 4.15      | `walk`: `TypeWalker Quantized<T>`                                                                                                                                                                                                                                                                                                                                       |
+| 4.16      | `walk`: `TypeWalker bit sets inside Packed<T>`                                                                                                                                                                                                                                                                                                                          |
+| 5.1       | `emit`: `Emitter read-order for side-effecting fields`; every round trip under `tests/src/tests/`                                                                                                                                                                                                                                                                       |
+| 5.2       | `emit`: `Emitter per-kind write/read snapshots`; `test/golden.test.mjs`: a non-recursive shape never calls a helper. Source only for the closure the helpers are declared in: `buildReplacement` in `src/index.ts`                                                                                                                                                      |
+| 5.3       | `emit`: `Emitter read-side checks` (the read state); `transform`: `transform injected imports` (the scratch buffer). Source only for the state a side with no bytes omits: `writeStateDecls` and `readStateDecls` in `src/emit/context.ts`                                                                                                                              |
+| 5.4       | `emit`: `Emitter per-kind write/read snapshots` (the inline reservation); `transform`: `transform (end-to-end)` (the `finishWrite` import). Source only for the `buffer.create(0)` return: `finishWriteExpression` in `src/emit/context.ts`                                                                                                                             |
+| 5.5       | `emit`: `Emitter shared reservations`, and `Emitter bit sets` for a `bitSet`; `test/golden.test.mjs`: consecutive fixed-size fields share one reservation. Source only for the 31-property bound and tuple elements: `allocRuns` and `fixedBytes` in `src/emit/layout.ts`                                                                                               |
+| 5.6       | `tests/src/tests/bytes.spec.ts`: `pinsContainers` (each count ahead of its contents). Source only for the `dict` count written back: `writeDict` in `src/emit/write.ts`                                                                                                                                                                                                 |
+| 5.7       | `test/golden.test.mjs`: a count-driven read is a numeric for loop                                                                                                                                                                                                                                                                                                       |
+| 5.8       | `emit`: `Emitter local-register ceiling`; `tests/src/tests/coverage.spec.ts`: `roundTripsAnObjectWiderThanTheLocalRegisterLimit`                                                                                                                                                                                                                                        |
+| 5.9       | `transform`: `transform (end-to-end)` (no blob field, a blob field, and a blob reachable only through a recursion helper); `test/golden.test.mjs`: a shape with no blob field pays nothing for the blob side channel                                                                                                                                                    |
+| 5.10      | `emit`: `Emitter read-side checks`; `test/golden.test.mjs`: the two `checks` checks; `tests/src/tests/checks.spec.ts`: `rejectsAnEnumIndexPastItsItems`. Source only for the sequence keypoint count: `readSequence` in `src/emit/read.ts`                                                                                                                              |
+| 5.11      | `tests/src/tests/roblox.spec.ts`: `keepsLaterBlobsInPlaceWhenAnUnknownIsUndefined`, `writesNoBlobForAnAbsentOptionalBlob`                                                                                                                                                                                                                                               |
+| 5.12      | `emit`: `Emitter read-side checks` (a packed CFrame); `tests/src/tests/checks.spec.ts`: `rejectsATruncatedPackedCFrame`, `rejectsAPackedRotationCodeThatNamesNoRotation`                                                                                                                                                                                                |
+| 5.13      | `transform`: `transform generated code` (the single-sided factories on a recursive type); `tests/src/tests/factories.spec.ts`: `roundTripsARecursiveTypeThroughASeparateSerializerAndDeserializer`                                                                                                                                                                      |
+| 5.14      | `emit`: `Emitter write-side checks`; `transform`: `transform writeChecks option`; `tests/src/tests/checks.spec.ts`: `rejectsAnExactLengthValueOfAnyOtherLength`, `letsAnExactArrayOfOptionalsBeShorterButNotLonger`, `rejectsACountPastItsWidth`, `rejectsANumberItsRangeDoesNotAdmit`                                                                                  |
+| 5.15      | `transform`: `transform generated code` (a deserialize result with each of seven shapes is assignable to its type argument)                                                                                                                                                                                                                                             |
+| 6.1, 6.2  | `transform`: `transform injected imports`, and in `transform (end-to-end)` the single shared import and the same-named local function; `tests/src/tests/coverage.spec.ts`: `leavesAUserDeclarationNamedAfterAnInjectedImportAlone`                                                                                                                                      |
+| 6.3       | `test/golden.test.mjs`: a file directive survives the transformer's injected imports; `transform`: `transform generated code` (the three directive tests)                                                                                                                                                                                                               |
+| 6.4       | `transform`: `transform injected imports` (a `createDeserializer` call site)                                                                                                                                                                                                                                                                                            |
+| 6.5       | Source only: `src/emit/`                                                                                                                                                                                                                                                                                                                                                |
+| 7.1       | `transform`: `transform diagnostics` (the category). Source only for the code string: `report` in `src/index.ts`                                                                                                                                                                                                                                                        |
+| 7.2       | `walk`: `TypeWalker blob classification`, `TypeWalker bare EnumItem`, `TypeWalker classification with fixture packages`, `TypeWalker tuples`, `TypeWalker classification`, `TypeWalker union guards`, the brand blocks under 4.3, and `TypeWalker bit sets inside Packed<T>`. Source only for a constituent of a kind no guard covers: `classifyUnion` in `src/walk.ts` |
+| 7.3       | `transform`: `transform diagnostics`, `transform checks option`. Source only: the cases listed under 3.2 and 3.3                                                                                                                                                                                                                                                        |
+| 7.4       | `walk`: `TypeWalker diagnostic position`; `transform`: `transform diagnostics`, `transform checks option` (the positions). Source only for a property declared in another file: `nodeForProperty` in `src/walk.ts`                                                                                                                                                      |
+| 7.5       | `transform`: `transform diagnostics`                                                                                                                                                                                                                                                                                                                                    |
 
 ## Changes
 
+- `86f729b` / `c8481d3`: adds 4.14 (`DataType.Range<T, Min, Max>`), 4.15
+  (`DataType.Quantized<T>`) and 4.16 (a `bitSet`); 4.1, 4.3 (a width brand's
+  property is tried last), 5.5, 5.14 and 7.2 follow them.
 - `bbd55c4` / `04cda66`: adds 5.15 (a `deserialize` result types as the type
   argument).
 - `fec89a8` / `17fda41`: 3.3 (the options each factory takes, now

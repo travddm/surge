@@ -43,6 +43,39 @@ tables and code blocks.
 - `Field` kind names (`num`, `bool`, `dict`, `taggedUnion`, ...) are the ones
   [specs/wire-format.md](specs/wire-format.md) uses, in the same case.
 
+## DataType brands
+
+Every brand in `DataType` follows these rules, so that a new one does not
+have to invent an answer:
+
+1. A brand is `T & { readonly _surge_<name>?: ... }`. It erases to `T`, so an
+   unbranded value still assigns to a branded field.
+2. Parameters are types, never values. A width is one of the width brands; a
+   count or a bound is a number literal type.
+3. The first parameter is the value type, and configuration follows it. A
+   brand that fixes its own value type, as `Vector<X, Y, Z>` and
+   `Transform<X, Y, Z>` do, takes configuration only, and so is never the
+   outer brand of a composition.
+4. A configuration parameter has a default wherever one value encodes exactly
+   what the unbranded type encodes, and a brand with all of its defaults
+   encodes that. This keeps every buffer `bytes.spec.ts` pins unchanged as a
+   brand lands. `Range<T, Min, Max>` has no such bounds, so its bounds have no
+   default.
+5. A brand applies to the type it wraps, not to that type's subtree.
+   `Packed<T>` is the one exception.
+
+A default is part of the brand, never a project-wide setting in
+`tsconfig.json`: two projects compiled with different settings could not
+exchange bytes, and nothing in the type would say so. A brand is not named
+after a TypeScript global such as `String`, `Map` or `Set`, which it would
+shadow for the rest of the namespace.
+
+A brand is declared in surge's `src/data-type.ts` and in the transformer's
+`test/fixtures/rbxts-surge/data-type.ts` in the same change. One that takes
+arguments is also a row of `PARAMETERIZED_BRANDS` in the transformer's
+`detect.ts`, which recognizes it by alias and, re-aliased, by its brand
+property ([specs/transformer.md](specs/transformer.md) 4.3).
+
 ## Package boundaries
 
 - surge's `src/` never depends on `rbxts-transformer-surge`.

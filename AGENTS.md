@@ -8,23 +8,23 @@ holds the transformer and its own `AGENTS.md`.
 
 ## Documentation
 
-| Document                                                       | Owns                                                                                |
-| -------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
-| [README.md](README.md)                                         | What surge is, how to install it, and where to go next                              |
-| [docs/getting-started.md](docs/getting-started.md)             | Installing, registering the transformer, and a first serializer                     |
-| [docs/supported-types.md](docs/supported-types.md)             | What each type is written as, passed through, or rejected                           |
-| [docs/data-types.md](docs/data-types.md)                       | The `DataType` brands                                                               |
-| [docs/errors-and-guarantees.md](docs/errors-and-guarantees.md) | `checks`, `writeChecks`, what each side raises, and what is not guaranteed          |
-| [docs/performance.md](docs/performance.md)                     | The file directives, the module shape, and what to expect                           |
-| [docs/contributing.md](docs/contributing.md)                   | Setup, every task, working across both repositories, and the editor                 |
-| [docs/coding-standards.md](docs/coding-standards.md)           | Formatting, types, naming, boundaries, file organization, comments, generated files |
-| [docs/testing.md](docs/testing.md)                             | What `mise run ci` checks, how to write a suite, and the benchmarks                 |
-| [docs/contributing-docs.md](docs/contributing-docs.md)         | What kind of statement goes where, and how to write it                              |
-| [docs/architecture.md](docs/architecture.md)                   | Why two repositories, and how they depend on each other                             |
-| [docs/specs/](docs/specs/README.md)                            | What the code guarantees: runtime API, wire format, transformer, both harnesses     |
-| [docs/research/](docs/research/README.md)                      | Dated papers on what was measured                                                   |
-| [docs/benchmarks/](docs/benchmarks/)                           | The generated size and speed tables                                                 |
-| [docs/future-work/](docs/future-work/README.md)                | Open work, in order                                                                 |
+| Document                                                       | Owns                                                                            |
+| -------------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| [README.md](README.md)                                         | What surge is, how to install it, and where to go next                          |
+| [docs/getting-started.md](docs/getting-started.md)             | Installing, registering the transformer, and a first serializer                 |
+| [docs/supported-types.md](docs/supported-types.md)             | What each type is written as, passed through, or rejected                       |
+| [docs/data-types.md](docs/data-types.md)                       | The `DataType` brands                                                           |
+| [docs/errors-and-guarantees.md](docs/errors-and-guarantees.md) | `checks`, `writeChecks`, what each side raises, and what is not guaranteed      |
+| [docs/performance.md](docs/performance.md)                     | The file directives, the module shape, and what to expect                       |
+| [docs/contributing.md](docs/contributing.md)                   | Setup, every task, working across both repositories, and the editor             |
+| [docs/coding-standards.md](docs/coding-standards.md)           | Formatting, types, naming, brands, boundaries, files, comments, generated files |
+| [docs/testing.md](docs/testing.md)                             | What `mise run ci` checks, how to write a suite, and the benchmarks             |
+| [docs/contributing-docs.md](docs/contributing-docs.md)         | What kind of statement goes where, and how to write it                          |
+| [docs/architecture.md](docs/architecture.md)                   | Why two repositories, and how they depend on each other                         |
+| [docs/specs/](docs/specs/README.md)                            | What the code guarantees: runtime API, wire format, transformer, both harnesses |
+| [docs/research/](docs/research/README.md)                      | Dated papers on what was measured                                               |
+| [docs/benchmarks/](docs/benchmarks/)                           | The generated size and speed tables                                             |
+| [docs/future-work/](docs/future-work/README.md)                | Open work, in order                                                             |
 
 ## Setup
 
@@ -110,7 +110,7 @@ part of the change.
 | how `ci` runs, the Lune shim, a sentinel line, or an exit code         | [docs/testing.md](docs/testing.md) and [docs/specs/test-harness.md](docs/specs/test-harness.md)                                                                                                                                                               |
 | something measured: a probe, an A/B, or a run worth keeping            | a paper under [docs/research/](docs/research/README.md); a page links to it and never copies the number                                                                                                                                                       |
 | what the generated code costs, or what a file directive does to it     | [docs/performance.md](docs/performance.md), with a paper under [docs/research/](docs/research/README.md) for the measurement                                                                                                                                  |
-| a lint rule, a formatter setting, a type rule, or a naming convention  | [docs/coding-standards.md](docs/coding-standards.md)                                                                                                                                                                                                          |
+| a lint, format, type or naming rule, or the `DataType` brand rules     | [docs/coding-standards.md](docs/coding-standards.md)                                                                                                                                                                                                          |
 | how or when documentation is updated                                   | this table and [docs/contributing-docs.md](docs/contributing-docs.md)                                                                                                                                                                                         |
 | deferred work started, finished or re-scoped                           | [docs/future-work/](docs/future-work/README.md) and its index                                                                                                                                                                                                 |
 

@@ -16,13 +16,13 @@ const [ok, request] = pcall(() => readRequest(input, blobs));
 
 ## Two options
 
-|                | `checks`                                                                                                                | `writeChecks`                                                                                            |
-| -------------- | ----------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| Governs        | `deserialize`                                                                                                           | `serialize`                                                                                              |
-| Guards against | bytes that did not come from `serialize`                                                                                | a value that does not fit its `DataType` brands                                                          |
-| Rejects        | a read past the end, a count the rest cannot hold, an enum index past its items, a packed rotation code that names none | an exact `Length<T, N>` value that is not `N` long, a count too large for its `u8`, `u16` or `u24` width |
-| Taken by       | `createDeserializer`, `createBinarySerializer`                                                                          | `createSerializer`, `createBinarySerializer`                                                             |
-| Costs          | a branch per read                                                                                                       | a branch per container                                                                                   |
+|                | `checks`                                                                                                                | `writeChecks`                                                                                                                                              |
+| -------------- | ----------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Governs        | `deserialize`                                                                                                           | `serialize`                                                                                                                                                |
+| Guards against | bytes that did not come from `serialize`                                                                                | a value that does not fit its `DataType` brands                                                                                                            |
+| Rejects        | a read past the end, a count the rest cannot hold, an enum index past its items, a packed rotation code that names none | an exact `Length<T, N>` value that is not `N` long, a count too large for its `u8`, `u16` or `u24` width, a number its `Range<T, Min, Max>` does not admit |
+| Taken by       | `createDeserializer`, `createBinarySerializer`                                                                          | `createSerializer`, `createBinarySerializer`                                                                                                               |
+| Costs          | a branch per read                                                                                                       | a branch per container and per ranged number                                                                                                               |
 
 Both default to `false`, and both must be written as `true` or `false` at the
 call site, because they decide what code is generated. Every error either one
@@ -39,9 +39,9 @@ wherever the bytes come from outside the game's own code, which a
 
 With `checks`, an input that passes deserializes to a value of the declared
 type. It does not follow that the value is one the game accepts. A number
-can be any number its width holds, a string any string, and a count any count
-the input has the bytes for. Validate what the game depends on after the
-`pcall` succeeds.
+can be any number its width holds, even outside its `Range`, a string any
+string, and a count any count the input has the bytes for. Validate what the
+game depends on after the `pcall` succeeds.
 
 A blob field holds whatever the `blobs` array holds at its position, and
 `checks` does not examine it. A client can put any value there, so check a
@@ -63,8 +63,10 @@ nothing:
 - an exact `Length<T, N>` value of another length is truncated, padded, or
   raises, depending on its element type.
 
-`writeChecks: true` makes the second and third raise before anything is
-written. It does not examine numbers.
+`writeChecks: true` makes the second and third raise before they are written.
+It examines a number only when its type is a `Range<T, Min, Max>`, and then
+raises for a value outside the range, a NaN, and a fraction where the range
+holds whole numbers. To have `serialize` check a number, give it a `Range`.
 
 ## What the bytes do not carry
 

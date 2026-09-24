@@ -22,7 +22,7 @@ const ENTITY_COUNT = 100;
  * Blink's two published benchmark shapes, so a result here can be compared
  * against its own table. Their `.blink` twins in ../definitions/catalog.blink
  * are transcribed from Blink's own benchmark definitions, at the commit pinned
- * in docs/future-work/type-coverage-parity.md.
+ * in docs/research/type-coverage-across-libraries.md.
  */
 interface Booleans {
 	values: boolean[];

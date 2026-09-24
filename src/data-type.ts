@@ -62,13 +62,33 @@ export namespace DataType {
 	type Width = f32 | f64 | u8 | u16 | u24 | u32 | i8 | i16 | i24 | i32;
 
 	/**
+	 * States the values a number takes: from `Min` to `Max`, both number
+	 * literals. `T` is `number` or one of the width brands above.
+	 *
+	 * With `number`, the value is a whole number, stored at the narrowest width
+	 * that holds the range: {@link u8}, {@link u16}, {@link u24} or
+	 * {@link u32} when `Min` is not negative, {@link i8} to {@link i32}
+	 * otherwise, and {@link f64} past 32 bits. `Range<number, 0, 100>` is one
+	 * byte. With a width brand, that width is kept, and a range it cannot hold
+	 * is a diagnostic; {@link f32} and {@link f64} also admit fractions.
+	 *
+	 * The range changes no byte beyond the width. With `writeChecks`,
+	 * `serialize` raises for a value outside the range, a NaN, and a fraction
+	 * where the range holds whole numbers. Without it, nothing checks the
+	 * value, and one outside the width wraps as that width does.
+	 */
+	export type Range<T extends number, Min extends number, Max extends number> = T & {
+		readonly _surge_range?: [T, Min, Max];
+	};
+
+	/**
 	 * Stores a `Vector3`'s three components at the given widths instead of
 	 * three {@link f32}s. `Y` and `Z` default to `X`, and `X` to {@link f32},
 	 * so an all-default `Vector` and a `Vector3` produce the same bytes.
 	 *
 	 * An integer width truncates a component toward zero and wraps it modulo
-	 * its range. Nothing raises and nothing checks the value until write-side
-	 * validation exists, so a width states a range the shape is known to keep.
+	 * its range, and nothing checks the value, with or without `writeChecks`.
+	 * A width states a range the shape is known to keep.
 	 */
 	export type Vector<X extends Width = f32, Y extends Width = X, Z extends Width = X> = Vector3 & {
 		readonly _surge_vector?: [X, Y, Z];
@@ -88,13 +108,25 @@ export namespace DataType {
 	};
 
 	/**
+	 * Stores a `CFrame`'s rotation in 6 bytes instead of 12: each component of
+	 * its axis-angle vector as an {@link i16}, rounded. The rotation that
+	 * comes back is within about 1e-4 radians of the one written, so use it
+	 * only where that loss is acceptable. `T` may be a {@link Transform}, which
+	 * still sets the position's widths. Has no form inside {@link Packed}, and
+	 * is a diagnostic there. See Wire format 7.4 in docs/specs/wire-format.md.
+	 */
+	export type Quantized<T extends CFrame> = T & { readonly _surge_quantized?: [T] };
+
+	/**
 	 * Opts a subtree into the smaller encodings. As a direct property of an
 	 * object inside it, a `boolean`, an `optional`'s presence, and the tag of
-	 * a two-variant tagged union are 1 bit each, not 1 byte. A `CFrame`
-	 * anywhere inside it is 1 byte when its rotation is axis-aligned and its
-	 * position is zero or one, 13 bytes with one of the two, and 25 bytes
-	 * (1 more than outside) with neither, and {@link Transform} does not
-	 * apply to it. See section 8 of docs/specs/wire-format.md.
+	 * a two-variant tagged union are 1 bit each, not 1 byte. A `Set` of
+	 * literal values anywhere inside it is one bit per value it can hold, with
+	 * no count. A `CFrame` anywhere inside it is 1 byte when its rotation is
+	 * axis-aligned and its position is zero or one, 13 bytes with one of the
+	 * two, and 25 bytes (1 more than outside) with neither, and
+	 * {@link Transform} and {@link Quantized} do not apply to it. See section 8
+	 * of docs/specs/wire-format.md.
 	 */
 	export type Packed<T> = T & { readonly _surge_packed?: [T] };
 }

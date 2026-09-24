@@ -41,6 +41,11 @@ interface WithTsEnums {
 }
 const tsEnumsSerializer = createBinarySerializer<WithTsEnums>();
 
+// A negative literal is a minus sign applied to a number literal, and the
+// generated code has to build it that way.
+type Turn = -1 | 0 | 1;
+const turnSerializer = createBinarySerializer<{ turn: Turn; ahead: -2 }>();
+
 const DIRECTIONS: ReadonlyArray<Direction> = ["north", "east", "south", "west"];
 const LEVELS: ReadonlyArray<Level> = [1, 2, 3];
 const MIXED: ReadonlyArray<Mixed> = ["auto", 0, false];
@@ -57,6 +62,18 @@ class LiteralsTest {
 		// One u8 index per field.
 		Assert.equal(4, buffer.len(buf));
 		Assert.equal(undefined, difference(value, literalsSerializer.deserialize(buf, blobs)));
+	}
+
+	@Theory
+	@InlineData(-1)
+	@InlineData(0)
+	@InlineData(1)
+	public roundTripsANegativeLiteral(turn: Turn): void {
+		const value = { turn, ahead: -2 as const };
+		const { buffer: buf, blobs } = turnSerializer.serialize(value);
+		// Index 0 of -1, 0, 1 is -1, and `ahead` is a constant.
+		Assert.equal(1, buffer.len(buf));
+		Assert.equal(undefined, difference(value, turnSerializer.deserialize(buf, blobs)));
 	}
 
 	@Fact

@@ -23,6 +23,17 @@ interface Floats {
 }
 const floatsSerializer = createBinarySerializer<Floats>();
 
+// Each range narrows to a different width (Wire format 4.16 in
+// docs/specs/wire-format.md), and `ratio` keeps the float width it asks for.
+interface Ranged {
+	small: DataType.Range<number, 0, 200>;
+	signed: DataType.Range<number, -300, 300>;
+	wide: DataType.Range<number, -9000000, 9000000>;
+	huge: DataType.Range<number, 0, 1e12>;
+	ratio: DataType.Range<DataType.f32, -1, 1>;
+}
+const rangedSerializer = createBinarySerializer<Ranged>();
+
 const FUZZ_ITERATIONS = 200;
 
 class NumbersTest {
@@ -87,6 +98,31 @@ class NumbersTest {
 			};
 			const { buffer: buf, blobs } = integersSerializer.serialize(value);
 			Assert.equal(undefined, difference(value, integersSerializer.deserialize(buf, blobs)));
+		}
+	}
+
+	@Fact
+	public roundTripsRangesAtTheirNarrowedWidths(): void {
+		const rng = new Rng(3);
+		const edges: ReadonlyArray<Ranged> = [
+			{ small: 0, signed: -300, wide: -9000000, huge: 0, ratio: -1 },
+			{ small: 200, signed: 300, wide: 9000000, huge: 1e12, ratio: 1 },
+		];
+		const values = [...edges];
+		for (const _ of $range(1, FUZZ_ITERATIONS)) {
+			values.push({
+				small: rng.int(0, 200),
+				signed: rng.int(-300, 300),
+				wide: rng.int(-9000000, 9000000),
+				huge: rng.int(0, 1e12),
+				ratio: rng.int(-8, 8) / 8,
+			});
+		}
+		for (const value of values) {
+			const { buffer: buf, blobs } = rangedSerializer.serialize(value);
+			// small: u8 | signed: i16 | wide: i32 | huge: f64 | ratio: f32
+			Assert.equal(1 + 2 + 4 + 8 + 4, buffer.len(buf));
+			Assert.equal(undefined, difference(value, rangedSerializer.deserialize(buf, blobs)));
 		}
 	}
 

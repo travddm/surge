@@ -49,6 +49,11 @@ interface WithDatatypes {
 }
 const datatypesSerializer = createBinarySerializer<WithDatatypes>();
 
+interface WithQuantized {
+	placement: DataType.Quantized<CFrame>;
+}
+const quantizedSerializer = createBinarySerializer<WithQuantized>();
+
 // The datatypes of `FIXED_DATATYPES` in the transformer: a fixed list of numbers each.
 interface WithFixedDatatypes {
 	cell: Vector3int16;
@@ -270,6 +275,39 @@ class RobloxTest {
 			};
 			const { buffer, blobs } = datatypesSerializer.serialize(value);
 			const result = datatypesSerializer.deserialize(buffer, blobs).placement;
+			const expectedComponents = [...placement.GetComponents()];
+			const actualComponents = [...result.GetComponents()];
+			for (const i of $range(0, 11)) {
+				Assert.fuzzyEqual(expectedComponents[i], actualComponents[i], 0.0001);
+			}
+		}
+	}
+
+	// Each i16 is within half a step, pi / 32767 / 2, of the component it
+	// rounds, so the rotation read back is within about 8.3e-5 radians of the
+	// one written, and so is each matrix component (Wire format 7.4 in
+	// docs/specs/wire-format.md). The fixed rotations are the ones a quantized
+	// form is likeliest to get wrong: none, half turns about each axis, where
+	// the angle is at the fold, and a turn about X, which serio's form loses.
+	@Fact
+	public roundTripsAQuantizedRotationWithinItsStep(): void {
+		const rng = new Rng(31);
+		const rotations = [
+			new CFrame(),
+			CFrame.fromAxisAngle(Vector3.xAxis, math.pi),
+			CFrame.fromAxisAngle(Vector3.yAxis, math.pi),
+			CFrame.fromAxisAngle(Vector3.zAxis, -math.pi),
+			CFrame.fromAxisAngle(Vector3.xAxis, 1),
+			CFrame.fromAxisAngle(new Vector3(1, 1, 1).Unit, math.pi - 1e-4),
+		];
+		for (const _ of $range(1, 200)) {
+			rotations.push(CFrame.Angles(rng.next() * 6 - 3, rng.next() * 6 - 3, rng.next() * 6 - 3));
+		}
+		for (const rotation of rotations) {
+			const placement = rotation.add(randomVector3(rng));
+			const { buffer: bytes, blobs } = quantizedSerializer.serialize({ placement });
+			Assert.equal(18, buffer.len(bytes));
+			const result = quantizedSerializer.deserialize(bytes, blobs).placement;
 			const expectedComponents = [...placement.GetComponents()];
 			const actualComponents = [...result.GetComponents()];
 			for (const i of $range(0, 11)) {

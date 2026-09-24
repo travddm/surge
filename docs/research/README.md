@@ -55,6 +55,7 @@ Prose follows [../contributing-docs.md](../contributing-docs.md).
 | [noise-in-the-speed-tier.md](noise-in-the-speed-tier.md)                         | What a cell's trials disagree by, what two invocations of unchanged code disagree by, and which of the two matters.                                            |
 | [generated-code-against-hand-written.md](generated-code-against-hand-written.md) | What the inline reservation bought, at 1.54× on encode against 4.15× on record, and the per-call gap to hand-written Luau it left.                             |
 | [serialized-size-across-libraries.md](serialized-size-across-libraries.md)       | surge's bytes against fbs, serio, Blink and Zap on sixteen rows, and what every difference is.                                                                 |
+| [type-coverage-across-libraries.md](type-coverage-across-libraries.md)           | What surge, fbs, serio, Blink and Zap can each express and at what cost, read from source, and what surge leaves out on purpose.                               |
 | [compile-time-specialization.md](compile-time-specialization.md)                 | Where fbs's per-call cost is, that a roblox-ts transformer can emit flat code instead, and six compiler behaviors it routes around.                            |
 | [packed-against-unpacked.md](packed-against-unpacked.md)                         | What `Packed<T>` does to speed on the two catalog pairs that encode the same values both ways: 0.576× on the toggles decode and 0.644× on the `CFrame` encode. |
 

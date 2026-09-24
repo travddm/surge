@@ -8,7 +8,7 @@ import { DataType, createBinarySerializer } from "@rbxts/surge";
 
 interface Snapshot {
 	tick: DataType.u32; // 4 bytes instead of 8
-	health: DataType.u8; // 1 byte
+	health: DataType.Range<number, 0, 100>; // 1 byte, the narrowest that holds 0 to 100
 	name: DataType.Length<string, DataType.u8>; // a 1-byte count
 	code: DataType.Length<string, 4>; // exactly 4 bytes, no count
 	velocity: DataType.Vector<DataType.i16>; // 3 × 2 bytes
@@ -34,8 +34,28 @@ builds it. What each brand does to the bytes is
 | `DataType.u32` / `DataType.i32` | 4     | 0 to 4294967295 / the signed 32 bits |
 
 An integer width truncates a fraction toward zero and wraps a value outside
-its range, and nothing reports either. A `u8` given 300 reads back 44. Choose
-a width that holds every value the field takes.
+its range. A `u8` given 300 reads back 44. Choose a width that holds every
+value the field takes, or state the range and let surge choose.
+
+## Ranges: `Range<T, Min, Max>`
+
+`DataType.Range<T, Min, Max>` states the values a number takes, from `Min` to
+`Max`:
+
+- `DataType.Range<number, 0, 100>` is a whole number, stored at the narrowest
+  width that holds the range: `u8` here. A range with a negative `Min` takes a
+  signed width, and one past 32 bits an `f64`.
+- `DataType.Range<DataType.u16, 0, 100>` keeps the width it names. A range the
+  width cannot hold is a build error, never a wider width.
+- `DataType.Range<DataType.f32, 0, 1>` admits fractions. With `number` or an
+  integer width, the bounds must be whole numbers.
+
+The range writes no bytes of its own. It is what `writeChecks` checks: with
+`writeChecks: true` on the factory, `serialize` raises for a value outside the
+range, a NaN, and a fraction where the range holds whole numbers
+([errors-and-guarantees.md](errors-and-guarantees.md)). Without it, a value
+outside the range wraps as its width does. `deserialize` does not check a
+range, with or without `checks`.
 
 ## Counts: `Length<T, L>`
 
@@ -63,8 +83,12 @@ applies to the container it wraps, not to containers inside it.
 `DataType.Vector<X, Y, Z>` sets the width of each component of a `Vector3`,
 and `DataType.Transform<X, Y, Z>` sets the widths of a `CFrame`'s position.
 `Y` and `Z` default to `X`, and `X` to `f32`, so `Vector<DataType.i16>` is
-three `i16`s. A `CFrame`'s rotation keeps its 12 bytes. An integer component
-truncates and wraps as a number width does.
+three `i16`s. An integer component truncates and wraps as a number width does.
+
+A `CFrame`'s rotation takes 12 bytes. `DataType.Quantized<CFrame>` stores it
+in 6, as three `i16`s, and reads back a rotation within about 1e-4 radians of
+the one written, so use it only where that loss is acceptable. It composes
+with `Transform`: `Quantized<Transform<DataType.i16>>` is 12 bytes in all.
 
 ## Packing: `Packed<T>`
 
@@ -73,12 +97,18 @@ property's presence, and the tag of a two-variant tagged union become one bit
 of the object's packed region instead of a byte. The region is rounded up to
 whole bytes, so up to eight of them cost one byte.
 
+A `Set` of literal values anywhere inside `Packed<T>`, such as
+`Set<"read" | "write" | "admin">`, is one bit per value it can hold, with no
+count: three values fit in one byte, whatever the set holds. `Length` does not
+apply to it. A `Set` of anything else keeps its count.
+
 A `CFrame` anywhere inside `Packed<T>` takes a header byte that can stand for
 a rotation aligned to the axes and for a position of zero or one. It is 1 byte
 when the header stands for both, 13 when it stands for one of the two, and 25,
 one byte more than outside `Packed<T>`, when it stands for neither. A
-`Transform` with a width other than the default is a build error inside
-`Packed<T>`, since the packed form writes its position its own way.
+`Transform` with a width other than the default, and `Quantized`, are build
+errors inside `Packed<T>`, since the packed form writes its `CFrame` its own
+way.
 
 Packing saves bytes and can cost speed: a packed shape reads its bits one
 call at a time. [research/packed-against-unpacked.md](research/packed-against-unpacked.md)
@@ -90,5 +120,5 @@ its encode and decode time.
 Brands nest: `Packed<{ list: Length<Array<DataType.u8>, DataType.u16> }>`
 packs the object and narrows the list's count. A brand applies to the type it
 wraps and to nothing that type contains, except `Packed<T>`, which covers
-every object inside it. A brand on a type it cannot apply to, such as
-`Length<number>`, is a build error.
+every object, `Set` and `CFrame` inside it. A brand on a type it cannot apply
+to, such as `Length<number>`, is a build error.

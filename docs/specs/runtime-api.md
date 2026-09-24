@@ -1,8 +1,8 @@
 # Runtime API specification
 
 Status: current
-Applies to: `@rbxts/surge` at commit `be5d3e6`, `rbxts-transformer-surge` at
-commit `04cda66` (no tagged release yet)
+Applies to: `@rbxts/surge` at commit `86f729b`, `rbxts-transformer-surge` at
+commit `c8481d3` (no tagged release yet)
 
 ## 1. Scope
 
@@ -69,22 +69,26 @@ written as literals at the call site, because the transformer decides from
 them what to emit. Each defaults to `false`. `checks` governs `deserialize`
 (section 4) and `writeChecks` governs `serialize` (3.10 and 3.11).
 
-**3.9** The package exports the `DataType` namespace of width, length and
-packing brands. What each brand does to the bytes is in
+**3.9** The package exports the `DataType` namespace of width, length, range,
+quantization and packing brands. What each brand does to the bytes is in
 [wire-format.md](wire-format.md).
 
 **3.10** With `writeChecks`, `serialize` raises a string beginning
-`@rbxts/surge:` for a value whose length or count does not fit its type: a
-value in the exact form of `DataType.Length<T, N>` that is not `N` long, and a
-count larger than the `u8`, `u16` or `u24` width `DataType.Length<T, L>` gives
-it. An `array` or tuple rest in the exact form whose element is `optional`, or
-a `literal` that includes `undefined`, may be shorter than `N`, which
-[wire-format.md](wire-format.md) 6.6 makes valid; only a longer one raises.
+`@rbxts/surge:` for a value that does not fit its type: a value in the exact
+form of `DataType.Length<T, N>` that is not `N` long, a count larger than the
+`u8`, `u16` or `u24` width `DataType.Length<T, L>` gives it, and a number that
+its `DataType.Range<T, Min, Max>` does not admit
+([wire-format.md](wire-format.md) 4.17). An `array` or tuple rest in the exact
+form whose element is `optional`, or a `literal` that includes `undefined`,
+may be shorter than `N`, which [wire-format.md](wire-format.md) 6.6 makes
+valid; only a longer one raises.
 
-**3.11** Without `writeChecks`, `serialize` does not examine lengths or counts:
-a value in the exact form is truncated or padded as
-[wire-format.md](wire-format.md) 6.3 and 6.7 state, and a count too large for
-its width wraps as 6.8 states. `writeChecks` examines no other value.
+**3.11** Without `writeChecks`, `serialize` does not examine lengths, counts
+or numbers: a value in the exact form is truncated or padded as
+[wire-format.md](wire-format.md) 6.3 and 6.7 state, a count too large for its
+width wraps as 6.8 states, and a number outside its width wraps as 4.15
+states, whatever its `DataType.Range`. `writeChecks` examines no other value,
+and no number without a `DataType.Range`.
 
 ## 4. What `deserialize` does with input it did not write
 
@@ -119,7 +123,8 @@ beginning `@rbxts/surge:`, with or without checks.
 that passes them deserializes to a value of the right type, except in its blob
 fields: each holds whatever `inputBlobs` holds at its position, which checks
 do not examine. Which value of the right type it is, such as a number outside
-the range a caller expects, is the caller's to check.
+the range a caller expects, is the caller's to check, and that includes a
+number outside its `DataType.Range<T, Min, Max>`: checks do not compare it.
 
 **4.8** The input buffer and the read cursor are reset at the start of every
 `deserialize` of a `T` that reads bytes, and the blob index at the start of
@@ -191,36 +196,39 @@ A test file named `*.spec.ts` is under `tests/src/tests/`. A path starting
 `emit/` is under `src/` of `rbxts-transformer-surge`, and a path starting
 `src/` is in `@rbxts/surge`.
 
-| Statement                   | Pinned by                                                                                                                                                                                                                                               |
-| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 3.1–3.3                     | `factories.spec.ts`: round trip through the bundled serializer and through separate ones                                                                                                                                                                |
-| 3.4                         | Source only: `notConfigured` in `src/serializer.ts`; no test runs a factory untransformed                                                                                                                                                               |
-| 3.5                         | `bytes.spec.ts`, which compares every pinned encoding's whole buffer                                                                                                                                                                                    |
-| 3.6                         | `roblox.spec.ts`: `passesUnknownAndInstanceValuesThroughTheBlobChannel`, `keepsLaterBlobsInPlaceWhenAnUnknownIsUndefined`, `writesNoBlobForAnAbsentOptionalBlob`; the empty array: `factories.spec.ts`: `deserializesAShapeWithNoBlobWithoutInputBlobs` |
-| 3.7                         | `factories.spec.ts`: `deserializesAShapeWithNoBlobWithoutInputBlobs`                                                                                                                                                                                    |
-| 3.8                         | `test/golden.test.mjs`: a serializer without `checks` carries no read-side check, and one with it carries them; `rbxts-transformer-surge` `test/transform.test.ts`: `transform checks option`, `transform writeChecks option`                           |
-| 3.9                         | Source: `src/data-type.ts`; each brand's bytes are pinned in `bytes.spec.ts`                                                                                                                                                                            |
-| 3.10                        | `checks.spec.ts`: `rejectsAnExactLengthValueOfAnyOtherLength`, `letsAnExactArrayOfOptionalsBeShorterButNotLonger`, `rejectsACountPastItsWidth`                                                                                                          |
-| 3.11                        | `checks.spec.ts`: `wrapsACountPastItsWidthWithoutWriteChecks`; `collections.spec.ts`: `padsAShortExactArrayOfOptionalsInsteadOfRaising`                                                                                                                 |
-| 4.1                         | Source only: the unchecked read path under `emit/`; a statement of what is not guaranteed has nothing to pin                                                                                                                                            |
-| 4.2–4.4                     | `checks.spec.ts`: `rejectsATruncatedPayload`, `rejectsATruncatedPackedCFrame`, `rejectsACountTheInputCannotHold`, `rejectsACountOfElementsThatReadNoBytes`                                                                                              |
-| 4.3 (no over-rejection)     | `checks.spec.ts`: `acceptsWhatSerializeWrote`, `acceptsEveryKindThatReadsACount`, `acceptsEmptyContainers`                                                                                                                                              |
-| 4.3 (minimum size, lengths) | Source only: `minBytes` in `emit/layout.ts`; `readStr`, `readBuffer` and `readSequence` in `emit/read.ts` check no count                                                                                                                                |
-| 4.5                         | With checks: `checks.spec.ts`: `rejectsAReadPastTheEndOfTheBlobs`. Without: source only, `nextBlob` in `src/blobs.ts`, which `checks` does not change                                                                                                   |
-| 4.6                         | Source only: `nextBlob` in `src/blobs.ts`                                                                                                                                                                                                               |
-| 4.7                         | `checks.spec.ts`: `acceptsWhatSerializeWrote`. Source only for what checks do not examine: the emitter compares no value but the two indexes of 4.9, and `nextBlob` in `src/blobs.ts` returns the element of `inputBlobs` as it is                      |
-| 4.8                         | Source only: the generated `deserialize` prologue and `beginReadBlobs`; no test raises and then deserializes again                                                                                                                                      |
-| 4.9                         | `checks.spec.ts`: `rejectsAnEnumIndexPastItsItems`, `rejectsAPackedRotationCodeThatNamesNoRotation`                                                                                                                                                     |
-| 4.10                        | Source only: `enumFromIndexExpr` in `emit/read.ts`; `readPackedCFrame` in `src/cframe.ts`                                                                                                                                                               |
-| 5.1                         | Source only: the calls the emitter makes under `emit/`, and the exports of `src/index.ts`                                                                                                                                                               |
-| 5.2                         | `test/golden.test.mjs`: consecutive fixed-size fields share one reservation, inline                                                                                                                                                                     |
-| 5.3                         | `test/golden.test.mjs`: packed booleans never call a per-bit `packBit` helper                                                                                                                                                                           |
-| 5.4                         | Source only: `finishWriteExpression` and `writeStateDecls` in `emit/context.ts`                                                                                                                                                                         |
-| 5.5                         | Source only: the module state in `src/blobs.ts`                                                                                                                                                                                                         |
-| 6.1–6.2                     | Source only: no version field is read or written by either package                                                                                                                                                                                      |
+| Statement                   | Pinned by                                                                                                                                                                                                                                                                                                                          |
+| --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 3.1–3.3                     | `factories.spec.ts`: round trip through the bundled serializer and through separate ones                                                                                                                                                                                                                                           |
+| 3.4                         | Source only: `notConfigured` in `src/serializer.ts`; no test runs a factory untransformed                                                                                                                                                                                                                                          |
+| 3.5                         | `bytes.spec.ts`, which compares every pinned encoding's whole buffer                                                                                                                                                                                                                                                               |
+| 3.6                         | `roblox.spec.ts`: `passesUnknownAndInstanceValuesThroughTheBlobChannel`, `keepsLaterBlobsInPlaceWhenAnUnknownIsUndefined`, `writesNoBlobForAnAbsentOptionalBlob`; the empty array: `factories.spec.ts`: `deserializesAShapeWithNoBlobWithoutInputBlobs`                                                                            |
+| 3.7                         | `factories.spec.ts`: `deserializesAShapeWithNoBlobWithoutInputBlobs`                                                                                                                                                                                                                                                               |
+| 3.8                         | `test/golden.test.mjs`: a serializer without `checks` carries no read-side check, and one with it carries them; `rbxts-transformer-surge` `test/transform.test.ts`: `transform checks option`, `transform writeChecks option`                                                                                                      |
+| 3.9                         | Source: `src/data-type.ts`; each brand's bytes are pinned in `bytes.spec.ts`                                                                                                                                                                                                                                                       |
+| 3.10                        | `checks.spec.ts`: `rejectsAnExactLengthValueOfAnyOtherLength`, `letsAnExactArrayOfOptionalsBeShorterButNotLonger`, `rejectsACountPastItsWidth`, `rejectsANumberItsRangeDoesNotAdmit`                                                                                                                                               |
+| 3.11                        | `checks.spec.ts`: `wrapsACountPastItsWidthWithoutWriteChecks`, `wrapsANumberOutsideItsRangeWithoutWriteChecks`; `collections.spec.ts`: `padsAShortExactArrayOfOptionalsInsteadOfRaising`                                                                                                                                           |
+| 4.1                         | Source only: the unchecked read path under `emit/`; a statement of what is not guaranteed has nothing to pin                                                                                                                                                                                                                       |
+| 4.2–4.4                     | `checks.spec.ts`: `rejectsATruncatedPayload`, `rejectsATruncatedPackedCFrame`, `rejectsACountTheInputCannotHold`, `rejectsACountOfElementsThatReadNoBytes`                                                                                                                                                                         |
+| 4.3 (no over-rejection)     | `checks.spec.ts`: `acceptsWhatSerializeWrote`, `acceptsEveryKindThatReadsACount`, `acceptsEmptyContainers`                                                                                                                                                                                                                         |
+| 4.3 (minimum size, lengths) | Source only: `minBytes` in `emit/layout.ts`; `readStr`, `readBuffer` and `readSequence` in `emit/read.ts` check no count                                                                                                                                                                                                           |
+| 4.5                         | With checks: `checks.spec.ts`: `rejectsAReadPastTheEndOfTheBlobs`. Without: source only, `nextBlob` in `src/blobs.ts`, which `checks` does not change                                                                                                                                                                              |
+| 4.6                         | Source only: `nextBlob` in `src/blobs.ts`                                                                                                                                                                                                                                                                                          |
+| 4.7                         | `checks.spec.ts`: `acceptsWhatSerializeWrote`; a `DataType.Range`: `rbxts-transformer-surge` `test/emit.test.ts`, `Emitter write-side checks`. Source only for what checks do not examine: the emitter compares no value but the two indexes of 4.9, and `nextBlob` in `src/blobs.ts` returns the element of `inputBlobs` as it is |
+| 4.8                         | Source only: the generated `deserialize` prologue and `beginReadBlobs`; no test raises and then deserializes again                                                                                                                                                                                                                 |
+| 4.9                         | `checks.spec.ts`: `rejectsAnEnumIndexPastItsItems`, `rejectsAPackedRotationCodeThatNamesNoRotation`                                                                                                                                                                                                                                |
+| 4.10                        | Source only: `enumFromIndexExpr` in `emit/read.ts`; `readPackedCFrame` in `src/cframe.ts`                                                                                                                                                                                                                                          |
+| 5.1                         | Source only: the calls the emitter makes under `emit/`, and the exports of `src/index.ts`                                                                                                                                                                                                                                          |
+| 5.2                         | `test/golden.test.mjs`: consecutive fixed-size fields share one reservation, inline                                                                                                                                                                                                                                                |
+| 5.3                         | `test/golden.test.mjs`: packed booleans never call a per-bit `packBit` helper                                                                                                                                                                                                                                                      |
+| 5.4                         | Source only: `finishWriteExpression` and `writeStateDecls` in `emit/context.ts`                                                                                                                                                                                                                                                    |
+| 5.5                         | Source only: the module state in `src/blobs.ts`                                                                                                                                                                                                                                                                                    |
+| 6.1–6.2                     | Source only: no version field is read or written by either package                                                                                                                                                                                                                                                                 |
 
 ## Changes
 
+- `86f729b` / `c8481d3`: 3.9 names the range and quantization brands; 3.10
+  and 3.11 add a number under `DataType.Range<T, Min, Max>` to what
+  `writeChecks` examines, and 4.7 states that checks do not.
 - `be5d3e6` / `04cda66`: the Scope points at `getting-started.md` for
   installation.
 - `fec89a8` / `17fda41`: adds `writeChecks`. 3.2, 3.3 and 3.8 give

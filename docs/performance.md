@@ -70,6 +70,7 @@ game's own shapes before deciding on the strength of one.
 ## Checks cost a branch
 
 `checks` adds a comparison to every read, and `writeChecks` one to every
-container it writes. Turn each on where it guards something: `checks` on
-input from outside the game, `writeChecks` where a value's lengths are
-built at run time ([errors-and-guarantees.md](errors-and-guarantees.md)).
+container and every `Range` number it writes. Turn each on where it guards
+something: `checks` on input from outside the game, `writeChecks` where a
+value's lengths or ranges are built at run time
+([errors-and-guarantees.md](errors-and-guarantees.md)).

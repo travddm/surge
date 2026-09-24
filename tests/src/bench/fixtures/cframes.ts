@@ -24,7 +24,7 @@ const COUNT = 50;
  * `Packed<T>` wrapper comes from each library's own namespace. serio stores a
  * rotation quantized to about 0.05 radians per component, so its round trip
  * is inexact by design on every row here -- see the coverage matrix in
- * docs/future-work/type-coverage-parity.md.
+ * docs/research/type-coverage-across-libraries.md.
  *
  * Neither packed row has a Zap cell: it has no packed mode, and its
  * `AlignedCFrame`, which would answer the axis-aligned one, looks a rotation
