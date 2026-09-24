@@ -28,6 +28,16 @@ interface WithAbsentUnknowns {
 }
 const absentUnknownsSerializer = createBinarySerializer<WithAbsentUnknowns>();
 
+// `undefined` and `void` are constants that write nothing and push no blob, so
+// a blob after them keeps its place (Transformer 4.8 in
+// docs/specs/transformer.md).
+interface WithNothing {
+	nothing: undefined;
+	alsoNothing: void;
+	after: unknown;
+}
+const nothingSerializer = createBinarySerializer<WithNothing>();
+
 interface WithDatatypes {
 	position: Vector3;
 	offset: Vector2;
@@ -135,6 +145,16 @@ class RobloxTest {
 		Assert.equal(3 + 4 + 2, buffer.len(buf));
 		Assert.equal(3, blobs.size());
 		Assert.equal(undefined, difference(value, absentUnknownsSerializer.deserialize(buf, blobs)));
+	}
+
+	@Fact
+	public writesNothingForUndefinedAndVoidProperties(): void {
+		const value: WithNothing = { nothing: undefined, alsoNothing: undefined, after: "after" };
+		const { buffer: buf, blobs } = nothingSerializer.serialize(value);
+		// Only the presence byte of `after`.
+		Assert.equal(1, buffer.len(buf));
+		Assert.equal(1, blobs.size());
+		Assert.equal(undefined, difference(value, nothingSerializer.deserialize(buf, blobs)));
 	}
 
 	@Fact

@@ -1,8 +1,8 @@
 # Runtime API specification
 
 Status: current
-Applies to: `@rbxts/surge` at commit `38b634f`, `rbxts-transformer-surge` at
-commit `6967359` (no tagged release yet)
+Applies to: `@rbxts/surge` at commit `f0b68ef`, `rbxts-transformer-surge` at
+commit `b954fd2` (no tagged release yet)
 
 ## 1. Scope
 
@@ -79,8 +79,9 @@ that no `serialize` of the same `T` produced, its behavior is unspecified: it
 may raise a Luau `buffer` error, return a wrong value, or run a loop for as
 long as a count in the input says.
 
-**4.2** With checks, every read is bounded against the length of `input`,
-except the read of a `CFrame` inside `Packed<T>` (4.9).
+**4.2** With checks, every read is bounded against the length of `input`. A
+`CFrame` inside `Packed<T>` is bounded in two steps, because its size is in
+its header: the header byte, then the bytes the header says follow.
 
 **4.3** With checks, the count ahead of an `array`, a tuple's rest or a `dict`
 is bounded against the bytes left in `input`: the count times the element's
@@ -100,9 +101,10 @@ beginning `@rbxts/surge:`.
 **4.6** Reading a blob field when `inputBlobs` was omitted raises a string
 beginning `@rbxts/surge:`, with or without checks.
 
-**4.7** Checks examine lengths and counts only, never values. An input that
-passes them can hold any value of the right type, except as 4.10 states, and a
-value outside the range a caller expects is the caller's to reject.
+**4.7** Checks examine lengths and counts, and the two indexes of 4.9. An input
+that passes them deserializes to a value of the right type. Which value of
+that type it is, such as a number outside the range a caller expects, is the
+caller's to check.
 
 **4.8** The input buffer and the read cursor are reset at the start of every
 `deserialize` of a `T` that reads bytes, and the blob index at the start of
@@ -110,19 +112,14 @@ every `deserialize` of a `T` that has a blob field — which is every call that
 can read one. A call that raised leaves no state that a later call reads, so a
 `pcall` around `deserialize` is sufficient to reject an input.
 
-**4.9** Known defect, not a guarantee: with checks, the read of a `CFrame`
-inside `Packed<T>` is not bounded against the length of `input`. An input that
-ends inside one raises a Luau `buffer` error, which does not begin
-`@rbxts/surge:`. It is tracked in
-[../future-work/data-type-surface.md](../future-work/data-type-surface.md).
+**4.9** With checks, an `enum` index past the items its type admits, and a
+packed `CFrame` header whose rotation code is from 24 to 30, raise a string
+beginning `@rbxts/surge:`.
 
-**4.10** Known defect, not a guarantee: two indexes are read with no range
-check, with or without checks. An `enum` index past the items its type admits
-reads back as `undefined`, which raises a Luau error where the `enum` is a
-`Set` element or a `Map` key. A packed `CFrame` header whose rotation is `24`
-to `30` raises a Luau error. Neither error begins `@rbxts/surge:`. It is
-tracked in
-[../future-work/data-type-surface.md](../future-work/data-type-surface.md).
+**4.10** Without checks, the two indexes of 4.9 are not examined, as 4.1
+states: an `enum` index past its items reads back as `undefined`, and a packed
+rotation code from 24 to 30 raises a Luau error that does not begin
+`@rbxts/surge:`.
 
 ## 5. The helper ABI
 
@@ -189,14 +186,14 @@ A test file named `*.spec.ts` is under `tests/src/tests/`. A path starting
 | 3.8                         | `test/golden.test.mjs`: a serializer without `checks` carries no read-side check, and one with it carries them                                                                                                                                          |
 | 3.9                         | Source: `src/data-type.ts`; each brand's bytes are pinned in `bytes.spec.ts`                                                                                                                                                                            |
 | 4.1                         | Source only: the unchecked read path under `emit/`; a statement of what is not guaranteed has nothing to pin                                                                                                                                            |
-| 4.2–4.4                     | `checks.spec.ts`: `rejectsATruncatedPayload`, `rejectsACountTheInputCannotHold`, `rejectsACountOfElementsThatReadNoBytes`                                                                                                                               |
+| 4.2–4.4                     | `checks.spec.ts`: `rejectsATruncatedPayload`, `rejectsATruncatedPackedCFrame`, `rejectsACountTheInputCannotHold`, `rejectsACountOfElementsThatReadNoBytes`                                                                                              |
 | 4.3 (no over-rejection)     | `checks.spec.ts`: `acceptsWhatSerializeWrote`, `acceptsEveryKindThatReadsACount`, `acceptsEmptyContainers`                                                                                                                                              |
 | 4.3 (minimum size, lengths) | Source only: `minBytes` in `emit/layout.ts`; `readStr`, `readBuffer` and `readSequence` in `emit/read.ts` check no count                                                                                                                                |
 | 4.5                         | With checks: `checks.spec.ts`: `rejectsAReadPastTheEndOfTheBlobs`. Without: source only, `nextBlob` in `src/blobs.ts`, which `checks` does not change                                                                                                   |
 | 4.6                         | Source only: `nextBlob` in `src/blobs.ts`                                                                                                                                                                                                               |
-| 4.7                         | Source only: checks bound reads and counts and emit no comparison against a value                                                                                                                                                                       |
+| 4.7                         | `checks.spec.ts`: `acceptsWhatSerializeWrote`. Source only for the values checks do not examine: the emitter compares no value but the two indexes of 4.9                                                                                               |
 | 4.8                         | Source only: the generated `deserialize` prologue and `beginReadBlobs`; no test raises and then deserializes again                                                                                                                                      |
-| 4.9                         | Source only: `readPackedCFrame` in `emit/read.ts` calls the runtime function with no bound; `checks.spec.ts` has no packed `CFrame`                                                                                                                     |
+| 4.9                         | `checks.spec.ts`: `rejectsAnEnumIndexPastItsItems`, `rejectsAPackedRotationCodeThatNamesNoRotation`                                                                                                                                                     |
 | 4.10                        | Source only: `enumFromIndexExpr` in `emit/read.ts`; `readPackedCFrame` in `src/cframe.ts`                                                                                                                                                               |
 | 5.1                         | Source only: the calls the emitter makes under `emit/`, and the exports of `src/index.ts`                                                                                                                                                               |
 | 5.2                         | `test/golden.test.mjs`: consecutive fixed-size fields share one reservation, inline                                                                                                                                                                     |
@@ -207,6 +204,10 @@ A test file named `*.spec.ts` is under `tests/src/tests/`. A path starting
 
 ## Changes
 
+- `f0b68ef` / `b954fd2`: the two gaps in `checks` closed. 4.2 (a
+  packed `CFrame` is bounded) and 4.9 (checks reject an `enum` index past its
+  items and a rotation code that names no rotation) now state guarantees;
+  4.7 and 4.10 follow them.
 - `38b634f` / `6967359`: 4.9 and 4.10 name the future-work document that tracks them.
 - `8c4d5f5` / `87813e5`: corrected against the code: 4.2 (a packed `CFrame`
   read is not bounded), 4.3 (which counts are bounded, and how), 4.7 (unchecked

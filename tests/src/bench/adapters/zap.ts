@@ -54,11 +54,6 @@ export function zapAdapter<T>(pick: (events: typeof ZapServer) => ZapServer.ZapE
 			const send = zapRemote().LastSend;
 			assert(send !== undefined, "Zap flushed nothing");
 			// Snapshotted here because the next encode overwrites the field.
-			// TODO: `send.instances` is always empty here. The shim's `record` keeps a
-			// reference to Zap's outgoing instance table, which `SendEvents` clears right
-			// after `FireClient`, so `side` reads 0 and `decode` gets no instances. Copy the
-			// table in `record` (scripts/lune-roblox-shim.luau) before any Zap row carries
-			// an Instance; no row does today, so no recorded result is affected.
 			return {
 				bytes: buffer.len(send.buffer) - EVENT_ID_BYTES,
 				side: send.instances.size(),

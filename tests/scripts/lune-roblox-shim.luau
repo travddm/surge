@@ -295,7 +295,13 @@ local function newRemote(name, className, parent)
 		local arguments = { ... }
 		-- FireClient passes the player first; FireAllClients and FireServer do not.
 		local offset = if className == "RemoteEvent" and typeof(arguments[1]) ~= "buffer" then 1 else 0
-		self.LastSend = { buffer = arguments[offset + 1], instances = arguments[offset + 2] }
+		-- A copy of the instance table, because Zap's SendEvents clears its own right after
+		-- FireClient returns, which would leave the adapter reading none.
+		local instances = arguments[offset + 2]
+		self.LastSend = {
+			buffer = arguments[offset + 1],
+			instances = if instances ~= nil then table.clone(instances) else nil,
+		}
 	end
 	remote.FireClient = record
 	remote.FireAllClients = record

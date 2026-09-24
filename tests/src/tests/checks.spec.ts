@@ -55,6 +55,19 @@ interface Everything {
 }
 const everything = createBinarySerializer<Everything>({ checks: true });
 
+// A packed `CFrame`'s size is in its own header, and an enum index names one of
+// a fixed list of items. Checks bound both before the value is read (Runtime
+// API 4.2 and 4.3 in docs/specs/runtime-api.md).
+interface WithPackedCFrame {
+	placement: DataType.Packed<{ at: CFrame }>;
+}
+const packedCFrame = createBinarySerializer<WithPackedCFrame>({ checks: true });
+
+interface WithEnum {
+	material: Enum.Material;
+}
+const withEnum = createBinarySerializer<WithEnum>({ checks: true });
+
 /** The message of a `deserialize` that raised, or `undefined` if it returned. */
 function rejection(run: () => unknown): string | undefined {
 	const [ok, err] = pcall(run);
@@ -166,6 +179,34 @@ class ChecksTest {
 		// Just past the cap of 2^24, and just inside it.
 		assertRejected(() => constants.deserialize(unhex("01000001")));
 		Assert.equal(3, constants.deserialize(unhex("03000000")).marks.size());
+	}
+
+	@Fact
+	public rejectsATruncatedPackedCFrame(): void {
+		// An arbitrary rotation away from the origin takes all 25 bytes.
+		const value: WithPackedCFrame = { placement: { at: CFrame.Angles(0.1, 0.2, 0.3).add(new Vector3(1, 2, 3)) } };
+		const full = hex(packedCFrame.serialize(value).buffer);
+		Assert.equal(25 * 2, full.size());
+		for (const bytes of $range(0, full.size() / 2 - 1)) {
+			assertRejected(() => packedCFrame.deserialize(unhex(full.sub(1, bytes * 2))));
+		}
+		Assert.undefined(rejection(() => packedCFrame.deserialize(unhex(full))));
+	}
+
+	// Header 0x38 is rotation code 24, which names no rotation, at the origin;
+	// 0x20 is rotation code 0 at the origin, the one-byte form.
+	@Fact
+	public rejectsAPackedRotationCodeThatNamesNoRotation(): void {
+		assertRejected(() => packedCFrame.deserialize(unhex("38")));
+		Assert.undefined(rejection(() => packedCFrame.deserialize(unhex("20"))));
+	}
+
+	// `Enum.Material` has far fewer than 255 items, so index 255 names none.
+	@Fact
+	public rejectsAnEnumIndexPastItsItems(): void {
+		assertRejected(() => withEnum.deserialize(unhex("ff")));
+		const written = withEnum.serialize({ material: Enum.Material.Plastic });
+		Assert.equal(Enum.Material.Plastic, withEnum.deserialize(written.buffer).material);
 	}
 
 	@Fact

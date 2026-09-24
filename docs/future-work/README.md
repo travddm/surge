@@ -63,14 +63,6 @@ time:
   and TypeScript that does not check, so the build fails with no
   diagnostic and nothing the user can open. The coverage table promises
   those keys today. Found while writing the `checks` fixtures.
-- [types-the-walk-mishandles.md](types-the-walk-mishandles.md): `void`,
-  `undefined` and `never` become blobs with no diagnostic, a cycle through
-  arrays alone overflows the stack, and a union of tuples floods unrelated
-  diagnostics.
-- The two gaps in the read half of `checks`, recorded in
-  [data-type-surface.md](data-type-surface.md): a packed `CFrame` read has no
-  bound, and an `enum` index and a packed rotation code have no range check.
-  Neither waits on the rest of Tier B.
 - The CI items in [ci-and-release.md](ci-and-release.md): the transformer
   workflow running the integration suite, the pinned sibling ref, `npm ci`,
   and the Windows job. The transformer's CI cannot see a broken

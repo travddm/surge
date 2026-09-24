@@ -23,6 +23,13 @@ interface Scope {
 }
 const scopeSerializer = createBinarySerializer<Scope>();
 
+// Recursion through arrays and tuples alone, with no object or union on the
+// cycle (Transformer 4.11 in docs/specs/transformer.md).
+type Nest = Nest[];
+const nestSerializer = createBinarySerializer<Nest>();
+type Branch = [number, Branch[]];
+const branchSerializer = createBinarySerializer<Branch>();
+
 function randomFolder(rng: Rng, depth: number): Folder {
 	const entries = new Array<Entry>();
 	for (const _ of $range(1, rng.int(0, 3))) {
@@ -66,6 +73,26 @@ class RecursionTest {
 		};
 		const { buffer, blobs } = scopeSerializer.serialize(value);
 		Assert.equal(undefined, difference(value, scopeSerializer.deserialize(buffer, blobs)));
+	}
+
+	@Fact
+	public roundTripsRecursionThroughArraysAndTuplesAlone(): void {
+		const nest: Nest = [[], [[], [[]]]];
+		const writtenNest = nestSerializer.serialize(nest);
+		Assert.equal(undefined, difference(nest, nestSerializer.deserialize(writtenNest.buffer, writtenNest.blobs)));
+
+		const branch: Branch = [
+			1,
+			[
+				[2, []],
+				[3, [[4, []]]],
+			],
+		];
+		const writtenBranch = branchSerializer.serialize(branch);
+		Assert.equal(
+			undefined,
+			difference(branch, branchSerializer.deserialize(writtenBranch.buffer, writtenBranch.blobs)),
+		);
 	}
 
 	@Fact

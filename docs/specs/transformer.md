@@ -1,8 +1,8 @@
 # Transformer specification
 
 Status: current
-Applies to: `@rbxts/surge` at commit `8ab32c4`, `rbxts-transformer-surge` at
-commit `e83581b` (no tagged release yet)
+Applies to: `@rbxts/surge` at commit `f0b68ef`, `rbxts-transformer-surge` at
+commit `b954fd2` (no tagged release yet)
 
 ## 1. Scope
 
@@ -59,42 +59,44 @@ declaration in `@rbxts/types`, and a user type with the same name falls
 through to a later row. The `Map` and `Set` rows match only the built-in
 declarations (4.10).
 
-| TypeScript type                                                                                                                            | `Field` kind                                                   |
-| ------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------- |
-| a type that depends on a type parameter, such as `T`, `keyof T` or `T["a"]`                                                                | a diagnostic (4.9)                                             |
-| `DataType.Packed<T>`                                                                                                                       | `T`'s kind, with `T` walked as a packed subtree                |
-| `DataType.Length<T, L>`                                                                                                                    | `T`'s kind, with the count `L` sets                            |
-| `DataType.Vector<X, Y, Z>`, `DataType.Transform<X, Y, Z>`                                                                                  | `vector3` with component widths, `cframe` with position widths |
-| a `DataType` width brand: `f32`, `f64`, `u8`, `u16`, `u24`, `u32`, `i8`, `i16`, `i24`, `i32`                                               | `num(width)`                                                   |
-| `boolean`                                                                                                                                  | `bool`                                                         |
-| `boolean \| undefined`, including an optional `boolean` property                                                                           | `optional(bool)`                                               |
-| a union of literal values, which may include `undefined`, including an optional property whose type is one literal value                   | `literal`                                                      |
-| one item of an enum, `Enum.X.Y`, or a union of items of one enum, which may include `undefined`                                            | `enum`, or `optional(enum)` with `undefined`                   |
-| `T \| undefined` with one `T`, including an optional property                                                                              | `optional` of `T`'s kind                                       |
-| a union of object types sharing one property whose type is a different literal value in each; a tuple counts as an object type here (4.12) | `taggedUnion`                                                  |
-| a union whose constituents are all opaque                                                                                                  | `blob`                                                         |
-| any other union, subject to 4.4                                                                                                            | `guardedUnion`                                                 |
-| `unknown`, `any`                                                                                                                           | `optional(blob)`                                               |
-| one literal value, such as `"a"`, `1` or `true`, in any position                                                                           | `literalConst`                                                 |
-| `string`                                                                                                                                   | `str`                                                          |
-| `number`                                                                                                                                   | `num(f64)`                                                     |
-| `buffer`                                                                                                                                   | `buffer`                                                       |
-| `Vector2`, `Vector3`, `CFrame`, `Color3`                                                                                                   | `vector2`, `vector3`, `cframe`, `color3`                       |
-| `ColorSequence`, `NumberSequence`                                                                                                          | `colorSequence`, `numberSequence`                              |
-| `Vector3int16`, `UDim`, `UDim2`, `BrickColor`, `NumberRange`, `Rect`, `DateTime`                                                           | `datatype`                                                     |
-| `Instance` and its subclasses, and every other `@rbxts/types` type with a `_nominal_` brand property, such as `Vector2int16`               | `blob`                                                         |
-| a template literal type, `symbol`, `bigint`, `null`, a function or constructor type                                                        | a diagnostic (7.2)                                             |
-| `T[]`, `ReadonlyArray<T>`                                                                                                                  | `array`                                                        |
-| a tuple whose rest element, if it has one, is last                                                                                         | `tuple`                                                        |
-| `Map<K, V>`, `ReadonlyMap<K, V>`                                                                                                           | `dict` with a key and a value                                  |
-| `Set<V>`, `ReadonlySet<V>`                                                                                                                 | `dict` with a key only                                         |
-| a type with both declared properties and an index signature                                                                                | a diagnostic (7.2)                                             |
-| an interface or object type with declared properties                                                                                       | `object`                                                       |
-| `Record<string, V>`, `Record<number, V>`, an index-signature type                                                                          | `dict` with a key and a value                                  |
-| a type with no properties and no index signature: `{}`, `object`, `defined`, `void`, `undefined` or `never`                                | `blob` (4.8)                                                   |
+| TypeScript type                                                                                                                                  | `Field` kind                                                   |
+| ------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------- |
+| a type that depends on a type parameter, such as `T`, `keyof T` or `T["a"]`                                                                      | a diagnostic (4.9)                                             |
+| `DataType.Packed<T>`                                                                                                                             | `T`'s kind, with `T` walked as a packed subtree                |
+| `DataType.Length<T, L>`                                                                                                                          | `T`'s kind, with the count `L` sets                            |
+| `DataType.Vector<X, Y, Z>`, `DataType.Transform<X, Y, Z>`                                                                                        | `vector3` with component widths, `cframe` with position widths |
+| a `DataType` width brand: `f32`, `f64`, `u8`, `u16`, `u24`, `u32`, `i8`, `i16`, `i24`, `i32`                                                     | `num(width)`                                                   |
+| `boolean`                                                                                                                                        | `bool`                                                         |
+| `boolean \| undefined`, including an optional `boolean` property                                                                                 | `optional(bool)`                                               |
+| a union of literal values, which may include `undefined`, including an optional property whose type is one literal value                         | `literal`                                                      |
+| one item of an enum, `Enum.X.Y`, or a union of items of one enum, which may include `undefined`                                                  | `enum`, or `optional(enum)` with `undefined`                   |
+| `T \| undefined` with one `T`, including an optional property                                                                                    | `optional` of `T`'s kind                                       |
+| a union of object types sharing one property whose type is a different literal value in each, where no constituent is a tuple or an array (4.12) | `taggedUnion`                                                  |
+| a union whose constituents are all opaque                                                                                                        | `blob`                                                         |
+| any other union, subject to 4.4                                                                                                                  | `guardedUnion`                                                 |
+| `unknown`, `any`                                                                                                                                 | `optional(blob)`                                               |
+| `undefined`, `void`                                                                                                                              | `literalConst` of `undefined` (4.8)                            |
+| `never`                                                                                                                                          | a diagnostic (4.8)                                             |
+| one literal value, such as `"a"`, `1` or `true`, in any position                                                                                 | `literalConst`                                                 |
+| `string`                                                                                                                                         | `str`                                                          |
+| `number`                                                                                                                                         | `num(f64)`                                                     |
+| `buffer`                                                                                                                                         | `buffer`                                                       |
+| `Vector2`, `Vector3`, `CFrame`, `Color3`                                                                                                         | `vector2`, `vector3`, `cframe`, `color3`                       |
+| `ColorSequence`, `NumberSequence`                                                                                                                | `colorSequence`, `numberSequence`                              |
+| `Vector3int16`, `UDim`, `UDim2`, `BrickColor`, `NumberRange`, `Rect`, `DateTime`                                                                 | `datatype`                                                     |
+| `Instance` and its subclasses, and every other `@rbxts/types` type with a `_nominal_` brand property, such as `Vector2int16`                     | `blob`                                                         |
+| a template literal type, `symbol`, `bigint`, `null`, a function or constructor type                                                              | a diagnostic (7.2)                                             |
+| `T[]`, `ReadonlyArray<T>`                                                                                                                        | `array`                                                        |
+| a tuple whose rest element, if it has one, is last                                                                                               | `tuple`                                                        |
+| `Map<K, V>`, `ReadonlyMap<K, V>`                                                                                                                 | `dict` with a key and a value                                  |
+| `Set<V>`, `ReadonlySet<V>`                                                                                                                       | `dict` with a key only                                         |
+| a type with both declared properties and an index signature                                                                                      | a diagnostic (7.2)                                             |
+| an interface or object type with declared properties                                                                                             | `object`                                                       |
+| `Record<string, V>`, `Record<number, V>`, an index-signature type                                                                                | `dict` with a key and a value                                  |
+| a type with no properties and no index signature: `{}`, `object` or `defined`                                                                    | `blob`                                                         |
 
-**4.2** An object type or a union that reappears on its own walk path is a
-`recursiveRef` to its first occurrence. A cycle through neither is 4.11.
+**4.2** An object type, a union, an array or a tuple that reappears on its own
+walk path is a `recursiveRef` to its first occurrence.
 
 **4.3** `DataType.Packed<T>`, `DataType.Length<T, L>`, `DataType.Vector<X, Y, Z>`
 and `DataType.Transform<X, Y, Z>` are recognized both by alias identity and,
@@ -125,14 +127,8 @@ covers a `boolean`, enum, object, `buffer` or Roblox datatype key, and a key
 of one literal value or a literal union. It is tracked in
 [../future-work/dict-key-typing.md](../future-work/dict-key-typing.md).
 
-**4.8** Known defect, not a guarantee: `void`, `undefined` and `never` walk to
-`blob` by the last row of 4.1, with no diagnostic. A plain
-`blob` has no presence byte ([wire-format.md](wire-format.md) 9.3), so one that
-holds `undefined` appends nothing to `blobs`, as a missing element does in
-[wire-format.md](wire-format.md) 6.7. `deserialize` then reads each later blob
-one position early and raises past the end of `inputBlobs`
-([runtime-api.md](runtime-api.md) 4.5). It is tracked in
-[../future-work/types-the-walk-mishandles.md](../future-work/types-the-walk-mishandles.md).
+**4.8** `undefined` and `void` walk to a `literalConst` of `undefined`, which
+writes nothing and reads back as `undefined`. `never` is a diagnostic (7.2).
 
 **4.9** A type that depends on a type parameter is a diagnostic (7.2), because a
 serializer is generated for one concrete type. This covers a type parameter
@@ -144,19 +140,13 @@ type that reaches one, such as `{ v: T }` inside a generic function.
 TypeScript's own lib does in a program compiled without it. A user type with
 one of those names is walked as any other type.
 
-**4.11** Known defect, not a guarantee: a type that reappears on its own walk
-path with no object type and no union on the cycle, such as
-`type Nest = Nest[]` or `type Tree = [number, Tree[]]`, is not a
-`recursiveRef`. The walk recurses until the stack overflows, and the
-transformer throws. It is tracked in
-[../future-work/types-the-walk-mishandles.md](../future-work/types-the-walk-mishandles.md).
+**4.11** A cycle with no object type and no union on it, such as
+`type Nest = Nest[]` or `type Tree = [number, Tree[]]`, is a `recursiveRef`
+by 4.2, and its helper's body is the array or tuple (5.2).
 
-**4.12** Known defect, not a guarantee: a union of tuples of different lengths
-matches the `taggedUnion` row of 4.1, with `length` as the tag property. The
-walk then walks each tuple's other members, including those it inherits from
-`Array`, and reports a diagnostic for each one it cannot encode (7.2), not the
-diagnostic for two table-shaped constituents. It is tracked in
-[../future-work/types-the-walk-mishandles.md](../future-work/types-the-walk-mishandles.md).
+**4.12** A tuple or an array is never a `taggedUnion` constituent: its
+`length` is not a discriminant. A union of two or more of them has two or
+more table-shaped constituents and is a diagnostic (4.4, 7.2).
 
 ## 5. Emission
 
@@ -218,16 +208,16 @@ tuple's rest element reads back. That bound is the count times the element's
 minimum size against the bytes left, or a fixed cap where the element reads
 no bytes. A `str` or `buffer` length is bounded by the reservation it sizes.
 A sequence's `u8` keypoint count gets no count bound, and each keypoint's
-reservation is bounded.
+reservation is bounded. An `enum` index is bounded by the number of items its
+type admits.
 
 **5.11** Blob pushes inside a branch that writes only when taken are emitted
 inside that branch, so encounter order is the same on both sides.
 
-**5.12** Known defect, not a guarantee: a `cframe` in a packed subtree is read
-by `readPackedCFrame` rather than by a reservation, and gets no bound under
-`checks: true`. A truncated one raises a Luau `buffer` error that does not
-begin with `@rbxts/surge:`. It is tracked in
-[../future-work/data-type-surface.md](../future-work/data-type-surface.md).
+**5.12** A `cframe` in a packed subtree is read by `readPackedCFrame` rather
+than by a reservation. Under `checks: true` it is bounded before that call, in
+two steps: its header byte, then the size the header gives. A header whose
+rotation code is from 24 to 30 is rejected.
 
 **5.13** A `createSerializer` or `createDeserializer` call site emits only the
 side it returns, recursion helpers included, so its generated code refers to
@@ -260,12 +250,13 @@ shadows the global in that call site's generated code.
 
 **7.1** A diagnostic is a TypeScript diagnostic of category `Error` whose code
 is the string `" surge"`, with a leading space, so roblox-ts prints it as
-`error TS surge: …`. Not every type the walk cannot encode is a diagnostic:
-4.8 walks with none.
+`error TS surge: …`. A type the walk cannot see into, such as `{}`, `object`,
+`defined` or an `Instance`, is a `blob` by 4.1 rather than a diagnostic.
 
 **7.2** The walk reports a diagnostic for:
 
 - a type that depends on a type parameter (4.9);
+- `never` (4.8);
 - a template literal type, `symbol`, `bigint`, `null`, or a function or
   constructor type;
 - a type with both declared properties and an index signature;
@@ -294,7 +285,7 @@ or at the call site where there is none. An entry-point diagnostic points at
 the call site, the options argument, the offending property or its value.
 
 **7.5** A call site with a diagnostic is left untransformed. The transformer
-throws only on a broken internal invariant and in the known defect of 4.11.
+throws only on a broken internal invariant.
 
 ## 8. Conformance
 
@@ -308,17 +299,17 @@ of `rbxts-transformer-surge`, cited by `describe` block. Source paths are in
 | 3.2, 3.3  | `transform`: `transform diagnostics`, `transform checks option`. Source only for more than one argument, options that are not an object literal, and a quoted or shorthand `checks`: `readChecksOption` in `src/index.ts`                                                                                                       |
 | 3.4       | `tests/src/tests/factories.spec.ts`: `writesTheSameBytesFromTwoCallSitesForOneType`                                                                                                                                                                                                                                             |
 | 4.1       | `walk`: `TypeWalker classification`, `TypeWalker classification with fixture packages`, `TypeWalker blob classification`, `TypeWalker tuples`, `TypeWalker union guards`, `TypeWalker wire-format determinism`, and the brand blocks under 4.3                                                                                  |
-| 4.2       | `walk`: `TypeWalker recursion through unions`, `TypeWalker union guards` (a recursive object type); `test/golden.test.mjs`: the recursion-helper checks                                                                                                                                                                         |
+| 4.2       | `walk`: `TypeWalker recursion through unions`, `TypeWalker union guards` (a recursive object type); `test/golden.test.mjs`: the recursion-helper checks; `walk`: `TypeWalker recursion through arrays and tuples`                                                                                                               |
 | 4.3       | `detect`: `getDataTypeBrand / getSurgeBrand`; `walk`: `TypeWalker Packed<T>`, `TypeWalker Length<T, L>`, `TypeWalker Vector<X, Y, Z> and Transform<X, Y, Z>`                                                                                                                                                                    |
 | 4.4       | `walk`: `TypeWalker union guards`, `TypeWalker wire-format determinism` (two literal values of one runtime type), `TypeWalker classification with fixture packages` (a union of `Instance` subclasses is a `blob`); `emit`: `Emitter union guards`                                                                              |
 | 4.5       | `walk`: `TypeWalker generic instantiation identity`                                                                                                                                                                                                                                                                             |
 | 4.6       | `walk`: `TypeWalker classification` (a finite key union walks as a fixed-property object)                                                                                                                                                                                                                                       |
 | 4.7       | Source only: `readDict` in `src/emit/read.ts`                                                                                                                                                                                                                                                                                   |
-| 4.8       | Source only: `TypeWalker.walk` in `src/walk.ts`, its last fallback                                                                                                                                                                                                                                                              |
+| 4.8       | `walk`: `TypeWalker undefined, void and never`; `tests/src/tests/roblox.spec.ts`: `writesNothingForUndefinedAndVoidProperties`                                                                                                                                                                                                  |
 | 4.9       | `walk`: `TypeWalker type parameters`; `transform`: `transform diagnostics` (a call site inside a generic function)                                                                                                                                                                                                              |
 | 4.10      | `walk`: `TypeWalker Map and Set by declaration`                                                                                                                                                                                                                                                                                 |
-| 4.11      | Source only: `walkArrayOrTuple` in `src/walk.ts`, which records no walk in progress                                                                                                                                                                                                                                             |
-| 4.12      | Source only: `classifyUnion` and `findDiscriminant` in `src/walk.ts`                                                                                                                                                                                                                                                            |
+| 4.11      | `walk`: `TypeWalker recursion through arrays and tuples`; `transform`: `transform generated code` (an array of itself, a tuple holding an array of itself); `tests/src/tests/recursion.spec.ts`: `roundTripsRecursionThroughArraysAndTuplesAlone`                                                                               |
+| 4.12      | `walk`: `TypeWalker unions of tuples`                                                                                                                                                                                                                                                                                           |
 | 5.1       | `emit`: `Emitter read-order for side-effecting fields`; every round trip under `tests/src/tests/`                                                                                                                                                                                                                               |
 | 5.2       | `emit`: `Emitter per-kind write/read snapshots`; `test/golden.test.mjs`: a non-recursive shape never calls a helper. Source only for the closure the helpers are declared in: `buildReplacement` in `src/index.ts`                                                                                                              |
 | 5.3       | `emit`: `Emitter read-side checks` (the read state); `transform`: `transform injected imports` (the scratch buffer). Source only for the state a side with no bytes omits: `writeStateDecls` and `readStateDecls` in `src/emit/context.ts`                                                                                      |
@@ -328,9 +319,9 @@ of `rbxts-transformer-surge`, cited by `describe` block. Source paths are in
 | 5.7       | `test/golden.test.mjs`: a count-driven read is a numeric for loop                                                                                                                                                                                                                                                               |
 | 5.8       | `emit`: `Emitter local-register ceiling`; `tests/src/tests/coverage.spec.ts`: `roundTripsAnObjectWiderThanTheLocalRegisterLimit`                                                                                                                                                                                                |
 | 5.9       | `transform`: `transform (end-to-end)` (no blob field, a blob field, and a blob reachable only through a recursion helper); `test/golden.test.mjs`: a shape with no blob field pays nothing for the blob side channel                                                                                                            |
-| 5.10      | `emit`: `Emitter read-side checks`; `test/golden.test.mjs`: the two `checks` checks. Source only for the sequence keypoint count: `readSequence` in `src/emit/read.ts`                                                                                                                                                          |
+| 5.10      | `emit`: `Emitter read-side checks`; `test/golden.test.mjs`: the two `checks` checks; `tests/src/tests/checks.spec.ts`: `rejectsAnEnumIndexPastItsItems`. Source only for the sequence keypoint count: `readSequence` in `src/emit/read.ts`                                                                                      |
 | 5.11      | `tests/src/tests/roblox.spec.ts`: `keepsLaterBlobsInPlaceWhenAnUnknownIsUndefined`, `writesNoBlobForAnAbsentOptionalBlob`                                                                                                                                                                                                       |
-| 5.12      | Source only: `readPackedCFrame` in `src/emit/read.ts`, and `readPackedCFrame` in `@rbxts/surge`'s `src/cframe.ts`                                                                                                                                                                                                               |
+| 5.12      | `emit`: `Emitter read-side checks` (a packed CFrame); `tests/src/tests/checks.spec.ts`: `rejectsATruncatedPackedCFrame`, `rejectsAPackedRotationCodeThatNamesNoRotation`                                                                                                                                                        |
 | 5.13      | `transform`: `transform generated code` (the single-sided factories on a recursive type); `tests/src/tests/factories.spec.ts`: `roundTripsARecursiveTypeThroughASeparateSerializerAndDeserializer`                                                                                                                              |
 | 6.1, 6.2  | `transform`: `transform injected imports`, and in `transform (end-to-end)` the single shared import and the same-named local function; `tests/src/tests/coverage.spec.ts`: `leavesAUserDeclarationNamedAfterAnInjectedImportAlone`                                                                                              |
 | 6.3       | `test/golden.test.mjs`: a file directive survives the transformer's injected imports; `transform`: `transform generated code` (the three directive tests)                                                                                                                                                                       |
@@ -340,10 +331,16 @@ of `rbxts-transformer-surge`, cited by `describe` block. Source paths are in
 | 7.2       | `walk`: `TypeWalker blob classification`, `TypeWalker bare EnumItem`, `TypeWalker classification with fixture packages`, `TypeWalker tuples`, `TypeWalker classification`, `TypeWalker union guards`, and the brand blocks under 4.3. Source only for a constituent of a kind no guard covers: `classifyUnion` in `src/walk.ts` |
 | 7.3       | `transform`: `transform diagnostics`, `transform checks option`. Source only: the cases listed under 3.2 and 3.3                                                                                                                                                                                                                |
 | 7.4       | `walk`: `TypeWalker diagnostic position`; `transform`: `transform diagnostics`, `transform checks option` (the positions). Source only for a property declared in another file: `nodeForProperty` in `src/walk.ts`                                                                                                              |
-| 7.5       | `transform`: `transform diagnostics`. The throw is 4.11                                                                                                                                                                                                                                                                         |
+| 7.5       | `transform`: `transform diagnostics`                                                                                                                                                                                                                                                                                            |
 
 ## Changes
 
+- `f0b68ef` / `b954fd2`: the remaining known defects of the walk
+  fixed. 4.8 (`undefined` and `void` are constants, `never` a diagnostic),
+  4.11 (a cycle through arrays or tuples is a recursion helper), 4.12 (a
+  tuple union is two table-shaped constituents) and 5.12 (a packed `cframe`
+  is bounded under checks) now state guarantees; 4.1, 4.2, 5.10, 7.1, 7.2 and
+  7.5 follow them.
 - `8ab32c4` / `e83581b`: three known defects fixed. 4.9 (a type that depends
   on a type parameter is a diagnostic), 4.10 (`Map` and `Set` by declaration)
   and 5.13 (a single-sided factory emits only its side) now state guarantees;

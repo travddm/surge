@@ -1,8 +1,8 @@
 # Test harness specification
 
 Status: current
-Applies to: `@rbxts/surge` at commit `8c4d5f5`, `rbxts-transformer-surge` at
-commit `87813e5` (no tagged release yet)
+Applies to: `@rbxts/surge` at commit `f0b68ef`, `rbxts-transformer-surge` at
+commit `b954fd2` (no tagged release yet)
 
 ## 1. Scope
 
@@ -95,8 +95,9 @@ one; the wide enum index is pinned at the transformer level instead.
 **4.6** The shim creates, in `ReplicatedStorage`, the remotes the generated
 Blink and Zap server modules look up when they are required:
 `BLINK_RELIABLE_REMOTE`, `BLINK_UNRELIABLE_REMOTE`, and `ZAP_RELIABLE` in a
-`ZAP` folder. Each records what it is fired with as `LastSend`, and delivers
-no event.
+`ZAP` folder. Each records, as `LastSend`, the buffer it is fired with and a
+copy of the instance table, which Zap clears once the call returns, and
+delivers no event.
 
 ## 5. Sentinel lines and exit codes
 
@@ -157,6 +158,7 @@ file in its `lib/` for the snapshot to copy.
 
 ## Changes
 
+- `f0b68ef` / `b954fd2`: 4.6 (the recorded instance table is a copy).
 - `8c4d5f5` / `87813e5`: corrected against the code: 3.3 (not every fact
   compares a whole value), 4.2, 4.3, 4.4, 5.1 and 5.2 (the `ERROR` verdict),
   5.3; added 3.5 (moved from 3.3), 4.6, and 5.4 (the timeout, moved from
