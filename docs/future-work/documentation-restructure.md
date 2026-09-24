@@ -73,10 +73,7 @@ more than that, each until the page that owns it exists:
 [benchmark-tooling.md](benchmark-tooling.md) keeps the harness design until
 `specs/benchmark-harness.md` takes it over, and
 [generated-code-performance.md](generated-code-performance.md) keeps the
-file-directive recommendation until `performance.md` does. And two keep landed
-items struck through rather than removed, which the rule forbids:
-[type-coverage-parity.md](type-coverage-parity.md)'s Tier A list and one item
-of [blob-classification.md](blob-classification.md).
+file-directive recommendation until `performance.md` does.
 
 ### Conventions to adopt
 

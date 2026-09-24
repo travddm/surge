@@ -103,7 +103,7 @@ that, u32 wins on two things that are not about bandwidth:
 - Rule 4. u32 is what an unbranded container writes today, so every pinned
   buffer in `bytes.spec.ts` stays green and no existing wire format moves.
 - A u16 default truncates a container above 65535 entries, and nothing
-  detects it until write-side validation lands, which is item 5 of Tier B in
+  detects it until write-side validation lands, which is item 3 of Tier B in
   [type-coverage-parity.md](type-coverage-parity.md). A u32 default has no
   matching failure: its cost is two bytes, paid visibly.
 

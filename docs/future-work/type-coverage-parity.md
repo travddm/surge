@@ -16,11 +16,11 @@ lengths, whose u16 defaults the size table confirms row by row:
 | Zap (`red-blox/zap`)                       | 0.6.29  | `8cd17ab` | Rust IDL compiler; networking layer included; no standalone codec |
 
 surge's own column comes from the walker probes recorded in the sibling
-documents (executed). surge used to walk every Roblox datatype's declared
-properties as an object. The identity-based `_nominal_*` brand fix in
-[blob-classification.md](blob-classification.md) has landed, so a datatype
-without its own encoding now routes to `side`. Real per-datatype encodings
-(the rest of Tier A below) are still open.
+documents (executed). A Roblox datatype with its own encoding is written
+into the buffer (Wire format 4.6 to 4.11 in
+[specs/wire-format.md](../specs/wire-format.md)); one without routes to
+`side` by its `_nominal_*` brand (Transformer 4.1 in
+[specs/transformer.md](../specs/transformer.md)).
 
 ## Coverage matrix
 
@@ -109,7 +109,7 @@ hand-written baseline is the floor beneath all of them.
 | ByteBuf (`DarkOnGithub/ByteBuf`) | 0 stars, last pushed 2025-08-16; `@rbxts/bytebuf` 1.0.0, one release  | No adoption to speak of, and it describes itself as self-describing on npm and as schema-based on GitHub, which are opposite wire formats                                                                                                                                         |
 
 Sera is worth reading once for a different reason. Its `LossyCFrame` and
-`Angle8` are a second reference for the quantized rotation of Tier B item 6,
+`Angle8` are a second reference for the quantized rotation of Tier B item 4,
 where serio is otherwise the only one, and its delta serialization is a
 feature nothing in the catalog has. Neither is a reason for a column.
 
@@ -152,92 +152,33 @@ These differences are design choices, not bugs, and should stay:
 
 ## Gaps to close
 
-**Tier A: walker and emitter work on the existing type surface.** These
-were TypeScript types fbs or serio already handle and surge mishandled or
-dropped.
-
-1. Every Roblox datatype that surge's column above marks `side`. fbs and
-   serio both use the `_nominal_*` brand key `@rbxts/types` puts on every
-   datatype to route them to the side table. surge now does the same as
-   the fallback; what remains is real encodings for the cheap ones.
-   `Vector2` (2×f32) has landed as its own kind. Each fixed-size type
-   below is one row of the table-driven `datatype` kind (`FIXED_DATATYPES`
-   in the transformer's `datatypes.ts`).
-    - Landed: `Vector3int16` (3×i16).
-    - Landed: `UDim` (f32 scale + i32 offset).
-    - Landed: `UDim2` (2 x UDim: f32 + i32 for X, then for Y).
-    - Landed: `BrickColor` (u16 `.Number`).
-    - Landed: `NumberRange` (2 x f32: Min, Max).
-    - Landed: `Rect` (4 x f32: Min.X, Min.Y, Max.X, Max.Y).
-    - Landed: `DateTime` (f64 `UnixTimestampMillis`). Lune 0.10.5 has no
-      `DateTime`, so its fixtures use a stand-in global in the Lune runner
-      and do not cover it as a union member.
-    - Landed: raw `buffer` (u32 len + bytes), as its own `buffer` kind: it
-      is variable length, so it is not a table row.
-2. ~~`Instance` and subclasses to the side table.~~ Landed with the
-   nominal-brand fallback in item 1.
-3. ~~`Packed<T>` for `optional` presence bits, 2-way tagged-union tags,
-   and the packed `CFrame`.~~ All landed; see section 8 of
-   [specs/wire-format.md](../specs/wire-format.md). A `Packed` union at the root, or
-   anywhere that is not a direct property of an object, has no packed
-   region to hold its tag bit, so its tag stays a byte.
-4. ~~`NumberSequence` Envelope.~~ Landed: one more f32 per keypoint. fbs
-   drops the envelope; serio keeps it.
-5. ~~Recursive unions, generic instantiations, enum width, literal-union
-   order.~~ All landed; see [README.md](README.md).
-6. ~~Wider and narrower numeric widths from serio.~~ `DataType.u24`/`i24`
-   (3 bytes) have landed. f16 and u12/i12 are decided against; see
-   Deliberate non-gaps.
-
 **Tier B: new `DataType.*` surface, needed before the IDL features can
 exist in a type-driven design.** Blink and Zap get their size advantage
 from bounds declared in the IDL; a TypeScript type has nowhere to put a
 bound without a helper type.
 
-1. ~~Length-typed containers.~~ **Landed**, as one brand,
-   `DataType.Length<T, L>`, over all five kinds that write a count — `string`,
-   array, `Map`/`Set`/`Record`, `buffer`, and a tuple's rest element — rather
-   than serio's four; [data-type-surface.md](data-type-surface.md) records
-   why, and section 6 of [specs/wire-format.md](../specs/wire-format.md) describes
-   it. `L` is a width, defaulting to `u32` so nothing moves until a shape
-   asks, or a whole number literal for the exact form Blink and Zap have,
-   which writes no count at all. A `Map`, `Set`, or `Record` takes the width
-   form only. This was the single biggest bandwidth lever: every unbounded
-   string, array, map, and set cost 4 bytes of prefix against 2 in Blink and
-   Zap by default.
-2. ~~Per-component widths for `Vector3` and `CFrame`.~~ **Landed**, as
-   `DataType.Vector<X, Y, Z>` over a `Vector3`'s three components and
-   `DataType.Transform<X, Y, Z>` over a `CFrame`'s position, serio's two
-   names for the same two things (`vector<T>` in Blink and Zap). The
-   rotation keeps its f32 axis-angle triple and the packed `CFrame` takes
-   no widths at all; section 7 of
-   [specs/wire-format.md](../specs/wire-format.md) describes both. Zap's
-   `AlignedCFrame` (u8 index + position, 13 bytes) was decided against in
-   [data-type-surface.md](data-type-surface.md): `Packed<T>` already has
-   that form, plus a 1-byte case and a fallback where Zap asserts.
-3. A bit-packed set of a fixed member list (Blink's `set`), expressible as
+1. A bit-packed set of a fixed member list (Blink's `set`), expressible as
    `Packed<Set<"a" | "b" | ...>>` with one bit per member.
-4. Numeric ranges as a brand (`DataType.Range<Min, Max>`): validation on
+2. Numeric ranges as a brand (`DataType.Range<Min, Max>`): validation on
    write, and narrowing to the smallest width that fits (which neither
    Blink nor Zap does; serio validates but does not narrow).
-5. Opt-in write-side validation. The read-side half has landed as the
+3. Opt-in write-side validation. The read-side half has landed as the
    factory's `checks` option (section 4 of
    [specs/runtime-api.md](../specs/runtime-api.md)); what is left is checking a value on the way
    in, which is the same option's other half and is what `Range<Min, Max>`
    above needs. Every other library has at least one of the two.
-6. A quantized rotation option for `CFrame` (serio's 18-byte form, with
+4. A quantized rotation option for `CFrame` (serio's 18-byte form, with
    its documented ~0.05 error) for shapes that can accept it.
 
 **Tier C: not worth chasing.** Blink's f16 and serio's f8/f24/12-bit
-widths beyond what Tier A lists; Blink and Zap event framing; Zap's
+widths beyond the `u24` and `i24` surge added; Blink and Zap event framing; Zap's
 `unknown`-as-union-fallback; serio's common-value tables for vectors and
 `UDim2` (a 64-entry table lookup per value is a speed cost for a rare
 byte saving, and serio's has an index collision bug).
 
 ## Why deferred
 
-Tier A has landed; its list above is kept as the record of what each
-item became. Tier B is API design that should be decided once, with the benchmark harness in
+Tier B is API design that should be decided once, with the benchmark harness in
 [benchmark-tooling.md](benchmark-tooling.md) available to show what each
 bound actually saves; it is a separate, later step for that reason. That
 decision is now [data-type-surface.md](data-type-surface.md); the items below

@@ -21,8 +21,8 @@ interface WithRobloxTypes {
 }
 const robloxSerializer = createBinarySerializer<WithRobloxTypes>();
 
-// type-coverage-parity.md Tier A: Vector2 gets its own real 2xf32 encoding
-// instead of routing through the blob side channel.
+// Wire format 4.6 in docs/specs/wire-format.md: Vector2 gets its own real 2xf32
+// encoding instead of routing through the blob side channel.
 interface WithVector2 {
 	offset: Vector2;
 }
@@ -165,7 +165,7 @@ class CoverageTest {
 		const value: WithVector2 = { offset: new Vector2(4, 5) };
 		const { buffer: buf, blobs } = vector2Serializer.serialize(value);
 		// 2xf32, not the 0-byte blob side channel -- this is the real encoding
-		// from type-coverage-parity.md Tier A, not the passthrough fallback.
+		// of Wire format 4.6, not the passthrough fallback.
 		Assert.equal(8, buffer.len(buf));
 		const result = vector2Serializer.deserialize(buf, blobs);
 		Assert.fuzzyEqual(value.offset.X, result.offset.X, 0.001);

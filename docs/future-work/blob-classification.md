@@ -42,14 +42,8 @@ Tests: `test/walk.test.ts` in the transformer repo covers `Instance`, an
 (`Vector2`), `unknown`, the `Vector3`-name-collision case, and one
 diagnostic fixture per silently-misclassified kind above.
 
-One item from the original review remains open (the other, real
-encodings for the cheap datatypes, has landed):
+One item from the original review remains open:
 
-- ~~**Real encodings for the cheap datatypes**~~, per
-  [type-coverage-parity.md](type-coverage-parity.md) Tier A. Landed:
-  `Vector2` has its own kind, the fixed-size types are rows of
-  `FIXED_DATATYPES`, and `buffer` has its own kind (Wire format 4.5 and 4.10 in
-  [specs/wire-format.md](../specs/wire-format.md)).
 - **An empty object type (`{}`, `interface Empty {}`) still classifies as
   `blob`** instead of a zero-byte object. Deferred, not merely unimplemented:
   `@rbxts/compiler-types` declares `type defined = {}`, so a bare structural
