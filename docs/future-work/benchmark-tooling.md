@@ -31,9 +31,16 @@ client and server is Blink's own benchmark method, and the only measure that
 includes remote overhead and batching, so a networking library and a bare
 serializer would meet on one axis.
 
+**A Zap-shaped timing.** Zap has no callable encoder, so it is a size column
+only (Benchmark harness 4.3 in
+[specs/benchmark-harness.md](../specs/benchmark-harness.md)). A hand-written
+Luau column that transcribes the statement sequence Zap's `irgen` emits for
+each row, the way the baseline transcribes surge's bytes, is the only route
+to one.
+
 ## Why deferred
 
-None of the three can start yet. Widening the baseline measures nothing new
+None of the four can start yet. Widening the baseline measures nothing new
 until the per-call gap the three existing rows already show is understood:
 surge's encode is about 0.2 µs per call behind the hand-written codec
 ([generated-code-against-hand-written.md](../research/generated-code-against-hand-written.md)),
@@ -43,7 +50,8 @@ allocations per call as the next thing to measure. The large record also waits
 on Tier B. The code-size measurement needs the fixtures restructured, one call
 per module. Tier 3 has no driver: nothing yet asks what a serializer costs on
 the wire once a networking layer batches it, and [networking.md](networking.md)
-is where that would come from.
+is where that would come from. A Zap-shaped timing has no driver either, and a
+transcription would measure the transcription as much as Zap.
 
 ## How, briefly
 
@@ -54,3 +62,5 @@ is where that would come from.
    each module's compiled size beside the speed table.
 3. Tier 3 only if wire cost with batching becomes a question the serializer
    comparison cannot answer.
+4. A Zap-shaped timing only if Zap's speed becomes a question Blink's column,
+   the other IDL compiler, cannot answer.

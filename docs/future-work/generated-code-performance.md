@@ -47,6 +47,15 @@ surge owns and reuses, which removes the allocation as well as the copy. It
 would have to be an opt-in API, since a reused buffer is dead the moment
 anything calls `serialize()` again, and what it is worth is unmeasured.
 
+The copy itself was chosen over two-pass exact sizing: a `size(value)`
+function generated per shape, called first, and a write into a buffer of
+exactly that size with no copy. The copy needs one traversal of the value and
+two-pass sizing needs two. Whether a second traversal could cost less than the
+copy is open: the copy does not grow with the payload, and what it costs per
+call is not settled
+([per-call-overhead.md](../research/per-call-overhead.md) and its
+correction).
+
 **Reopened: the package pragma.** The package's hot modules carry
 `--!native`, and this was recorded as worth nothing, because marking only the
 package moves almost no work into the native region — its functions were a

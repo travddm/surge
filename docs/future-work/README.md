@@ -44,8 +44,9 @@ time:
   hand-written baseline to the tagged union and the packed toggles, which
   waits on the per-call gap to hand-written Luau being understood and on
   Tier B settling the large record's length prefix; measuring the generated
-  Luau's size, which needs each factory call in a module of its own; and a
-  third tier, for wire cost, that needs a driver.
+  Luau's size, which needs each factory call in a module of its own; a
+  third tier, for wire cost, that needs a driver; and a Zap-shaped timing,
+  which needs one too.
 - The stale-statement checklist in
   [documentation-gaps.md](documentation-gaps.md). Every entry describes
   behavior that is already final.
