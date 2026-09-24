@@ -10,8 +10,7 @@ This specifies the bytes a serializer writes for a value, per `Field` kind:
 scalars, composites, counts and the brands that change them, `Packed<T>`,
 the blob channel, and which bytes are deterministic. Which TypeScript type
 walks to which `Field` kind, and which types are rejected, is classification,
-and is specified in Type coverage in [../transformer.md](../transformer.md)
-until `transformer.md` is written in this directory. What `serialize` and
+and is specified in [transformer.md](transformer.md). What `serialize` and
 `deserialize` return is in [runtime-api.md](runtime-api.md).
 
 ## 2. Terms
@@ -280,5 +279,5 @@ buffers against pinned bytes.
 
 ## Changes
 
-- `7fc35db` / `05b267b`: first version, from Type coverage in
+- `7fc35db` / `05b267b`: first version, from Type coverage in the former
   `docs/transformer.md`.

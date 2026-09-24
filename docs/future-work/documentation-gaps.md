@@ -26,33 +26,10 @@ file states what was measured and does not advise.
 
 **Statements the code contradicts** (each checked against the source):
 
-- [transformer.md](../transformer.md) opens with "This is the
-  `transformer/` package"; it is a separate repository.
-- Type Coverage in transformer.md describes `blob` as "`unknown`,
-  `Instance` (and subclasses), any other type this design can't
-  structurally encode". The catch-all is wrong since
-  [blob-classification.md](blob-classification.md) landed: function,
-  `symbol`, `bigint`, `null`, template-literal, and
-  index-signature-plus-properties types are rejected with a diagnostic, and
-  transformer.md does not mention those diagnostics.
-- The `guardedUnion` row of the same table says a union of two or more
-  table-shaped variants gets "generated structural guards". Risks in the
-  same document says the transformer reports a build-time error instead,
-  which is what `classifyUnion` does.
-- The last paragraph of transformer.md lists "the lack of automated
-  runtime CI" as an open item; the round-trip suite runs in CI under Lune,
-  and only benchmark automation is open (see
-  [headless-ci.md](headless-ci.md)).
 - [testing.md](../testing.md) says golden checks cover "a curated set of
   representative shapes"; there are 13 tests in one file,
   `test/golden.test.mjs`, each pinning one decision rather than sampling
   shapes. The count was six when this entry was written.
-- Comments name future-work documents that were deleted when their fixes
-  landed: `test/golden.test.mjs` (`recursive-union-types.md`,
-  `wire-format-determinism.md`) and `tests/src/tests/coverage.spec.ts`
-  (`walk-type-identity.md`, `recursive-union-types.md`,
-  `wire-format-determinism.md`). Each should name Transformer Design in
-  transformer.md, which now describes the corrected behavior.
 - `rbxts-transformer-surge/README.md` and Static verification in
   [testing.md](../testing.md) tell VS Code users to run the `mise: ci`
   task; the tasks are labeled `transformer: ci` and `surge: ci` (renamed

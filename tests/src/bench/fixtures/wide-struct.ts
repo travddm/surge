@@ -16,8 +16,8 @@ import { WideStruct as blinkCodec } from "../blink/server";
 
 /**
  * 50 fixed-size fields: 100 of the 120 locals at which the emitter starts
- * wrapping an object's fields in blocks (Luau function-size limits in
- * docs/transformer.md), so this row is the widest struct that still compiles
+ * wrapping an object's fields in blocks (Transformer 5.8 in
+ * docs/specs/transformer.md), so this row is the widest struct that still compiles
  * to one straight run of writes.
  */
 interface WideStruct {

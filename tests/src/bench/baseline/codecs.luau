@@ -12,8 +12,8 @@
 --
 -- Each codec writes the bytes surge writes, field for field, so the size table is the check that
 -- the two are comparable: a baseline row that does not equal surge's is measuring a different
--- format and its timing means nothing. Field order is surge's, which sorts by name; see Transformer
--- Design in docs/transformer.md.
+-- format and its timing means nothing. Field order is surge's, which sorts by name; see Wire
+-- format 5.1 in docs/specs/wire-format.md.
 --
 -- Both directives, like every benchmark fixture: the fixtures are where surge's generated code
 -- lives, and marking this codec the same way keeps the distance between the two columns a fact

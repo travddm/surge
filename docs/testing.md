@@ -97,7 +97,7 @@ that must stay in agreement with each other, per shape — whatever
 `serialize()` writes, `deserialize()` must read back correctly — with no
 runtime schema to fall back on if they drift. (This is a different claim
 from the byte-_equality_-across-calls property discussed for `dict`
-fields in Type Coverage in [transformer.md](transformer.md), which this
+fields in Wire format 10.2 in [specs/wire-format.md](specs/wire-format.md), which this
 design explicitly does not guarantee.)
 
 An earlier version of this section proposed a Lune-headless harness
@@ -211,7 +211,7 @@ registers `rbxts-transformer-jecs` _before_ `rbxts-transformer-flamework`,
 with an explicit comment — "jecs must run before flamework: flamework
 rewrites macros (e.g. runit's `Assert`) into synthetic AST nodes that the
 jecs transformer cannot read." Registering this project's own transformer
-alongside Flamework's (confirmed compatible in [transformer.md](transformer.md))
+alongside Flamework's (confirmed compatible in [research/compile-time-specialization.md](research/compile-time-specialization.md))
 is not a new risk, but _where_ in `tests/tsconfig.json`'s `plugins` array
 it goes is a real decision, not a detail to skip — this transformer does
 not read any Flamework-rewritten macro output, so running before
@@ -341,16 +341,16 @@ The concrete plan for everything else:
       so the comparison stays exact. The one exception is a `CFrame` with
       a rotation, which is compared per component within `0.0001`.
     - `bytes.spec.ts` pins the exact bytes of shapes whose encoding is
-      final. Each expected string is derived by hand from Type Coverage in
-      [transformer.md](transformer.md), not copied from the output, so it
-      also checks that document.
+      final. Each expected string is derived by hand from
+      [specs/wire-format.md](specs/wire-format.md), not copied from the
+      output, so it also checks that specification.
     - `@rbxts/repr` is pinned to `1.0.2` in `tests/package.json`. `1.0.3`
       changed its module to return `{ default = repr }`, and
       `@rbxts/runit` `1.4.8` calls the module itself when it formats the
       arguments of a `@Theory`, so every `@Theory` fails with `1.0.3`
       (`attempt to call a table value`).
-- **Malformed-input scope**: per the no-bounds-checking decision in
-  Transformer Design §7 in [transformer.md](transformer.md),
+- **Malformed-input scope**: per the no-bounds-checking default in
+  section 4 of [specs/runtime-api.md](specs/runtime-api.md),
   `deserialize()` has unspecified behavior on malformed input — so these
   tests only need to cover `deserialize(serialize(x))` round-trips, not
   arbitrary malformed buffers, and a fuzz-style test finding a crash on a
@@ -608,8 +608,8 @@ tier, and throughput (values/sec) for serialize and deserialize
 separately from the speed tier. Generated Luau size (line/byte count)
 belongs with the speed numbers, because full inlining trades code size
 for speed and the one large-shape row exists to make that trade-off, and
-the Luau function-size risk (see Risks in
-[transformer.md](transformer.md)), visible in real numbers instead of
+the Luau function-size risk (see Transformer 5.8 in
+[specs/transformer.md](specs/transformer.md)), visible in real numbers instead of
 only discussed; measuring it needs each fixture's generated code in a
 module of its own, which the harness does not do yet (see
 [future-work/benchmark-tooling.md](future-work/benchmark-tooling.md)).

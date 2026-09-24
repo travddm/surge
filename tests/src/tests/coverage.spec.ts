@@ -56,7 +56,10 @@ interface TreeNode {
 }
 const treeSerializer = createBinarySerializer<TreeNode>();
 
-// walk-type-identity.md: two instantiations of one generic interface must
+// Each note below that opens with a name is a regression for the review finding of that
+// name, listed with what closed it in docs/research/september-2026-review.md.
+
+// walk-type-identity: two instantiations of one generic interface must
 // classify independently (keyed by `ts.Type`, not the shared declaration
 // symbol) instead of one silently reusing the other's `Field`.
 interface Box<T> {
@@ -68,13 +71,13 @@ interface WithGenerics {
 }
 const genericsSerializer = createBinarySerializer<WithGenerics>();
 
-// recursive-union-types.md: a recursive discriminated union used to crash
+// recursive-union-types: a recursive discriminated union used to crash
 // the whole `rbxtsc` build with an uncaught stack overflow instead of
 // compiling to a recursion helper.
 type Expr = { kind: "num"; v: number } | { kind: "add"; l: Expr; r: Expr };
 const exprSerializer = createBinarySerializer<Expr>();
 
-// walker-emitter-robustness.md: property names that are not identifiers
+// walker-emitter-robustness: property names that are not identifiers
 // used to emit `value.my-key`/`value.0`, which is invalid TypeScript.
 interface WithOddKeys {
 	"my-key": number;
@@ -85,12 +88,12 @@ interface WithOddKeys {
 }
 const oddKeysSerializer = createBinarySerializer<WithOddKeys>();
 
-// walker-emitter-robustness.md: a Roblox datatype as a bare union member used
+// walker-emitter-robustness: a Roblox datatype as a bare union member used
 // to crash the emitter (`guardFor` had no case for it).
 type PlacementOrLabel = CFrame | Vector2 | string;
 const datatypeUnionSerializer = createBinarySerializer<PlacementOrLabel>();
 
-// walker-emitter-robustness.md: so did a recursive object type as a bare
+// walker-emitter-robustness: so did a recursive object type as a bare
 // union member.
 interface Chain {
 	label: string;
@@ -98,20 +101,20 @@ interface Chain {
 }
 const chainSerializer = createBinarySerializer<Chain>();
 
-// walker-emitter-robustness.md: a re-aliased `Packed<T>` used to be walked
+// walker-emitter-robustness: a re-aliased `Packed<T>` used to be walked
 // structurally, leaving the booleans byte-aligned and serializing the
 // `_surge_packed` brand property as an extra field.
 type PackedPair = DataType.Packed<{ first: boolean; second: boolean }>;
 const packedPairSerializer = createBinarySerializer<PackedPair>();
 
-// Risks in docs/transformer.md: 100 fixed-size fields in one function used to
+// Transformer 5.8 in docs/specs/transformer.md: 100 fixed-size fields in one function used to
 // exceed Luau's 200 registers, which fails when the module loads.
 type Digit = "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9";
 type Wide = { [K in `f${"0" | "1"}${Digit}${Digit}`]: number };
 const WIDE_FIELD_COUNT = 200;
 const wideSerializer = createBinarySerializer<Wide>();
 
-// walker-emitter-robustness.md: a user declaration named after an injected
+// walker-emitter-robustness: a user declaration named after an injected
 // `@rbxts/surge` import used to collide with it.
 function alloc(): string {
 	return "the user's own alloc";
@@ -251,7 +254,7 @@ class CoverageTest {
 
 	@Fact
 	public roundTripsPackedBooleansAfterALargerPriorPayload(): void {
-		// Regression for wire-format-determinism.md: the packed byte is now
+		// Regression for the wire-format-determinism finding: the packed byte is now
 		// computed from all its bits at once, so any bits unused by this
 		// payload's field count must come back zero even when the shared
 		// scratch buffer still holds a larger previous payload's bytes here.

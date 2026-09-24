@@ -10,9 +10,8 @@ This specifies `@rbxts/surge`, the runtime package: the API a consumer calls,
 what `deserialize` does with input it did not write, the helpers generated
 code calls into, and how the package's version is coupled to the
 transformer's. The bytes an encoding writes are in
-[wire-format.md](wire-format.md). What the transformer emits for a call is
-specified in Transformer design in [../transformer.md](../transformer.md)
-until `transformer.md` is written in this directory. How to install the two
+[wire-format.md](wire-format.md), and what the transformer emits for a call
+in [transformer.md](transformer.md). How to install the two
 packages is in [../serde.md](../serde.md) until a user page takes it.
 
 ## 2. Terms

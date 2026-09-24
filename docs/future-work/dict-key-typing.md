@@ -26,9 +26,9 @@ before it emits.
   the initializer rather than of the key.
 
 The walker accepts all of these: they are `dict` fields with a `str`, `num`,
-`datatype`, `enum`, or `literal` key, and Type Coverage in
-[transformer.md](../transformer.md) says a dictionary key may be any of
-them. So the coverage table promises a shape the emitter cannot type.
+`datatype`, `enum`, or `literal` key, and Transformer 4.1 in
+[specs/transformer.md](../specs/transformer.md) classifies a dictionary key as any of
+them, with 4.7 recording this defect. So the coverage table promises a shape the emitter cannot type.
 
 ## Why deferred
 

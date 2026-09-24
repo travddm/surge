@@ -42,8 +42,8 @@ and the speed papers beside it.
 
 Tier 1's numbers were only unstable before the wire-format determinism
 fixes (literal/guardedUnion ordering, packed padding, discriminant choice)
-and the enum index-width fix landed — see Transformer Design §3 in
-[transformer.md](../transformer.md). It is now a checked-in table that
+and the enum index-width fix landed — see section 10 of
+[specs/wire-format.md](../specs/wire-format.md). It is now a checked-in table that
 changes only when an encoding changes.
 
 ### One fixture catalog, one adapter per library
@@ -72,7 +72,7 @@ interface Adapter<T> {
 The 16 rows are the testing.md list plus Blink's two published benches, so
 results can be sanity-checked against its table: small flat struct; deeply
 nested object; wide struct (50 f32 fields, just under the 120-local
-block-split threshold in Risks in [transformer.md](../transformer.md));
+block-split threshold in Transformer 5.8 in [specs/transformer.md](../specs/transformer.md));
 large array; large `Record`; string-heavy; enum-heavy; tagged union;
 guarded union; `Packed<T>` vs unpacked; three `CFrame` rows (unpacked,
 packed with axis-aligned rotations, packed with arbitrary ones); and

@@ -177,8 +177,8 @@ dropped.
 2. ~~`Instance` and subclasses to the side table.~~ Landed with the
    nominal-brand fallback in item 1.
 3. ~~`Packed<T>` for `optional` presence bits, 2-way tagged-union tags,
-   and the packed `CFrame`.~~ All landed; see `Packed<T>` in
-   [transformer.md](../transformer.md). A `Packed` union at the root, or
+   and the packed `CFrame`.~~ All landed; see section 8 of
+   [specs/wire-format.md](../specs/wire-format.md). A `Packed` union at the root, or
    anywhere that is not a direct property of an object, has no packed
    region to hold its tag bit, so its tag stays a byte.
 4. ~~`NumberSequence` Envelope.~~ Landed: one more f32 per keypoint. fbs
@@ -198,7 +198,7 @@ bound without a helper type.
    `DataType.Length<T, L>`, over all five kinds that write a count — `string`,
    array, `Map`/`Set`/`Record`, `buffer`, and a tuple's rest element — rather
    than serio's four; [data-type-surface.md](data-type-surface.md) records
-   why, and `Length<T, L>` in [transformer.md](../transformer.md) describes
+   why, and section 6 of [specs/wire-format.md](../specs/wire-format.md) describes
    it. `L` is a width, defaulting to `u32` so nothing moves until a shape
    asks, or a whole number literal for the exact form Blink and Zap have,
    which writes no count at all. A `Map`, `Set`, or `Record` takes the width
@@ -210,8 +210,8 @@ bound without a helper type.
    `DataType.Transform<X, Y, Z>` over a `CFrame`'s position, serio's two
    names for the same two things (`vector<T>` in Blink and Zap). The
    rotation keeps its f32 axis-angle triple and the packed `CFrame` takes
-   no widths at all; `Vector<X, Y, Z>` and `Transform<X, Y, Z>` in
-   [transformer.md](../transformer.md) describes both. Zap's
+   no widths at all; section 7 of
+   [specs/wire-format.md](../specs/wire-format.md) describes both. Zap's
    `AlignedCFrame` (u8 index + position, 13 bytes) was decided against in
    [data-type-surface.md](data-type-surface.md): `Packed<T>` already has
    that form, plus a 1-byte case and a fallback where Zap asserts.

@@ -1,8 +1,8 @@
 //!optimize 2
 /**
  * Branded number types the transformer recognizes as an explicit width
- * request, matching fbs's own `DataType.*` branding convention (see Type
- * Coverage in transformer.md) so existing fbs call sites migrate with only
+ * request, matching fbs's own `DataType.*` branding convention (see Wire format
+ * 4.1 in docs/specs/wire-format.md) so existing fbs call sites migrate with only
  * an import-path change. A plain `number` with no brand defaults to `f64`.
  */
 // eslint-disable-next-line @typescript-eslint/no-namespace -- a namespace is the only way to get fbs's exact `DataType.f32` dotted-type-reference syntax.
@@ -86,7 +86,7 @@ export namespace DataType {
 	 * anywhere inside it is 1 byte when its rotation is axis-aligned and its
 	 * position is zero or one, 13 bytes with one of the two, and 25 bytes
 	 * (1 more than outside) with neither, and {@link Transform} does not
-	 * apply to it. See Type Coverage -> Packed<T> in transformer.md.
+	 * apply to it. See section 8 of docs/specs/wire-format.md.
 	 */
 	export type Packed<T> = T & { readonly _surge_packed?: [T] };
 }

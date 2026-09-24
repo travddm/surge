@@ -6,8 +6,9 @@ Part of the [surge](../architecture.md) design.
 
 The index-overflow fix, the bare-`EnumItem` diagnostic, the O(1) lookup
 table, and the `@rbxts/types` version-coupling note have all landed (see
-Transformer Design's Type Coverage table and
-[schema-versioning.md](schema-versioning.md) in [transformer.md](../transformer.md),
+Wire format 4.12 in [specs/wire-format.md](../specs/wire-format.md), Transformer 7.2 in
+[specs/transformer.md](../specs/transformer.md), and
+[schema-versioning.md](schema-versioning.md) for the version coupling,
 and the dedicated cases in the transformer repo's `test/walk.test.ts`/
 `test/emit.test.ts`). No live `Enum.KeyCode` round trip in `coverage.spec.ts`
 itself: this suite's headless Lune harness doesn't implement every real

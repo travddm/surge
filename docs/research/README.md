@@ -55,6 +55,7 @@ Prose follows [../contributing-docs.md](../contributing-docs.md).
 | [noise-in-the-speed-tier.md](noise-in-the-speed-tier.md)                         | What a cell's trials disagree by, what two invocations of unchanged code disagree by, and which of the two matters.                      |
 | [generated-code-against-hand-written.md](generated-code-against-hand-written.md) | What the inline reservation bought, at 1.54× on encode against 4.15× on record, and the per-call gap to hand-written Luau it left.       |
 | [serialized-size-across-libraries.md](serialized-size-across-libraries.md)       | surge's bytes against fbs, serio, Blink and Zap on sixteen rows, and what every difference is.                                           |
+| [compile-time-specialization.md](compile-time-specialization.md)                 | Where fbs's per-call cost is, that a roblox-ts transformer can emit flat code instead, and six compiler behaviors it routes around.      |
 
 A paper's own run output, where nothing else records it, is under
 [data/](data/). Which papers are planned, and where the measurements behind

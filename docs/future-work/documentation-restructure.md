@@ -57,11 +57,10 @@ produces is held to them.
 code, in the format [specs/README.md](../specs/README.md) states.
 The specs to write, and where their content is today:
 
-| Spec                         | Content                                                                                                                                  | From                                                                                                       |
-| ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| `specs/transformer.md`       | Detection, type walk, classification rules, the diagnostics list, emission rules (reservation runs, block splitting, directive hoisting) | transformer.md Transformer Design §1–9 and Risks                                                           |
-| `specs/benchmark-harness.md` | The catalog, adapters, tiers, protocol (chunked timing, yields, trials, scoped runs), and what each results file records                 | testing.md Benchmarking strategy and the run-in-roblox section, benchmark-tooling.md, the recorder scripts |
-| `specs/test-harness.md`      | The Lune shim contract, the sentinel lines, what each suite root covers                                                                  | testing.md                                                                                                 |
+| Spec                         | Content                                                                                                                  | From                                                                                                       |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------- |
+| `specs/benchmark-harness.md` | The catalog, adapters, tiers, protocol (chunked timing, yields, trials, scoped runs), and what each results file records | testing.md Benchmarking strategy and the run-in-roblox section, benchmark-tooling.md, the recorder scripts |
+| `specs/test-harness.md`      | The Lune shim contract, the sentinel lines, what each suite root covers                                                  | testing.md                                                                                                 |
 
 **Research papers** (`docs/research/`) report what was measured and never
 advise, in the format [research/README.md](../research/README.md) states.
@@ -74,7 +73,10 @@ more than that, each until the page that owns it exists:
 [benchmark-tooling.md](benchmark-tooling.md) keeps the harness design until
 `specs/benchmark-harness.md` takes it over, and
 [generated-code-performance.md](generated-code-performance.md) keeps the
-file-directive recommendation until `performance.md` does.
+file-directive recommendation until `performance.md` does. And two keep landed
+items struck through rather than removed, which the rule forbids:
+[type-coverage-parity.md](type-coverage-parity.md)'s Tier A list and one item
+of [blob-classification.md](blob-classification.md).
 
 ### Conventions to adopt
 
@@ -182,30 +184,31 @@ Write one only when the task has been done twice by hand.
 
 ### Migration map
 
-| Today                                       | Goes to                                                                                                                                 | Dropped                                          |
-| ------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ |
-| `AGENTS.md`, `CLAUDE.md` (both repos)       | New, per Conventions to adopt                                                                                                           |                                                  |
-| `README.md` (both repos)                    | Rewritten to one screen, plus a getting-started and task-reference section for contributors and the mirrored index                      |                                                  |
-| `architecture.md`                           | Shrunk to repository shape and cross-cutting decisions; goal and build history to the review paper                                      | Implementation status, build order               |
-| `transformer.md`                            | `specs/transformer.md`, `specs/wire-format.md`, `supported-types.md`; the fbs/Zap source reading and the spike to a short research note | Prose the specs restate                          |
-| `serde.md`                                  | `getting-started.md` (install and version pinning); `specs/runtime-api.md` has taken the contract                                       |                                                  |
-| `coding-standards.md`                       | Kept and shortened; gains file organization, comments, and generated files per Conventions to adopt                                     | The editor-window narrative (to contributing.md) |
-| `testing.md`                                | Kept, in the fixed shape above; `specs/test-harness.md` and `specs/benchmark-harness.md` take the contracts                             | The history of why each runner exists            |
-| `benchmarks/*`                              | Unchanged; their generated prose shortened to point at the harness spec                                                                 |                                                  |
-| `future-work/generated-code-performance.md` | `performance.md` takes the file-directive recommendation; the open items stay                                                           |                                                  |
-| `future-work/benchmark-tooling.md`          | `specs/benchmark-harness.md` takes the harness design; the open items stay                                                              |                                                  |
-| `future-work/documentation-gaps.md`         | The user pages it lists, then deleted; its stale-statement checklist is worked off during the move                                      |                                                  |
-| Other `future-work/*.md`                    | Unchanged if open; deleted if landed, with a spec or paper carrying the record                                                          |                                                  |
+| Today                                       | Goes to                                                                                                            | Dropped                                          |
+| ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------ |
+| `AGENTS.md`, `CLAUDE.md` (both repos)       | New, per Conventions to adopt                                                                                      |                                                  |
+| `README.md` (both repos)                    | Rewritten to one screen, plus a getting-started and task-reference section for contributors and the mirrored index |                                                  |
+| `architecture.md`                           | Shrunk to repository shape and cross-cutting decisions; goal and build history to the review paper                 | Implementation status, build order               |
+| `transformer.md` (deleted)                  | `supported-types.md` still takes the user's view of what is supported, from Transformer 4.1                        |                                                  |
+| `serde.md`                                  | `getting-started.md` (install and version pinning); `specs/runtime-api.md` has taken the contract                  |                                                  |
+| `coding-standards.md`                       | Kept and shortened; gains file organization, comments, and generated files per Conventions to adopt                | The editor-window narrative (to contributing.md) |
+| `testing.md`                                | Kept, in the fixed shape above; `specs/test-harness.md` and `specs/benchmark-harness.md` take the contracts        | The history of why each runner exists            |
+| `benchmarks/*`                              | Unchanged; their generated prose shortened to point at the harness spec                                            |                                                  |
+| `future-work/generated-code-performance.md` | `performance.md` takes the file-directive recommendation; the open items stay                                      |                                                  |
+| `future-work/benchmark-tooling.md`          | `specs/benchmark-harness.md` takes the harness design; the open items stay                                         |                                                  |
+| `future-work/documentation-gaps.md`         | The user pages it lists, then deleted; its stale-statement checklist is worked off during the move                 |                                                  |
+| Other `future-work/*.md`                    | Unchanged if open; deleted if landed, with a spec or paper carrying the record                                     |                                                  |
 
 ### What must survive the move
 
-- Code comments and tests cite documents by section: `Transformer Design
-§4 in transformer.md`, `Benchmarking strategy in testing.md`,
-  `test/golden.test.mjs` and `coverage.spec.ts` name future-work documents,
-  and the two recorder scripts write prose that names `size.md` and
-  `speed.md`. Sweep `src/`, `tests/`, `test/`, `scripts/`, both
-  `README.md`s, and the transformer repository for `.md` mentions and
-  update each to the new location and section. Do not leave redirect
+- Code comments and tests cite documents by section. Every citation of
+  the former `transformer.md` and of a deleted future-work document now
+  names a statement in a specification or a finding in a paper. What is
+  left is `testing.md`'s sections (`Benchmarking strategy in testing.md`)
+  and the prose the two recorder scripts write, naming `size.md` and
+  `speed.md`: sweep `src/`, `tests/`, `test/`, `scripts/`, both
+  `README.md`s, and the transformer repository for those, and update each
+  to the new location and section. Do not leave redirect
   stubs; a stub is a second place the statement lives.
 - `architecture.md`'s "Documents in this design" list is the entry point
   and must be rewritten with the layout above, not appended to.
@@ -231,9 +234,9 @@ with a sequence, not a series of opportunistic edits.
 
 In order; each step is one change that leaves the tree consistent:
 
-1. Write the remaining specs from transformer.md and testing.md, each
-   section marked `current` or `draft` where Tier B will change it; delete
-   the prose the specs restate; fix the code and test citations.
+1. Write the two harness specs from testing.md and benchmark-tooling.md,
+   each section marked `current` or `draft`; delete the prose the specs
+   restate; fix the code and test citations.
 2. Write the user pages, `contributing.md`, and the shortened
    `coding-standards.md` and `testing.md`, working off
    documentation-gaps.md's checklist as each statement is rewritten;

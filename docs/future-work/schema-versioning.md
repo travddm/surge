@@ -19,8 +19,8 @@ client and server briefly run different builds against the same shape).
 ## Version coupling this design already has
 
 Not schema evolution, but relevant to it: an `enum` field's wire index is
-assigned by sorting the enum's members (see enum-encoding.md and
-Transformer Design §3 in [transformer.md](../transformer.md)), and that
+assigned by sorting the enum's members (see Wire format 4.12 in
+[specs/wire-format.md](../specs/wire-format.md)), and that
 member list comes from whichever `@rbxts/types` version is installed when
 `rbxtsc` runs. When Roblox adds a new member to an existing `Enum.*` that
 sorts before an existing member, every index after it shifts, which is a
@@ -45,5 +45,6 @@ neither committed to:
   rule.
 
 Both trade off differently against the flat, no-runtime-dispatch codegen
-this design is built around (see [transformer.md](../transformer.md)) —
-an actual design pass should weigh that before picking one.
+this design is built around (see Transformer 5.2 in
+[specs/transformer.md](../specs/transformer.md)) — an actual design pass
+should weigh that before picking one.

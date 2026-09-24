@@ -3,8 +3,8 @@
 // Native code generation, and an optimization level pinned rather than inherited; neither is
 // worth anything here on its own. See the package pragma entry in
 // docs/future-work/generated-code-performance.md.
-// The `CFrame` encoding inside a `DataType.Packed<T>` subtree (Type Coverage
-// -> Packed<T> in transformer.md). One header byte, then only the parts the
+// The `CFrame` encoding inside a `DataType.Packed<T>` subtree (Wire format 8.6
+// and 8.7 in docs/specs/wire-format.md). One header byte, then only the parts the
 // header does not already give:
 //
 //   bits 0-4: the rotation. 0-23 is an axis-aligned rotation, 31 is any other
@@ -19,8 +19,8 @@
 // runtime function and not inlined code: the branches are the encoding.
 //
 // Both take the buffer and the offset and report how many bytes they used,
-// because the cursor lives in the generated code (Transformer Design §4 in
-// transformer.md). The caller reserves the 25 bytes of the largest form, calls,
+// because the cursor lives in the generated code (Transformer 5.3 in
+// docs/specs/transformer.md). The caller reserves the 25 bytes of the largest form, calls,
 // and then sets its cursor from what came back.
 
 const GENERAL_ROTATION = 31;

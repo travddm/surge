@@ -10,8 +10,8 @@ table or in `FIXED_DATATYPES` (`Vector2int16`, `Region3`, `TweenInfo`,
 `Font`, `Ray`, ...) now classify as `blob` instead of being walked
 structurally
 (`unknown` and `any` as `optional(blob)`, because they can hold
-`undefined`; see Blob / passthrough channel in
-[transformer.md](../transformer.md)). The fix
+`undefined`; see Wire format 9.3 in
+[specs/wire-format.md](../specs/wire-format.md)). The fix
 is identity-based, not name-matching: `@rbxts/types` brands `Instance`
 (and every subclass) and every datatype interface with its own uniquely
 named `_nominal_<TypeName>: unique symbol` property (`isRobloxNominalType`
@@ -25,9 +25,9 @@ Vector3 { foo: string }` no longer misclassifies as the Roblox scalar.
 
 The other silent misclassifications are fixed with a diagnostic (the
 walker's `report()`/`WalkDiagnostic` mechanism, surfaced as a
-`ts.Diagnostic`; see Transformer Design §8 in
-[transformer.md](../transformer.md)) instead of a silent `blob`: function types (detected via
-`checker.getSignaturesOfType`, covering both plain function-typed fields
+`ts.Diagnostic`; see section 7 of
+[specs/transformer.md](../specs/transformer.md)) instead of a silent `blob`:
+function types (detected via `checker.getSignaturesOfType`, covering both plain function-typed fields
 and methods), `symbol`, `bigint`, `null`, template literal types, and a
 type with both declared properties and an index signature. Each points the
 caller at `unknown` as the explicit opt-in. A union where every constituent
@@ -48,8 +48,8 @@ encodings for the cheap datatypes, has landed):
 - ~~**Real encodings for the cheap datatypes**~~, per
   [type-coverage-parity.md](type-coverage-parity.md) Tier A. Landed:
   `Vector2` has its own kind, the fixed-size types are rows of
-  `FIXED_DATATYPES`, and `buffer` has its own kind (see Type Coverage in
-  [transformer.md](../transformer.md)).
+  `FIXED_DATATYPES`, and `buffer` has its own kind (Wire format 4.5 and 4.10 in
+  [specs/wire-format.md](../specs/wire-format.md)).
 - **An empty object type (`{}`, `interface Empty {}`) still classifies as
   `blob`** instead of a zero-byte object. Deferred, not merely unimplemented:
   `@rbxts/compiler-types` declares `type defined = {}`, so a bare structural

@@ -94,7 +94,7 @@ packages, then relative imports. Do not reorder imports by hand — run
 - File names reflect their primary export's concept; use `kebab-case` for
   multi-word file names.
 - `Field` IR node kind names (`num`, `bool`, `dict`, `taggedUnion`, …) are
-  already specified in [transformer.md](transformer.md) — follow that
+  already specified in [specs/wire-format.md](specs/wire-format.md) — follow that
   naming exactly rather than inventing new casing for it.
 
 ## Package boundaries
@@ -111,7 +111,7 @@ declared dependencies rather than needing a separate lint rule:
 - `rbxts-transformer-surge` must never depend on `@rbxts/surge` at
   runtime — it only needs to recognize its ambient declarations through
   the TypeScript checker of whatever program it's running inside (see
-  Transformer Design §1 in [transformer.md](transformer.md)), not to
+  Transformer 3.1 in [specs/transformer.md](specs/transformer.md)), not to
   import the package itself.
 - `tests/` (nested in this repo, but its own standalone npm project) is
   the one place allowed to depend on both.

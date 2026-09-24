@@ -4,7 +4,7 @@ import { DataType, createBinarySerializer } from "@rbxts/surge";
 
 import { Rng, difference, hex, unhex } from "../support";
 
-// The `checks` factory option (Transformer Design §7 in transformer.md): the
+// The `checks` factory option (Transformer 5.10 in docs/specs/transformer.md): the
 // read side stays inside the input buffer and rejects a count the rest of the
 // input cannot hold. Every payload here is written by hand, because no
 // `serialize` would produce one.

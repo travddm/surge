@@ -6,7 +6,7 @@ import { hex } from "../support";
 
 // Pins the exact bytes of shapes whose encoding is final, so a change to the
 // wire format fails here and must be made on purpose. Each expected string is
-// worked out from Type Coverage in transformer.md, not copied from the output.
+// worked out from docs/specs/wire-format.md, not copied from the output.
 // All integers and floats are little-endian. Not pinned, because an open
 // future-work item changes their bytes: a union with an enum member.
 

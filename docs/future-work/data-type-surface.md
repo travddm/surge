@@ -131,8 +131,8 @@ would say so.
   fallback.** `Length<Packed<T>, u16>` flattens to one intersection carrying
   both brand properties, so a property check made one brand at a time answers
   "Packed" and drops the length with no error. `getSurgeBrand` tries alias
-  identity for every brand before any property, and `Length<T, L>` in
-  [transformer.md](../transformer.md) describes how it then resolves a
+  identity for every brand before any property, and Transformer 4.3 in
+  [specs/transformer.md](../specs/transformer.md) describes how it then resolves a
   re-aliased composition. A brand added later inherits this by joining
   `PARAMETERIZED_BRANDS`; `walk.test.ts` pins both orders.
 - The IR (`field.ts`): `str`, `array`, `dict`, `buffer`, and `tuple`'s `rest`

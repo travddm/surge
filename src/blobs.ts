@@ -3,8 +3,8 @@
 // Native code generation, and an optimization level pinned rather than inherited; neither is
 // worth anything here on its own. See the package pragma entry in
 // docs/future-work/generated-code-performance.md.
-// The blob/passthrough side-channel (Type Coverage -> Blob / passthrough
-// channel in transformer.md). Values pushed here are never written into the
+// The blob/passthrough side-channel (section 9 of
+// docs/specs/wire-format.md). Values pushed here are never written into the
 // buffer; both sides must agree on push/read order, which is the generated
 // code's responsibility (encounter order), not this module's.
 let writeBlobs: Array<defined> = [];

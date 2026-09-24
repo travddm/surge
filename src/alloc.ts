@@ -10,8 +10,8 @@
 // This module owns no cursor and no buffer. A generated serializer declares
 // its own scratch buffer, capacity and write cursor in the closure it is
 // emitted into, so that reserving bytes is a compare and two moves inline
-// rather than a call into this module (Transformer Design §4 in
-// transformer.md). Measured, each such call removed saved about 22 to 27 ns
+// rather than a call into this module (Transformer 5.3 and 5.4 in
+// docs/specs/transformer.md). Measured, each such call removed saved about 22 to 27 ns
 // (docs/research/generated-code-against-hand-written.md).
 
 /**

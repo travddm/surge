@@ -19,7 +19,7 @@ interface WithBlobs {
 const blobsSerializer = createBinarySerializer<WithBlobs>();
 
 // An `unknown` that is `undefined` used to push no blob, so every later blob
-// was read one position early (Blob / passthrough channel in transformer.md).
+// was read one position early (Wire format 9.3 in docs/specs/wire-format.md).
 interface WithAbsentUnknowns {
 	first?: unknown;
 	second: unknown;

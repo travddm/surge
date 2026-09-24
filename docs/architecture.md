@@ -18,10 +18,13 @@ This document is the entry point: repository shape, cross-cutting
 decisions, and the overall build order. Each package/workstream has its
 own doc for the detail that belongs to it:
 
-- [transformer.md](transformer.md) — `rbxts-transformer-surge`: why the
-  schema-time-specialization approach works (including the fbs/Zap source
-  reading and the spike that proved it compiles), the transformer's
-  detection/type-walk/codegen design, and the full type coverage table.
+- [specs/transformer.md](specs/transformer.md) and
+  [specs/wire-format.md](specs/wire-format.md) — `rbxts-transformer-surge`:
+  what it transforms, how each type is classified, what it emits and
+  reports, and the bytes the emitted code writes.
+  [research/compile-time-specialization.md](research/compile-time-specialization.md)
+  records why the approach works: the fbs and Zap source reading, and the
+  spike that showed a roblox-ts transformer can emit flat code.
 - [serde.md](serde.md) — how a consumer installs `@rbxts/surge` and the
   transformer. What the runtime package guarantees is in
   [specs/runtime-api.md](specs/runtime-api.md).
@@ -114,7 +117,7 @@ Node/CommonJS package — no roblox-ts, no `tests/`. See
   round-trip/benchmark suite that exercises both packages together. See
   [specs/runtime-api.md](specs/runtime-api.md) and [testing.md](testing.md).
 - **`rbxts-transformer-surge`** (sibling repo) — the TS transformer. No
-  runtime code. See [transformer.md](transformer.md) for its design.
+  runtime code. See [specs/transformer.md](specs/transformer.md) for what it guarantees.
 - **`surge-net`** (future-work, not started) — the deferred networking
   layer. See [future-work/networking.md](future-work/networking.md).
   (Renamed from an earlier draft's `@rbxts/surge`, once `@rbxts/surge`
@@ -272,13 +275,14 @@ distribution model itself was verified the same way, not just documented:
 a local `git init`-and-install repro
 against both restructured repos (see serde.md) confirmed a
 `github:`-style whole-repo install actually produces a working
-`out/init.luau`/`lib/index.js`. Two narrower gaps are carried inside step
-6 and step 8 rather than blocking them (see Risks in
-[transformer.md](transformer.md)): `Packed<T>` bit-packs `boolean` fields
-only, not `optional`/`cframe`; and the structurally-ambiguous guarded-union
-case is a compile-time error, not guard codegen, exactly as step 8 always
-scoped it to be. Step 9 (the benchmark run) is done, and both tiers now write their own
-results. The size tier runs under Lune and
+`out/init.luau`/`lib/index.js`. One narrower gap was carried inside step 8
+rather than blocking it: the structurally-ambiguous guarded union is a
+compile-time error, not guard codegen, exactly as step 8 always scoped it to
+be (Transformer 4.4 and 7.2 in [specs/transformer.md](specs/transformer.md)).
+`Packed<T>` has since grown from booleans alone to optional presence,
+two-variant tags and a packed `CFrame` form (section 8 of
+[specs/wire-format.md](specs/wire-format.md)). Step 9 (the benchmark run) is
+done, and both tiers now write their own results. The size tier runs under Lune and
 [benchmarks/size.md](benchmarks/size.md) carries six columns — surge, fbs,
 serio, Blink, Zap, and a hand-written baseline. The speed tier runs in a real
 Roblox process through `run-in-roblox`, and
@@ -309,15 +313,16 @@ with the fixtures and the baseline both marked `--!native`.
    by package name — actually works, and confirms `tests/`'s roblox-ts
    install actually resolves `@rbxts/surge` (see the confirmed finding
    under Repository Layout) before any later step depends on it.
-   (Signature-based detection itself — Transformer Design §1 in
-   [transformer.md](transformer.md) — was already de-risked via the same
-   spike, before it was removed, so step 0 doesn't need to redo that
-   part.)
+   (Signature-based detection itself — Transformer 3.1 in
+   [specs/transformer.md](specs/transformer.md) — was already de-risked via
+   the same spike, recorded in
+   [research/compile-time-specialization.md](research/compile-time-specialization.md),
+   before it was removed, so step 0 doesn't need to redo that part.)
 1. This package: growable scratch buffer + `alloc()` cursor helper, blob
    side-channel, `Serializer<T>` bundled API. The buffer and the cursor have
    since moved out of the package and into the code the transformer
    generates, which is what step 9's measurements led to; see Transformer
-   Design §4 in [transformer.md](transformer.md).
+   5.3 and 5.4 in [specs/transformer.md](specs/transformer.md).
 2. Transformer: primitives + plain objects + optional fields (serialize and
    deserialize), matching the spike's proof but through the real IR
    builder, with signature-based detection and name-sorted field order.
@@ -336,11 +341,11 @@ with the fixtures and the baseline both marked `--!native`.
 7. Recursive type support (named helper functions + cycle detection). Adds
    the large-shape (hundreds of fields) benchmark row and the
    corresponding golden-Luau check that scope-splitting only kicks in
-   where actually needed (see Risks in [transformer.md](transformer.md)).
+   where actually needed (see Transformer 5.8 in [specs/transformer.md](specs/transformer.md)).
 8. Guarded unions: primitive/at-most-one-object-variant case first (no
    guard codegen needed); structurally-ambiguous multi-object-variant case
-   as a separate, explicitly scoped follow-up (see Risks in
-   [transformer.md](transformer.md)).
+   as a separate, explicitly scoped follow-up (see Transformer 4.4 and 7.2
+   in [specs/transformer.md](specs/transformer.md)).
 9. Full benchmark suite run, inside Roblox Studio via the `tests` place or
    `run-in-roblox`, against every comparison library and the hand-written
    flat serializer (see [testing.md](testing.md)), with results recorded

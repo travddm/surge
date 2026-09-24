@@ -39,8 +39,8 @@ test("a genuinely self-referential shape (TreeNode) does call its generated recu
 	assert.match(luau, /surge_TreeNode_\d+_(?:write|read)/);
 });
 
-// Regression checks for docs/future-work/recursive-union-types.md,
-// enum-encoding.md, and wire-format-determinism.md, against the real
+// Regression checks for the recursive-union-types, enum-encoding and wire-format-determinism
+// findings of docs/research/september-2026-review.md, against the real
 // compiled output (not a unit-level reconstruction of the emitter's input).
 test("a recursive discriminated union (Expr) compiles to its own recursion helper", () => {
 	const luau = readCompiledLuau("tests/coverage.spec.luau");

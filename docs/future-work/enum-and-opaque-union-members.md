@@ -84,5 +84,5 @@ these stages move no pinned buffer; pin the new shapes when they land.
 - **Cascading diagnostic.** In `classifyUnion`, record
   `this.diagnostics.length` before walking the constituents and return
   `{ kind: "blob" }` without further checks when it grew.
-- Update the `guardedUnion` row of Type Coverage and Transformer Design §8
-  in [transformer.md](../transformer.md) with each stage that lands.
+- Update Transformer 4.4 and 7.2 in
+  [specs/transformer.md](../specs/transformer.md) with each stage that lands.

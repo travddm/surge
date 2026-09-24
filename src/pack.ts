@@ -4,8 +4,8 @@
 // worth anything here on its own. See the package pragma entry in
 // docs/future-work/generated-code-performance.md.
 // Bit-packing for `boolean` values, `optional` presence, and two-variant
-// tagged-union tags inside a `DataType.Packed<T>` subtree (Type Coverage ->
-// Packed<T> in transformer.md). The transformer
+// tagged-union tags inside a `DataType.Packed<T>` subtree (section 8 of
+// docs/specs/wire-format.md). The transformer
 // knows at compile time exactly how many packed bits a subtree needs, so it
 // `alloc()`s that many bytes once (like any other fixed-size field) and
 // passes the resulting buffer/byte-offset here with a compile-time-known bit
