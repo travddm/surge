@@ -18,7 +18,7 @@
 			// runs jecs before flamework: flamework rewrites macros (e.g.
 			// runit's `Assert`) into synthetic AST nodes this transformer never
 			// needs to read, so there's no reason to risk running after it (see
-			// testing.md).
+			// Register the transformer in docs/getting-started.md).
 			{ "transform": "rbxts-transformer-surge" },
 			{ "transform": "rbxts-transformer-flamework" }
 		],

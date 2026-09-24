@@ -19,7 +19,8 @@ same tag or commit:
 ```
 
 `@rbxts/surge` is the runtime package the generated code calls.
-`rbxts-transformer-surge` runs only at compile time. Update the two `<ref>`s
+`rbxts-transformer-surge` runs only at compile time, so it is a
+devDependency. Update the two `<ref>`s
 together: the generated code calls the runtime package with no version
 check, and nothing detects a mismatch
 ([specs/runtime-api.md](specs/runtime-api.md) 6.1 and 6.2).
@@ -41,8 +42,7 @@ In `tsconfig.json`:
 ```
 
 If the project uses Flamework, list surge's entry before
-`rbxts-transformer-flamework`, so that surge reads each call site as it was
-written.
+`rbxts-transformer-flamework`, as surge's own test project does.
 
 ## Declare a serializer
 

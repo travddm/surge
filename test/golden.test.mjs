@@ -1,5 +1,5 @@
-// Golden/invariant tests on the actual compiled `.luau` output (see
-// "Golden/invariant tests" in docs/testing.md): they read text the real
+// Golden/invariant tests on the actual compiled `.luau` output (see Golden
+// checks in docs/testing.md): they read text the real
 // pipeline already produced, they don't execute anything. This is the
 // falsifiable claim the whole design rests on -- specialized code per shape
 // at compile time, not a runtime interpreter reading a schema -- so these

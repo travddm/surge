@@ -41,7 +41,7 @@ in the order the transformer applies it, is
 | a type that refers to itself, such as a tree node                                | the same bytes as the structure, through a helper function                                   |
 | `Vector2`, `Vector3`                                                             | 2 or 3 floats of 4 bytes; `DataType.Vector` chooses other widths                             |
 | `CFrame`                                                                         | 24 bytes: position and rotation. 1, 13 or 25 bytes inside `Packed<T>`                        |
-| `Color3`                                                                         | 3 bytes, one per channel from 0 to 1                                                         |
+| `Color3`                                                                         | 3 bytes, one per channel from 0 to 1; a channel outside that range is not representable      |
 | `ColorSequence`, `NumberSequence`                                                | a 1-byte keypoint count, then each keypoint                                                  |
 | `Vector3int16`, `UDim`, `UDim2`, `BrickColor`, `NumberRange`, `Rect`, `DateTime` | a fixed number of bytes each ([specs/wire-format.md](specs/wire-format.md) 4.10)             |
 

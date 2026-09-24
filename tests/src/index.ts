@@ -71,7 +71,7 @@ export function main(): void {
  * inside a running Script/ModuleScript, not from Studio's command bar (where
  * `script` is nil) -- invoke it via `mise run bench:speed`, or through the
  * disabled `MainBenchmarks` Script in default.project.json: enable it and
- * Play when doing a deliberate benchmarking pass (see testing.md).
+ * Play when doing a deliberate benchmarking pass.
  *
  * The engine version goes out first because the recorder records the whole
  * environment a timing was taken in, and this is the part of it that only

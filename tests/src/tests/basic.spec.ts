@@ -12,8 +12,8 @@ interface Basic {
 const basicSerializer = createBinarySerializer<Basic>();
 
 /**
- * Covers the step-2 scope in architecture.md: primitives, a plain object,
- * and an optional field, serialized and deserialized through the actual
+ * Covers primitives, a plain object, and an optional field, serialized and
+ * deserialized through the actual
  * `rbxts-transformer-surge` + `@rbxts/surge` pipeline.
  */
 class BasicRoundTripTest {
