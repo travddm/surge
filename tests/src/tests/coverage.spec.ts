@@ -116,8 +116,8 @@ const wideSerializer = createBinarySerializer<Wide>();
 
 // walker-emitter-robustness: a user declaration named after an injected
 // `@rbxts/surge` import used to collide with it.
-function alloc(): string {
-	return "the user's own alloc";
+function grow(): string {
+	return "the user's own grow";
 }
 
 // The enum-encoding finding's `Enum.KeyCode` width/O(1)-table fixture intentionally
@@ -334,7 +334,7 @@ class CoverageTest {
 
 	@Fact
 	public leavesAUserDeclarationNamedAfterAnInjectedImportAlone(): void {
-		Assert.equal("the user's own alloc", alloc());
+		Assert.equal("the user's own grow", grow());
 	}
 }
 
