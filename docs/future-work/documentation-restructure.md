@@ -237,8 +237,8 @@ In order; each step is one change that leaves the tree consistent:
    trigger table into `AGENTS.md`; rewrite both READMEs and
    architecture.md; delete documentation-gaps.md.
 2. Final sweep: remove the landed work the five documents under Future
-   work above still hold, link check across both repositories, `mise run
-ci`, and a read of every page under `docs/*.md` against
+   work above still hold, link check across both repositories,
+   `mise run ci`, and a read of every page under `docs/*.md` against
    [contributing-docs.md](../contributing-docs.md).
 
 **Done when:** a consumer can install and use surge from `README.md` and

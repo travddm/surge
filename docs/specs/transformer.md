@@ -1,8 +1,8 @@
 # Transformer specification
 
 Status: current
-Applies to: `@rbxts/surge` at commit `8c4d5f5`, `rbxts-transformer-surge` at
-commit `87813e5` (no tagged release yet)
+Applies to: `@rbxts/surge` at commit `38b634f`, `rbxts-transformer-surge` at
+commit `6967359` (no tagged release yet)
 
 ## 1. Scope
 
@@ -127,33 +127,39 @@ of one literal value or a literal union. It is tracked in
 unconstrained type parameter walk to `blob` by the last row of 4.1, with no
 diagnostic. A call site inside a generic function whose type argument is the
 function's own type parameter therefore generates a blob serializer. A plain
-`blob` has no presence byte ([wire-format.md](wire-format.md) 9.3), so one
-that holds `undefined` appends nothing to `blobs`, as a missing element does in
+`blob` has no presence byte ([wire-format.md](wire-format.md) 9.3), so one that
+holds `undefined` appends nothing to `blobs`, as a missing element does in
 [wire-format.md](wire-format.md) 6.7. `deserialize` then reads each later blob
 one position early and raises past the end of `inputBlobs`
-([runtime-api.md](runtime-api.md) 4.5).
+([runtime-api.md](runtime-api.md) 4.5). It is tracked in
+[../future-work/types-the-walk-mishandles.md](../future-work/types-the-walk-mishandles.md).
 
 **4.9** Known defect, not a guarantee: a type parameter constrained to an
 object type walks as an `object` of the constraint's properties, with no
-diagnostic. The generated code writes and reads those properties and no
-others, whatever type the function is called with.
+diagnostic. The generated code writes and reads those properties and no others,
+whatever type the function is called with. It is tracked in
+[../future-work/types-the-walk-mishandles.md](../future-work/types-the-walk-mishandles.md).
 
 **4.10** Known defect, not a guarantee: the `Map` and `Set` rows of 4.1 match
 any type named `Map`, `ReadonlyMap`, `Set` or `ReadonlySet`, whatever declares
 it. A user type with one of those names and no type parameters makes the
-transformer throw a `TypeError` instead of reporting a diagnostic.
+transformer throw a `TypeError` instead of reporting a diagnostic. It is
+tracked in
+[../future-work/types-the-walk-mishandles.md](../future-work/types-the-walk-mishandles.md).
 
 **4.11** Known defect, not a guarantee: a type that reappears on its own walk
 path with no object type and no union on the cycle, such as
 `type Nest = Nest[]` or `type Tree = [number, Tree[]]`, is not a
 `recursiveRef`. The walk recurses until the stack overflows, and the
-transformer throws.
+transformer throws. It is tracked in
+[../future-work/types-the-walk-mishandles.md](../future-work/types-the-walk-mishandles.md).
 
-**4.12** Known defect, not a guarantee: a union of tuples of different
-lengths matches the `taggedUnion` row of 4.1, with `length` as the tag
-property. The walk then walks each tuple's other members, including those it
-inherits from `Array`, and reports a diagnostic for each one it cannot encode
-(7.2), not the diagnostic for two table-shaped constituents.
+**4.12** Known defect, not a guarantee: a union of tuples of different lengths
+matches the `taggedUnion` row of 4.1, with `length` as the tag property. The
+walk then walks each tuple's other members, including those it inherits from
+`Array`, and reports a diagnostic for each one it cannot encode (7.2), not the
+diagnostic for two table-shaped constituents. It is tracked in
+[../future-work/types-the-walk-mishandles.md](../future-work/types-the-walk-mishandles.md).
 
 ## 5. Emission
 
@@ -223,13 +229,15 @@ inside that branch, so encounter order is the same on both sides.
 **5.12** Known defect, not a guarantee: a `cframe` in a packed subtree is read
 by `readPackedCFrame` rather than by a reservation, and gets no bound under
 `checks: true`. A truncated one raises a Luau `buffer` error that does not
-begin with `@rbxts/surge:`.
+begin with `@rbxts/surge:`. It is tracked in
+[../future-work/data-type-surface.md](../future-work/data-type-surface.md).
 
 **5.13** Known defect, not a guarantee: a `createSerializer` or
 `createDeserializer` call site whose type is recursive emits the helper
 functions of both sides but declares only its own side's state (5.3). The
-generated TypeScript does not type-check, so the build fails on a type error
-in generated code, with no diagnostic.
+generated TypeScript does not type-check, so the build fails on a type error in
+generated code, with no diagnostic. It is tracked in
+[../future-work/single-sided-recursive-factories.md](../future-work/single-sided-recursive-factories.md).
 
 ## 6. Injected imports
 
@@ -343,6 +351,8 @@ of `rbxts-transformer-surge`, cited by `describe` block. Source paths are in
 
 ## Changes
 
+- `38b634f` / `6967359`: 4.8–4.12, 5.12 and 5.13 name the future-work documents that track
+  them.
 - `8c4d5f5` / `87813e5`: corrected against the code: 2 (Opaque, Reservation),
   3.3, 4.1 (row order and rows), 4.2, 4.3, 4.4, 4.7 (keys), 5.2 (helper scope),
   5.3–5.6, 5.8, 5.10, 6.1, 7.1, 7.2, 7.4, 7.5 and the Conformance table; adds

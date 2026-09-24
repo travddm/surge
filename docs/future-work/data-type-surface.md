@@ -36,6 +36,13 @@ Three Tier B items need no brand:
 - Opt-in validation is the factory's `checks` option, not a type. Its read
   half has landed; see section 4 of
   [specs/runtime-api.md](../specs/runtime-api.md). `Range<Min, Max>` adds the write half.
+  The read half has two gaps, Runtime API 4.9 and 4.10. A packed `CFrame` is
+  read by a runtime function with no bound, so a truncated one raises an
+  unprefixed Luau error; with checks on, bound its header byte, then the 1,
+  13 or 25 bytes the header implies, before the call. And an `enum` index past
+  its items, or a packed rotation code from 24 to 30, is read with no range
+  check. Closing that one makes `checks` examine two values, which 4.7 says it
+  never does, so 4.7 changes with it.
 - **`AlignedCFrame` is dropped.** `Packed<T>` already gives a `CFrame` the
   1-, 13-, or 25-byte form, which is Zap's 13-byte form plus a smaller case
   and a fallback. Zap asserts on a rotation its table misses, which is the
@@ -142,11 +149,14 @@ would say so.
   `s.size()` is bytes. Measured under Lune 0.10.5: a value longer than N is
   truncated silently, a shorter string raises `string length overflow`, and
   a `buffer.copy` past the source's end raises `buffer access out of
-bounds`. An array or tuple rest of an **optional** element is the one
-  place nothing raises: `arr[i]` past the end is `nil`, which is what an
-  absent optional writes, so a short value pads with absent markers and
-  comes back at its own length. Until write validation lands, that is the
-  contract.
+bounds`. A short array or tuple rest writes each missing element as `nil`,
+  and Wire format 6.6 and 6.7 state what each element kind does with it: an
+  `optional` pads as absent and reads back at its own length, which is the
+  contract; a `bool`, a `literal`, a `literalConst` and some `guardedUnion`s
+  pad silently and read back changed; a `blob` appends nothing, so the blob
+  channel falls out of step; every other kind raises. Write validation is what
+  closes the silent cases: with it on, a short value in the exact form should
+  raise before anything is written.
 - What an integer component width does to a value outside it, which
   `Vector<X, Y, Z>` and `Transform<X, Y, Z>` leave to the `buffer` call.
   Measured under Lune 0.10.5: `buffer.writeu8` of `3.7` reads back 3, of

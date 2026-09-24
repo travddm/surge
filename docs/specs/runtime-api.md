@@ -1,8 +1,8 @@
 # Runtime API specification
 
 Status: current
-Applies to: `@rbxts/surge` at commit `8c4d5f5`, `rbxts-transformer-surge` at
-commit `87813e5` (no tagged release yet)
+Applies to: `@rbxts/surge` at commit `38b634f`, `rbxts-transformer-surge` at
+commit `6967359` (no tagged release yet)
 
 ## 1. Scope
 
@@ -113,13 +113,16 @@ can read one. A call that raised leaves no state that a later call reads, so a
 **4.9** Known defect, not a guarantee: with checks, the read of a `CFrame`
 inside `Packed<T>` is not bounded against the length of `input`. An input that
 ends inside one raises a Luau `buffer` error, which does not begin
-`@rbxts/surge:`.
+`@rbxts/surge:`. It is tracked in
+[../future-work/data-type-surface.md](../future-work/data-type-surface.md).
 
 **4.10** Known defect, not a guarantee: two indexes are read with no range
 check, with or without checks. An `enum` index past the items its type admits
 reads back as `undefined`, which raises a Luau error where the `enum` is a
 `Set` element or a `Map` key. A packed `CFrame` header whose rotation is `24`
-to `30` raises a Luau error. Neither error begins `@rbxts/surge:`.
+to `30` raises a Luau error. Neither error begins `@rbxts/surge:`. It is
+tracked in
+[../future-work/data-type-surface.md](../future-work/data-type-surface.md).
 
 ## 5. The helper ABI
 
@@ -204,6 +207,7 @@ A test file named `*.spec.ts` is under `tests/src/tests/`. A path starting
 
 ## Changes
 
+- `38b634f` / `6967359`: 4.9 and 4.10 name the future-work document that tracks them.
 - `8c4d5f5` / `87813e5`: corrected against the code: 4.2 (a packed `CFrame`
   read is not bounded), 4.3 (which counts are bounded, and how), 4.7 (unchecked
   indexes), 4.8 (a `T` that reads bytes), 5.1 (`finishWrite` for a `T` that

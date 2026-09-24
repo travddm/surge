@@ -1,8 +1,8 @@
 # Wire format specification
 
 Status: current
-Applies to: `@rbxts/surge` at commit `8c4d5f5`, `rbxts-transformer-surge` at
-commit `87813e5` (no tagged release yet)
+Applies to: `@rbxts/surge` at commit `38b634f`, `rbxts-transformer-surge` at
+commit `6967359` (no tagged release yet)
 
 ## 1. Scope
 
@@ -188,7 +188,9 @@ element that 6.6 does not cover raises or changes the value without raising:
   `literalConst`, reads back as a present value.
 
 Each element that does not raise and is not a `blob` reads back present, so
-the value reads back at length `L`.
+the value reads back at length `L`. Write validation, tracked in
+[../future-work/data-type-surface.md](../future-work/data-type-surface.md),
+is what would close this.
 
 ## 7. Per-component widths
 
@@ -326,6 +328,7 @@ in `@rbxts/surge`.
 
 ## Changes
 
+- `38b634f` / `6967359`: 6.7 names the future-work document that tracks it.
 - `8c4d5f5` / `87813e5`: corrected against the code: 4.8 (24 bytes only without
   `Transform`), 4.12 (a union of some items indexes those items), 5.7 (index
   width; `datatype` order), 6.3 (a shorter `array` or tuple rest moves to the
