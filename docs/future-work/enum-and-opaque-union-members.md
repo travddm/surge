@@ -6,7 +6,7 @@ Part of the [surge](../architecture.md) design.
 
 Three union shapes are diagnostics (Transformer 4.4 and 7.2 in
 [specs/transformer.md](../specs/transformer.md)) that the write side could
-support, and one rejection reports twice:
+support:
 
 - **A whole enum next to another type.** `Enum.SortOrder | string` reaches
   `classifyUnion` as the constituents `Custom`, `LayoutOrder`, `Name`, and
@@ -24,10 +24,6 @@ support, and one rejection reports twice:
   user must type the whole field as `unknown`, which also moves the `string`
   to the blob channel. `unknown | string` is not affected: TypeScript reduces
   it to `unknown`.
-- **One rejected constituent reports two diagnostics.** `EnumItem | string`
-  reports the bare-`EnumItem` diagnostic, then the constituent's `blob`
-  fallback triggers the "opaque variant" diagnostic for the same union. The
-  second message is noise.
 
 ## Why deferred
 
@@ -71,8 +67,5 @@ enum stages group constituents by it.
   with the string in the buffer and the `Instance` in the blob channel.
   Round-trip fixtures: `Vector2int16 | string`, and `Instance | string` with
   a Lune data-model `Part` (as `roblox.spec.ts` builds one).
-- **Cascading diagnostic.** In `classifyUnion`, record
-  `this.diagnostics.length` before walking the constituents and return
-  `{ kind: "blob" }` without further checks when it grew.
 - Update Transformer 4.4 and 7.2, and Wire format 5.7, with each stage that
   lands.

@@ -30,9 +30,9 @@ time:
   should ever add the file directives itself.
 - [enum-and-opaque-union-members.md](enum-and-opaque-union-members.md):
   support for `Enum.X | string`, a union of items from two enums, and
-  `Instance | string`, each a diagnostic, and one rejection that reports
-  twice. Support changes `guardedUnion` variant order, but `bytes.spec.ts`
-  pins no union with an enum or opaque member, so it moves no pinned buffer.
+  `Instance | string`, each a diagnostic. Support changes `guardedUnion`
+  variant order, but `bytes.spec.ts` pins no union with an enum or opaque
+  member, so it moves no pinned buffer.
 - [blob-classification.md](blob-classification.md): whether an empty object
   type should encode as zero bytes, which waits on the design decision that
   document records.
@@ -46,8 +46,8 @@ time:
   workflow running the integration suite, the pinned sibling ref, `npm ci`,
   and the Windows job. The transformer's CI cannot see a broken
   serializer today.
-- [transformer-unit-test-coverage.md](transformer-unit-test-coverage.md):
-  each remaining case lands with the fix or fixture it pins.
+- [transformer-unit-test-coverage.md](transformer-unit-test-coverage.md): a
+  test of the package-name cache in `detect.ts`, which needs `fs` mocking.
 - [enum-encoding.md](enum-encoding.md): a one-byte saving that needs an IR
   change. Do it with a broader `literalConst` cleanup, not alone.
 

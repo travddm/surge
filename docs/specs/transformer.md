@@ -1,8 +1,8 @@
 # Transformer specification
 
 Status: current
-Applies to: `@rbxts/surge` at commit `86f729b`, `rbxts-transformer-surge` at
-commit `c8481d3` (no tagged release yet)
+Applies to: `@rbxts/surge` at commit `45454d2`, `rbxts-transformer-surge` at
+commit `0710f5d` (no tagged release yet)
 
 ## 1. Scope
 
@@ -156,8 +156,8 @@ more table-shaped constituents and is a diagnostic (4.4, 7.2).
 **4.14** `DataType.Range<T, Min, Max>` walks to a `num` at the width of Wire
 format 4.16, carrying `Min` and `Max` for 5.14. `T` must be `number` or a
 width brand, and `Min` and `Max` number literals, with `Min` not greater than
-`Max`. Unless `T` is `DataType.f32` or `DataType.f64`, both must be whole
-numbers, and a width brand `T` must hold both.
+`Max`. A width brand `T` must hold both. Unless `T` is `DataType.f32` or
+`DataType.f64`, both must be whole numbers.
 
 **4.15** `DataType.Quantized<T>` walks `T`, which must walk to a `cframe`
 outside a packed subtree, and quantizes that `cframe`'s rotation (Wire format
@@ -314,6 +314,9 @@ is the string `" surge"`, with a leading space, so roblox-ts prints it as
 - a `Quantized<T>` whose `T` is not a `CFrame`, or that is inside a packed
   subtree.
 
+A union with a constituent that reports one of these reports that diagnostic
+alone, and none of its own for the union.
+
 **7.3** The entry point reports a diagnostic for a call site that breaks 3.2
 or 3.3.
 
@@ -380,6 +383,9 @@ of `rbxts-transformer-surge`, cited by `describe` block. Source paths are in
 
 ## Changes
 
+- `45454d2` / `0710f5d`: 7.2 states that a union reports a rejected
+  constituent's diagnostic alone; 4.14 states the width rule apart from the
+  whole-number rule.
 - `86f729b` / `c8481d3`: adds 4.14 (`DataType.Range<T, Min, Max>`), 4.15
   (`DataType.Quantized<T>`) and 4.16 (a `bitSet`); 4.1, 4.3 (a width brand's
   property is tried last), 5.5, 5.14 and 7.2 follow them.
