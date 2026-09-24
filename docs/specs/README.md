@@ -33,8 +33,8 @@ Changes           one line per change, newest first
   marked `draft` where it stands, and the rest of the document stays
   `current`.
 - `Applies to` names a version of each package, because the two only work
-  together at the version each was built against (see Package name and
-  distribution in [../serde.md](../serde.md)). Until the first tagged
+  together at the version each was built against (see Install in
+  [../getting-started.md](../getting-started.md)). Until the first tagged
   release, it names a commit in each repository instead: the code the
   statements were checked against. A commit cannot name its own hash, so this
   is the commit before the one that adds or changes the specification, and

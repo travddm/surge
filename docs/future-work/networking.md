@@ -26,7 +26,7 @@ the serializer redesigned when this is picked up.
   reserved the bare `@rbxts/surge` name for this networking layer instead;
   that reservation was dropped once the serializer runtime needed the
   `@rbxts` scope for its own real distribution (see
-  [serde.md](../serde.md)) and "surge-net" turned out to name this layer
+  [getting-started.md](../getting-started.md)) and "surge-net" turned out to name this layer
   just as well.
 - Builds on `@rbxts/surge`'s `Serializer<T>` (Runtime API 3.1 in
   [specs/runtime-api.md](../specs/runtime-api.md)) rather than re-deriving its own wire format.

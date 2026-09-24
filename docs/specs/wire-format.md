@@ -1,8 +1,8 @@
 # Wire format specification
 
 Status: current
-Applies to: `@rbxts/surge` at commit `ca7bb09`, `rbxts-transformer-surge` at
-commit `8792c27` (no tagged release yet)
+Applies to: `@rbxts/surge` at commit `93814bf`, `rbxts-transformer-surge` at
+commit `3278123` (no tagged release yet)
 
 ## 1. Scope
 
@@ -116,6 +116,10 @@ canonical literal order.
 
 **4.14** `literalConst` is zero bytes. The value is a constant of the type on
 both sides.
+
+**4.15** An integer width truncates a number toward zero and wraps it modulo
+its range, as 7.3 states for a component. Nothing raises, with or without
+`writeChecks` ([runtime-api.md](runtime-api.md) 3.11).
 
 ## 5. Composites
 
@@ -310,6 +314,7 @@ in `@rbxts/surge`.
 | 4.12               | A whole enum: `bytes.spec.ts`: `pinsLiteralAndEnumIndexes`; `walk.test.ts`, `TypeWalker classification with fixture packages`. A union of some items: source only, `walkEnum` in `walk.ts` takes the members from the union's items                                                                                                                |
 | 4.13               | `bytes.spec.ts`: `pinsLiteralAndEnumIndexes`; `walk.test.ts`, `TypeWalker wire-format determinism`                                                                                                                                                                                                                                                 |
 | 4.14               | `bytes.spec.ts`: `pinsLiteralAndEnumIndexes`; `literals.spec.ts`: `writesNoBytesForASingleLiteral`                                                                                                                                                                                                                                                 |
+| 4.15               | Source only: `writeNumberAt` in `emit/context.ts` passes the number unconverted to Luau's `buffer` writes and `bit32`                                                                                                                                                                                                                              |
 | 5.4                | A `Record`: `bytes.spec.ts`: `pinsContainers`. A `Set`: source only, `writeDict` in `emit/write.ts` writes the key alone, and `readDict` in `emit/read.ts` sets it to `true`; `collections.spec.ts`: `roundTripsDictionaries` round-trips one                                                                                                      |
 | 5.6                | `bytes.spec.ts`: `pinsATaggedUnion`; the choice of tag: `walk.test.ts`, `TypeWalker wire-format determinism`                                                                                                                                                                                                                                       |
 | 5.7                | `bytes.spec.ts`: `pinsAGuardedUnion`; the `literalConst` and `datatype` order: `walk.test.ts`, `TypeWalker wire-format determinism` and `TypeWalker classification with fixture packages`. The `u16` index: source only, `writeGuardedUnion` in `emit/write.ts`                                                                                    |
@@ -335,6 +340,8 @@ in `@rbxts/surge`.
 
 ## Changes
 
+- `93814bf` / `3278123`: adds 4.15 (an integer width truncates and wraps a
+  number, as 7.3 states for a component).
 - `ca7bb09` / `8792c27`: 6.3 and 6.7 state what `writeChecks`
   changes, and 6.7 is no longer a known defect but the unchecked behavior;
   adds 6.8 (a count too large for its width wraps).

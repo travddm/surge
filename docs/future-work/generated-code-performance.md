@@ -14,8 +14,7 @@ code the transformer generates runs. What has been measured is under
   far apart two runs of unchanged code land, which is the band every
   measurement here is read against.
 
-This document holds what is still open, and one recommendation that has no
-other home until the user pages are written.
+This document holds what is still open.
 
 ## What
 
@@ -129,45 +128,19 @@ rewrites the emitted text — hoisting a `--!` line, annotating
   without, and Lune 0.10.5 cannot parse it, so emitting it would break the
   round-trip suite. Nothing is lost by its absence.
 
-## The file-directive recommendation
-
-Nothing outside this directory tells a consumer how to mark a module that
-holds generated serializers, and a research paper never advises, so the
-recommendation lives here until `performance.md` is written
-([documentation-restructure.md](documentation-restructure.md)).
-
-Recommend both directives as defaults, and recommend the file shape that makes
-them safe: a module holding the serializers and the types they are built
-from, and nothing else. A TypeScript type emits no Luau, and roblox-ts elides
-an import used only as a type, so such a module compiles to the injected
-`@rbxts/surge` import, one closure per serializer, and the export table —
-every line of it the code the directives are meant for. Checked against
-`tests/src/bench/fixtures/cframes.ts`, whose `import type * as Serio`,
-`import type { Fixture }` and `DataType` produce nothing at all in the
-compiled `cframes.luau`. The objection to `//!native` — a whole file compiled
-natively whether the rest of it should be or not — is an objection about file
-layout, and the layout is the recommendation. `//!optimize 2` needs no such
-care and goes on every module a consumer writes. Roblox documents level 1 as
-the default in Studio testing and level 2 as the default in live games
-([Luau comments](https://create.roblox.com/docs/luau/comments)), so pinning 2
-makes a profile taken in Studio a profile of what a published place runs.
-
-What the directives are worth on the generated code, which is the number to
-quote with the recommendation, is in
-[file-directives-on-generated-code.md](../research/file-directives-on-generated-code.md).
-
-surge does not put either directive in the consumer's file. The generated code
-is inlined into the call site's own file (Transformer 5.1 in
-[specs/transformer.md](../specs/transformer.md)), so a file-level `--!native` would also compile
-whatever unrelated code that file holds — a blast radius surge cannot reason
-about. If surge is ever to inject it, the check is not "one serializer call
+**Injecting the directives.** [performance.md](../performance.md) recommends
+both file directives on a module that holds only serializers, and surge does
+not add them itself: the generated code is inlined into the call site's own
+file (Transformer 5.1 in [specs/transformer.md](../specs/transformer.md)), so
+a file-level `--!native` would also compile whatever unrelated code that file
+holds. If surge is ever to inject it, the check is not "one serializer call
 and its export": a module may declare several serializers, three of the
 benchmark fixtures do, and may import types from anywhere, since none of that
 reaches the Luau. What a check would have to establish is that the module
 emits no other runtime code, which is a statement about what its statements
 compile to and not about how many serializers it declares. `--!optimize 2` is
-the weaker case — it changes how well a file is compiled and not what it
-means — but it is still not surge's to decide for a file surge does not own.
+the weaker case, since it changes how well a file is compiled and not what it
+means, but it is still not surge's to decide for a file surge does not own.
 
 ## Why deferred
 

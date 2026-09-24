@@ -64,10 +64,7 @@ Every paper this plan named is published, and
 [research/README.md](../research/README.md) indexes them.
 
 **Future work** (`docs/future-work/`) holds open work only, per the rule in
-[contributing-docs.md](../contributing-docs.md). Six documents still hold
-more than that.
-[generated-code-performance.md](generated-code-performance.md) keeps the
-file-directive recommendation until `performance.md` exists. Five still
+[contributing-docs.md](../contributing-docs.md). Five documents still
 describe work that has landed, beyond a sentence of context for what is
 left: [blob-classification.md](blob-classification.md),
 [enum-and-opaque-union-members.md](enum-and-opaque-union-members.md),

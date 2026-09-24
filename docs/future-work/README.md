@@ -28,8 +28,8 @@ time:
   allocations per `serialize()` named as the next thing to measure; the
   package pragma and the read loop, both reopened by the re-measurement;
   coalescing a tuple's fixed-size elements, which needs a fixture; three
-  smaller items; and the per-function `@native` attribute. It also holds the
-  file-directive recommendation until `performance.md` is written.
+  smaller items; the per-function `@native` attribute; and whether surge
+  should ever add the file directives itself.
 - [enum-and-opaque-union-members.md](enum-and-opaque-union-members.md).
   Its stage 1 has landed: a union of items from two enums is a diagnostic,
   where two items of the same name used to produce a wrong value with no
@@ -50,14 +50,6 @@ time:
 - The stale-statement checklist in
   [documentation-gaps.md](documentation-gaps.md). Every entry describes
   behavior that is already final.
-- The Luau file directives, also from
-  [documentation-gaps.md](documentation-gaps.md): a consumer-facing statement
-  that a module holding generated serializers should carry `//!native` and
-  `//!optimize 2`, and what else that module may hold. It is the one piece of
-  the user pages, in `performance.md`, that depends on neither step 1 nor
-  step 2, and since
-  `benchmarks/speed.md` stopped advising, it is the only recommendation with
-  no home outside this directory.
 - The CI items in [ci-and-release.md](ci-and-release.md): the transformer
   workflow running the integration suite, the pinned sibling ref, `npm ci`,
   and the Windows job. The transformer's CI cannot see a broken

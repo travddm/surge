@@ -25,9 +25,12 @@ own doc for the detail that belongs to it:
   [research/compile-time-specialization.md](research/compile-time-specialization.md)
   records why the approach works: the fbs and Zap source reading, and the
   spike that showed a roblox-ts transformer can emit flat code.
-- [serde.md](serde.md) — how a consumer installs `@rbxts/surge` and the
-  transformer. What the runtime package guarantees is in
-  [specs/runtime-api.md](specs/runtime-api.md).
+- [getting-started.md](getting-started.md), [supported-types.md](supported-types.md),
+  [data-types.md](data-types.md),
+  [errors-and-guarantees.md](errors-and-guarantees.md) and
+  [performance.md](performance.md) — the user pages: install, what is
+  supported, the `DataType` brands, what each side checks, and how to lay out
+  a module for speed.
 - [coding-standards.md](coding-standards.md) — lint/format/spell tooling
   and style conventions (each repo keeps its own copy — see below).
 - [testing.md](testing.md) — testing and verification strategy for the
@@ -72,15 +75,16 @@ calls straight into `@rbxts/surge`'s runtime helpers (`grow()`,
 version-negotiation of any kind, so the two only ever
 work together at exactly one version each was built against, and nothing
 now enforces "released together, same version" the way one repo's
-package-lock did — see Package name and distribution in
-[serde.md](serde.md) for the manual tag-pinning this now requires instead.
+package-lock did — see Install in
+[getting-started.md](getting-started.md) for the manual tag-pinning this now
+requires instead.
 This repo (`travddm/surge`) is this package's own root:
 
 ```text
 surge/                 = @rbxts/surge itself
 ├── src/                the runtime source, compiled by roblox-ts
 ├── out/                compiled output (main/types point here; gitignored,
-│                       rebuilt by `prepare` on every install — see serde.md)
+│                       rebuilt by `prepare` on every install)
 ├── test/               golden-Luau invariant checks (plain Node, node:test;
 │                       reads tests/out — see testing.md)
 ├── tests/              private nested project (own package.json, own
@@ -110,7 +114,7 @@ surge/                 = @rbxts/surge itself
 (`travddm/rbxts-transformer-surge`), with the identical tooling shape
 (its own `mise.toml`/`eslint.config.ts`/etc.) scoped to a plain
 Node/CommonJS package — no roblox-ts, no `tests/`. See
-[serde.md](serde.md) for exactly how a consumer installs each.
+[getting-started.md](getting-started.md) for how a consumer installs each.
 
 - **`@rbxts/surge`** (this repo) — the runtime support package the
   transformer's generated code calls into, _and_ the `@rbxts/runit`
@@ -273,7 +277,7 @@ golden-Luau invariant checks against that same compiled output); and real
 compiled through both, actually executed, not just compiled. The two-repo
 distribution model itself was verified the same way, not just documented:
 a local `git init`-and-install repro
-against both restructured repos (see serde.md) confirmed a
+against both restructured repos confirmed a
 `github:`-style whole-repo install actually produces a working
 `out/init.luau`/`lib/index.js`. One narrower gap was carried inside step 8
 rather than blocking it: the structurally-ambiguous guarded union is a

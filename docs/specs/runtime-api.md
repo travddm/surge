@@ -1,8 +1,8 @@
 # Runtime API specification
 
 Status: current
-Applies to: `@rbxts/surge` at commit `ca7bb09`, `rbxts-transformer-surge` at
-commit `f7270b3` (no tagged release yet)
+Applies to: `@rbxts/surge` at commit `93814bf`, `rbxts-transformer-surge` at
+commit `3278123` (no tagged release yet)
 
 ## 1. Scope
 
@@ -12,7 +12,7 @@ code calls into, and how the package's version is coupled to the
 transformer's. The bytes an encoding writes are in
 [wire-format.md](wire-format.md), and what the transformer emits for a call
 in [transformer.md](transformer.md). How to install the two
-packages is in [../serde.md](../serde.md) until a user page takes it.
+packages is in [../getting-started.md](../getting-started.md).
 
 ## 2. Terms
 
@@ -221,6 +221,8 @@ A test file named `*.spec.ts` is under `tests/src/tests/`. A path starting
 
 ## Changes
 
+- `93814bf` / `3278123`: the Scope points at `getting-started.md` for
+  installation.
 - `ca7bb09` / `f7270b3`: adds `writeChecks`. 3.2, 3.3 and 3.8 give
   each factory the options of its own side; adds 3.10 (what `writeChecks`
   rejects) and 3.11 (what `serialize` does without it).

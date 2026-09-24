@@ -21,18 +21,22 @@ the reader who needs it and never current for the reader who wrote it.
   classification and emission rules, the runtime API. Exact, versioned with the
   code, pinned by tests.
 
-| Document                                   | Owns                                                                                                                                        |
-| ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| [../README.md](../README.md)               | What surge is, how to install it, and where to go next. The transformer repository's own `README.md` does the same for it, and points here. |
-| [architecture.md](architecture.md)         | How the two repositories fit together, the cross-cutting decisions behind that shape, and the index of the documents below.                 |
-| [serde.md](serde.md)                       | How a consumer installs the two packages, until a user page takes it.                                                                       |
-| [coding-standards.md](coding-standards.md) | TypeScript conventions, and the tooling that enforces them.                                                                                 |
-| [testing.md](testing.md)                   | What each step of `mise run ci` checks, how to write a suite, and how to run a benchmark tier and read its result.                          |
-| `contributing-docs.md`                     | This document.                                                                                                                              |
-| [benchmarks/](benchmarks/)                 | Recorded results, written by `mise run bench:size` and `mise run bench:speed`. Generated, and never hand-edited.                            |
-| [specs/](specs/)                           | Normative specifications, versioned with the code. [specs/README.md](specs/README.md) has the format.                                       |
-| [research/](research/)                     | Papers reporting what was measured. [research/README.md](research/README.md) has the format.                                                |
-| [future-work/](future-work/)               | Open work, one document per unit, in the order [future-work/README.md](future-work/README.md) states.                                       |
+| Document                                             | Owns                                                                                                                                        |
+| ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| [../README.md](../README.md)                         | What surge is, how to install it, and where to go next. The transformer repository's own `README.md` does the same for it, and points here. |
+| [architecture.md](architecture.md)                   | How the two repositories fit together, the cross-cutting decisions behind that shape, and the index of the documents below.                 |
+| [getting-started.md](getting-started.md)             | Installing both packages, registering the transformer, and a first serializer.                                                              |
+| [supported-types.md](supported-types.md)             | What each type is written as, what goes into `blobs`, and what is rejected.                                                                 |
+| [data-types.md](data-types.md)                       | The `DataType` brands: number widths, `Length`, `Vector`, `Transform` and `Packed`.                                                         |
+| [errors-and-guarantees.md](errors-and-guarantees.md) | What `checks` and `writeChecks` reject, what each side raises, and what the bytes do not carry.                                             |
+| [performance.md](performance.md)                     | The two file directives, the module shape they need, and what to expect against other libraries.                                            |
+| [coding-standards.md](coding-standards.md)           | TypeScript conventions, and the tooling that enforces them.                                                                                 |
+| [testing.md](testing.md)                             | What each step of `mise run ci` checks, how to write a suite, and how to run a benchmark tier and read its result.                          |
+| `contributing-docs.md`                               | This document.                                                                                                                              |
+| [benchmarks/](benchmarks/)                           | Recorded results, written by `mise run bench:size` and `mise run bench:speed`. Generated, and never hand-edited.                            |
+| [specs/](specs/)                                     | Normative specifications, versioned with the code. [specs/README.md](specs/README.md) has the format.                                       |
+| [research/](research/)                               | Papers reporting what was measured. [research/README.md](research/README.md) has the format.                                                |
+| [future-work/](future-work/)                         | Open work, one document per unit, in the order [future-work/README.md](future-work/README.md) states.                                       |
 
 A statement lives in one document. Everywhere else links to it.
 
@@ -42,19 +46,19 @@ Documentation changes in the same commit as the change that makes it
 necessary. When in doubt: if a reader of the documentation after the change
 would be confused or misled, that document is part of the change.
 
-| Trigger                                                                                             | Update                                                                                                   |
-| --------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| Added, removed, or renamed a mise task or an npm script                                             | The `README.md` of the repository that has it, and [testing.md](testing.md) if `mise run ci` runs it     |
-| Changed the repository split, the sibling-checkout arrangement, or where a package lives            | [architecture.md](architecture.md)                                                                       |
-| Changed the runtime package's exports, or the contract of `createBinarySerializer` or `deserialize` | [specs/runtime-api.md](specs/runtime-api.md)                                                             |
-| Changed any byte an encoding writes: a width, a length prefix, the packed region, an enum index     | [specs/wire-format.md](specs/wire-format.md), `tests/src/tests/bytes.spec.ts`, and `mise run bench:size` |
-| Changed type classification, a diagnostic, or an emission rule                                      | [specs/transformer.md](specs/transformer.md)                                                             |
-| Changed the benchmark catalog, an adapter, the timing protocol, or a recorder                       | [specs/benchmark-harness.md](specs/benchmark-harness.md), and re-record the results file it affects      |
-| Measured something: a probe, an A/B, a re-measurement, or a full run worth keeping                  | A paper under [research/](research/). A page links to the paper and never carries the number             |
-| Changed a lint rule, a formatter setting, a type rule, or a naming convention                       | [coding-standards.md](coding-standards.md)                                                               |
-| Changed how `ci` runs, the Lune shim, a sentinel line, or an exit code                              | [testing.md](testing.md) and [specs/test-harness.md](specs/test-harness.md)                              |
-| Changed how or when documentation is updated                                                        | This document                                                                                            |
-| Started, finished, or re-scoped deferred work                                                       | [future-work/](future-work/), per the rule below                                                         |
+| Trigger                                                                                             | Update                                                                                                                                                                                                      |
+| --------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Added, removed, or renamed a mise task or an npm script                                             | The `README.md` of the repository that has it, and [testing.md](testing.md) if `mise run ci` runs it                                                                                                        |
+| Changed the repository split, the sibling-checkout arrangement, or where a package lives            | [architecture.md](architecture.md)                                                                                                                                                                          |
+| Changed the runtime package's exports, or the contract of `createBinarySerializer` or `deserialize` | [specs/runtime-api.md](specs/runtime-api.md), and [getting-started.md](getting-started.md) and [errors-and-guarantees.md](errors-and-guarantees.md) where they state it                                     |
+| Changed any byte an encoding writes: a width, a length prefix, the packed region, an enum index     | [specs/wire-format.md](specs/wire-format.md), [supported-types.md](supported-types.md) or [data-types.md](data-types.md) where they give a size, `tests/src/tests/bytes.spec.ts`, and `mise run bench:size` |
+| Changed type classification, a diagnostic, or an emission rule                                      | [specs/transformer.md](specs/transformer.md), and [supported-types.md](supported-types.md) for classification and diagnostics                                                                               |
+| Changed the benchmark catalog, an adapter, the timing protocol, or a recorder                       | [specs/benchmark-harness.md](specs/benchmark-harness.md), and re-record the results file it affects                                                                                                         |
+| Measured something: a probe, an A/B, a re-measurement, or a full run worth keeping                  | A paper under [research/](research/). A page links to the paper and never carries the number                                                                                                                |
+| Changed a lint rule, a formatter setting, a type rule, or a naming convention                       | [coding-standards.md](coding-standards.md)                                                                                                                                                                  |
+| Changed how `ci` runs, the Lune shim, a sentinel line, or an exit code                              | [testing.md](testing.md) and [specs/test-harness.md](specs/test-harness.md)                                                                                                                                 |
+| Changed how or when documentation is updated                                                        | This document                                                                                                                                                                                               |
+| Started, finished, or re-scoped deferred work                                                       | [future-work/](future-work/), per the rule below                                                                                                                                                            |
 
 ## How to write it
 

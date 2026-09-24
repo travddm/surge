@@ -1,28 +1,10 @@
 # Future work: documentation gaps and stale statements
 
-Part of the [surge](../architecture.md) design. The user pages this
-document asks for are one part of
-[documentation-restructure.md](documentation-restructure.md), which plans
-the whole `docs/` tree around its readers; the stale-statement checklist
-below is worked off during that move.
+Part of the [surge](../architecture.md) design. The statements the move in
+[documentation-restructure.md](documentation-restructure.md) corrects as it
+rewrites each page, and the process documents a first release needs.
 
 ## What
-
-**No user-facing documentation.** Everything under `docs/` is design
-history written for the maintainer. A consumer has nowhere to find:
-installation (both `github:` dependencies, pinned together), the
-`tsconfig.json` `plugins` entry and its ordering relative to Flamework's
-transformer, a usage example, the supported-types table in user terms
-(what is encoded how, what becomes a blob, what is rejected), the wire
-format per kind (needed to interoperate with anything else and to reason
-about [schema-versioning.md](schema-versioning.md)), the error contract
-of `deserialize`, and the non-guarantees (dict order, no bounds checks
-unless a call site sets `checks`, sparse arrays, `@rbxts/types` version
-coupling of enum indices). The two READMEs point at design docs instead. Until `performance.md` exists,
-nothing outside this directory tells a consumer to mark a serializer
-module `//!native` and `//!optimize 2`: `benchmarks/speed.md` used to
-carry the recommendation and no longer does, because a generated results
-file states what was measured and does not advise.
 
 **Statements the code contradicts** (each checked against the source):
 
@@ -36,44 +18,22 @@ file states what was measured and does not advise.
   table.
 
 **Missing process documentation.** No `CHANGELOG`, no release or tagging
-procedure (serde.md requires consumers to pin both repos to the same
+procedure (getting-started.md asks consumers to pin both repos to the same
 release, and neither repository has a tag), no contributor guide beyond
 the tooling description, no statement of which Roblox, roblox-ts, and
 `@rbxts/types` versions the generated code targets.
 
 ## Why deferred
 
-User documentation should be written against fixed behavior. What moved it
-has since landed: `deserialize`'s error contract is settled (section 4 of
-[specs/runtime-api.md](../specs/runtime-api.md)), and what is
-left of Tier B in [type-coverage-parity.md](type-coverage-parity.md) adds a
-row to the supported-types table rather than changing one.
-
-Two parts of this document do not wait, and README.md lists both under No
-step of its own. The stale-statement checklist does not, because every entry
-describes behavior that is already final. Neither do the two Luau file
-directives, because they depend on neither step and nothing outside this
-directory states them.
+The stale-statement checklist is worked off as each statement is rewritten in
+the move [documentation-restructure.md](documentation-restructure.md) plans,
+and the process documents wait on the first tagged release
+([ci-and-release.md](ci-and-release.md)).
 
 ## How, briefly
 
-- The user pages the target layout in
-  [documentation-restructure.md](documentation-restructure.md) names
-  (install, plugin entry, example, supported types, wire format, errors,
-  non-guarantees, and the two Luau file directives — both
-  recommended as defaults, with the module shape that makes `//!native` safe
-  to default to, per The file-directive recommendation in
-  [generated-code-performance.md](generated-code-performance.md)),
-  linked from both READMEs. The directives section can be written and
-  linked before the rest, since it depends on no open step. The wire-format
-  section must state each container's default length width and that
-  `DataType.Length<T, L>` changes it, and the three `f32`s a `Vector3` and a
-  `CFrame`'s position cost by default and that `DataType.Vector<X, Y, Z>` and
-  `DataType.Transform<X, Y, Z>` change them. Each default is part of the
-  decision in [data-type-surface.md](data-type-surface.md) rather than a
-  detail of it.
 - Correct each stale statement in place as its fix lands; the list above
   is the checklist.
-- `CHANGELOG.md` and a short release section in serde.md (tag both
+- `CHANGELOG.md` and a short release section in getting-started.md (tag both
   repositories with the same version; see
   [ci-and-release.md](ci-and-release.md)).
