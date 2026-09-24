@@ -1,6 +1,6 @@
 # Serialized size across five libraries
 
-2026-09-23 · surge `5d843a7` · rbxts-transformer-surge `aa6f04b` · Lune 0.10.5
+2026-09-23 · surge `6ffcfc8` · rbxts-transformer-surge `cb7b4f9` · Lune 0.10.5
 
 ## Abstract
 

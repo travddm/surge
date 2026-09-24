@@ -1,8 +1,8 @@
 # Wire format specification
 
 Status: current
-Applies to: `@rbxts/surge` at commit `93814bf`, `rbxts-transformer-surge` at
-commit `3278123` (no tagged release yet)
+Applies to: `@rbxts/surge` at commit `be5d3e6`, `rbxts-transformer-surge` at
+commit `04cda66` (no tagged release yet)
 
 ## 1. Scope
 
@@ -340,18 +340,18 @@ in `@rbxts/surge`.
 
 ## Changes
 
-- `93814bf` / `3278123`: adds 4.15 (an integer width truncates and wraps a
+- `be5d3e6` / `04cda66`: adds 4.15 (an integer width truncates and wraps a
   number, as 7.3 states for a component).
-- `ca7bb09` / `8792c27`: 6.3 and 6.7 state what `writeChecks`
+- `fec89a8` / `e402a49`: 6.3 and 6.7 state what `writeChecks`
   changes, and 6.7 is no longer a known defect but the unchecked behavior;
   adds 6.8 (a count too large for its width wraps).
-- `38b634f` / `6967359`: 6.7 names the future-work document that tracks it.
-- `8c4d5f5` / `87813e5`: corrected against the code: 4.8 (24 bytes only without
+- `a597b56` / `9fc05be`: 6.7 names the future-work document that tracks it.
+- `aff15c3` / `b8ace27`: corrected against the code: 4.8 (24 bytes only without
   `Transform`), 4.12 (a union of some items indexes those items), 5.7 (index
   width; `datatype` order), 6.3 (a shorter `array` or tuple rest moves to the
   new 6.6 and 6.7), 8.1 (a two-variant `taggedUnion` elsewhere), 8.2 and 8.4
   (bits per property; where a packed `optional`'s value goes), 8.7 (codes and
   `rank` order defined), 9.3 (presence bit inside `Packed<T>`); Conformance
   rows corrected.
-- `7fc35db` / `05b267b`: first version, from Type coverage in the former
+- `378ef30` / `058495f`: first version, from Type coverage in the former
   `docs/transformer.md`.

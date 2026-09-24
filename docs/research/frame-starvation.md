@@ -1,7 +1,7 @@
 # Frame starvation in a Studio benchmark run
 
-2026-09-23 · surge `0b4a259` → `a878aac` · rbxts-transformer-surge `14d9e27` →
-`fcebbd6` · Roblox 0.739.0.7390687
+2026-09-23 · surge `6b143ed` → `6b9506c` · rbxts-transformer-surge `f397697` →
+`9dadced` · Roblox 0.739.0.7390687
 
 ## Abstract
 
@@ -187,16 +187,16 @@ returns.
 ## Data
 
 - `docs/benchmarks/speed.md` and `docs/benchmarks/speed-trials.tsv` at
-  `fcdd3f5^` (before) and `fcdd3f5` (after) in this repository's history. The
+  `cb863c9^` (before) and `cb863c9` (after) in this repository's history. The
   group, row, and cell figures above are computed from those two pairs.
 - The A/B's run output was not kept. Its two figures are as recorded at the
   time, in `tests/src/bench/speed.spec.ts` and `docs/testing.md` at
-  `fcdd3f5`.
+  `cb863c9`.
 
 ## Correction, 2026-09-23
 
-This corrects five statements. The figures below are read from the two trials files at `fcdd3f5^`
-and `fcdd3f5`, which keep each old cell's median at full precision. The paper read the printed
+This corrects five statements. The figures below are read from the two trials files at `cb863c9^`
+and `cb863c9`, which keep each old cell's median at full precision. The paper read the printed
 medians in `speed.md`, which round an old median below 10k to two significant figures.
 
 - **Which cells slowed most.** Discussion: "It falls hardest where a call allocates most —
@@ -209,14 +209,14 @@ medians in `speed.md`, which round an old median below 10k to two significant fi
   that pattern, the "falls hardest on allocation" in the practical consequence, or the fit of a
   per-frame collection step to "the shape of the result".
 - **What has been re-measured.** Discussion, last sentence: "The conclusions it reaches have since
-  been re-measured". This sentence was added after publication, in surge `95de1dd`.
+  been re-measured". This sentence was added after publication, in surge `77897aa`.
   [generated-code-against-hand-written.md](generated-code-against-hand-written.md) lists three
   conclusions that were not re-measured: the shared reservation, the single reservation of a
   `CFrame`'s 24 bytes, and the tagged-union literal. The sentence should have said that most of
   those conclusions have been re-measured and those three have not.
 - **The idle frames.** Method: "and put three idle frames between rows". The after run, at
-  `fcdd3f5`, had none: its method line names no idle frames, and they landed afterwards, in surge
-  `6dff513`. The compared change made a trial a length of time, raised trials per cell from 5 to 9
+  `cb863c9`, had none: its method line names no idle frames, and they landed afterwards, in surge
+  `5c136b2`. The compared change made a trial a length of time, raised trials per cell from 5 to 9
   in each of two runs, and made the libraries within a row take turns.
 - **Figures read from the printed medians.** Data: "computed from those two pairs". The counts,
   the control group's 0.99× to 1.21×, the medians of the 106 cells and of the decode half, and the

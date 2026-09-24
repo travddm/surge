@@ -1,6 +1,6 @@
 # Noise in the speed tier
 
-2026-09-23 · surge `824a279` · rbxts-transformer-surge `aa6f04b` · Roblox
+2026-09-23 · surge `1c4d9d4` · rbxts-transformer-surge `cb7b4f9` · Roblox
 0.739.0.7390687
 
 ## Abstract
@@ -39,13 +39,13 @@ back to back.
 Two questions, two data sets.
 
 **Within a cell.** `docs/benchmarks/speed-trials.tsv` as committed at surge
-`ed28683`: 124 cells, 18 trials each (nine per run, two runs). Spread is
+`a631584`: 124 cells, 18 trials each (nine per run, two runs). Spread is
 computed two ways — the slowest-to-fastest range over the median, which is the
 statistic the recorded claim used, and the interquartile range over the
 median, which is what `speed.md` prints as `±`.
 
-**Between invocations.** The run committed at surge `a878aac` against the
-reference committed at `ed28683`, over the same 124 cells. The generated code
+**Between invocations.** The run committed at surge `6b9506c` against the
+reference committed at `a631584`, over the same 124 cells. The generated code
 is identical between them: the emitter split that landed in between was gated
 on an identical printed corpus, and the `checks` option emits nothing when a
 call site does not ask for it. So any difference is the machine, the Studio
@@ -132,9 +132,9 @@ can separate a real change from.
 ## Data
 
 - `docs/benchmarks/speed-trials.tsv` and `docs/benchmarks/speed.md` as
-  committed at surge `ed28683`, for the within-cell figures and the later side
+  committed at surge `a631584`, for the within-cell figures and the later side
   of the between-invocation comparison.
-- `docs/benchmarks/speed.md` as committed at surge `a878aac`, for the earlier
+- `docs/benchmarks/speed.md` as committed at surge `6b9506c`, for the earlier
   side.
 - The recorded before figures are from
   [benchmark-tooling.md](../future-work/benchmark-tooling.md), which read them
@@ -144,23 +144,23 @@ can separate a real change from.
 
 This corrects seven statements.
 
-- **The earlier run.** Method: "The run committed at surge `a878aac`"; Data: "`speed.md` as
-  committed at surge `a878aac`". At `a878aac` the committed `speed.md` is the pre-yield run. The
+- **The earlier run.** Method: "The run committed at surge `6b9506c`"; Data: "`speed.md` as
+  committed at surge `6b9506c`". At `6b9506c` the committed `speed.md` is the pre-yield run. The
   between-invocation figures are read from the printed medians of `speed.md` as committed at surge
-  `6dff513` against the reference. That run was recorded at `e98cb8c` with uncommitted changes and
-  rbxts-transformer-surge `fcebbd6`. Besides the emitter split and the `checks` option, the
-  transformer commits between that run and the reference include `ce7b615`, whose message states
+  `5c136b2` against the reference. That run was recorded at `9c5f9d8` with uncommitted changes and
+  rbxts-transformer-surge `9dadced`. Besides the emitter split and the `checks` option, the
+  transformer commits between that run and the reference include `60db9a8`, whose message states
   that every existing emitter snapshot is unmoved.
 - **The interquartile median.** Results: "0.023 by interquartile range"; Discussion: "2.3% at the
   median"; Conclusion: "median 2.3%". The statistic `speed.md` prints as `±`, recomputed from the
-  trials at `ed28683` with the recorder's own quartile positions, has a median of 0.022. 0.023
+  trials at `a631584` with the recorder's own quartile positions, has a median of 0.022. 0.023
   comes from a different quartile method. The statements should have said 0.022, or 2.2%.
 - **Column agreement.** Abstract: "agree to within 3% on a column median". The largest column
   median is serio's decode, at 1.033×, so the columns agree to within 3.3%. Results: "Every column
   moved the same way". Nine of the ten column medians rose, by 1.7% to 3.3%, and blink's encode
   fell, to 0.995×.
 - **The two cells' spreads.** Results: "within-run spreads of ±2% in both files". surge's encode on
-  `Blink: Entities` prints ±5% in the reference and ±2% at `6dff513`. blink's encode on
+  `Blink: Entities` prints ±5% in the reference and ±2% at `5c136b2`. blink's encode on
   `Blink: Booleans` prints ±2% in both. Neither cell is flagged, and neither spread approaches its
   move.
 - **The readable threshold.** Discussion: "unreadable below roughly 1.3×". blink's encode on
@@ -169,10 +169,10 @@ This corrects seven statements.
 - **The before counts.** Background and Results: 27, 11 and 4 cells, "all 11 of them on the flat
   struct, the nested object, the wide struct, or the large array". These come from a run whose
   trials were not kept. Two pre-yield runs did keep each cell's slowest and fastest trial. By the
-  same statistic over five trials, `speed-trials.tsv` at surge `4afeaca` gives 33, 13 and 5, and
-  at `afde7bc` it gives 28, 15 and 4. In both, cells over three tenths fall on the large record
-  row and none on the large array, and at `afde7bc` three of the 15 are decode cells. Against
+  same statistic over five trials, `speed-trials.tsv` at surge `df6e44f` gives 33, 13 and 5, and
+  at `0906cf0` it gives 28, 15 and 4. In both, cells over three tenths fall on the large record
+  row and none on the large array, and at `0906cf0` three of the 15 are decode cells. Against
   either run, no cell spreads by more than three tenths now.
 - **The cited document.** Data: "The recorded before figures are from benchmark-tooling.md". That
   passage has since been removed from the document. It is in
-  `docs/future-work/benchmark-tooling.md` as committed at surge `3bb0a57`.
+  `docs/future-work/benchmark-tooling.md` as committed at surge `a960b51`.

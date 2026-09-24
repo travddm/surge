@@ -6,7 +6,7 @@ Not a result: this is a throwaway probe build, kept as the data behind
 [file-directives-on-generated-code.md](../file-directives-on-generated-code.md).
 `//!optimize 2` was removed from the twelve fixture modules, which the
 repository ships with it, leaving them at whatever level Studio compiles by
-default. Read it only against the reference run committed at surge `ed28683`.
+default. Read it only against the reference run committed at surge `a631584`.
 
 | Library  | Encode                   | Decode                   |
 | -------- | ------------------------ | ------------------------ |
@@ -43,8 +43,8 @@ The run:
 - Roblox: 0.739.0.7390687
 - Machine: 12th Gen Intel(R) Core(TM) i9-12900KF, 16 threads, win32 10.0.26200
 - Runs: 2, back to back
-- surge: 1bf8ff3 (uncommitted changes)
-- rbxts-transformer-surge: aa6f04b
+- surge: 61af23c (uncommitted changes)
+- rbxts-transformer-surge: cb7b4f9
 - roblox-ts: 3.0.0
 - @rbxts/flamework-binary-serializer: 0.7.0
 - @rbxts/serio: 1.2.7

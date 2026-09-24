@@ -1,6 +1,6 @@
 # The cost of generated serializer code against hand-written Luau
 
-2026-09-23 · surge `824a279` · rbxts-transformer-surge `aa6f04b` · Roblox
+2026-09-23 · surge `1c4d9d4` · rbxts-transformer-surge `cb7b4f9` · Roblox
 0.739.0.7390687
 
 ## Abstract
@@ -29,7 +29,7 @@ generated code called `alloc` in the package once per reservation — per field
 until the shared reservation, per run of fields after it — and each call
 crossed a module boundary. The inline reservation replaced each call with four
 instructions local to the serializer's own closure (`rbxts-transformer-surge`
-`7f46c81`, surge `91310ea`):
+`9a4fc27`, surge `eeb1a2e`):
 
 ```luau
 local pos1 = __surge_cursor
@@ -46,8 +46,8 @@ both read from full runs made before the suite yielded
 
 ## Method
 
-The after side is the committed reference run at surge `824a279` and
-rbxts-transformer-surge `aa6f04b`: two Studio runs back to back, nine trials
+The after side is the committed reference run at surge `1c4d9d4` and
+rbxts-transformer-surge `cb7b4f9`: two Studio runs back to back, nine trials
 per cell.
 
 The before side is a mixed tree, because neither repository's history holds a
@@ -55,8 +55,8 @@ state that is both the previous shape and measurable on today's harness. A
 transformer-only checkout cannot build today's tests place: its round-trip
 suites use `DataType.Length<T, L>` and the `checks` option, which the earlier
 transformer predates, and it misreads `Length<string, 5>` as a function type.
-So the before side is the transformer at `35253a6`, the last commit before the
-inline reservation; surge's `src/` at `17876b6`, the last commit before the
+So the before side is the transformer at `228abc5`, the last commit before the
+inline reservation; surge's `src/` at `ba90bea`, the last commit before the
 package side of the same change; today's benchmark suite, fixtures, adapters
 and recorder, so that the run yields; and the round-trip suites removed, since
 the speed tier never runs them and the earlier transformer cannot compile them.
@@ -66,7 +66,7 @@ Three checks on that build:
 - **The shape is the old one.** The compiled flat struct reserves with
   `local buf1, pos2 = __surge_alloc(17)`, a call into the package, where
   today's inlines the four lines above and calls nothing.
-- **No encoding moved.** `docs/benchmarks/size.md` at surge `91310ea` and at
+- **No encoding moved.** `docs/benchmarks/size.md` at surge `eeb1a2e` and at
   the reference agree on every byte count of every library in all sixteen
   rows, so the Tier B commits missing from the earlier transformer changed no
   default width, and the reservation shape is the only difference in the
@@ -165,7 +165,7 @@ mode to see where its onset fell.
 
 A second difference between the two measurements runs the other way. The
 recorded pair was taken before `//!native` was added to the fixture modules
-(surge `afde7bc`, two hours after the inline reservation landed), so both of
+(surge `0906cf0`, two hours after the inline reservation landed), so both of
 its sides compiled the generated code interpreted; this re-measurement has it
 native on both sides. The change replaces a cross-module call with four inline
 instructions, and native code generation makes those instructions much faster
@@ -221,12 +221,12 @@ the next thing to measure.
 ## Data
 
 - The after side: `docs/benchmarks/speed.md` and
-  `docs/benchmarks/speed-trials.tsv` as committed at surge `ed28683`.
+  `docs/benchmarks/speed-trials.tsv` as committed at surge `a631584`.
 - The before side, kept because nothing else records it:
   `data/before-the-inline-reservation.md` in this directory. The mixed tree it
   was measured on is described under Method and was never committed.
-- The byte check: `docs/benchmarks/size.md` at surge `91310ea` and at
-  `ed28683`.
+- The byte check: `docs/benchmarks/size.md` at surge `eeb1a2e` and at
+  `a631584`.
 
 ## Correction, 2026-09-23
 
@@ -247,7 +247,7 @@ before-side file keeps nothing else.
   thousand-element `CFrame` array: roughly a constant 0.2 µs per call, plus under a nanosecond per
   element"; Discussion: "is not a per-element cost; it is about 0.2 µs paid once per
   `serialize()`". The `CFrame` array has 50 elements, not a thousand: `COUNT` is 50 in
-  `tests/src/bench/fixtures/cframes.ts` at surge `824a279`, and its 1204 bytes are a 4-byte count
+  `tests/src/bench/fixtures/cframes.ts` at surge `1c4d9d4`, and its 1204 bytes are a 4-byte count
   and 50 rotations of 24. Its gap of about 0.86 µs is therefore about 0.2 µs per call plus about
   13 ns per element, and the per-element part is most of it. The statements should have said that
   the gap has a per-call part of about 0.2 µs, which is most of the gap on the two small rows, and
@@ -255,14 +255,14 @@ before-side file keeps nothing else.
   leave nothing to test them against.
 - **The share the measured per-call work explains.** Conclusion: "of which the per-call work
   already measured accounts for an eighth at most". Neither side of this comparison emits the blob
-  channel: `d7af243` is an ancestor of rbxts-transformer-surge `35253a6` and of `aa6f04b`. The
+  channel: `8df437a` is an ancestor of rbxts-transformer-surge `228abc5` and of `cb7b4f9`. The
   channel is therefore not in the 0.2 µs. Whether `finishWrite`'s copy is in it is open, per the
   correction of this date to [per-call-overhead.md](per-call-overhead.md). The statement should
   have said that the per-call work measured so far accounts for none of the 0.2 µs, with the copy
   unsettled.
-- **Edited after publication.** This paper was published in surge `95de1dd`. Surge `c3cfdd6` then
+- **Edited after publication.** This paper was published in surge `77897aa`. Surge `5efc1f6` then
   changed the Abstract's claim about which rows the gain can be read on, and added the Discussion
   paragraph on `--!native`, in place rather than as an appended correction. The text above is the
-  edited version; `git show 95de1dd:docs/research/generated-code-against-hand-written.md` is the
+  edited version; `git show 77897aa:docs/research/generated-code-against-hand-written.md` is the
   one first published. The Discussion paragraph's expectation that the gain is larger under native
   code generation was not measured.

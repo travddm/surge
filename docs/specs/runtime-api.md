@@ -1,8 +1,8 @@
 # Runtime API specification
 
 Status: current
-Applies to: `@rbxts/surge` at commit `93814bf`, `rbxts-transformer-surge` at
-commit `3278123` (no tagged release yet)
+Applies to: `@rbxts/surge` at commit `be5d3e6`, `rbxts-transformer-surge` at
+commit `04cda66` (no tagged release yet)
 
 ## 1. Scope
 
@@ -221,23 +221,23 @@ A test file named `*.spec.ts` is under `tests/src/tests/`. A path starting
 
 ## Changes
 
-- `93814bf` / `3278123`: the Scope points at `getting-started.md` for
+- `be5d3e6` / `04cda66`: the Scope points at `getting-started.md` for
   installation.
-- `ca7bb09` / `f7270b3`: adds `writeChecks`. 3.2, 3.3 and 3.8 give
+- `fec89a8` / `17fda41`: adds `writeChecks`. 3.2, 3.3 and 3.8 give
   each factory the options of its own side; adds 3.10 (what `writeChecks`
   rejects) and 3.11 (what `serialize` does without it).
-- `f0b68ef` / `b954fd2`: the two gaps in `checks` closed. 4.2 (a
+- `a7cb730` / `84e0abb`: the two gaps in `checks` closed. 4.2 (a
   packed `CFrame` is bounded) and 4.9 (checks reject an `enum` index past its
   items and a rotation code that names no rotation) now state guarantees;
   4.7 (a value of the right type, blob fields excepted) and 4.10 follow them.
-- `38b634f` / `6967359`: 4.9 and 4.10 name the future-work document that tracks them.
-- `8c4d5f5` / `87813e5`: corrected against the code: 4.2 (a packed `CFrame`
+- `a597b56` / `9fc05be`: 4.9 and 4.10 name the future-work document that tracks them.
+- `aff15c3` / `b8ace27`: corrected against the code: 4.2 (a packed `CFrame`
   read is not bounded), 4.3 (which counts are bounded, and how), 4.7 (unchecked
   indexes), 4.8 (a `T` that reads bytes), 5.1 (`finishWrite` for a `T` that
   reserves no bytes), 5.2 (the blob channel is the exception); adds 4.9, 4.10,
   5.4 and 5.5; Conformance rows corrected.
-- `16dddf8` / `05b267b`: 5.3 states that `packBit` is a public primitive and
+- `c1cb304` / `058495f`: 5.3 states that `packBit` is a public primitive and
   that the bit region is written one whole byte at a time; the Scope and 3.9
   point at the new specifications.
-- `02dbdd8` / `05b267b`: first version, from `docs/serde.md`. Corrects that
+- `78af06a` / `058495f`: first version, from `docs/serde.md`. Corrects that
   document's statement that the factories have no runtime body (3.4).

@@ -1,8 +1,8 @@
 # Benchmark harness specification
 
 Status: current
-Applies to: `@rbxts/surge` at commit `8c4d5f5`, `rbxts-transformer-surge` at
-commit `87813e5` (no tagged release yet)
+Applies to: `@rbxts/surge` at commit `aff15c3`, `rbxts-transformer-surge` at
+commit `b8ace27` (no tagged release yet)
 
 ## 1. Scope
 
@@ -219,12 +219,12 @@ for the reasons in section 6 of [test-harness.md](test-harness.md).
 
 ## Changes
 
-- `8c4d5f5` / `87813e5`: corrected against the code: Terms (Row, Cell), 3.2
+- `aff15c3` / `b8ace27`: corrected against the code: Terms (Row, Cell), 3.2
   (the large record; brands moved to 3.5), 4.3 (the Zap flow), 4.4 (the two
   definitions declare different rows), 4.6, 5.2, 6.1 (one Studio process per
   run), 7.1, 7.2 (the `ERROR` verdict), 8.2, 8.4 (the `±` and drift as
   computed), 8.5 (the summary moved to 8.7); added 3.5, 4.7, 7.3 and 8.7;
   Conformance for 3.5, 4.3–4.7, 5.1–5.3, 6.1, 7.1–7.3, 8.1–8.7 and 9.1–9.3.
-- `a551981` / `925e701`: first version, from Benchmarking strategy in
+- `a9d1801` / `1e008b9`: first version, from Benchmarking strategy in
   `docs/testing.md` and the harness design in
   `docs/future-work/benchmark-tooling.md`.

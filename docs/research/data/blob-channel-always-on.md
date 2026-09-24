@@ -6,7 +6,7 @@ Not a result: this is a throwaway probe build, kept as the data behind
 [per-call-overhead.md](../per-call-overhead.md). The transformer was patched to
 emit the blob side channel on every call (`usesBlobs` forced true), which no
 shipping build does. Read it only against the reference run committed at surge
-`ed28683`.
+`a631584`.
 
 | Library  | Encode                   | Decode                   |
 | -------- | ------------------------ | ------------------------ |
@@ -43,8 +43,8 @@ The run:
 - Roblox: 0.739.0.7390687
 - Machine: 12th Gen Intel(R) Core(TM) i9-12900KF, 16 threads, win32 10.0.26200
 - Runs: 2, back to back
-- surge: ed28683
-- rbxts-transformer-surge: aa6f04b (uncommitted changes)
+- surge: a631584
+- rbxts-transformer-surge: cb7b4f9 (uncommitted changes)
 - roblox-ts: 3.0.0
 - @rbxts/flamework-binary-serializer: 0.7.0
 - @rbxts/serio: 1.2.7

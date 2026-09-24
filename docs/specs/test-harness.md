@@ -1,8 +1,8 @@
 # Test harness specification
 
 Status: current
-Applies to: `@rbxts/surge` at commit `1ed333b`, `rbxts-transformer-surge` at
-commit `33e2082` (no tagged release yet)
+Applies to: `@rbxts/surge` at commit `f0d9639`, `rbxts-transformer-surge` at
+commit `fd89bf5` (no tagged release yet)
 
 ## 1. Scope
 
@@ -161,14 +161,14 @@ file in its `lib/` for the snapshot to copy.
 
 ## Changes
 
-- `1ed333b` / `33e2082`: 4.5 (no round trip keys a table by an `EnumItem` or
+- `f0d9639` / `fd89bf5`: 4.5 (no round trip keys a table by an `EnumItem` or
   a `Vector3`).
-- `f0b68ef` / `b954fd2`: 4.6 (the recorded instance table is a copy).
-- `8c4d5f5` / `87813e5`: corrected against the code: 3.3 (not every fact
+- `a7cb730` / `84e0abb`: 4.6 (the recorded instance table is a copy).
+- `aff15c3` / `b8ace27`: corrected against the code: 3.3 (not every fact
   compares a whole value), 4.2, 4.3, 4.4, 5.1 and 5.2 (the `ERROR` verdict),
   5.3; added 3.5 (moved from 3.3), 4.6, and 5.4 (the timeout, moved from
   5.3); Conformance for 3.3, 3.5, 4.4–4.6, 5.1, 5.2 and 5.4.
-- `cb96dc9` / `925e701`: the Conformance row for 3.4 names
+- `17d643c` / `1e008b9`: the Conformance row for 3.4 names
   `script.WaitForChild("tests")`.
-- `a551981` / `925e701`: first version, from Testing strategy and Round-trip
+- `a9d1801` / `1e008b9`: first version, from Testing strategy and Round-trip
   tests run under Lune in `docs/testing.md`.

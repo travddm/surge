@@ -1,6 +1,6 @@
 # Per-call overhead in the generated code
 
-2026-09-23 · surge `824a279` · rbxts-transformer-surge `aa6f04b` · Roblox
+2026-09-23 · surge `1c4d9d4` · rbxts-transformer-surge `cb7b4f9` · Roblox
 0.739.0.7390687
 
 ## Abstract
@@ -24,7 +24,7 @@ allocates a table, and `finishWriteBlobs()` on every call, and `deserialize()`
 called `beginReadBlobs()`, whether or not the shape had a blob field. None of
 the benchmark catalog's 16 rows has one. The transformer emits those entry
 points only where the emitted body reaches `pushBlob` or `nextBlob` now
-(`rbxts-transformer-surge` `d7af243`). `finishWrite` still runs on every call:
+(`rbxts-transformer-surge` `8df437a`). `finishWrite` still runs on every call:
 it allocates an exact-size buffer and copies the written region into it,
 because the caller has to be handed a buffer of the right size.
 
@@ -41,15 +41,15 @@ measure again.
 
 ## Method
 
-One reference run of the catalog at surge `824a279` and
-rbxts-transformer-surge `aa6f04b`: two Studio runs back to back, nine trials
-per cell, `docs/benchmarks/speed.md` as committed at surge `ed28683`.
+One reference run of the catalog at surge `1c4d9d4` and
+rbxts-transformer-surge `cb7b4f9`: two Studio runs back to back, nine trials
+per cell, `docs/benchmarks/speed.md` as committed at surge `a631584`.
 
 Two probes, each a one-line change measured as its own full catalog run
 against that reference:
 
 - **Blob channel always on.** `usesBlobs` forced true where the transformer
-  decides whether to emit the entry points, restoring the pre-`d7af243` shape.
+  decides whether to emit the entry points, restoring the pre-`8df437a` shape.
   Verified in the compiled output: every fixture module carries
   `beginWriteBlobs` where the reference build has none in any of the sixteen.
 - **`finishWrite` without the copy.** The exact-size buffer is still allocated
@@ -192,11 +192,11 @@ measured here differ by more than an order of magnitude.
 ## Data
 
 - The reference run: `docs/benchmarks/speed.md` and
-  `docs/benchmarks/speed-trials.tsv` as committed at surge `ed28683`.
+  `docs/benchmarks/speed-trials.tsv` as committed at surge `a631584`.
 - The two probe runs, kept because nothing else records them:
   `data/blob-channel-always-on.md` and `data/finish-write-without-copy.md` in
   this directory. Neither probe is in any build that shipped.
-- The drift figures: the run committed at surge `a878aac` against the
+- The drift figures: the run committed at surge `6b9506c` against the
   reference, the same comparison
   [frame-starvation.md](frame-starvation.md) uses for its own control.
 
@@ -214,7 +214,7 @@ becomes +25.4 ns. The Discussion does not list this limit.
 - **The copy's control.** Results: "Removing the copy did not make encoding faster"; Abstract and
   Conclusion: "costs nothing". This probe was read against the drift between two invocations, not
   against the untouched columns in the same run, which are the control the Method names. Against
-  those (`data/finish-write-without-copy.md` against `speed.md` at `ed28683`), surge moved −14.0
+  those (`data/finish-write-without-copy.md` against `speed.md` at `a631584`), surge moved −14.0
   ns per encode call where fbs moved +12.2, serio +13.5, blink −1.5 and the baseline +2.0. On the
   five fastest rows, surge moved 1.030× where fbs moved 0.994×, serio 0.995×, blink 0.981× and the
   baseline 0.985×. That separation, about 3.5% to 5% in the direction a removed cost predicts, is
@@ -223,15 +223,15 @@ becomes +25.4 ns. The Discussion does not list this limit.
   rest on "costs nothing" are not established: "does independently measure at nothing, twice
   now", "a `buffer.copy` … does not", "at any payload size", and "differ by more than an order
   of magnitude".
-- **The drift run.** Data: "the run committed at surge `a878aac` against the reference, the same
-  comparison frame-starvation.md uses". At `a878aac` the committed `speed.md` is the pre-yield
-  run. The drift figures are read from `speed.md` as committed at surge `6dff513`, which was
-  recorded at `e98cb8c` with uncommitted changes and rbxts-transformer-surge `fcebbd6`, against
-  the reference. frame-starvation.md's control compares `fcdd3f5^` with `fcdd3f5`, a different
+- **The drift run.** Data: "the run committed at surge `6b9506c` against the reference, the same
+  comparison frame-starvation.md uses". At `6b9506c` the committed `speed.md` is the pre-yield
+  run. The drift figures are read from `speed.md` as committed at surge `5c136b2`, which was
+  recorded at `9c5f9d8` with uncommitted changes and rbxts-transformer-surge `9dadced`, against
+  the reference. frame-starvation.md's control compares `cb863c9^` with `cb863c9`, a different
   pair. The Method's "the previously committed run" is correct.
 - **The two cells' spreads.** Method: "Two individual cells moved 0.74× and 0.79× with within-run
   spreads of ±2%". surge's encode on `Blink: Entities` prints ±5% in the reference and ±2% at
-  `6dff513`. blink's encode on `Blink: Booleans` prints ±2% in both.
+  `5c136b2`. blink's encode on `Blink: Booleans` prints ±2% in both.
 - **The floor.** Discussion: "about twice the ±14 ns floor". The Method gives the floor as a median
   of −13.0 ns. The statement should have said about twice the 13 ns floor.
 - **Share of a call, and the worst case.** Abstract: "3.6% to 6.4% of a call"; Discussion: "Six
@@ -249,11 +249,11 @@ becomes +25.4 ns. The Discussion does not list this limit.
   contradict a constant per-call cost. The median is consistent with one.
 - **The gap to hand-written Luau.** Discussion: "26 ns is roughly an eighth, and that eighth is
   already removed … Per-call work accounts for part of that gap". The gap of about 0.2 µs was read
-  from the reference run. Its transformer, `aa6f04b`, already includes `d7af243`, so it emits no
+  from the reference run. Its transformer, `cb7b4f9`, already includes `8df437a`, so it emits no
   channel on any catalog row. The channel is therefore not part of that gap. The statement should
   have said that the channel is not in the gap as measured today, and that whether the copy is in
   it is open.
 - **The cited document.** Background: "generated-code-performance.md concluded from the first";
   Discussion: "settles the rest of the per-call list". That text has since been removed from the
   document. It is in `docs/future-work/generated-code-performance.md` as committed at surge
-  `824a279`.
+  `1c4d9d4`.

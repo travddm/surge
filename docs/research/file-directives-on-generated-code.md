@@ -1,6 +1,6 @@
 # What Luau's file directives are worth on generated serializer code
 
-2026-09-23 · surge `824a279` · rbxts-transformer-surge `aa6f04b` · Roblox
+2026-09-23 · surge `1c4d9d4` · rbxts-transformer-surge `cb7b4f9` · Roblox
 0.739.0.7390687
 
 ## Abstract
@@ -27,7 +27,7 @@ surge's generated write and read code is straight-line `buffer.writeXX` and
 `buffer.readXX` calls with count-driven loops: the shape native code
 generation is supposed to help most. Three measurements said otherwise —
 1.016×/1.021×, then 1.028×/1.099×, then 1.069×/1.103× when the directive was
-committed to the fixtures in surge `afde7bc` — and
+committed to the fixtures in surge `0906cf0` — and
 [generated-code-performance.md](../future-work/generated-code-performance.md)
 built a section on the first: each of six dismissed optimizations rested on
 the form "X is invisible against an interpreted total, and native shrinks that
@@ -44,8 +44,8 @@ there is biased toward 1.00× by construction.
 
 ## Method
 
-The reference is the committed catalog run at surge `824a279` and
-rbxts-transformer-surge `aa6f04b`, in which the twelve fixture modules carry
+The reference is the committed catalog run at surge `1c4d9d4` and
+rbxts-transformer-surge `cb7b4f9`, in which the twelve fixture modules carry
 `//!native` and `//!optimize 2`: two Studio runs back to back, nine trials per
 cell.
 
@@ -206,7 +206,7 @@ need their arithmetic redone.
 ## Data
 
 - The reference run: `docs/benchmarks/speed.md` and
-  `docs/benchmarks/speed-trials.tsv` as committed at surge `ed28683`.
+  `docs/benchmarks/speed-trials.tsv` as committed at surge `a631584`.
 - The two probe runs, kept because nothing else records them:
   `data/without-native-on-the-fixtures.md` and
   `data/without-optimize-2-on-the-fixtures.md` in this directory. Neither
@@ -231,7 +231,7 @@ This corrects six statements.
 
 - **The type-annotation arithmetic.** Discussion: "dismissed by dividing that by the 1.10× … to
   get 1.01×" and "Against 1.180× the arithmetic gives about 1.04×". The entry, as committed in
-  `docs/future-work/generated-code-performance.md` at surge `824a279`, took "a ninth of" native's
+  `docs/future-work/generated-code-performance.md` at surge `1c4d9d4`, took "a ninth of" native's
   gain. It did not divide, since 1.09 divided by 1.10 is 0.99. By that rule 1.180× gives about
   1.02×. About 1.04× follows only from the encode figure, 1.335×. The statement should have said
   about 1.02× against decode and about 1.04× against encode.
@@ -245,10 +245,10 @@ This corrects six statements.
 - **What stayed at level 2.** `--!optimize 2`: "both other libraries' codecs and surge's own
   runtime package, still pinned at level 2". The run has three other libraries. fbs's and Blink's
   codecs, the hand-written baseline, and surge's runtime package carry `--!optimize 2`. serio's
-  codec carries no directive (`speed.md` at `ed28683`), so it ran at the default level in both
+  codec carries no directive (`speed.md` at `a631584`), so it ran at the default level in both
   runs.
 - **The other files that name the factory.** Method: "the one other file that names
-  `createBinarySerializer` mentions it in a comment". At surge `824a279`, two files outside the
+  `createBinarySerializer` mentions it in a comment". At surge `1c4d9d4`, two files outside the
   twelve fixture modules name it: `tests/src/bench/adapters/fbs.ts` and
   `tests/src/bench/adapters/surge.ts`. Each names it in a comment, so the conclusion drawn from the
   statement does not change.
@@ -261,9 +261,9 @@ This corrects six statements.
 - **The cited document.** Background: "built a section on the first", with its "2.25× to 11.68×"
   form; Discussion: "the six dismissals generated-code-performance.md built on this figure". That
   section has since been removed from the document. It is in
-  `docs/future-work/generated-code-performance.md` as committed at surge `824a279`.
+  `docs/future-work/generated-code-performance.md` as committed at surge `1c4d9d4`.
 - **Edited after publication.** This paper was first published as `native-on-generated-code.md`
-  in surge `3bb0a57`, covering `--!native` alone. Surge `46c7985` widened it in place to both
-  directives and renamed it, and `8880b4b` changed one sentence of its Discussion, rather than
+  in surge `a960b51`, covering `--!native` alone. Surge `23a9dc4` widened it in place to both
+  directives and renamed it, and `937b350` changed one sentence of its Discussion, rather than
   publishing a second paper or appending a correction.
-  `git show 3bb0a57:docs/research/native-on-generated-code.md` is the one first published.
+  `git show a960b51:docs/research/native-on-generated-code.md` is the one first published.

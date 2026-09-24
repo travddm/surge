@@ -1,7 +1,7 @@
 # The September 2026 review: findings and what landed
 
-2026-09-18, disposition as of 2026-09-23 · surge `bc06cf7` → `07d0f33` ·
-rbxts-transformer-surge `6908124` → `aa6f04b` · Node with TypeScript 5.5.3
+2026-09-18, disposition as of 2026-09-23 · surge `bc06cf7` → `e1dbef3` ·
+rbxts-transformer-surge `6908124` → `cb7b4f9` · Node with TypeScript 5.5.3
 
 ## Abstract
 
@@ -46,7 +46,7 @@ re-run.
 Each finding became one document under `docs/future-work/`, with what, why it
 was deferred, and how it would be fixed; the index ordered them and said why
 each came where it did. A second pass the same day re-checked every claim in
-those documents against surge `7cce55e` and rbxts-transformer-surge `0e7c10d`
+those documents against surge `0b9abec` and rbxts-transformer-surge `d522be7`
 and reordered the index as a result.
 
 The review did not run the generated code against values. That boundary is
@@ -63,14 +63,14 @@ what the Discussion is about.
 | `read-order-side-effects.md`        | A helper call and a blob read came back as bare side-effecting expressions with no statement, so the read cursor and the blob channel could desynchronize.                                                             | Closed, transformer `9ef1c2e`                                         |
 | `wire-format-determinism.md`        | Literal, guarded-union, and discriminant order came from the checker's type-id order, so an unrelated file changed the bytes. Packed padding was not deterministic either.                                             | Closed, transformer `9ef1c2e`                                         |
 | `enum-encoding.md`                  | An enum index was always written with `writeu8`, and 27 of `Enum.KeyCode`'s members truncate to a different key. The promised lookup table was a linear scan.                                                          | Overflow and lookup closed, transformer `9ef1c2e`; one item open      |
-| `blob-classification.md`            | `Instance` and the Roblox datatypes were walked structurally instead of passed through, and function, `symbol`, `bigint`, `null`, template-literal, and index-signature types were misclassified in silence.           | Closed, transformer `8616c93` and `0e7c10d`; one design question open |
-| `walker-emitter-robustness.md`      | Non-identifier property names, datatype and recursive union members, a re-aliased `Packed<T>`, and a user declaration named after an injected import each crashed the transformer or produced code that did not build. | Closed, transformer `4067844`                                         |
+| `blob-classification.md`            | `Instance` and the Roblox datatypes were walked structurally instead of passed through, and function, `symbol`, `bigint`, `null`, template-literal, and index-signature types were misclassified in silence.           | Closed, transformer `96a2953` and `d522be7`; one design question open |
+| `walker-emitter-robustness.md`      | Non-identifier property names, datatype and recursive union members, a re-aliased `Packed<T>`, and a user declaration named after an injected import each crashed the transformer or produced code that did not build. | Closed, transformer `658bc66`                                         |
 | `transformer-unit-test-coverage.md` | The transformer had no unit tests, because its tests had no `@rbxts/surge` to resolve a brand against.                                                                                                                 | Harness closed, transformer `619246c`; cases land with their fixes    |
-| `round-trip-test-coverage.md`       | Eight facts covered the whole type coverage table, none of them a fuzz loop, a `@Theory`, or a whole-value comparison.                                                                                                 | Closed, surge `1109d42`                                               |
-| `type-coverage-parity.md`           | Seven Roblox datatypes, `buffer`, and several width brands had no encoding of their own.                                                                                                                               | Tier A closed, transformer `aa59c4a`; Tier B open                     |
+| `round-trip-test-coverage.md`       | Eight facts covered the whole type coverage table, none of them a fuzz loop, a `@Theory`, or a whole-value comparison.                                                                                                 | Closed, surge `a0a38b6`                                               |
+| `type-coverage-parity.md`           | Seven Roblox datatypes, `buffer`, and several width brands had no encoding of their own.                                                                                                                               | Tier A closed, transformer `d59c7ec`; Tier B open                     |
 | `benchmark-tooling.md`              | No size or speed comparison against any other library, so no claim about either could be checked.                                                                                                                      | Harness and five columns closed; one tier open                        |
 | `generated-code-performance.md`     | Six items, from a local-register ceiling that made a wide object fail to compile to one helper call per field.                                                                                                         | Every large item closed; four small ones open                         |
-| `deserialize-hardening.md`          | `deserialize` trusted its input completely.                                                                                                                                                                            | Closed, surge `84f3ed5`                                               |
+| `deserialize-hardening.md`          | `deserialize` trusted its input completely.                                                                                                                                                                            | Closed, surge `865b0e2`                                               |
 | `documentation-gaps.md`             | No user-facing documentation at all, and a checklist of statements the code contradicted.                                                                                                                              | Open                                                                  |
 | `ci-and-release.md`                 | Neither repository's CI could see a broken serializer, and neither had a tag.                                                                                                                                          | Open                                                                  |
 
@@ -82,9 +82,9 @@ pinned afterwards, in `bytes.spec.ts`.
 
 | Defect                                                                                                                                                                                   | Found by                                                         | Today                                                   |
 | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- | ------------------------------------------------------- |
-| A union of items from two enums merged into one enum under the first enum's name: a build error, or a wrong value with no error when both enums had a member of the same name.           | Landing the robustness fixes it did find (transformer `4067844`) | Diagnostic landed; support open                         |
-| An `unknown` property that was absent or `undefined` (`a?: unknown`) shifted every later blob into the wrong field, with no error.                                                       | The round-trip suite it asked for (surge `1109d42`)              | Closed, transformer `5e6c2d7`                           |
-| Six shapes whose generated code did not type-check, so the build failed inside code the user cannot open.                                                                                | The same suite, and Tier A after it                              | Closed, transformer `e74935d`, `5e6c2d7`, and `671439f` |
+| A union of items from two enums merged into one enum under the first enum's name: a build error, or a wrong value with no error when both enums had a member of the same name.           | Landing the robustness fixes it did find (transformer `658bc66`) | Diagnostic landed; support open                         |
+| An `unknown` property that was absent or `undefined` (`a?: unknown`) shifted every later blob into the wrong field, with no error.                                                       | The round-trip suite it asked for (surge `a0a38b6`)              | Closed, transformer `83d0d31`                           |
+| Six shapes whose generated code did not type-check, so the build failed inside code the user cannot open.                                                                                | The same suite, and Tier A after it                              | Closed, transformer `c9ebc38`, `83d0d31`, and `a660605` |
 | A `Map` or `Set` keyed by a Roblox datatype or by a literal union generates correct Luau and TypeScript that does not check, with no diagnostic, on a shape the coverage table promises. | Writing the fixtures for the `checks` option                     | Open, `dict-key-typing.md`                              |
 
 Three of the four are silent or invisible to the user until a build fails,
@@ -137,7 +137,7 @@ were each found by the first thing that ran the generated code on a value.
   since deleted. Each states the case its finding was confirmed on.
 - The commits named in the tables above, in both repositories.
 - The git log of both repositories between `bc06cf7`/`6908124` and
-  `07d0f33`/`aa6f04b`.
+  `e1dbef3`/`cb7b4f9`.
 
 ## Correction, 2026-09-23
 
@@ -146,7 +146,7 @@ This corrects five statements.
 - **How the later defects were found.** Abstract: "every one by something that ran the generated
   code"; Conclusion: "each found by the first thing that ran the generated code on a value". The
   table under "What it did not find" says otherwise. Only the `unknown` defect needed a value to
-  be encoded and decoded. The enum-union defect was found while transformer `4067844` landed, and
+  be encoded and decoded. The enum-union defect was found while transformer `658bc66` landed, and
   one of its two forms is a build error. The six shapes and the dictionary-key defect are
   type-check failures, and the dictionary-key defect was found by writing fixtures. The statements
   should have said that one of the four was found by running generated code on a value, and three
@@ -154,20 +154,20 @@ This corrects five statements.
   output" does not match the Method either: the review compiled probe files with `rbxtsc`.
 - **How each defect was confirmed.** Abstract: "checked it by executing the compiled transformer
   … rather than by reading it"; Discussion: "Every one of the seven defects was confirmed on a
-  concrete case before it was filed". The Method, as edited in surge `824a279`, names two
+  concrete case before it was filed". The Method, as edited in surge `1c4d9d4`, names two
   exceptions. One union case in `walker-emitter-robustness.md` is from code reading, and the enum
   index overflow rests on a member count. The statements should have said that each defect was
   confirmed on a concrete case except for those two parts.
 - **What "closed" counts.** Discussion: "all seven are closed"; Abstract: "seven of the fifteen
   are closed and eight are open in part". The two count different things. The Abstract's seven
-  are the documents deleted by surge `07d0f33`: five defects and two gaps,
+  are the documents deleted by surge `e1dbef3`: five defects and two gaps,
   `round-trip-test-coverage.md` and `deserialize-hardening.md`. The fixes for all seven defects
   landed, but `enum-encoding.md` and `blob-classification.md` stay open for one further item each.
   Of the eight documents not closed, six are open in part. Two, `documentation-gaps.md` and
   `ci-and-release.md`, are open in full.
 - **The size of the coverage table.** Discussion: "over a table of sixty rows". The type coverage
   table in `docs/transformer.md` has 21 data rows at surge `bc06cf7` and at `f5d8134`, and 22 at
-  `7cce55e`. Nothing in the repository supports sixty.
+  `0b9abec`. Nothing in the repository supports sixty.
 - **How many were silent.** Abstract: "three of them silent"; Discussion: "The two silent ones".
   Per the table, the `unknown` defect is silent. The enum-union defect is silent when both enums
   have a member of the same name, and a build error otherwise. The six shapes and the

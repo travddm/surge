@@ -1,8 +1,8 @@
 # Transformer specification
 
 Status: current
-Applies to: `@rbxts/surge` at commit `ac76821`, `rbxts-transformer-surge` at
-commit `3278123` (no tagged release yet)
+Applies to: `@rbxts/surge` at commit `bbd55c4`, `rbxts-transformer-surge` at
+commit `04cda66` (no tagged release yet)
 
 ## 1. Scope
 
@@ -351,30 +351,30 @@ of `rbxts-transformer-surge`, cited by `describe` block. Source paths are in
 
 ## Changes
 
-- `ac76821` / `3278123`: adds 5.15 (a `deserialize` result types as the type
+- `bbd55c4` / `04cda66`: adds 5.15 (a `deserialize` result types as the type
   argument).
-- `ca7bb09` / `f7270b3`: 3.3 (the options each factory takes, now
+- `fec89a8` / `17fda41`: 3.3 (the options each factory takes, now
   with `writeChecks`); adds 5.14 (the write-side checks).
-- `1ed333b` / `33e2082`: 4.7 (every `dict` key kind type-checks) now
+- `f0d9639` / `fd89bf5`: 4.7 (every `dict` key kind type-checks) now
   states a guarantee; adds 4.13 (a width-branded `Record` key).
-- `f0b68ef` / `b954fd2`: the remaining known defects of the walk
+- `a7cb730` / `84e0abb`: the remaining known defects of the walk
   fixed. 4.8 (`undefined` and `void` are constants, `never` a diagnostic),
   4.11 (a cycle through arrays or tuples is a recursion helper), 4.12 (a
   tuple union is two table-shaped constituents) and 5.12 (a packed `cframe`
   is bounded under checks) now state guarantees; 4.1, 4.2, 5.10, 7.1, 7.2 and
   7.5 follow them.
-- `8ab32c4` / `e83581b`: three known defects fixed. 4.9 (a type that depends
+- `4f09f80` / `69b6018`: three known defects fixed. 4.9 (a type that depends
   on a type parameter is a diagnostic), 4.10 (`Map` and `Set` by declaration)
   and 5.13 (a single-sided factory emits only its side) now state guarantees;
   4.1, 4.8, 5.2, 6.4, 7.1, 7.2 and 7.5 follow them.
-- `38b634f` / `6967359`: 4.8–4.12, 5.12 and 5.13 name the future-work documents that track
+- `a597b56` / `9fc05be`: 4.8–4.12, 5.12 and 5.13 name the future-work documents that track
   them.
-- `8c4d5f5` / `87813e5`: corrected against the code: 2 (Opaque, Reservation),
+- `aff15c3` / `b8ace27`: corrected against the code: 2 (Opaque, Reservation),
   3.3, 4.1 (row order and rows), 4.2, 4.3, 4.4, 4.7 (keys), 5.2 (helper scope),
   5.3–5.6, 5.8, 5.10, 6.1, 7.1, 7.2, 7.4, 7.5 and the Conformance table; adds
   4.8–4.12, 5.12, 5.13, 6.4 and 6.5; retracts the first version's claim that a type
   the walk cannot encode is always a diagnostic.
-- `16dddf8` / `05b267b`: first version, from Transformer design, Type
+- `c1cb304` / `058495f`: first version, from Transformer design, Type
   coverage and Risks in the former `docs/transformer.md`. Corrects two
   statements that document made: an ambiguous table-shaped union is a
   diagnostic, not a generated structural guard, and a type the walk cannot
