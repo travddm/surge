@@ -43,11 +43,11 @@ own doc for the detail that belongs to it:
 - [research/](research/) — papers reporting what was measured, dated and
   never edited after the fact; [research/README.md](research/README.md)
   states the format and indexes them.
-- [future-work/](future-work/) — deferred capabilities with no design yet
-  (the `surge-net` networking layer, schema evolution/versioning, and a
-  headless CI runner), plus the findings of the September 2026 adversarial
-  review: confirmed correctness bugs, determinism gaps, and test, benchmark,
-  documentation, and CI coverage gaps, one document per unit of work.
+- [future-work/](future-work/) — open work only, one document per unit of
+  work: deferred capabilities with no design yet (the `surge-net` networking
+  layer, schema evolution/versioning, and a headless CI runner) and what is
+  still open from the September 2026 review, whose findings are in
+  [research/september-2026-review.md](research/september-2026-review.md).
 
 ## Repository layout
 
@@ -287,15 +287,13 @@ done, and both tiers now write their own results. The size tier runs under Lune 
 serio, Blink, Zap, and a hand-written baseline. The speed tier runs in a real
 Roblox process through `run-in-roblox`, and
 [benchmarks/speed.md](benchmarks/speed.md) records it. The timings opened
-unflattering: surge encoded 2.87× slower than a hand-written codec
-writing its exact bytes on the one row of three whose trials can be read, and
-the two columns ahead of it on most rows were natively compiled where surge's
-generated code was not. What that gap was made of is
-[future-work/generated-code-performance.md](future-work/generated-code-performance.md),
-which the run moved to the head of the plan and which has since closed it: the
-same row is 1.08× on encode and 1.06× on decode, after a change that reserves
-bytes inline in the generated code instead of calling into the package, and
-with the fixtures and the baseline both marked `--!native`.
+unflattering against a hand-written codec writing surge's exact bytes.
+Reserving bytes inline in the generated code, instead of calling into the
+package, narrowed that gap but did not close it: what remains is paid partly
+once per call and partly per element
+([research/generated-code-against-hand-written.md](research/generated-code-against-hand-written.md)),
+and it is open in
+[future-work/generated-code-performance.md](future-work/generated-code-performance.md).
 
 0. This repo's `package.json` (the `@rbxts/surge` manifest itself), the
    `mise`-pinned toolchain (`node`, `rojo`), the `tests/` Rojo place and

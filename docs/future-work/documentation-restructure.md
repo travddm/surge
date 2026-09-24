@@ -64,10 +64,17 @@ Every paper this plan named is published, and
 [research/README.md](../research/README.md) indexes them.
 
 **Future work** (`docs/future-work/`) holds open work only, per the rule in
-[contributing-docs.md](../contributing-docs.md). One document still holds
-more than that, until the page that owns it exists:
+[contributing-docs.md](../contributing-docs.md). Six documents still hold
+more than that.
 [generated-code-performance.md](generated-code-performance.md) keeps the
-file-directive recommendation until `performance.md` does.
+file-directive recommendation until `performance.md` exists. Five still
+describe work that has landed, beyond a sentence of context for what is
+left: [blob-classification.md](blob-classification.md),
+[enum-and-opaque-union-members.md](enum-and-opaque-union-members.md),
+[enum-encoding.md](enum-encoding.md),
+[data-type-surface.md](data-type-surface.md), and
+[transformer-unit-test-coverage.md](transformer-unit-test-coverage.md). The
+final sweep removes that content, after promoting what a reader needs.
 
 ### Conventions to adopt
 
@@ -229,8 +236,9 @@ In order; each step is one change that leaves the tree consistent:
    write `AGENTS.md` and `CLAUDE.md` in both repositories, moving the
    trigger table into `AGENTS.md`; rewrite both READMEs and
    architecture.md; delete documentation-gaps.md.
-2. Final sweep: link check across both repositories, `mise run ci`, and a
-   read of every page under `docs/*.md` against
+2. Final sweep: remove the landed work the five documents under Future
+   work above still hold, link check across both repositories, `mise run
+ci`, and a read of every page under `docs/*.md` against
    [contributing-docs.md](../contributing-docs.md).
 
 **Done when:** a consumer can install and use surge from `README.md` and

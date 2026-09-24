@@ -111,7 +111,7 @@ So the trade is two bytes per container against a silent ceiling, and a
 consumer takes the two bytes back per container with `Length<T, u16>`.
 
 **The default is therefore user documentation, not an implementation
-detail.** `docs/usage.md` has to state what an unbranded string, array, map,
+detail.** `data-types.md` has to state what an unbranded string, array, map,
 set, `Record`, `buffer`, and tuple rest each cost, and that `Length<T, L>` is
 how to change it; see [documentation-gaps.md](documentation-gaps.md).
 

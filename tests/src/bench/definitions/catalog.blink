@@ -4,6 +4,9 @@
 -- as a bare serializer; everything else it generates is the event layer.
 --
 -- Regenerate ../blink/server.luau and ../blink/client.luau with `mise run bench:definitions`.
+-- Blink's output is byte-identical from one regeneration to the next, so a diff there means a
+-- definition changed. Its module raises on a second require under one `RemoteScope`, so the whole
+-- catalog is this one definition file.
 -- A client path is mandatory even when nothing requires the module, so it is generated and
 -- left alone; the adapter drives the server output, which creates its own RemoteEvents
 -- instead of waiting for them.

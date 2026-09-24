@@ -53,7 +53,8 @@ time:
   [documentation-gaps.md](documentation-gaps.md): a consumer-facing statement
   that a module holding generated serializers should carry `//!native` and
   `//!optimize 2`, and what else that module may hold. It is the one piece of
-  `docs/usage.md` that depends on neither step 1 nor step 2, and since
+  the user pages, in `performance.md`, that depends on neither step 1 nor
+  step 2, and since
   `benchmarks/speed.md` stopped advising, it is the only recommendation with
   no home outside this directory.
 - [dict-key-typing.md](dict-key-typing.md): a `Map` or `Set` keyed by a

@@ -5,7 +5,9 @@
 -- decoder. That is also why every event is `from: Server` -- the server half is the one
 -- the Lune runner can host, and the tooling decoder takes its side from its arguments.
 --
--- Regenerate ../zap/{server,client,tooling}.luau with `mise run bench:definitions`.
+-- Regenerate ../zap/{server,client,tooling}.luau with `mise run bench:definitions`. Zap emits
+-- its type declarations in a different order on every regeneration. The bytes do not move, so
+-- the size table is unchanged, but a diff under ../zap/ does not show that a definition changed.
 opt server_output = "../zap/server.luau"
 opt client_output = "../zap/client.luau"
 opt tooling = true

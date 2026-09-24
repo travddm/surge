@@ -16,9 +16,9 @@ transformer, a usage example, the supported-types table in user terms
 (what is encoded how, what becomes a blob, what is rejected), the wire
 format per kind (needed to interoperate with anything else and to reason
 about [schema-versioning.md](schema-versioning.md)), the error contract
-of `deserialize`, and the non-guarantees (dict order, no bounds checks,
-sparse arrays, `@rbxts/types` version coupling of enum indices). The two
-READMEs point at design docs instead. Until `docs/usage.md` exists,
+of `deserialize`, and the non-guarantees (dict order, no bounds checks
+unless a call site sets `checks`, sparse arrays, `@rbxts/types` version
+coupling of enum indices). The two READMEs point at design docs instead. Until `performance.md` exists,
 nothing outside this directory tells a consumer to mark a serializer
 module `//!native` and `//!optimize 2`: `benchmarks/speed.md` used to
 carry the recommendation and no longer does, because a generated results
@@ -57,8 +57,10 @@ directory states them.
 
 ## How, briefly
 
-- `docs/usage.md` (install, plugin entry, example, supported types, wire
-  format, errors, non-guarantees, and the two Luau file directives — both
+- The user pages the target layout in
+  [documentation-restructure.md](documentation-restructure.md) names
+  (install, plugin entry, example, supported types, wire format, errors,
+  non-guarantees, and the two Luau file directives — both
   recommended as defaults, with the module shape that makes `//!native` safe
   to default to, per The file-directive recommendation in
   [generated-code-performance.md](generated-code-performance.md)),
