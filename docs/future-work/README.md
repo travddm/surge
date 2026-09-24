@@ -23,11 +23,25 @@ time:
 
 - [generated-code-performance.md](generated-code-performance.md): the
   per-call gap to hand-written Luau, with two table
-  allocations per `serialize()` named as the next thing to measure; the
+  allocations per `serialize()` named as the next thing to measure, and exact
+  sizing for a shape with no loop over elements of varying size; the
   package pragma and the read loop, both reopened by the re-measurement;
-  coalescing a tuple's fixed-size elements, which needs a fixture; three
-  smaller items; the per-function `@native` attribute; and whether surge
-  should ever add the file directives itself.
+  fewer reservations, across a nested object, for a string's count and bytes,
+  for an array of fixed-size elements, and for a tuple's fixed-size elements,
+  which needs a fixture; three smaller items; the per-function `@native`
+  attribute; and whether surge should ever add the file directives itself.
+- [blob-channel-state.md](blob-channel-state.md): the blob channel's state
+  moved from the package into each serializer's closure, as the scratch
+  buffer's was. It removes the rule that two serializers with blob fields must
+  not overlap. It changes the helper ABI, so it ships in a release of both
+  packages.
+- [schema-fingerprint.md](schema-fingerprint.md): a compile-time fingerprint
+  of a type's encoding, so a game can detect bytes that a build with a
+  different type wrote. It changes no byte. It is most useful once there is a
+  release whose bytes a later release reads.
+- [native-code-limits.md](native-code-limits.md): where a large serializer, or
+  a large module of them, passes a native code generation limit and runs
+  interpreted. Measure first.
 - [enum-and-opaque-union-members.md](enum-and-opaque-union-members.md):
   support for `Enum.X | string`, a union of items from two enums, and
   `Instance | string`, each a diagnostic. Support changes `guardedUnion`
@@ -58,6 +72,12 @@ above depends on them:
 
 - [networking.md](networking.md): the `surge-net` transport layer.
   Serializer-layer work is complete without it.
+- [caller-buffers.md](caller-buffers.md): writing into and reading from a
+  caller's buffer at an offset. `surge-net`'s per-frame batching is its
+  driver. Its blob handling builds on
+  [blob-channel-state.md](blob-channel-state.md), and its constant size on
+  the first item under fewer reservations in
+  [generated-code-performance.md](generated-code-performance.md).
 - [schema-versioning.md](schema-versioning.md): schema evolution. Only
   needed once a deployment runs two builds against one shape.
 - [headless-ci.md](headless-ci.md): automated benchmark runs in CI. The

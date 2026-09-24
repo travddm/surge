@@ -55,6 +55,21 @@ call is not settled
 ([per-call-overhead.md](../research/per-call-overhead.md) and its
 correction).
 
+Not every shape needs a second traversal to be sized. The hand-written
+baseline (`tests/src/bench/baseline/codecs.luau`) computes its buffer's size
+from the value before it writes, and has no scratch buffer, no capacity check
+and no copy. The size is a constant for the flat struct, the fixed bytes plus
+each string's length for the nested object, and the count times the element
+size for the `CFrame` array. The `Field` tree gives the transformer the same
+terms at compile time. Only a loop over elements of varying size, such as an
+array of strings or a `dict`, needs a traversal to be sized. An `optional` or
+a union adds its branch to the sizing, which evaluates the branch's test
+twice. Any other shape could be sized from a constant and the lengths and
+counts it reads anyway, then written into one `buffer.create` of that size.
+That removes every capacity check and the call to `finishWrite` with its copy.
+The allocation stays, because the caller gets a buffer of its own. A shape
+with such a loop keeps the scratch buffer. None of this is measured.
+
 **Reopened: the package pragma.** The package's hot modules carry
 `--!native`, and this was recorded as worth nothing, because marking only the
 package moved almost no work into the native region. A loop benchmark of a
@@ -77,10 +92,33 @@ fixtures compiled interpreted. Neither condition holds now, and it was not
 measured again. The change stays for what the emitted code says,
 whatever it is worth.
 
-**Tuple elements.** Coalesce a tuple's consecutive fixed-size elements into
-one reservation, the way an object's fields already are. The mechanism is
-`fixedBytes`, `allocRuns` and `withAllocRun`, unchanged; what is missing is a
-benchmark fixture that serializes a tuple, without which nothing measures it.
+**Fewer reservations.** A run of consecutive fixed-size properties of one
+object shares one reservation (Transformer 5.5), and nothing else does. The
+places below reserve more often than the bytes require. Merging reservations
+changes no byte, because reservation order is byte order either way. A shape
+whose reservations all merge makes one reservation per call, which is where
+the exact sizing above starts.
+
+- **Across a nested object.** `fixedBytes` has no case for an `object`, so a
+  run ends at a nested object even when every field inside it has a fixed
+  size. The deeply nested object reserves eight times per call, and the
+  hand-written codec for the same bytes allocates once. The run's cap of 31
+  properties keeps it inside one block of Transformer 5.8, so the cap would
+  count the nested fields too.
+- **A string's count and bytes.** A `str` or a `buffer` reserves its count
+  and then its bytes: two reservations where one of the count's width plus
+  the length would do.
+- **An array of fixed-size elements.** Each element reserves inside the loop,
+  so `Blink: Entities` checks capacity once per element. One reservation of
+  the count times the element's size, before the loop, covers every element.
+  With `checks`, the count bound (Runtime API 4.3 in
+  [specs/runtime-api.md](../specs/runtime-api.md)) is exact for such an
+  element, so the per-element read bounds repeat it.
+- **Tuple elements.** Coalesce a tuple's consecutive fixed-size elements into
+  one reservation, the way an object's fields already are. The mechanism is
+  `fixedBytes`, `allocRuns` and `withAllocRun`, unchanged; what is missing is
+  a benchmark fixture that serializes a tuple, without which nothing measures
+  it.
 
 **Smaller items.** Strings evaluate `s.size()` twice. The scratch buffer only
 grows, so one large payload pins its memory for the module's lifetime. An

@@ -29,6 +29,9 @@ bump — the same class of problem this document is about, but triggered by
 a dependency update rather than an edit to the shape's own declaration.
 No mitigation exists yet; whatever direction is picked for schema
 evolution above should account for it.
+[schema-fingerprint.md](schema-fingerprint.md) would detect it, because the
+fingerprint covers each enum's member list, but it would not read the old
+bytes.
 
 ## How, briefly
 
