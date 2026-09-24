@@ -112,7 +112,7 @@ file in its `lib/` for the snapshot to copy.
 | 3.1       | `rbxts-transformer-surge` `test/`: `walk.test.ts`, `emit.test.ts`, `transform.test.ts`, `detect.test.ts`                     |
 | 3.2       | `test/golden.test.mjs`                                                                                                       |
 | 3.3       | `tests/src/tests/*.spec.ts`; `tests/src/tests/support.spec.ts` tests the whole-value comparison itself                       |
-| 3.4       | Source: `main()` in `tests/src/index.ts` runs `script.tests` only                                                            |
+| 3.4       | Source: `main()` in `tests/src/index.ts` runs only `script.WaitForChild("tests")`                                            |
 | 4.1–4.4   | Source: `tests/scripts/lune-test-runner.luau` and `tests/scripts/lune-roblox-shim.luau`; every round-trip run exercises them |
 | 4.5       | Source: `tests/src/support.ts`, the shim's `DateTime`, and the enum fixture in `tests/src/bench/fixtures/enum-heavy.ts`      |
 | 5.1, 5.2  | Source: `main()` in `tests/src/index.ts`                                                                                     |

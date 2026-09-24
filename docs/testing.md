@@ -158,7 +158,7 @@ The concrete plan for everything else:
   [architecture.md](architecture.md) for why). After editing either package,
   run `npm run tests:install` again before `npm run tests:compile`: section 6
   of [specs/test-harness.md](specs/test-harness.md) says why a plain install
-  is not enough.
+  is not enough. `mise run ci` and both benchmark tasks do this for you.
 - **Transformer unit tests** and **golden checks**: what each covers is in
   section 3 of [specs/test-harness.md](specs/test-harness.md). The golden
   checks read `tests/out/`, so `tests/` must be built after a real
