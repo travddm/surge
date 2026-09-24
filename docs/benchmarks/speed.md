@@ -29,7 +29,7 @@ Every column but serio runs with `--!native` and `--!optimize 2`.
 Each number is one shape in a warm loop, on one machine on one day, not
 an application profile; compare columns within this file only.
 [size.md](size.md) gives each row's bytes, and
-[testing.md](../testing.md) says how the suite measures.
+[specs/benchmark-harness.md](../specs/benchmark-harness.md) says how the suite measures.
 
 The run:
 

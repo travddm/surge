@@ -36,7 +36,7 @@ export interface SizeResult {
 }
 
 /**
- * Tier 1 of docs/future-work/benchmark-tooling.md: bytes per value, which is
+ * The size tier (section 5 of docs/specs/benchmark-harness.md): bytes per value, which is
  * deterministic and therefore worth recording from Lune rather than from a
  * real Roblox process. `scripts/lune-size-runner.luau` calls this and writes
  * the table; nothing here prints a number it did not measure.

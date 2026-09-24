@@ -11,6 +11,12 @@ import type { BlinkCodec } from "../blink/server";
  * `side` is always zero: a Blink export cannot carry an `Instance` or an
  * `unknown`, which are the only things the other adapters put beside the
  * buffer.
+ *
+ * Each generated `Write` saves the module's send state into a new table,
+ * resets it with `Load()` -- a fresh 64-byte scratch buffer and a fresh
+ * instance table -- and copies what it wrote into an exact-size result, so it
+ * creates two buffers and two tables per call. That is Blink's cost, not this
+ * adapter's, and it is in every Blink encode cell of the speed table.
  */
 export function blinkAdapter<T>(codec: BlinkCodec<T>): Adapter<T> {
 	return {

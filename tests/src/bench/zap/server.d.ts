@@ -7,7 +7,7 @@
  * layer this benchmark deliberately does not use: every row here is fired at
  * the mocked remote the Lune shim provides and measured out of what
  * `SendEvents` flushes, because Zap exposes no encoder (see
- * docs/future-work/benchmark-tooling.md). So these declarations cover exactly
+ * section 4.3 of docs/specs/benchmark-harness.md). So these declarations cover exactly
  * that -- `Fire` and `SendEvents` -- and name each shape structurally, so a
  * fixture's own sample value is assignable without a second shape
  * declaration.

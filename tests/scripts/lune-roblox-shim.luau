@@ -283,7 +283,7 @@ gameRoot._children.Players = players
 -- library reaches Instance.new.
 --
 -- Zap's is the one that does work. It exposes no encoder at all (see
--- docs/future-work/benchmark-tooling.md), so the only way to read a size out of it is to fire
+-- section 4.3 of docs/specs/benchmark-harness.md), so the only way to read a size out of it is to fire
 -- one event and measure what SendEvents flushes: `FireClient` records that here as `LastSend`,
 -- which the benchmark's Zap adapter reads back. Nothing replicates, and no event is ever
 -- received.

@@ -1,7 +1,7 @@
--- Tier 1 of docs/future-work/benchmark-tooling.md: writes ../docs/benchmarks/size.md from the
+-- The size tier (section 5 of docs/specs/benchmark-harness.md): writes ../docs/benchmarks/size.md from the
 -- bytes each fixture costs under each library, via `mise run bench:size`. It runs under Lune
 -- because a byte count is deterministic -- unlike a timing, which only the real engine can give
--- (see the Benchmarking strategy in docs/testing.md), and which `mise run bench:speed` collects
+-- (see section 6 of docs/specs/benchmark-harness.md), and which `mise run bench:speed` collects
 -- instead.
 --
 -- It requires src/bench/size.luau directly rather than an entry point in src/index.ts, so a

@@ -1,5 +1,5 @@
--- Runs the speed suite (Tier 2 of docs/future-work/benchmark-tooling.md, see also the
--- Benchmarking strategy in docs/testing.md) inside a real Roblox Studio process driven by
+-- Runs the speed suite (section 6 of docs/specs/benchmark-harness.md)
+-- inside a real Roblox Studio process driven by
 -- `run-in-roblox`, via `mise run bench:speed`. The size tier needs no Roblox process and runs
 -- under Lune instead, through scripts/lune-size-runner.luau. Confirmed empirically
 -- that `run-in-roblox --script` runs this file as its own Script instance without simulating Play

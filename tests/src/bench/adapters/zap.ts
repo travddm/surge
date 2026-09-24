@@ -37,7 +37,7 @@ function zapRemote(): CapturingRemote {
  *
  * This works only under the Lune runner, which provides that mocked remote;
  * it is why Zap is a size-only column and the speed tier skips it. See
- * docs/future-work/benchmark-tooling.md.
+ * section 4.3 of docs/specs/benchmark-harness.md.
  *
  * The event arrives as a selector rather than as itself, because the module
  * it comes from cannot be required at all in a real Roblox process: nothing

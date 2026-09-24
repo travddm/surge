@@ -120,85 +120,12 @@ see "No automated runtime CI for benchmarks" below.
 
 ### Round-trip tests run under Lune
 
-The mechanism, in short (full detail and rationale live as comments in
-the runner file itself):
-
-- **The core problem**: Lune's own `require()` only accepts a string
-  path — confirmed directly, not assumed, by calling it with a real
-  `ModuleScript` Instance deserialized via `@lune/roblox` and getting
-  `bad argument #1 to 'require' (string expected, got userdata)`. Real
-  Roblox's `require(moduleScriptInstance)` is an engine-level primitive
-  Lune doesn't reimplement.
-- **The fix**: override the global `require` to detect a "fake Instance"
-  (a plain table with a recognizable metatable), translate its captured
-  on-disk path into a string, and delegate to Lune's own native
-  `require(path)` for the actual loading/caching/relative-resolution —
-  `TS.import`/`RuntimeLib.lua` itself is never touched. This is far less
-  code than reimplementing module loading, and it means Lune's own
-  require semantics (including per-path caching) are reused as-is.
-- **Building the fake tree**: eagerly `fs.readDir`-scan real output
-  directories (`tests/out`, `tests/include`,
-  `tests/node_modules/@rbxts`, `tests/node_modules/@flamework`) at
-  startup, hand-mirroring `default.project.json`'s `$path` mappings —
-  not derived from a sourcemap or a built `.rbxl`. Scanning must happen
-  eagerly, never lazily inside `__index`: Lune's `fs` functions yield
-  internally, and Luau forbids yielding across a metamethod boundary.
-- **Datatype globals**: `Vector3`/`Vector2`/`Vector3int16`/`Vector2int16`/`Rect`/`NumberRange`/`BrickColor`/`UDim2`/`UDim`/`CFrame`/
-  `Color3`/`ColorSequence`/`NumberSequence` (and the two keypoint
-  types)/`Enum` are bound as
-  bare globals from `@lune/roblox`'s namespaced equivalents
-  (`(roblox :: any).Vector3`, etc. — the `:: any` cast works around
-  Lune 0.10.5's `@lune/roblox` type definitions omitting these
-  constructors even though they exist at runtime). `buffer` needs no
-  shim; it's a native Luau global Lune ships without help. Add the same
-  pattern for any datatype a future fixture needs that isn't listed here
-  (`UDim2`, ...). Lune does not provide `Random`, so the fuzz loops use
-  the seeded `Rng` in `tests/src/support.ts`. Lune has no `DateTime`
-  either, so the runner defines a stand-in with the two members the
-  generated code uses (`UnixTimestampMillis`,
-  `DateTime.fromUnixTimestampMillis`). `typeof` reports the stand-in as a
-  table, so no fixture uses a `DateTime` as a union member.
-- **Service stubs**: most services auto-vivify as inert stubs the first
-  time `GetService` is asked for them. `RunService` gets a real stub
-  (`IsRunning`/`IsClient`/`IsServer`/`IsStudio`/a dead `Heartbeat.Connect`)
-  because `@flamework/core` (which `@rbxts/runit` depends on) calls these
-  directly at module load, not just checks they exist; `Players` gets
-  `LocalPlayer = nil`. `Instance.new("BindableEvent")` returns a
-  stand-in with real `Connect`/`Fire` dispatch — `@flamework/core`'s
-  `Modding` module constructs one via `@rbxts/signal` unconditionally at
-  module load, and needs it to actually work, not just exist. Every other
-  class is a Lune data-model instance, which is enough for a fixture that
-  passes an `Instance` through the blob channel.
-- **Two separate roots, not one**: `src/tests/*.spec.ts` (correctness)
-  and `src/bench/` (benchmarks) are siblings, not nested —
-  `src/index.ts`'s `main()` only ever passes `script.tests` to
-  `TestRunner`, so `src/bench/speed.spec.ts` is structurally excluded from
-  the Lune runner rather than filtered out by convention (a benchmark
-  suite's `@Fact`s don't assert anything meaningful for a pass/fail
-  gate, and their iteration counts would slow down every `mise run ci`
-  run for no benefit).
-- **The pass/fail signal**: a failing `@Fact` is caught inside `runit`'s
-  own `TestRunner`, so the Lune process always exits `0` regardless of
-  outcome — `main()`'s reporter parses `runit`'s printed report
-  (`Ran N tests...` / `Passed: N` / `Failed: N`) into a `RUNIT_RESULT:`
-  sentinel line, and `tests/scripts/check-test-output.mjs` (invoked as
-  `node scripts/check-test-output.mjs lune run scripts/lune-test-runner.luau`)
-  scrapes that line into a real process exit code, plus a watchdog
-  timeout (`SURGE_TEST_TIMEOUT`, default 60s) in case a suite hangs.
-  `main()` explicitly checks that more than zero tests ran, not just
-  that zero failed — a broken mount (an empty or misconfigured `tests`
-  folder) would otherwise report `Ran 0 tests` / `Failed: 0` and the
-  sentinel would read as a silent, false-positive `PASSED`.
-- **Known boundary**: this covers anything reachable through
-  `TS.import`/`require(Instance)` on files that exist on disk under the
-  mounted folders — which is all roblox-ts-compiled output, first- or
-  third-party — but not arbitrary hand-written Luau packages with their
-  own relative-`require("./x")` conventions, since Lune's native
-  relative-require resolution doesn't replicate Rojo/Roblox
-  Instance-tree semantics the same way. None of this project's current
-  dependencies hit that case (`@rbxts/services` and `@rbxts/signal` are
-  hand-written but only ever call `game:GetService(...)`/`Instance.new`,
-  never a relative `require`), but a future dependency might.
+The round-trip suite runs headlessly under Lune, through a shim that fakes
+enough of the Roblox `Instance` surface for roblox-ts's module resolution to
+work. What the shim provides, the sentinel line that carries the result, and
+what a run must rebuild first are specified in
+[specs/test-harness.md](specs/test-harness.md); how the shim works is in the
+comments of `tests/scripts/lune-roblox-shim.luau`.
 
 `@rbxts/runit` itself is the same xUnit-style framework (`@Fact`,
 `@Theory`, `@InlineData`, `Assert`) already used by an established
@@ -221,89 +148,22 @@ ordered here for the identical reason (see the comment in
 
 The concrete plan for everything else:
 
-- **Toolchain**: [`mise`](https://mise.jdx.dev), matching the template's
-  own `mise.toml` closely — `node` and `rojo` pinned the same way, plus
-  `lune` (`github:lune-org/lune`, not the deprecated `ubi:` backend) for
-  the round-trip suite above, and `run-in-roblox` for the benchmark suite
-  (see "Running benchmarks via run-in-roblox" below):
-
-    ```toml
-    [tools]
-    node = "24.18.0"
-    "github:rojo-rbx/rojo" = "7.7.0-rc.1"
-    "github:lune-org/lune" = "0.10.5"
-    "github:rojo-rbx/run-in-roblox" = "0.3.0"
-    ```
-
-    One dependency this pulls in that the _shipped_
-    `@rbxts/surge`/`rbxts-transformer-surge` packages otherwise wouldn't
-    need: `@rbxts/runit`'s README states it "Depends on
-    `rbxts-transformer-flamework`", so the `tests/` project needs
-    `@flamework/core` and `rbxts-transformer-flamework` as devDependencies
-    purely to run the test suite, mapped into `ReplicatedStorage` the same
-    way the template's own `default.project.json` already does — these
-    stay scoped to `tests/`'s own `package.json`, not either published
-    package's dependency list. `tests/` is not an npm workspace member of
-    this repo — it's its own standalone project with its own
-    `node_modules`, installed with `npm run tests:install` from the repo
-    root (a `--prefix tests` wrapper) — see Repository layout in
-    [architecture.md](architecture.md) for why. `tests/.npmrc` sets
-    `install-links=true` so its `file:` dependencies on `@rbxts/surge` and
-    `rbxts-transformer-surge` are packed and copied, not symlinked (see
-    architecture.md for why a symlink would cycle) — which means
-    `tests/node_modules/` holds a **snapshot**, not a live view. A plain
-    `npm install` reports the snapshot as up to date while the version
-    number is unchanged, so `npm run tests:install` first deletes both
-    snapshots (`tests/scripts/clear-stale-build.mjs`) to force a fresh
-    copy. The same script deletes `tests/out/tsconfig.tsbuildinfo`, for
-    the same reason one step later: `tests/tsconfig.json` sets
-    `incremental`, and the transformer is a tsconfig plugin, not an input
-    file, so with `tests/src/` unchanged `rbxtsc` reuses the previous emit
-    and the new transformer never runs — the golden checks, the round-trip
-    run, and both benchmark tiers would all read the previous
-    transformer's code, with nothing in the output to say so.
-    After editing this package's `src/` or the transformer's source, rerun
-    `npm run tests:install` before `npm run tests:compile` (or
-    `mise run tests:compile:watch`, which watches `tests/src/` only, never
-    the dependency snapshot) to pick the change up.
-
-    The snapshot is a copy of the transformer's `lib/`, and `tsc` never
-    deletes output for a source file that was renamed or deleted. A
-    leftover `lib/x.js` beside a new `lib/x/` is the case that bites:
-    Node resolves `./x` to the file, so every suite here would run the
-    previous transformer and pass. The transformer's own `npm run compile`
-    deletes output with no source before it builds, in
-    `scripts/clear-orphaned-output.mjs` (`rbxts-transformer-surge`
-    `aa6f04b`), so there is no manual step — but a `lib/` built by a bare
-    `tsc` has not had that run.
-
-- **Transformer unit tests** live in `rbxts-transformer-surge`'s own
-  `test/` and run in plain Node/Jest, no Luau or Roblox involved — the
-  transformer is ordinary code operating on the TypeScript compiler API.
-  These cover: type-walk classification (does a given TS type produce the
-  expected `Field` IR), property name-sort determinism across
-  differently-constructed equivalent types (the fix for fbs's issue #16 —
-  exactly the kind of regression a unit test catches cheaply), and
-  diagnostic behavior for rejected inputs (ambiguous multi-object unions
-  before that phase ships, `Record<SomeUnion, V>`, etc.).
-- **Golden/invariant tests on the generated Luau itself** live in _this_
-  repo's `test/` instead (they used to sit alongside the transformer's own
-  unit tests, before the two-repo split — the fixtures they read,
-  `tests/out/`, are only ever produced in this repo; one check reads this
-  package's own `out/` instead, for the Luau file pragmas each of its
-  modules carries) and run in plain Node
-  (`node:test`, no extra dependency) — no execution needed, only reading
-  the compiled `.luau` text: for a curated set of representative shapes,
-  assert the emitted function body contains no shape-based branching (no
-  `if kind ==`-style dispatch reappearing) and no recursive call into a
-  shared generic serializer for a non-recursive type — the specific,
-  falsifiable claim this whole design rests on, checked as an automated
-  regression rather than only a one-time manual read of the output (as the
-  initial spike did). This requires `tests/`'s own build to run _after_ a
-  real `rbxts-transformer-surge` install (whatever repo it's coming from —
-  a sibling checkout locally, `github:` otherwise), since `tests/` loads
-  it as a `tsconfig.json` plugin by package name, not by source — a
-  step-0 build-order constraint, not just a convenience.
+- **Toolchain**: [`mise`](https://mise.jdx.dev), with the versions pinned in
+  `mise.toml`: `node`, `rojo`, `lune` for the round-trip suite and the size
+  tier, and `run-in-roblox` for the speed tier. `@rbxts/runit` depends on
+  `rbxts-transformer-flamework`, so `tests/` carries `@flamework/core` and
+  `rbxts-transformer-flamework` as devDependencies of its own; neither
+  published package depends on them. `tests/` is a standalone npm project
+  installed with `npm run tests:install` (see Repository layout in
+  [architecture.md](architecture.md) for why). After editing either package,
+  run `npm run tests:install` again before `npm run tests:compile`: section 6
+  of [specs/test-harness.md](specs/test-harness.md) says why a plain install
+  is not enough.
+- **Transformer unit tests** and **golden checks**: what each covers is in
+  section 3 of [specs/test-harness.md](specs/test-harness.md). The golden
+  checks read `tests/out/`, so `tests/` must be built after a real
+  `rbxts-transformer-surge` install, since it loads the transformer as a
+  tsconfig plugin by package name.
 - **Round-trip tests**, the primary correctness technique for generated
   code, are `@rbxts/runit` suites in the `tests/` project, under
   `src/tests/*.spec.ts`, depending on both `@rbxts/surge` and
@@ -376,244 +236,47 @@ The concrete plan for everything else:
 
 ## Benchmarking strategy
 
-Benchmarks stay on real Roblox (Studio, or `run-in-roblox`) even though
-the round-trip suite now runs under Lune — deliberately, not because
-compiled output can't run there (it can, per above). Lune is a separate
-Luau implementation/VM build from Roblox's own engine; `os.clock()`
-timings measured under it are not evidence of real in-game throughput,
-only of correctness. A benchmark number this design publishes has to come
-from the actual engine it claims to be fast on. Zap is not a speed baseline:
-its event-level `irgen`-produced writes target a module-global
-`outgoing_buff`/`outgoing_apos`, and the public surface for those is
-`Fire`/`FireAll`/`On` wired to real `RemoteEvent` instances at module load,
-not a callable `Zap.encode(shape, value)`. Reading Zap 0.6.29 settled the
-question its `.zap` DSL's named `type` declarations left open: only
-recursive ones get their own `write_X`/`read_X`, and the `types` table
-holding them is module-local, so no shape has a callable Zap codec. An
-encode timed through the event path would measure batching and a mocked
-remote as much as the encoder, so it is not taken. Its bytes are another
-matter, and are planned for Tier 1 through that same mocked remote minus
-the event-id byte; see
-[future-work/benchmark-tooling.md](future-work/benchmark-tooling.md).
+Benchmarks run on real Roblox even though the round-trip suite runs under
+Lune. Lune is a separate Luau build, so a timing measured under it is not
+evidence of in-game throughput; a byte count is the same on any runtime, which
+is why the size tier runs under Lune and the speed tier does not. The harness
+— its catalog, the columns it compares, both tiers' protocols, and what each
+results file records — is specified in
+[specs/benchmark-harness.md](specs/benchmark-harness.md), and what it has
+measured is under [research/](research/README.md).
 
-This design measures **speed** inside real Roblox — Studio, via the
-`tests` place, or `run-in-roblox` (`mise run bench:speed`) for an
-automatable-but-still-real-engine run — using `os.clock()` around many
-iterations, reported through the same runner output `@rbxts/runit`
-already prints to. Against these baselines:
+Each comparison column answers its own question. fbs is the library surge is
+a drop-in alternative to. serio is a second runtime schema interpreter, which
+shows whether a difference against fbs is particular to fbs or common to
+interpreting a schema at run time. Blink is an IDL compiler, the closest
+published comparison to compile-time specialization. The hand-written baseline
+writes surge's exact bytes, so its distance from surge is what the generated
+code costs rather than a difference of format.
 
-1. **fbs**, via `createBinarySerializer<T>()` for the identical shape —
-   the actual comparison this whole project is justified by.
-2. **serio**, via `createSerializer<T>()` — a second runtime schema
-   interpreter, with its own narrower widths and a lossy `CFrame`, which
-   is what shows whether a delta against fbs is fbs-specific or common to
-   interpreting a schema at runtime.
-3. **Blink**, via the `Write`/`Read` pair an `export`ed type generates —
-   an IDL compiler rather than a runtime schema interpreter, so it is the
-   closest published comparison to what this transformer does, and the only
-   one of the three libraries whose shapes are declared outside TypeScript.
-4. **A hand-written, non-generated "ideal" flat serializer** for a subset of
-   shapes — `tests/src/bench/baseline/codecs.luau`, a straight-line function
-   per shape with no transformer involved, covering the flat struct, the
-   nested object, and the `CFrame` array. This measures whether the
-   transformer's emitted code actually reaches the flatness it claims, or
-   introduces avoidable overhead (extra temporaries, an unnecessary function
-   layer) beyond what the shape structurally requires — a check the fbs
-   comparison alone cannot catch. It is Luau rather than TypeScript for that
-   reason: roblox-ts's own idioms would otherwise be part of what is being
-   measured. It writes surge's bytes exactly, which the size table checks.
+### Running the speed tier
 
-    The variant this document used to propose — transcribing the statement
-    sequence Zap's `irgen` would produce, as a stand-in for "how Zap would do
-    it" — was not built. Zap's bytes are measured directly now (Tier 1), and a
-    transcription would still be the only route to a Zap-shaped _timing_,
-    which remains open rather than done.
+`mise run bench:speed` needs Roblox Studio installed, and takes about ten
+minutes: two runs of about four minutes each, back to back. `run-in-roblox`
+runs the injected script as its own Script instance, so `script` resolves as
+it does in a place; it does not simulate Play, so the place's own `MainServer`
+and `MainBenchmarks` Scripts never run; and it completes without interaction
+on a place that depends on `@flamework/core`. The rows reach the terminal as
+they are measured, because the suite yields and the plugin flushes its output
+on `Heartbeat`.
 
-A library with no adapter for a row, such as Blink on a shape its IDL cannot
-express, simply has no cell there. The full plan is
-[future-work/benchmark-tooling.md](future-work/benchmark-tooling.md).
+### Reading a scoped run
 
-### Running the size tier under Lune
+`mise run bench:size:only large-array` and `mise run bench:speed:only cframe`
+measure only the rows their patterns select. A pattern is one word, because a
+mise task argument does not reliably keep its quoting on Windows. The size
+tier is the cheap place to confirm a pattern selects what you meant, since the
+speed tier only finds out after the place is built and Studio is up.
 
-`mise run bench:size` reinstalls and recompiles `tests/` first (see
-"Both benchmark tasks reinstall first" below), then runs
-`tests/scripts/lune-size-runner.luau`, which
-loads the compiled fixtures through the same fake-Instance shim the
-round-trip runner uses (`tests/scripts/lune-roblox-shim.luau`, shared by
-both), asks each fixture for every column's buffer size, side-table count,
-and round-trip error, and writes [benchmarks/size.md](benchmarks/size.md)
-with `@lune/fs`, one column per library. The task
-then reformats that file with Prettier, since every checked-in Markdown
-file has to pass `mise run format:check`.
-
-Lune is the right runtime for this tier and the wrong one for speed: a
-byte count is a property of the wire format, identical on any Luau
-runtime, while a timing is a property of the engine. The runner requires
-`src/bench/size.luau` directly rather than an entry point in
-`src/index.ts`, so a fixture that fails to load cannot break the
-round-trip suite. The generated table carries no date, machine, or commit,
-so it changes only when an encoding changes — which makes it a
-byte-regression gate as well as a result.
-
-Three limits of running this tier headlessly. Two are already known from the
-round-trip suite: Lune's Roblox database is missing members that
-`@rbxts/types` declares for every enum of more than 256 members
-(`Enum.KeyCode` included), so the catalog's enum row uses `Enum.Material`
-and the wide enum index is measured at the transformer level instead; and
-`DateTime` has a stand-in, so no fixture uses one. The third came with the
-two IDL compilers: their generated modules are event layers that cannot be
-separated from the codec, so the shim pre-creates the remotes each looks for
-and reports a running server. Blink's `Write`/`Read` then work as pure
-functions, and Zap -- which has no codec to call at all -- is driven by
-firing one event at its mocked remote and measuring what `SendEvents` hands
-over. That mock is also why Zap has no speed number: the real Roblox process
-the speed tier runs in has neither a mocked remote nor a fake player to queue
-against, so `SIZE_ONLY` in `bench/adapter.ts` keeps the suite off it. Its
-generated module cannot even be required there -- it errors on a client, and
-Studio's edit mode answers true to both `IsClient` and `IsServer` -- so a
-fixture reaches a Zap event through `bench/zap/deferred.luau`, which requires
-the module on first use, and `defineEntry` puts off a size-only entry's first
-encode for the same reason. In a Roblox process neither ever happens.
-
-### Running the speed tier via run-in-roblox
-
-`mise run bench:speed` reinstalls and recompiles `tests/`, builds the
-`tests` place (`rojo build`), and runs it twice, back to back, through
-[`run-in-roblox`](https://github.com/rojo-rbx/run-in-roblox) with
-`tests/scripts/run-in-roblox-benchmarks.luau` as the injected script
-(`tests/scripts/ensure-dist.mjs` creates `dist/` first, since it's
-gitignored and `rojo build` doesn't create its own output directory).
-Confirmed empirically, not assumed:
-
-- `run-in-roblox --script` runs the given file as its own real Script
-  instance (`script` resolves to it, unlike the Studio command bar, where
-  `script` is nil) — so `require(tests):runBenchmarks()` works exactly as
-  it does from the disabled `MainBenchmarks` Script (see "Round-trip
-  tests run under Lune" above for the same `script`-is-nil pitfall this
-  avoids).
-- It does not simulate Play: `ServerScriptService`'s `MainServer` and
-  `MainBenchmarks` Scripts never fire on their own, only the explicitly
-  injected script runs. There is exactly one thing running per invocation.
-- It loads a place depending on `@flamework/core`/
-  `rbxts-transformer-flamework` (the same dependency `@rbxts/runit`
-  itself has) and completes on its own, without requiring interaction,
-  which is what makes it usable from a task instead of only from a human
-  pressing Play.
-
-`run-in-roblox` calls the injected script on its plugin's own thread and
-ends the run when that call returns, so the suite yields on purpose: its
-timing loop yields between timed chunks of calls once a quarter second of
-measured work has passed, never inside a timed chunk, and `runBenchmarks`
-waits for runit's verdict before it returns. A suite that never yielded
-held the plugin thread for the whole catalog with no frame in between, and
-about ten seconds in, every path that allocates per call slowed by close to
-an order of magnitude and stayed slow for the rest of the run — Studio's
-"plugin has stopped responding" prompt was the symptom, and the numbers
-were the damage. See
-[Frame starvation in a Studio benchmark run](research/frame-starvation.md)
-for what that cost each cell of the catalog and what it leaves unexplained.
-Yielding also means the rows reach the terminal as they are measured, since
-the plugin flushes its output on `Heartbeat`.
-
-This is a different mechanism from the Lune runner above, not a
-replacement for it: `run-in-roblox` drives the actual Roblox engine, so
-its timings are real, but a timing is a number to read rather than a
-pass/fail signal, which is why `mise run bench:speed` is deliberately not
-part of `mise run ci` (see "No automated runtime CI for benchmarks"
-above). The run does carry the Lune runner's `RUNIT_RESULT:` idea under
-another name: `src/index.ts` prints `BENCH_RESULT:` with runit's verdict,
-and the recorder below writes no results file without it.
-
-**Both benchmark tasks reinstall first.** Each tier reads `tests/out` and
-`tests/node_modules`, and neither `rojo build` nor the Lune runner refreshes
-either, so both tasks run `tests:install` and `tests:compile` before
-measuring. The install is the part that matters and the part that is easy to
-miss: `tests/node_modules/@rbxts/surge` is a packed copy, not a symlink (see
-`install-links=true` above), so an edit under `src/` does not reach a
-benchmark run until `tests/` is installed again. Without it a run measures
-the previous build of the package and says nothing about it. The same task
-deletes `tests/out/tsconfig.tsbuildinfo`, which is the same trap one step
-later: a transformer change leaves `tests/src/` untouched, so an incremental
-`rbxtsc` reuses the previous emit and the run measures the previous
-transformer.
-
-**Either tier can be scoped to some fixtures.** `mise run bench:size:only
-large-array` and `mise run bench:speed:only cframe` measure only the rows
-their patterns select and print the table instead of rewriting the results
-file. That is how one change is read without a full run: seconds for the size
-tier, and one short Studio run for the speed tier, where the full catalog is
-two runs of about four minutes each. A
-pattern is one word, because a mise task argument does not reliably reach the
-task with its quoting intact — on Windows a quoted `large array` arrives as
-two arguments. The match drops case and every character that is not a letter
-or a digit from both sides, so `large-array` selects exactly the `large
-array` row and `cframe` selects all three `CFrame` rows. A pattern that
-matches nothing stops the run and lists the catalog — the size tier is the
-cheap place to confirm a pattern selects what you meant, since the speed tier
-only finds out after the place is built and Studio is up.
-
-A scoped **size** table can be read against
-[benchmarks/size.md](benchmarks/size.md) directly, because a byte count is
-the same on every run. A scoped **speed** table cannot:
-[benchmarks/speed.md](benchmarks/speed.md) holds that a column is read
-against the other columns of the same run and never against a number from
-another file, and a scoped run is a run of its own. Read one against another
-scoped run of the same patterns.
-
-A scoped run writes none of the three. `size.md` is a byte-regression gate,
-and `size.md` and `speed.md` both open with prose describing the whole
-catalog, so a file holding a few of its rows would read as a result about all
-of them; `speed-trials.tsv` records the run `speed.md` records and goes
-where it goes. That is
-also why the flag is `--only` rather than "there are arguments": a
-`bench:*:only` task with no pattern stops instead of quietly doing a full run
-under a name that says otherwise. `run-in-roblox` passes no arguments into
-the Studio process, so a scoped speed run reaches the suite through the
-script it injects — the recorder copies
-`tests/scripts/run-in-roblox-benchmarks.luau` into `dist/` with the patterns
-substituted into the one line that file reserves for them. Both tiers select
-by one rule, in `tests/src/bench/selection.ts`, so a pattern picks the same
-rows in either.
-
-**Both tiers write their own results file.** The size tier does it
-directly, exactly as Lync's committed baseline does and for the same
-reason (a `lune run` script has ordinary filesystem access). A speed
-number cannot take that route: it comes from a Roblox process, which has
-no filesystem. So it leaves as printed output instead —
-`src/bench/speed.spec.ts` prints one `BENCH_ROW:` line per fixture,
-library, and half, carrying every trial's rate, and
-`tests/scripts/record-speed-benchmarks.mjs` wraps `run-in-roblox`,
-forwards every line it is handed, and turns the rows into
-[benchmarks/speed.md](benchmarks/speed.md), with every trial of every run
-in `benchmarks/speed-trials.tsv` beside it. A full run is two Studio
-processes back to back, and a cell is the median over both runs' trials;
-the file states how far a cell's median moved between the two runs, which
-is the run-to-run noise a reader needs to tell a real change from drift,
-and which one run cannot show. A trial is a length of time rather than a
-number of calls, and within a row the libraries take turns, one trial
-each; the comment block in `speed.spec.ts` says why each of those is so.
-Both files record the date, the machine, the engine version the process
-itself reports, and the commit or version of everything measured, because
-a timing is only true of one machine on one day, where a byte count is
-true everywhere. The recorder writes nothing unless every run passed and
-every row came back in both halves of every run, so an interrupted run
-leaves the last real table in place. It is still a deliberate
-benchmarking pass, not something every change runs. `mise run
-bench:speed:render` writes `speed.md` again from the trials file with no
-run, which is how a change to the recorder's statistics or layout is read
-without ten minutes of Studio.
-
-**Metrics per row**: buffer bytes and side-table entries from the size
-tier, and throughput (values/sec) for serialize and deserialize
-separately from the speed tier. Generated Luau size (line/byte count)
-belongs with the speed numbers, because full inlining trades code size
-for speed and the one large-shape row exists to make that trade-off, and
-the Luau function-size risk (see Transformer 5.8 in
-[specs/transformer.md](specs/transformer.md)), visible in real numbers instead of
-only discussed; measuring it needs each fixture's generated code in a
-module of its own, which the harness does not do yet (see
-[future-work/benchmark-tooling.md](future-work/benchmark-tooling.md)).
-Because the speed tier runs inside real Roblox (not Lune), its numbers
-are already the real, final production numbers — there is no separate
-"validate against real Roblox" pass needed, unlike the Lune-based
-approach this section replaced.
+A scoped size table can be read against
+[benchmarks/size.md](benchmarks/size.md) directly, because a byte count is the
+same on every run. A scoped speed table cannot: a column is read against the
+other columns of the same run, and a scoped run is a run of its own, so read
+one against another scoped run of the same patterns. Two separate runs of
+unchanged code can still disagree by a quarter on a single cell
+([research/noise-in-the-speed-tier.md](research/noise-in-the-speed-tier.md)),
+so read medians over many cells, with the untouched columns as the control.

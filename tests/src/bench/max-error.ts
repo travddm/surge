@@ -5,9 +5,8 @@
  * `difference` in ../support says *whether* a round trip lost something; this
  * says how much, which is what separates f32 rounding (about 1e-7 on a
  * rotation component) from an encoding that quantizes on purpose. The size
- * table needs both, because three libraries now share its round-trip column:
- * see the deliberate deferral this replaces in
- * docs/future-work/benchmark-tooling.md.
+ * table needs both, because three libraries share its round-trip column
+ * (section 5.2 of docs/specs/benchmark-harness.md).
  */
 
 /** `undefined` on either side wins: it means "not expressible as a number". */

@@ -1,5 +1,5 @@
--- Zap twins of the fixture catalog in ../fixtures/, per the harness plan in
--- docs/future-work/benchmark-tooling.md. Zap has no callable encoder, so every row is an
+-- Zap twins of the fixture catalog in ../fixtures/, per section 4.4 of
+-- docs/specs/benchmark-harness.md. Zap has no callable encoder, so every row is an
 -- event fired at a mocked RemoteEvent: the adapter reads the bytes out of what SendEvents
 -- flushes, minus the one event-id byte, and reads the value back through the tooling
 -- decoder. That is also why every event is `from: Server` -- the server half is the one

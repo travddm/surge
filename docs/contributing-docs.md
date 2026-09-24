@@ -27,7 +27,7 @@ the reader who needs it and never current for the reader who wrote it.
 | [architecture.md](architecture.md)         | How the two repositories fit together, the cross-cutting decisions behind that shape, and the index of the documents below.                 |
 | [serde.md](serde.md)                       | How a consumer installs the two packages, until a user page takes it.                                                                       |
 | [coding-standards.md](coding-standards.md) | TypeScript conventions, and the tooling that enforces them.                                                                                 |
-| [testing.md](testing.md)                   | What each step of `mise run ci` checks, the runtime suites and the shim they run under, and how the benchmarks are run and recorded.        |
+| [testing.md](testing.md)                   | What each step of `mise run ci` checks, how to write a suite, and how to run a benchmark tier and read its result.                          |
 | `contributing-docs.md`                     | This document.                                                                                                                              |
 | [benchmarks/](benchmarks/)                 | Recorded results, written by `mise run bench:size` and `mise run bench:speed`. Generated, and never hand-edited.                            |
 | [specs/](specs/)                           | Normative specifications, versioned with the code. [specs/README.md](specs/README.md) has the format.                                       |
@@ -49,10 +49,10 @@ would be confused or misled, that document is part of the change.
 | Changed the runtime package's exports, or the contract of `createBinarySerializer` or `deserialize` | [specs/runtime-api.md](specs/runtime-api.md)                                                             |
 | Changed any byte an encoding writes: a width, a length prefix, the packed region, an enum index     | [specs/wire-format.md](specs/wire-format.md), `tests/src/tests/bytes.spec.ts`, and `mise run bench:size` |
 | Changed type classification, a diagnostic, or an emission rule                                      | [specs/transformer.md](specs/transformer.md)                                                             |
-| Changed the benchmark catalog, an adapter, the timing protocol, or a recorder                       | [testing.md](testing.md), and re-record the results file it affects                                      |
+| Changed the benchmark catalog, an adapter, the timing protocol, or a recorder                       | [specs/benchmark-harness.md](specs/benchmark-harness.md), and re-record the results file it affects      |
 | Measured something: a probe, an A/B, a re-measurement, or a full run worth keeping                  | A paper under [research/](research/). A page links to the paper and never carries the number             |
 | Changed a lint rule, a formatter setting, a type rule, or a naming convention                       | [coding-standards.md](coding-standards.md)                                                               |
-| Changed how `ci` runs, the Lune shim, a sentinel line, or an exit code                              | [testing.md](testing.md)                                                                                 |
+| Changed how `ci` runs, the Lune shim, a sentinel line, or an exit code                              | [testing.md](testing.md) and [specs/test-harness.md](specs/test-harness.md)                              |
 | Changed how or when documentation is updated                                                        | This document                                                                                            |
 | Started, finished, or re-scoped deferred work                                                       | [future-work/](future-work/), per the rule below                                                         |
 

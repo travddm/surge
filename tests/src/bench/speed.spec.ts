@@ -7,7 +7,7 @@ import { CATALOG } from "./catalog";
 import { matching, scopedPatterns } from "./selection";
 
 /**
- * Tier 2 of docs/future-work/benchmark-tooling.md: encode and decode values
+ * The speed tier (section 6 of docs/specs/benchmark-harness.md): encode and decode values
  * per second, over the same catalog the size run measures, one line per
  * fixture and library. Real Roblox only (`mise run bench:speed`, or the
  * disabled `MainBenchmarks` Script in default.project.json): a timing from

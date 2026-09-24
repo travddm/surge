@@ -16,7 +16,7 @@ import { wideStruct } from "./fixtures/wide-struct";
 /**
  * The one fixture catalog both benchmark tiers read: the size run under Lune
  * (size.ts) and the speed run under real Roblox (speed.spec.ts). The rows are
- * the list in docs/future-work/benchmark-tooling.md. Each library's adapter
+ * section 3 of docs/specs/benchmark-harness.md. Each library's adapter
  * drives this same catalog, so a size delta between two libraries is a format
  * difference and nothing else; only surge's adapter exists so far.
  */

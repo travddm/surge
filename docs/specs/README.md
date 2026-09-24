@@ -56,13 +56,13 @@ what a reader needs in order to apply a statement correctly.
 
 ## Published specifications
 
-| Specification                    | Specifies                                                                                                                          |
-| -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| [runtime-api.md](runtime-api.md) | `@rbxts/surge`'s consumer API, what `deserialize` does with bad input, the helpers generated code calls, and the version coupling. |
-| [wire-format.md](wire-format.md) | The bytes each `Field` kind writes, the brands that change them, `Packed<T>`, the blob channel, and determinism.                   |
-| [transformer.md](transformer.md) | Which calls the transformer transforms, how each type is classified, what it emits, and the diagnostics it reports.                |
+| Specification                                | Specifies                                                                                                                          |
+| -------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| [runtime-api.md](runtime-api.md)             | `@rbxts/surge`'s consumer API, what `deserialize` does with bad input, the helpers generated code calls, and the version coupling. |
+| [wire-format.md](wire-format.md)             | The bytes each `Field` kind writes, the brands that change them, `Packed<T>`, the blob channel, and determinism.                   |
+| [transformer.md](transformer.md)             | Which calls the transformer transforms, how each type is classified, what it emits, and the diagnostics it reports.                |
+| [test-harness.md](test-harness.md)           | The correctness suites, how the round-trip suite runs under Lune, its sentinel line and exit code, and what a run rebuilds first.  |
+| [benchmark-harness.md](benchmark-harness.md) | The benchmark catalog and columns, both tiers' protocols, the sentinel lines, and what each results file records.                  |
 
-Which specifications are still planned, what each one owns, and where its
-content lives today are in
-[../future-work/documentation-restructure.md](../future-work/documentation-restructure.md).
-Each is listed here as it lands.
+Every specification the restructure planned is written. A new one follows the
+format above and is listed here.

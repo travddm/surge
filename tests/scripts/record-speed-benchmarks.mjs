@@ -1,4 +1,4 @@
-// Runs the speed tier (Tier 2 of docs/future-work/benchmark-tooling.md) and writes
+// Runs the speed tier (section 6 of docs/specs/benchmark-harness.md) and writes
 // ../docs/benchmarks/speed.md from what it printed, via `mise run bench:speed`.
 //
 // A Roblox process cannot write a file, so src/bench/speed.spec.ts prints one `BENCH_ROW:` line
@@ -648,7 +648,7 @@ function write(facts) {
 		"Each number is one shape in a warm loop, on one machine on one day, not",
 		"an application profile; compare columns within this file only.",
 		"[size.md](size.md) gives each row's bytes, and",
-		"[testing.md](../testing.md) says how the suite measures.",
+		"[specs/benchmark-harness.md](../specs/benchmark-harness.md) says how the suite measures.",
 		"",
 		"The run:",
 		"",

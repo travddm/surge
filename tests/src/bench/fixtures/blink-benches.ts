@@ -20,9 +20,9 @@ const ENTITY_COUNT = 100;
 
 /**
  * Blink's two published benchmark shapes, so a result here can be compared
- * against its own table. The exact `.blink` definitions are transcribed when
- * the Blink adapter lands (see docs/future-work/benchmark-tooling.md); these
- * are the shapes as that document records them.
+ * against its own table. Their `.blink` twins in ../definitions/catalog.blink
+ * are transcribed from Blink's own benchmark definitions, at the commit pinned
+ * in docs/future-work/type-coverage-parity.md.
  */
 interface Booleans {
 	values: boolean[];

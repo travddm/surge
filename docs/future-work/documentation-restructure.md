@@ -55,12 +55,8 @@ produces is held to them.
 
 **Specifications** (`docs/specs/`) are normative and versioned with the
 code, in the format [specs/README.md](../specs/README.md) states.
-The specs to write, and where their content is today:
-
-| Spec                         | Content                                                                                                                  | From                                                                                                       |
-| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------- |
-| `specs/benchmark-harness.md` | The catalog, adapters, tiers, protocol (chunked timing, yields, trials, scoped runs), and what each results file records | testing.md Benchmarking strategy and the run-in-roblox section, benchmark-tooling.md, the recorder scripts |
-| `specs/test-harness.md`      | The Lune shim contract, the sentinel lines, what each suite root covers                                                  | testing.md                                                                                                 |
+Every specification this plan named is written, and
+[specs/README.md](../specs/README.md) indexes them.
 
 **Research papers** (`docs/research/`) report what was measured and never
 advise, in the format [research/README.md](../research/README.md) states.
@@ -68,10 +64,8 @@ Every paper this plan named is published, and
 [research/README.md](../research/README.md) indexes them.
 
 **Future work** (`docs/future-work/`) holds open work only, per the rule in
-[contributing-docs.md](../contributing-docs.md). Two documents still hold
-more than that, each until the page that owns it exists:
-[benchmark-tooling.md](benchmark-tooling.md) keeps the harness design until
-`specs/benchmark-harness.md` takes it over, and
+[contributing-docs.md](../contributing-docs.md). One document still holds
+more than that, until the page that owns it exists:
 [generated-code-performance.md](generated-code-performance.md) keeps the
 file-directive recommendation until `performance.md` does.
 
@@ -189,24 +183,22 @@ Write one only when the task has been done twice by hand.
 | `transformer.md` (deleted)                  | `supported-types.md` still takes the user's view of what is supported, from Transformer 4.1                        |                                                  |
 | `serde.md`                                  | `getting-started.md` (install and version pinning); `specs/runtime-api.md` has taken the contract                  |                                                  |
 | `coding-standards.md`                       | Kept and shortened; gains file organization, comments, and generated files per Conventions to adopt                | The editor-window narrative (to contributing.md) |
-| `testing.md`                                | Kept, in the fixed shape above; `specs/test-harness.md` and `specs/benchmark-harness.md` take the contracts        | The history of why each runner exists            |
+| `testing.md`                                | Kept, in the fixed shape above; `specs/test-harness.md` and `specs/benchmark-harness.md` have taken the contracts  | The history of why each runner exists            |
 | `benchmarks/*`                              | Unchanged; their generated prose shortened to point at the harness spec                                            |                                                  |
 | `future-work/generated-code-performance.md` | `performance.md` takes the file-directive recommendation; the open items stay                                      |                                                  |
-| `future-work/benchmark-tooling.md`          | `specs/benchmark-harness.md` takes the harness design; the open items stay                                         |                                                  |
+| `future-work/benchmark-tooling.md`          | Its open items stay; `specs/benchmark-harness.md` has taken the harness design                                     |                                                  |
 | `future-work/documentation-gaps.md`         | The user pages it lists, then deleted; its stale-statement checklist is worked off during the move                 |                                                  |
 | Other `future-work/*.md`                    | Unchanged if open; deleted if landed, with a spec or paper carrying the record                                     |                                                  |
 
 ### What must survive the move
 
-- Code comments and tests cite documents by section. Every citation of
-  the former `transformer.md` and of a deleted future-work document now
-  names a statement in a specification or a finding in a paper. What is
-  left is `testing.md`'s sections (`Benchmarking strategy in testing.md`)
-  and the prose the two recorder scripts write, naming `size.md` and
-  `speed.md`: sweep `src/`, `tests/`, `test/`, `scripts/`, both
-  `README.md`s, and the transformer repository for those, and update each
-  to the new location and section. Do not leave redirect
-  stubs; a stub is a second place the statement lives.
+- Code comments and tests cite documents by section. Every citation of a
+  moved or deleted section now names a statement in a specification or a
+  finding in a paper. When a later step moves a section, sweep `src/`,
+  `tests/`, `test/`, `scripts/`, both `README.md`s, and the transformer
+  repository for `.md` mentions and update each to the new location and
+  section. Do not leave redirect stubs; a stub is a second place the
+  statement lives.
 - `architecture.md`'s "Documents in this design" list is the entry point
   and must be rewritten with the layout above, not appended to.
 - Nothing is duplicated between an old and a new location for longer than
@@ -231,16 +223,13 @@ with a sequence, not a series of opportunistic edits.
 
 In order; each step is one change that leaves the tree consistent:
 
-1. Write the two harness specs from testing.md and benchmark-tooling.md,
-   each section marked `current` or `draft`; delete the prose the specs
-   restate; fix the code and test citations.
-2. Write the user pages, `contributing.md`, and the shortened
+1. Write the user pages, `contributing.md`, and the shortened
    `coding-standards.md` and `testing.md`, working off
    documentation-gaps.md's checklist as each statement is rewritten;
    write `AGENTS.md` and `CLAUDE.md` in both repositories, moving the
    trigger table into `AGENTS.md`; rewrite both READMEs and
    architecture.md; delete documentation-gaps.md.
-3. Final sweep: link check across both repositories, `mise run ci`, and a
+2. Final sweep: link check across both repositories, `mise run ci`, and a
    read of every page under `docs/*.md` against
    [contributing-docs.md](../contributing-docs.md).
 

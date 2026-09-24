@@ -3,8 +3,8 @@ import { difference } from "../support";
 import { maxComponentError } from "./max-error";
 
 /**
- * One library's driver for one shape, per the harness plan in
- * docs/future-work/benchmark-tooling.md. `bytes` is the wire payload;
+ * One library's driver for one shape, per section 3 of
+ * docs/specs/benchmark-harness.md. `bytes` is the wire payload;
  * `side` is the number of entries the library passes outside that payload
  * (surge's and fbs's blob array, serio's), which cost bandwidth the buffer
  * does not show. `payload` is whatever `decode` needs back, so the two
@@ -25,7 +25,7 @@ export interface Encoded {
 /**
  * A column of the size table: the four comparison libraries, surge itself,
  * and the hand-written baseline, which is not a library at all but is driven
- * through the same interface (see Benchmarking strategy in docs/testing.md).
+ * through the same interface (see section 4.5 of docs/specs/benchmark-harness.md).
  */
 export type Library = "surge" | "fbs" | "serio" | "blink" | "zap" | "baseline";
 
@@ -44,7 +44,7 @@ export const LIBRARIES: ReadonlyArray<Library> = ["surge", "fbs", "serio", "blin
  * required there -- it errors on a client, and Studio's edit mode answers
  * true to both `IsClient` and `IsServer` -- which is why `defineEntry`
  * builds a size-only entry on first use rather than at import. See
- * docs/future-work/benchmark-tooling.md.
+ * section 4.3 of docs/specs/benchmark-harness.md.
  */
 export const SIZE_ONLY: ReadonlyArray<Library> = ["zap"];
 
@@ -64,8 +64,8 @@ export interface Measurement {
 
 /**
  * One library's half of one catalog row. `encode` and `decode` are the two
- * halves the speed suite times; they discard their results, exactly as the
- * methodology in benchmark-tooling.md requires.
+ * halves the speed suite times; they discard their results, exactly as section 6.3 of
+ * docs/specs/benchmark-harness.md requires.
  */
 export interface Entry {
 	library: Library;

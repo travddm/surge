@@ -1,6 +1,6 @@
 --!native
 --!optimize 2
--- The hand-written "ideal flat serializer" from the Benchmarking strategy in docs/testing.md:
+-- The hand-written baseline of section 4.5 of docs/specs/benchmark-harness.md:
 -- what a person would write by hand for one fixed shape, with no transformer, no schema, and no
 -- library in the way. It is not a comparison with anything published. It is the floor -- the
 -- fewest instructions the shape structurally needs -- so the gap between it and surge's emitted

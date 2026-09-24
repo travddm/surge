@@ -26,10 +26,6 @@ file states what was measured and does not advise.
 
 **Statements the code contradicts** (each checked against the source):
 
-- [testing.md](../testing.md) says golden checks cover "a curated set of
-  representative shapes"; there are 13 tests in one file,
-  `test/golden.test.mjs`, each pinning one decision rather than sampling
-  shapes. The count was six when this entry was written.
 - `rbxts-transformer-surge/README.md` and Static verification in
   [testing.md](../testing.md) tell VS Code users to run the `mise: ci`
   task; the tasks are labeled `transformer: ci` and `surge: ci` (renamed

@@ -1,5 +1,5 @@
--- Blink twins of the fixture catalog in ../fixtures/, per the harness plan in
--- docs/future-work/benchmark-tooling.md. `export` is what gives a type a standalone
+-- Blink twins of the fixture catalog in ../fixtures/, per section 4.4 of
+-- docs/specs/benchmark-harness.md. `export` is what gives a type a standalone
 -- `Write(value) -> buffer` / `Read(buffer)` pair, which is the only way to drive Blink
 -- as a bare serializer; everything else it generates is the event layer.
 --
