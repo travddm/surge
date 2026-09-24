@@ -96,6 +96,9 @@ all serializers. A `serialize` of a type with a blob field must therefore not
 start while any other such `serialize` is running, and the same holds for
 `deserialize`.
 
+Two different serializers may otherwise overlap: one may run inside a call of
+the other, and each returns what it returns when it runs alone.
+
 A serializer runs code it did not generate only through the metamethods of a
 table it is given, so both rules matter only for a value with a metatable:
 when one of its metamethods serializes, or when the iterator its `__iter`
@@ -110,4 +113,4 @@ call that runs untransformed at run time raises an error that says the
 transformer is not registered in `tsconfig.json`.
 
 The full contract is [specs/runtime-api.md](specs/runtime-api.md) sections 3
-and 4, and 5.5 to 5.7 for calls that overlap.
+and 4, and 5.5 to 5.8 for calls that overlap.

@@ -1,7 +1,7 @@
 # Runtime API specification
 
 Status: current
-Applies to: `@rbxts/surge` at commit `1bfb702`, `rbxts-transformer-surge` at
+Applies to: `@rbxts/surge` at commit `9fcca62`, `rbxts-transformer-surge` at
 commit `0710f5d` (no tagged release yet)
 
 ## 1. Scope
@@ -191,7 +191,13 @@ other call's input.
 metamethods of a table it is given. Only a metamethod can therefore start a
 call that 5.5 or 5.6 forbids: by calling a serializer itself, or, in the case
 of the iterator function that an `__iter` metamethod returns, by yielding
-while another thread calls one. `__index` and `__len` cannot yield.
+while another thread calls one. Luau lets that iterator yield from release
+0.736, and from release 0.722 behind a flag; in an earlier release, the yield
+raises. `__index` and `__len` cannot yield.
+
+**5.8** A call of one serializer may start while a call of a different
+serializer is running, unless 5.5 forbids it. Each call then returns what it
+returns when it runs alone.
 
 ## 6. Version coupling
 
@@ -236,11 +242,15 @@ A test file named `*.spec.ts` is under `tests/src/tests/`. A path starting
 | 5.4                         | Source only: `finishWriteExpression` and `writeStateDecls` in `emit/context.ts`                                                                                                                                                                                                                                                    |
 | 5.5                         | Source only: the module state in `src/blobs.ts`                                                                                                                                                                                                                                                                                    |
 | 5.6                         | Source only: `writeStateDecls` and `readStateDecls` in `emit/context.ts` declare the state once per closure, and `beginWriteStatements` and `beginReadStatements` reset it per call; no test re-enters a serializer                                                                                                                |
-| 5.7                         | Source only: the emitter reads a value's properties, lengths and `for … in` iterations under `emit/`, and calls nothing else of the value's. Which metamethods may yield is Luau's: `luaD_call` and `luaD_performcally` in its `VM/src/ldo.cpp`                                                                                    |
+| 5.7                         | Source only: the emitter reads a value's properties, lengths and `for … in` iterations under `emit/`, and calls nothing else of the value's. Which metamethods may yield is Luau's: `luaD_call` and `luaD_performcally` in its `VM/src/ldo.cpp`. No test yields inside `serialize`, because Lune 0.10.5 bundles Luau 0.709         |
+| 5.8                         | `overlap.spec.ts`: `runsAnotherSerializerInsideAnIterator`, a call from inside an `__iter` iterator. A call while an iterator is suspended is not run, as the 5.7 row states                                                                                                                                                       |
 | 6.1–6.2                     | Source only: no version field is read or written by either package                                                                                                                                                                                                                                                                 |
 
 ## Changes
 
+- `9fcca62` / `0710f5d`: adds 5.8 (a call of a different serializer may
+  overlap), pinned by `overlap.spec.ts`; 5.7 names the Luau release from
+  which an `__iter` iterator may yield.
 - `1bfb702` / `0710f5d`: adds 5.6 (a serializer is not re-entrant, whatever
   `T` is) and 5.7 (what can start a second call, including an `__iter`
   iterator that yields); 5.5 points at 5.7.

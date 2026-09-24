@@ -47,7 +47,8 @@ benchmark speed tier needs Roblox Studio, and it is not part of `ci`.
 ## Writing suites
 
 - One suite per area: `numbers`, `strings`, `collections`, `literals`,
-  `unions`, `recursion`, `packed`, `roblox`, `factories` and `checks`, with
+  `unions`, `recursion`, `packed`, `roblox`, `factories`, `overlap` and
+  `checks`, with
   `basic` and `coverage` as regression suites and `bytes` for exact bytes.
 - Compare whole values: assert `difference(value, result) === undefined`,
   with `difference` from `tests/src/support.ts`. It returns the path of the

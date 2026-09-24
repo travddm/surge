@@ -35,9 +35,9 @@ In Luau:
 - `__index` and `__len` cannot yield. The VM calls them through `luaD_call`,
   and `lua_yield` raises "attempt to yield across metamethod/C-call boundary"
   inside them.
-- The iterator function that an `__iter` metamethod returns can yield. The
-  `FORGLOOP` instruction calls it through `luaD_performcally`, which permits
-  it ([`VM/src/ldo.cpp`](https://github.com/luau-lang/luau/blob/master/VM/src/ldo.cpp),
+- The iterator function that an `__iter` metamethod returns can yield, from
+  Luau release 0.736. The `FORGLOOP` instruction calls it through
+  `luaD_performcally`, which permits it ([`VM/src/ldo.cpp`](https://github.com/luau-lang/luau/blob/master/VM/src/ldo.cpp),
   [`VM/src/lvmexecute.cpp`](https://github.com/luau-lang/luau/blob/master/VM/src/lvmexecute.cpp)).
 
 So a second serializer starts inside a first one only when a metamethod
