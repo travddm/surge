@@ -112,9 +112,8 @@ So the trade is two bytes per container against a silent ceiling, and a
 consumer takes the two bytes back per container with `Length<T, u16>`.
 
 **The default is therefore user documentation, not an implementation
-detail.** `data-types.md` has to state what an unbranded string, array, map,
-set, `Record`, `buffer`, and tuple rest each cost, and that `Length<T, L>` is
-how to change it; see [documentation-gaps.md](documentation-gaps.md).
+detail**, and [data-types.md](../data-types.md) states what every unbranded
+container's count costs and that `Length<T, L>` is how to change it.
 
 A project-wide default in `tsconfig.json` is rejected: two projects compiled
 with different settings could not exchange bytes, and nothing in the type

@@ -33,6 +33,11 @@ Part of the [surge](../architecture.md) design.
 - **No Windows job.** The maintainer develops on Windows and the mise
   tasks assume a POSIX shell (documented as a VS Code task override);
   nothing exercises that path automatically.
+- **No release documentation.** There is no `CHANGELOG`, no tagging
+  procedure, and no statement of which Roblox, roblox-ts and `@rbxts/types`
+  versions the generated code targets. [getting-started.md](../getting-started.md)
+  asks a consumer to pin both repositories to the same release, and neither
+  has one yet.
 - **`tests/package.json` lists `rbxts-transformer-flamework` and
   `rbxts-transformer-surge` under `dependencies`**; both are build-time
   tools and belong in `devDependencies` with the rest of the toolchain
@@ -57,7 +62,9 @@ what the missing integration job would catch.
 - Emit a diagnostic from the transformer when the resolved `@rbxts/surge`
   version does not equal the transformer's own; document a release
   procedure that bumps both `package.json` versions and tags both
-  repositories together.
+  repositories together, with a `CHANGELOG.md` entry, and state the
+  targeted roblox-ts and `@rbxts/types` versions in
+  [getting-started.md](../getting-started.md).
 - Switch CI to `npm ci` and key the cache on the exact lockfile hash
   without a prefix fallback.
 - Add a `windows-latest` matrix entry running the same steps through Git
