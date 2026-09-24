@@ -271,7 +271,7 @@ real consumer would — `file:` dependencies with `install-links=true`,
 packed and `prepare`-built, not symlinked — then actually running the
 `@rbxts/runit` round-trip suite headlessly under Lune, via a fake-Instance
 shim adapted from an existing solution to the same problem in another
-project (see "Round-trip tests run under Lune" in testing.md), followed by the
+project (section 4 of [specs/test-harness.md](specs/test-harness.md)), followed by the
 golden-Luau invariant checks against that same compiled output); and real
 `createBinarySerializer<T>()` fixtures in `tests/src/tests/*.spec.ts`
 compiled through both, actually executed, not just compiled. The two-repo

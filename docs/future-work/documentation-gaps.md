@@ -8,10 +8,10 @@ rewrites each page, and the process documents a first release needs.
 
 **Statements the code contradicts** (each checked against the source):
 
-- `rbxts-transformer-surge/README.md` and Static verification in
-  [testing.md](../testing.md) tell VS Code users to run the `mise: ci`
-  task; the tasks are labeled `transformer: ci` and `surge: ci` (renamed
-  for the multi-root workspace, per architecture.md).
+- `rbxts-transformer-surge/README.md` tells VS Code users to run the
+  `mise: ci` task; the tasks are labeled `transformer: ci` and `surge: ci`
+  (renamed for the multi-root workspace, per
+  [contributing.md](../contributing.md)).
 - Implementation status in architecture.md says steps 0 to 8 are "built
   and verified, end-to-end"; the bugs recorded in this directory show the
   verification was the eight round-trip facts, not the Type Coverage

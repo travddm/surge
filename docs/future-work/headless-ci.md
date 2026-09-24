@@ -41,8 +41,8 @@ has) without issue, and exits on its own once the script finishes — no
 interaction needed. What's still unevaluated, if this is ever pursued:
 whether it needs a visible Studio window on the machine that would run it
 in CI (unconfirmed either way — it did not require interacting with one
-locally), where recorded numbers would live (a checked-in log, as
-Benchmarking strategy in [testing.md](../testing.md) already does by
-hand, or something queryable), and what makes a timing difference across
+locally), where recorded numbers would live (a checked-in file, as
+`mise run bench:speed` writes `benchmarks/speed.md` by hand today, or
+something queryable), and what makes a timing difference across
 runs a real regression rather than ordinary noise. Worth its own decision
 if ever pursued, not assumed here.

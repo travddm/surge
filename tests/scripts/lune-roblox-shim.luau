@@ -18,8 +18,8 @@
 --    Roblox does; compiled code assumes they exist, so they're bound as globals below.
 --
 -- Real Roblox (Studio, or run-in-roblox) is still how the speed benchmarks run -- a timing
--- measured under Lune is not evidence about the engine surge claims to be fast on (see
--- docs/testing.md's Benchmarking strategy). Only the size tier, whose numbers are byte counts
+-- measured under Lune is not evidence about the engine surge claims to be fast on (Benchmark
+-- harness 6.1 in docs/specs/benchmark-harness.md). Only the size tier, whose numbers are byte counts
 -- and therefore runtime-independent, runs here.
 local fs = require("@lune/fs")
 local roblox = require("@lune/roblox")

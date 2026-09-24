@@ -1,18 +1,8 @@
-# surge: coding standards
+# Coding standards
 
-Part of the [surge](architecture.md) design. Conventions for TypeScript in
-this repository, enforced by ESLint, Prettier, and the compiler, and
-verified by `mise run ci` (see [testing.md](testing.md)).
-
-These follow an established roblox-ts starter template's own
-conventions closely — the same ecosystem convention this design
-already follows for its toolchain and testing setup (see
-[testing.md](testing.md)) — deviating only where this project's shape
-requires it: two separate repositories (see Repository layout in
-[architecture.md](architecture.md)), one of which
-(`rbxts-transformer-surge`) is a plain Node/CommonJS package rather than a
-roblox-ts-compiled one, and neither of which has the template's
-client/server/shared "realm" split.
+The rules for code in both repositories. Tooling enforces formatting, types
+and the lint rules, and `mise run ci` fails on a break; review enforces the
+rest.
 
 ## Tooling
 
@@ -23,104 +13,88 @@ client/server/shared "realm" split.
 | Prettier     | `.prettierrc`        | `mise run format:check` / `mise run format:fix` |
 | cspell       | `cspell.json`        | `mise run spell`                                |
 
-`lint:check`/`lint:fix` run both ESLint and markdownlint (`lint:eslint`
-and `lint:md` individually, if only one is needed).
-
-Run `lint:fix` and `format:fix` (in whichever repo was touched) before
-treating a change as finished, not just the `check` variants `mise run ci`
-gates on — catching auto-fixable issues locally is cheaper than leaving
-them for CI or the next contributor to trip over.
-
-Each repository keeps its own copy of all four configs — there is no
-longer a single shared root, since the two repos don't share a
-`node_modules` or a checkout — trimmed to what that repo actually needs
-(the transformer repo's ESLint config, for instance, has no
-`roblox-ts/no-any` block, since none of its code is compiled by
-roblox-ts). `.vscode/settings.json` and `.vscode/extensions.json` wire the
-same tools into the editor (format-on-save, recommended
-ESLint/Prettier/roblox-ts/task-buttons extensions), matching the
-template, again once per repo. `.vscode/tasks.json` maps every `mise`
-task to a VS Code task (with a Windows shell override to Git Bash, since
-mise tasks assume a POSIX shell), labeled `surge: <task>` /
-`transformer: <task>` rather than the bare `mise: <task>` the template
-uses — see Editing both repos together in
-[architecture.md](architecture.md) for why the prefix is load-bearing,
-not cosmetic.
-
-`.vscode/settings.json`'s `VsCodeTaskButtons.tasks` surfaces the common
-ones (`Compile`, `Fix`, `CI`) as one-click buttons — but only when that
-repo is opened as its own standalone VS Code window. `VsCodeTaskButtons.*`,
-`material-icon-theme.*`, and `js/ts.tsdk.*` are all window-scoped
-settings, which VS Code only reads from a folder's own
-`.vscode/settings.json` when that folder _is_ the whole window; opened as
-part of `surge.code-workspace`'s multi-root window instead, those same
-keys in either folder's `settings.json` are silently ignored. The
-combined `.code-workspace` file carries its own top-level `settings`
-block with the equivalent (task buttons referencing both repos' now-
-distinctly-labeled tasks, the icon associations, and the TS SDK picker)
-for that reason — see Editing both repos together in
-[architecture.md](architecture.md).
+Run `mise run lint:fix` and `mise run format:fix` in each repository a change
+touches before `mise run ci`. Each repository keeps its own copy of every
+config, trimmed to what it needs: the transformer is plain Node, so its
+ESLint config has no roblox-ts rules. cspell checks Markdown, text and YAML,
+and the last commit message; add a real word to `cspell.json`.
 
 ## Formatting
 
-Prettier owns formatting, with the same settings as the template:
-
-- Tabs for indentation, width 4.
-- A print width of 120 columns.
-- Trailing commas everywhere.
-
-Imports are sorted and grouped automatically by
-`@trivago/prettier-plugin-sort-imports`. This repo has no Roblox-services/
-Flamework/realm layering to sort by, so the order is simpler than the
-template's: `typescript` (the compiler API) first, then `@rbxts/*`
-packages, then relative imports. Do not reorder imports by hand — run
-`mise run format:fix`.
+Prettier owns formatting: tabs of width 4, a print width of 120 columns, and
+trailing commas everywhere. `@trivago/prettier-plugin-sort-imports` sorts
+imports: `typescript` first, then `@rbxts/*`, then relative imports. Do not
+order them by hand. markdownlint holds a Markdown line to 100 columns outside
+tables and code blocks.
 
 ## Types
 
-- `strict` mode is on everywhere. `mise run compile` is the type-check.
-- `any` is discouraged everywhere, and banned outright in this package's
-  own `src/` and in `tests/` via `roblox-ts/no-any` (both are
-  roblox-ts-compiled). `rbxts-transformer-surge` is plain Node/CommonJS
-  and never compiled by roblox-ts, so `roblox-ts/no-any` doesn't apply
-  there; `@typescript-eslint/no-explicit-any` covers it instead — the
-  TypeScript compiler API that package operates on is fully typed, so
-  `any` should be rare regardless.
+- `strict` is on everywhere, and `mise run compile` is the type check.
+- No `any`. `roblox-ts/no-any` bans it in surge's `src/` and in `tests/`,
+  which roblox-ts compiles; `@typescript-eslint/no-explicit-any` bans it in
+  the transformer.
 
 ## Naming
 
-- `PascalCase` for types, classes, and enums.
-- `camelCase` for variables, functions, and methods.
-- File names reflect their primary export's concept; use `kebab-case` for
-  multi-word file names.
-- `Field` IR node kind names (`num`, `bool`, `dict`, `taggedUnion`, …) are
-  already specified in [specs/wire-format.md](specs/wire-format.md) — follow that
-  naming exactly rather than inventing new casing for it.
+- `PascalCase` for types, classes and enums; `camelCase` for variables,
+  functions and methods.
+- A file is named for its concept, in `kebab-case` when it takes more than
+  one word.
+- `Field` kind names (`num`, `bool`, `dict`, `taggedUnion`, ...) are the ones
+  [specs/wire-format.md](specs/wire-format.md) uses, in the same case.
 
 ## Package boundaries
 
-The template enforces intra-package realm/place boundaries
-(`shared`/`client`/`server`, multiple Rojo "places") with
-`eslint-plugin-import-x`'s `no-restricted-paths`. This project has no
-equivalent intra-package split to protect the same way — its boundaries
-are between the two repositories, already enforced by each package's own
-declared dependencies rather than needing a separate lint rule:
+- surge's `src/` never depends on `rbxts-transformer-surge`.
+- The transformer never depends on `@rbxts/surge` at run time. It recognizes
+  the runtime package's declarations through the TypeScript checker of the
+  program it runs in ([specs/transformer.md](specs/transformer.md) 3.1).
+- `tests/` is the one project that depends on both.
 
-- This package's own `src/` must never depend on
-  `rbxts-transformer-surge`.
-- `rbxts-transformer-surge` must never depend on `@rbxts/surge` at
-  runtime — it only needs to recognize its ambient declarations through
-  the TypeScript checker of whatever program it's running inside (see
-  Transformer 3.1 in [specs/transformer.md](specs/transformer.md)), not to
-  import the package itself.
-- `tests/` (nested in this repo, but its own standalone npm project) is
-  the one place allowed to depend on both.
+Each package's declared dependencies enforce these; no lint rule is needed.
+
+## File organization
+
+- One responsibility per module, with a name that says what it is without an
+  "and". A file past about 150 lines is a prompt to ask what else it has
+  taken on, not a limit.
+- Entry modules stay thin: the transformer's `src/index.ts` and the test
+  place's `tests/src/index.ts` call into modules that can be tested alone.
+- A directory per concern, with a barrel where sibling definitions
+  accumulate, as the benchmark's `adapters/` and `fixtures/` do.
+- Factor out the third copy, not the second.
+- Splitting a module is a refactor: move code as it is, keep exports working,
+  and verify with `mise run ci`.
 
 ## Comments
 
-Comments are exceptional, not expected — prefer self-documenting code
-through clear naming and small functions. Use `//` only when the reason
-behind the code would not be obvious from the code itself: intent,
-invariants, or a workaround, not a restatement of what the code does. Use
-`/** */` doc comments on exported functions/types to describe behavior a
-caller needs to know, not how the implementation works.
+- Comments are exceptional. Prefer names and small functions that say what
+  the code does.
+- `/** */` on an exported function or type says what a caller needs, never
+  how it works.
+- `//` says why: an intent, an invariant, or a workaround. A comment should
+  stay true if the implementation changes and the intent does not.
+- A comment cites a document by statement and file, as in "Transformer 5.3
+  in docs/specs/transformer.md", and links to a measured figure rather than
+  copying it.
+- `TODO` only with the follow-up it needs, stated.
+- The prose rules in [contributing-docs.md](contributing-docs.md) apply to
+  comments as much as to documents.
+
+## Generated files
+
+Never edit these by hand; regenerate them:
+
+| Path                                                                                                              | Regenerated by               |
+| ----------------------------------------------------------------------------------------------------------------- | ---------------------------- |
+| `out/` and `include/` in surge, `lib/` in the transformer                                                         | `mise run compile`           |
+| `node_modules/`, `package-lock.json`                                                                              | `npm install`                |
+| `tests/out/`, `tests/include/`                                                                                    | `mise run tests:compile`     |
+| `tests/dist/`                                                                                                     | `mise run tests:build`       |
+| `server.luau` and `client.luau` under `tests/src/bench/blink/` and `tests/src/bench/zap/`, and `zap/tooling.luau` | `mise run bench:definitions` |
+| `docs/benchmarks/size.md`                                                                                         | `mise run bench:size`        |
+| `docs/benchmarks/speed.md`, `docs/benchmarks/speed-trials.tsv`                                                    | `mise run bench:speed`       |
+
+The `.d.ts` files beside the Blink and Zap modules, and `zap/deferred.luau`,
+are written by hand: neither compiler's own TypeScript output describes the
+calls the benchmark adapters make.
