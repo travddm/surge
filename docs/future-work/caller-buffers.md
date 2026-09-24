@@ -54,7 +54,10 @@ undecided.
   the read cursor to the offset, and returns it after the value. The `checks`
   bounds need no new form: each read is bounded against `buffer.len` of the
   input, and a count against the bytes left after the cursor (Runtime API 4.2
-  and 4.3).
+  and 4.3). In a buffer that holds several values, though, the bytes left
+  include the values after this one. The bounds then stop a read at the end of
+  the buffer, not at the end of the value, and admit a count that a buffer of
+  this value alone would reject.
 - **The caller's buffer cannot grow in place.** A Luau `buffer` has a fixed
   length. A write past its end must either raise, as `Sera.Push` does, or call
   `grow` and return the new buffer for the caller to keep, as Zap's `alloc`
