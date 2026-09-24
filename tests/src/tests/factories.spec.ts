@@ -15,6 +15,17 @@ interface Reading {
 }
 const writeReading = createSerializer<Reading>();
 const readReading = createDeserializer<Reading>();
+
+// Transformer 5.13 in docs/specs/transformer.md: a factory that returns one
+// side emits the recursion helpers of that side only, since its closure
+// declares only that side's state.
+interface Outline {
+	title: string;
+	children: Outline[];
+	next?: Outline;
+}
+const writeOutline = createSerializer<Outline>();
+const readOutline = createDeserializer<Outline>();
 const aliasedSerializer = makeSerializer<Reading>();
 
 // The second call site for `SharedShape`. The first is in `support.ts`.
@@ -26,6 +37,19 @@ class FactoriesTest {
 		const value: Reading = { sensor: "thermal", values: [1, 2.5, -3] };
 		const { buffer, blobs } = writeReading(value);
 		Assert.equal(undefined, difference(value, readReading(buffer, blobs)));
+	}
+
+	@Fact
+	public roundTripsARecursiveTypeThroughASeparateSerializerAndDeserializer(): void {
+		const value: Outline = {
+			title: "root",
+			children: [
+				{ title: "a", children: [] },
+				{ title: "b", children: [{ title: "b1", children: [] }], next: { title: "c", children: [] } },
+			],
+		};
+		const { buffer, blobs } = writeOutline(value);
+		Assert.equal(undefined, difference(value, readOutline(buffer, blobs)));
 	}
 
 	@Fact

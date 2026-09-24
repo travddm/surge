@@ -1,8 +1,8 @@
 # Transformer specification
 
 Status: current
-Applies to: `@rbxts/surge` at commit `38b634f`, `rbxts-transformer-surge` at
-commit `6967359` (no tagged release yet)
+Applies to: `@rbxts/surge` at commit `8ab32c4`, `rbxts-transformer-surge` at
+commit `e83581b` (no tagged release yet)
 
 ## 1. Scope
 
@@ -56,10 +56,12 @@ added. In the union rows, `undefined` is set aside: a union that includes it
 and matches the `taggedUnion`, all-opaque or `guardedUnion` row is `optional`
 of that kind. The rows that name a Roblox type or an enum item match only a
 declaration in `@rbxts/types`, and a user type with the same name falls
-through to a later row. The `Map` and `Set` rows match by name alone (4.10).
+through to a later row. The `Map` and `Set` rows match only the built-in
+declarations (4.10).
 
 | TypeScript type                                                                                                                            | `Field` kind                                                   |
 | ------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------- |
+| a type that depends on a type parameter, such as `T`, `keyof T` or `T["a"]`                                                                | a diagnostic (4.9)                                             |
 | `DataType.Packed<T>`                                                                                                                       | `T`'s kind, with `T` walked as a packed subtree                |
 | `DataType.Length<T, L>`                                                                                                                    | `T`'s kind, with the count `L` sets                            |
 | `DataType.Vector<X, Y, Z>`, `DataType.Transform<X, Y, Z>`                                                                                  | `vector3` with component widths, `cframe` with position widths |
@@ -87,9 +89,9 @@ through to a later row. The `Map` and `Set` rows match by name alone (4.10).
 | `Map<K, V>`, `ReadonlyMap<K, V>`                                                                                                           | `dict` with a key and a value                                  |
 | `Set<V>`, `ReadonlySet<V>`                                                                                                                 | `dict` with a key only                                         |
 | a type with both declared properties and an index signature                                                                                | a diagnostic (7.2)                                             |
-| an interface or object type with declared properties, including a type parameter constrained to one (4.9)                                  | `object`                                                       |
+| an interface or object type with declared properties                                                                                       | `object`                                                       |
 | `Record<string, V>`, `Record<number, V>`, an index-signature type                                                                          | `dict` with a key and a value                                  |
-| a type with no properties and no index signature: `{}`, `object`, `defined`, `void`, `undefined`, `never`, an unconstrained type parameter | `blob` (4.8)                                                   |
+| a type with no properties and no index signature: `{}`, `object`, `defined`, `void`, `undefined` or `never`                                | `blob` (4.8)                                                   |
 
 **4.2** An object type or a union that reappears on its own walk path is a
 `recursiveRef` to its first occurrence. A cycle through neither is 4.11.
@@ -123,10 +125,8 @@ covers a `boolean`, enum, object, `buffer` or Roblox datatype key, and a key
 of one literal value or a literal union. It is tracked in
 [../future-work/dict-key-typing.md](../future-work/dict-key-typing.md).
 
-**4.8** Known defect, not a guarantee: `void`, `undefined`, `never` and an
-unconstrained type parameter walk to `blob` by the last row of 4.1, with no
-diagnostic. A call site inside a generic function whose type argument is the
-function's own type parameter therefore generates a blob serializer. A plain
+**4.8** Known defect, not a guarantee: `void`, `undefined` and `never` walk to
+`blob` by the last row of 4.1, with no diagnostic. A plain
 `blob` has no presence byte ([wire-format.md](wire-format.md) 9.3), so one that
 holds `undefined` appends nothing to `blobs`, as a missing element does in
 [wire-format.md](wire-format.md) 6.7. `deserialize` then reads each later blob
@@ -134,18 +134,15 @@ one position early and raises past the end of `inputBlobs`
 ([runtime-api.md](runtime-api.md) 4.5). It is tracked in
 [../future-work/types-the-walk-mishandles.md](../future-work/types-the-walk-mishandles.md).
 
-**4.9** Known defect, not a guarantee: a type parameter constrained to an
-object type walks as an `object` of the constraint's properties, with no
-diagnostic. The generated code writes and reads those properties and no others,
-whatever type the function is called with. It is tracked in
-[../future-work/types-the-walk-mishandles.md](../future-work/types-the-walk-mishandles.md).
+**4.9** A type that depends on a type parameter is a diagnostic (7.2), because a
+serializer is generated for one concrete type. This covers a type parameter
+with or without a constraint, which is not walked as its constraint, and a
+type that reaches one, such as `{ v: T }` inside a generic function.
 
-**4.10** Known defect, not a guarantee: the `Map` and `Set` rows of 4.1 match
-any type named `Map`, `ReadonlyMap`, `Set` or `ReadonlySet`, whatever declares
-it. A user type with one of those names and no type parameters makes the
-transformer throw a `TypeError` instead of reporting a diagnostic. It is
-tracked in
-[../future-work/types-the-walk-mishandles.md](../future-work/types-the-walk-mishandles.md).
+**4.10** The `Map` and `Set` rows of 4.1 match `Map`, `ReadonlyMap`, `Set` and
+`ReadonlySet` only as `@rbxts/compiler-types` declares them, or as
+TypeScript's own lib does in a program compiled without it. A user type with
+one of those names is walked as any other type.
 
 **4.11** Known defect, not a guarantee: a type that reappears on its own walk
 path with no object type and no union on the cycle, such as
@@ -170,9 +167,9 @@ reads fields in the order `serialize` writes them.
 
 **5.2** Each function is one flat body with no run-time dispatch on `Field`
 kind. Nested objects, arrays and tuples are inlined. A recursive type is the
-one exception: it compiles to a pair of named helper functions, declared in
-the closure the serializer is generated into, and called at the type's first
-occurrence and at each `recursiveRef`.
+one exception: it compiles to a named helper function for each side the
+factory returns, declared in the closure the serializer is generated into,
+and called at the type's first occurrence and at each `recursiveRef`.
 
 **5.3** Each generated serializer owns its scratch buffer, its capacity and
 its write and read cursors, declared in the closure it is generated into.
@@ -232,12 +229,9 @@ by `readPackedCFrame` rather than by a reservation, and gets no bound under
 begin with `@rbxts/surge:`. It is tracked in
 [../future-work/data-type-surface.md](../future-work/data-type-surface.md).
 
-**5.13** Known defect, not a guarantee: a `createSerializer` or
-`createDeserializer` call site whose type is recursive emits the helper
-functions of both sides but declares only its own side's state (5.3). The
-generated TypeScript does not type-check, so the build fails on a type error in
-generated code, with no diagnostic. It is tracked in
-[../future-work/single-sided-recursive-factories.md](../future-work/single-sided-recursive-factories.md).
+**5.13** A `createSerializer` or `createDeserializer` call site emits only the
+side it returns, recursion helpers included, so its generated code refers to
+no state its closure does not declare (5.3).
 
 ## 6. Injected imports
 
@@ -254,9 +248,8 @@ each.
 directive stays ahead of the first line of code and a file header keeps its
 order.
 
-**6.4** The import names every export that the generated code of either side
-uses, including a side the factory does not return. A `createDeserializer`
-call site whose shape reserves bytes imports `finishWrite` and `grow`.
+**6.4** The import names only the exports that the sides the factory returns
+use. A `createDeserializer` call site imports no write-side export.
 
 **6.5** The generated code refers to globals such as `buffer`, `Vector3`,
 `CFrame`, `typeIs`, `Enum` and `$range` by their own names, with no prefix.
@@ -268,10 +261,11 @@ shadows the global in that call site's generated code.
 **7.1** A diagnostic is a TypeScript diagnostic of category `Error` whose code
 is the string `" surge"`, with a leading space, so roblox-ts prints it as
 `error TS surge: …`. Not every type the walk cannot encode is a diagnostic:
-4.8 and 4.9 walk with none.
+4.8 walks with none.
 
 **7.2** The walk reports a diagnostic for:
 
+- a type that depends on a type parameter (4.9);
 - a template literal type, `symbol`, `bigint`, `null`, or a function or
   constructor type;
 - a type with both declared properties and an index signature;
@@ -300,8 +294,7 @@ or at the call site where there is none. An entry-point diagnostic points at
 the call site, the options argument, the offending property or its value.
 
 **7.5** A call site with a diagnostic is left untransformed. The transformer
-throws only on a broken internal invariant and in the known defects of 4.10
-and 4.11.
+throws only on a broken internal invariant and in the known defect of 4.11.
 
 ## 8. Conformance
 
@@ -322,8 +315,8 @@ of `rbxts-transformer-surge`, cited by `describe` block. Source paths are in
 | 4.6       | `walk`: `TypeWalker classification` (a finite key union walks as a fixed-property object)                                                                                                                                                                                                                                       |
 | 4.7       | Source only: `readDict` in `src/emit/read.ts`                                                                                                                                                                                                                                                                                   |
 | 4.8       | Source only: `TypeWalker.walk` in `src/walk.ts`, its last fallback                                                                                                                                                                                                                                                              |
-| 4.9       | Source only: `TypeWalker.walk` and `tryWalkObject` in `src/walk.ts`                                                                                                                                                                                                                                                             |
-| 4.10      | Source only: `isMapType`, `isSetType` and `walkMapOrSet` in `src/walk.ts`                                                                                                                                                                                                                                                       |
+| 4.9       | `walk`: `TypeWalker type parameters`; `transform`: `transform diagnostics` (a call site inside a generic function)                                                                                                                                                                                                              |
+| 4.10      | `walk`: `TypeWalker Map and Set by declaration`                                                                                                                                                                                                                                                                                 |
 | 4.11      | Source only: `walkArrayOrTuple` in `src/walk.ts`, which records no walk in progress                                                                                                                                                                                                                                             |
 | 4.12      | Source only: `classifyUnion` and `findDiscriminant` in `src/walk.ts`                                                                                                                                                                                                                                                            |
 | 5.1       | `emit`: `Emitter read-order for side-effecting fields`; every round trip under `tests/src/tests/`                                                                                                                                                                                                                               |
@@ -338,19 +331,23 @@ of `rbxts-transformer-surge`, cited by `describe` block. Source paths are in
 | 5.10      | `emit`: `Emitter read-side checks`; `test/golden.test.mjs`: the two `checks` checks. Source only for the sequence keypoint count: `readSequence` in `src/emit/read.ts`                                                                                                                                                          |
 | 5.11      | `tests/src/tests/roblox.spec.ts`: `keepsLaterBlobsInPlaceWhenAnUnknownIsUndefined`, `writesNoBlobForAnAbsentOptionalBlob`                                                                                                                                                                                                       |
 | 5.12      | Source only: `readPackedCFrame` in `src/emit/read.ts`, and `readPackedCFrame` in `@rbxts/surge`'s `src/cframe.ts`                                                                                                                                                                                                               |
-| 5.13      | Source only: `buildReplacement` in `src/index.ts` and `ensureHelper` in `src/emit/index.ts`                                                                                                                                                                                                                                     |
+| 5.13      | `transform`: `transform generated code` (the single-sided factories on a recursive type); `tests/src/tests/factories.spec.ts`: `roundTripsARecursiveTypeThroughASeparateSerializerAndDeserializer`                                                                                                                              |
 | 6.1, 6.2  | `transform`: `transform injected imports`, and in `transform (end-to-end)` the single shared import and the same-named local function; `tests/src/tests/coverage.spec.ts`: `leavesAUserDeclarationNamedAfterAnInjectedImportAlone`                                                                                              |
 | 6.3       | `test/golden.test.mjs`: a file directive survives the transformer's injected imports; `transform`: `transform generated code` (the three directive tests)                                                                                                                                                                       |
-| 6.4       | Source only: `buildReplacement` in `src/index.ts`, which emits both sides before it chooses one                                                                                                                                                                                                                                 |
+| 6.4       | `transform`: `transform injected imports` (a `createDeserializer` call site)                                                                                                                                                                                                                                                    |
 | 6.5       | Source only: `src/emit/`                                                                                                                                                                                                                                                                                                        |
 | 7.1       | `transform`: `transform diagnostics` (the category). Source only for the code string: `report` in `src/index.ts`                                                                                                                                                                                                                |
 | 7.2       | `walk`: `TypeWalker blob classification`, `TypeWalker bare EnumItem`, `TypeWalker classification with fixture packages`, `TypeWalker tuples`, `TypeWalker classification`, `TypeWalker union guards`, and the brand blocks under 4.3. Source only for a constituent of a kind no guard covers: `classifyUnion` in `src/walk.ts` |
 | 7.3       | `transform`: `transform diagnostics`, `transform checks option`. Source only: the cases listed under 3.2 and 3.3                                                                                                                                                                                                                |
 | 7.4       | `walk`: `TypeWalker diagnostic position`; `transform`: `transform diagnostics`, `transform checks option` (the positions). Source only for a property declared in another file: `nodeForProperty` in `src/walk.ts`                                                                                                              |
-| 7.5       | `transform`: `transform diagnostics`. The throws are 4.10 and 4.11                                                                                                                                                                                                                                                              |
+| 7.5       | `transform`: `transform diagnostics`. The throw is 4.11                                                                                                                                                                                                                                                                         |
 
 ## Changes
 
+- `8ab32c4` / `e83581b`: three known defects fixed. 4.9 (a type that depends
+  on a type parameter is a diagnostic), 4.10 (`Map` and `Set` by declaration)
+  and 5.13 (a single-sided factory emits only its side) now state guarantees;
+  4.1, 4.8, 5.2, 6.4, 7.1, 7.2 and 7.5 follow them.
 - `38b634f` / `6967359`: 4.8–4.12, 5.12 and 5.13 name the future-work documents that track
   them.
 - `8c4d5f5` / `87813e5`: corrected against the code: 2 (Opaque, Reservation),

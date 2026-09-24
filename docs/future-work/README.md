@@ -63,14 +63,10 @@ time:
   and TypeScript that does not check, so the build fails with no
   diagnostic and nothing the user can open. The coverage table promises
   those keys today. Found while writing the `checks` fixtures.
-- [single-sided-recursive-factories.md](single-sided-recursive-factories.md):
-  `createSerializer` or `createDeserializer` on a recursive type generates
-  code that does not type-check, so the build fails with no diagnostic. The
-  smallest fix here with the widest reach.
-- [types-the-walk-mishandles.md](types-the-walk-mishandles.md): a type
-  parameter, `void`, `undefined`, `never`, a user type named `Map` or `Set`, a
-  cycle through arrays alone, and a union of tuples. The constrained type
-  parameter drops properties silently and goes first; the rest fail the build.
+- [types-the-walk-mishandles.md](types-the-walk-mishandles.md): `void`,
+  `undefined` and `never` become blobs with no diagnostic, a cycle through
+  arrays alone overflows the stack, and a union of tuples floods unrelated
+  diagnostics.
 - The two gaps in the read half of `checks`, recorded in
   [data-type-surface.md](data-type-surface.md): a packed `CFrame` read has no
   bound, and an `enum` index and a packed rotation code have no range check.
