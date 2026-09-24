@@ -135,8 +135,8 @@ export class Rng {
 }
 
 /**
- * Transformer Design §3: two call sites for one type must produce the same
- * bytes. `factories.spec.ts` has the second call site for this type.
+ * Transformer 3.4 in docs/specs/transformer.md: two call sites for one type
+ * must produce the same bytes. `factories.spec.ts` has the second call site for this type.
  */
 export interface SharedShape {
 	zebra: number;

@@ -2,8 +2,8 @@
 //
 // A failing @Fact is caught internally by runit's TestRunner rather than propagating as an
 // uncaught error, so the child process exits 0 whether the suite passed or failed -- the
-// pass/fail signal has to come from the piped output. See testing.md's "Round-trip tests run
-// under Lune" section for the output contract this participates in.
+// pass/fail signal has to come from the piped output. Section 5 of docs/specs/test-harness.md
+// states the output contract this participates in.
 import { spawn } from "node:child_process";
 
 const SENTINEL = "RUNIT_RESULT:";

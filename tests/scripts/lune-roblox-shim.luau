@@ -2,10 +2,9 @@
 -- GetDescendants/IsA) under Lune that the roblox-ts output's `TS.import`/`require(Instance)`
 -- calls resolve to real files under out/, node_modules/, and include/, and returns the `tests`
 -- folder instance. Shared by lune-test-runner.luau (the round-trip suite) and
--- lune-size-runner.luau (the Tier 1 size benchmark); it must stay in scripts/, because the
+-- lune-size-runner.luau (the size tier); it must stay in scripts/, because the
 -- require override below rewrites each module path for a caller one level below tests/. See
--- docs/testing.md's "Round-trip tests run under Lune" section for the contract this
--- participates in. Adapted from an existing solution to this same problem
+-- section 4 of docs/specs/test-harness.md for the contract this participates in. Adapted from an existing solution to this same problem
 -- in another project (this exact "Lune's require() has no Instance overload" limitation,
 -- confirmed empirically before writing any of this).
 --
@@ -236,8 +235,9 @@ nodeModules._children["@flamework"] = flameworkScope
 --    through Methods:GetService above; RunService itself needs real methods because
 --    RuntimeLib's TS.getModule and Flamework's @Service/@Controller decorators call them
 --    directly, not just look the service up.
---  - IsRunning() false short-circuits RuntimeLib's getModule client-replication wait before
---    it touches game.Loaded.
+--  - IsRunning() true, because the generated Zap modules return stubs that do nothing
+--    otherwise. RuntimeLib's getModule client-replication wait also requires IsClient(), which
+--    is false, so it never touches game.Loaded.
 --  - IsClient() false takes the same branch a live server does; IsServer() true is the
 --    corresponding branch Flamework's @Service decorator checks at class-module load time.
 --  - Heartbeat never fires. Nothing in the suites schedules through it.
@@ -269,8 +269,7 @@ end
 -- PlayerRemoving is here for the generated Blink and Zap server modules, which both connect to
 -- it at require time to drop a leaving player's queued events. Neither ever fires: the
 -- benchmark drives Blink through the standalone Write/Read pair an `export`ed type generates,
--- and Zap one event at a time into the mocked remote below. Nothing fires it: the benchmark drives Blink
--- through the standalone Write/Read pair an `export`ed type generates, never through an event.
+-- and Zap one event at a time into the mocked remote below.
 local players = newStub("Players", "Players", gameRoot, {
 	LocalPlayer = nil,
 	PlayerRemoving = { Connect = inertConnection },

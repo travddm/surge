@@ -120,11 +120,11 @@ function alloc(): string {
 	return "the user's own alloc";
 }
 
-// enum-encoding.md's `Enum.KeyCode` width/O(1)-table fixture intentionally
+// The enum-encoding finding's `Enum.KeyCode` width/O(1)-table fixture intentionally
 // does not live here: the generated `{[EnumItem]: index}`/`EnumItem[]`
 // tables are module constants built from *every* member up front (matching
-// real Roblox and Transformer Design's own "How, briefly"), and this
-// suite's headless Lune harness (see testing.md) doesn't implement every
+// real Roblox), and this suite's headless Lune harness (Test harness 4.5 in
+// docs/specs/test-harness.md) doesn't implement every
 // real `Enum.KeyCode` member (confirmed missing at least `ButtonBack`), so
 // simply loading such a module here throws before any test body runs.
 // Covered instead at the transformer level -- `emit.test.ts` pins the u16

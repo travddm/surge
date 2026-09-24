@@ -69,7 +69,7 @@ description = "Reinstall and recompile tests/, then measure only the fixtures th
 run = "npm run bench:size:only -- {{arg(name='fixture', var=true)}}"
 
 [tasks."bench:speed"]
-description = "Reinstall and recompile tests/, run the speed suite twice back to back in a real Roblox Studio process via run-in-roblox (about ten minutes), and rewrite docs/benchmarks/speed.md and speed-trials.tsv (Tier 2, see testing.md); not part of ci -- a timing is read, not gated pass/fail, and it needs Roblox Studio installed"
+description = "Reinstall and recompile tests/, run the speed suite twice back to back in a real Roblox Studio process via run-in-roblox (about ten minutes), and rewrite docs/benchmarks/speed.md and speed-trials.tsv (the speed tier, see docs/specs/benchmark-harness.md); not part of ci -- a timing is read, not gated pass/fail, and it needs Roblox Studio installed"
 run = "npm run bench:speed"
 
 [tasks."bench:speed:only"]

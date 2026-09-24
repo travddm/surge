@@ -145,8 +145,8 @@ quote with the recommendation, is in
 [file-directives-on-generated-code.md](../research/file-directives-on-generated-code.md).
 
 surge does not put either directive in the consumer's file. The generated code
-is inlined into the call site's own file (Transformer Design §2, "call site is
-transformed independently"), so a file-level `--!native` would also compile
+is inlined into the call site's own file (Transformer 5.1 in
+[specs/transformer.md](../specs/transformer.md)), so a file-level `--!native` would also compile
 whatever unrelated code that file holds — a blast radius surge cannot reason
 about. If surge is ever to inject it, the check is not "one serializer call
 and its export": a module may declare several serializers, three of the

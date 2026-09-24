@@ -34,7 +34,7 @@ export interface SerializerOptions {
 
 /**
  * Replaced entirely by `rbxts-transformer-surge` at compile time (see
- * Transformer 3.1 in docs/specs/transformer.md). Calling this directly means the
+ * Runtime API 3.4 in docs/specs/runtime-api.md). Calling this directly means the
  * transformer isn't registered for this project.
  */
 export function createSerializer<T>(): (value: T) => { buffer: buffer; blobs: Array<defined> } {

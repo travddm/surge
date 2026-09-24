@@ -3,7 +3,10 @@ import { TestRunner } from "@rbxts/runit";
 
 import { scopeTo } from "./bench/selection";
 
-/** Sentinel consumed by scripts/check-test-output.mjs to derive an exit code (see testing.md). */
+/**
+ * Sentinel consumed by scripts/check-test-output.mjs to derive an exit code
+ * (Test harness 5.3 in docs/specs/test-harness.md).
+ */
 const RESULT_PREFIX = "RUNIT_RESULT:";
 
 /** The same contract for the speed tier, read by scripts/record-speed-benchmarks.mjs. */
@@ -60,7 +63,8 @@ export function main(): void {
 /**
  * Runs the speed suite (`src/bench/speed.spec.ts`) -- Roblox Studio or
  * `run-in-roblox` only (`mise run bench:speed`), never the Lune test runner,
- * because only the real engine's timings count (see testing.md). The size
+ * because only the real engine's timings count (Benchmark harness 6.1 in
+ * docs/specs/benchmark-harness.md). The size
  * tier is not here: `scripts/lune-size-runner.luau` requires
  * `src/bench/size.ts` directly, so a broken fixture cannot fail this file's
  * round-trip entry point. Reads the `script` global, so it only works from
