@@ -20,8 +20,7 @@ interface PlayerState {
 export const playerState = createBinarySerializer<PlayerState>();
 
 export function roundTrip(state: PlayerState): PlayerState {
-	const { buffer, blobs } = playerState.serialize(state);
-	return playerState.deserialize(buffer, blobs);
+	return playerState.deserialize(playerState.serialize(state).buffer);
 }
 ```
 

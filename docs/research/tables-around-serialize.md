@@ -276,3 +276,11 @@ own payload table, which the hand-written column does not build, costs about
   and `.tsv`. No probe is in any build that shipped.
 - The figures above were computed from the `.tsv` files, with the recorder's
   own median, spread and noise rule.
+
+## Correction, 2026-09-24
+
+This corrects one statement. Data: "`docs/benchmarks/speed.md` and
+`docs/benchmarks/speed-trials.tsv`, recorded at surge `56b6fd5` … and
+committed alongside this paper". Those paths hold a later run from surge
+`ff060af` onward. The reference run is both files as committed at surge
+`5ca8669`.
