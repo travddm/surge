@@ -192,3 +192,52 @@ returns.
 - The A/B's run output was not kept. Its two figures are as recorded at the
   time, in `tests/src/bench/speed.spec.ts` and `docs/testing.md` at
   `fcdd3f5`.
+
+## Correction, 2026-09-23
+
+This corrects five statements. The figures below are read from the two trials files at `fcdd3f5^`
+and `fcdd3f5`, which keep each old cell's median at full precision. The paper read the printed
+medians in `speed.md`, which round an old median below 10k to two significant figures.
+
+- **Which cells slowed most.** Discussion: "It falls hardest where a call allocates most —
+  decodes … and serio". The data shows a different order. Over the cells measured after the onset,
+  encode moved a median 7.78× (42 cells) and decode 5.31× (62 cells). Every library moved more on
+  encode than on decode: fbs 10.81× and 9.70×, serio 8.76× and 5.09×, blink 7.15× and 3.01×, surge
+  6.71× and 4.63×. fbs moved most, not serio. The statement should have said that the slowdown
+  reaches every library and both halves, and is largest on encode and on fbs. This was the only
+  evidence the paper gave that the slowdown follows allocation. Without it, nothing here supports
+  that pattern, the "falls hardest on allocation" in the practical consequence, or the fit of a
+  per-frame collection step to "the shape of the result".
+- **What has been re-measured.** Discussion, last sentence: "The conclusions it reaches have since
+  been re-measured". This sentence was added after publication, in surge `95de1dd`.
+  [generated-code-against-hand-written.md](generated-code-against-hand-written.md) lists three
+  conclusions that were not re-measured: the shared reservation, the single reservation of a
+  `CFrame`'s 24 bytes, and the tagged-union literal. The sentence should have said that most of
+  those conclusions have been re-measured and those three have not.
+- **The idle frames.** Method: "and put three idle frames between rows". The after run, at
+  `fcdd3f5`, had none: its method line names no idle frames, and they landed afterwards, in surge
+  `6dff513`. The compared change made a trial a length of time, raised trials per cell from 5 to 9
+  in each of two runs, and made the libraries within a row take turns.
+- **Figures read from the printed medians.** Data: "computed from those two pairs". The counts,
+  the control group's 0.99× to 1.21×, the medians of the 106 cells and of the decode half, and the
+  onset estimates hold from the trials. These figures move:
+
+    | Statement                                     | As printed | From the trials |
+    | --------------------------------------------- | ---------- | --------------- |
+    | Largest cell, fbs encode on `Blink: Entities` | 19.62×     | 19.42×          |
+    | Upper end of the 106 and of the 104 cells     | 19.62×     | 19.42×          |
+    | Median of the 104 cells after 11.43 s         | 5.92×      | 5.93×           |
+    | Large record, serio encode                    | 9.67×      | 9.94×           |
+    | Large record, blink encode                    | 12.84×     | 12.93×          |
+    | Row 5, large record                           | 5.37×      | 5.51×           |
+    | Row 6, string-heavy                           | 8.33×      | 8.29×           |
+    | Row 8, tagged union                           | 7.96×      | 7.91×           |
+    | Row 9, guarded union                          | 9.05×      | 9.16×           |
+    | Row 16, `Blink: Entities`                     | 8.35×      | 8.49×           |
+
+    Every other row differs by 0.02× at most.
+
+- **How far, and which paths.** Abstract: "every path that allocates per call slowed by close to
+  an order of magnitude". Every cell measured after the onset slowed, by 1.33× to 19.42×, with a
+  median of 5.93×. Nothing here measures which paths allocate per call. The statement should have
+  said that every cell measured after the onset slowed, by a median of about six times.

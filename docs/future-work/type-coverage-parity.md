@@ -81,7 +81,7 @@ harness in [benchmark-tooling.md](benchmark-tooling.md):
 - Zap's boolean row is narrower than "1 bit always": it packs the booleans
   and optional presence of a struct into a per-scope mask, but an array of
   booleans is a byte per element -- 1000 of them cost 1002 bytes, the same
-  as surge and Blink.
+  as Blink, and surge's 1004 differs only by its u32 count.
 - Zap's untagged union needs parentheses -- `(string.binary | f64 |
 boolean)` -- and dispatches with `typeof`, as the row says.
 - What the other 47 rotations then cost is the two libraries' general form:
@@ -138,9 +138,9 @@ These differences are design choices, not bugs, and should stay:
   branching, and it would be the only numeric width that needs a runtime
   helper in `@rbxts/surge`. Half of that is a design argument and half is
   what the branching costs; native code generation touches only the second
-  half, and it is measured at two percent on the generated code (see What
-  native changed in
-  [generated-code-performance.md](generated-code-performance.md)). It saves
+  half, and what it is worth on the generated code is in
+  [file-directives-on-generated-code.md](../research/file-directives-on-generated-code.md).
+  It saves
   2 bytes over `DataType.f32` and keeps about 3 significant digits. A value
   that can accept that loss is better served by a scaled integer
   (`DataType.i16` of the value times 100), which is exact in its range and

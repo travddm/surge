@@ -56,17 +56,16 @@ import { matching, scopedPatterns } from "./selection";
  * The loops yield, on purpose. `run-in-roblox` calls the injected script on
  * its own plugin thread and does not report the run finished until that
  * call returns, so a suite that never yielded held that thread for the whole
- * catalog -- about thirteen minutes by the earlier speed-trials.tsv -- with
- * no frame in between. Studio raised its "plugin has stopped responding"
- * prompt over that, which is how it was noticed, but the prompt is not the
- * damage. About ten seconds in, every path that allocates per call slows by
- * close to an order of magnitude and stays slow for the rest of the run,
- * which is most of the catalog. docs/research/frame-starvation.md reports
- * the A/B that establishes it, what it cost each cell, and why the mechanism
- * behind it is not established.
+ * catalog, minutes of measured calls with no frame in between. Studio raised
+ * its "plugin has stopped responding" prompt over that, which is how it was
+ * noticed, but the prompt is not the damage. Seconds into such a run, the
+ * suite falls into a slow mode, several times slower on most cells, and stays
+ * there for the rest of the run, which is most of the catalog.
+ * docs/research/frame-starvation.md reports the A/B that establishes it, what
+ * it cost each cell, and why the mechanism behind it is not established.
  *
  * Yielding once per row or per trial would not be enough: in that slow mode
- * a cell spends up to ninety seconds on one row and seventeen on one trial.
+ * a single row, and even a single trial, runs for many seconds.
  * So every call is timed inside a chunk of `CHUNK` calls, a trial's time is
  * the sum of its chunks, and the loop yields between two chunks once
  * `YIELD_AFTER` seconds of measured work have gone by since it last did. The

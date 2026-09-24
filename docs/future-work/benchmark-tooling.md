@@ -12,7 +12,9 @@ This document holds what is still open.
 a straight run of writes: the tagged union, which branches on the tag and
 builds each variant, and the packed `toggles`, whose bit region runs through a
 runtime function rather than inline code. Not the large array, since the
-`CFrame` array already prices the loop at under a nanosecond per element; and
+`CFrame` array already prices a per-element loop (see the correction in
+[generated-code-against-hand-written.md](../research/generated-code-against-hand-written.md));
+and
 not the large record until Tier B of
 [type-coverage-parity.md](type-coverage-parity.md) has settled its length
 prefix, because a baseline writes surge's exact bytes and the size tier
@@ -33,14 +35,15 @@ serializer would meet on one axis.
 
 None of the three can start yet. Widening the baseline measures nothing new
 until the per-call gap the three existing rows already show is understood:
-surge's encode is about 0.2 µs per call behind the hand-written codec, and
-[generated-code-against-hand-written.md](../research/generated-code-against-hand-written.md)
-accounts for an eighth of it and names two table allocations per call as the
-next thing to measure. The large record also waits on Tier B. The code-size
-measurement needs the fixtures restructured, one call per module. Tier 3 has
-no driver: nothing yet asks what a serializer costs on the wire once a
-networking layer batches it, and [networking.md](networking.md) is where that
-would come from.
+surge's encode is about 0.2 µs per call behind the hand-written codec
+([generated-code-against-hand-written.md](../research/generated-code-against-hand-written.md)),
+the per-call costs measured so far do not explain it, and
+[generated-code-performance.md](generated-code-performance.md) names two table
+allocations per call as the next thing to measure. The large record also waits
+on Tier B. The code-size measurement needs the fixtures restructured, one call
+per module. Tier 3 has no driver: nothing yet asks what a serializer costs on
+the wire once a networking layer batches it, and [networking.md](networking.md)
+is where that would come from.
 
 ## How, briefly
 

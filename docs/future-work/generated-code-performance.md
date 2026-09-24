@@ -20,14 +20,17 @@ other home until the user pages are written.
 ## What
 
 **The per-call gap to hand-written Luau.** On the three rows the hand-written
-baseline covers, surge's encode is about 0.2 µs per call behind a Luau codec
-writing the same bytes: 2.20× on the flat struct, 2.02× on the nested object,
-1.22× on the thousand-element `CFrame` array. A lead that is large on a small
-payload and small on a large one is paid once per call, not per element. Two
-per-call costs have been measured: the blob side channel at 25.7 ns an encode
-call, which is now emitted only where a shape uses it, and `finishWrite`'s
-copy at nothing, at any payload size. Together they account for an eighth of
-the gap at most.
+baseline covers, surge's encode is behind a Luau codec writing the same bytes:
+2.20× on the flat struct, 2.02× on the nested object, 1.22× on the fifty-element
+`CFrame` array. The gap has a part paid once per call, about 0.2 µs, which is
+most of it on the two small rows, and a part paid per element, which is most
+of it on the `CFrame` array (the correction in
+[generated-code-against-hand-written.md](../research/generated-code-against-hand-written.md)).
+Two per-call costs have been measured
+([per-call-overhead.md](../research/per-call-overhead.md)), and neither
+explains the gap: the blob side channel is emitted only where a shape uses it,
+and none of these three rows does; `finishWrite`'s copy does not grow with the
+payload, and what it costs per call is not settled.
 
 The next candidate is what the generated `serialize()` returns. The
 hand-written codec creates one buffer and returns it. The generated code
@@ -111,7 +114,7 @@ rewrites the emitted text — hoisting a `--!` line, annotating
   that is a value arriving through `TS.import`. Annotating both sides of a
   synthetic writer and helper was worth about 1.09× on top of `--!native`, and
   nothing without it. Against the 1.180× native is worth on decode, a ninth of
-  that is about 1.04× — not a number that pays for a pass which rewrites files
+  that is about 1.02× — not a number that pays for a pass which rewrites files
   roblox-ts has written.
 - **`const`** measured at 1.00× against `local`, with the directive and
   without, and Lune 0.10.5 cannot parse it, so emitting it would break the

@@ -11,8 +11,8 @@
 // its own scratch buffer, capacity and write cursor in the closure it is
 // emitted into, so that reserving bytes is a compare and two moves inline
 // rather than a call into this module (Transformer 5.3 and 5.4 in
-// docs/specs/transformer.md). Measured, each such call removed saved about 22 to 27 ns
-// (docs/research/generated-code-against-hand-written.md).
+// docs/specs/transformer.md). What removing that call was worth is in
+// docs/research/generated-code-against-hand-written.md.
 
 /**
  * Doubles `current` until it holds `needed` bytes and copies the first `live`

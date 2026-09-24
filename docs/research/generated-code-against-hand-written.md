@@ -227,3 +227,36 @@ the next thing to measure.
   was measured on is described under Method and was never committed.
 - The byte check: `docs/benchmarks/size.md` at surge `91310ea` and at
   `ed28683`.
+
+## Correction, 2026-09-23
+
+This corrects three statements. As above, the figures are read from printed medians, because the
+before-side file keeps nothing else.
+
+- **The readable rows.** Abstract: "On the three rows where the calls can be counted and the gain
+  read, each `alloc` call it removed saved about 22 to 27 ns, whether the row made one such call
+  per `serialize()`, eight, or a thousand". The Discussion sets the wide struct aside because its
+  1.048× is a single cell inside the between-invocation band. The flat struct's 1.072× is also a
+  single cell inside that band, which [noise-in-the-speed-tier.md](noise-in-the-speed-tier.md)
+  observed at 1.35× in its correction of this date, so the same test sets it aside. Two rows
+  clear the band: the nested object, at 1.426× over eight calls and 24.1 ns each, and the large
+  array, at 3.638× over 1,001 calls and 22.0 ns each. The statement should have said that on
+  these two rows each removed call saved about 22 to 24 ns, at eight calls and at a thousand,
+  and that the one-call row cannot be read.
+- **What is left per call.** Abstract: "the shape of a cost paid once per call"; Results: "the
+  thousand-element `CFrame` array: roughly a constant 0.2 µs per call, plus under a nanosecond per
+  element"; Discussion: "is not a per-element cost; it is about 0.2 µs paid once per
+  `serialize()`". The `CFrame` array has 50 elements, not a thousand: `COUNT` is 50 in
+  `tests/src/bench/fixtures/cframes.ts` at surge `824a279`, and its 1204 bytes are a 4-byte count
+  and 50 rotations of 24. Its gap of about 0.86 µs is therefore about 0.2 µs per call plus about
+  13 ns per element, and the per-element part is most of it. The statements should have said that
+  the gap has a per-call part of about 0.2 µs, which is most of the gap on the two small rows, and
+  a per-element part, which is most of it on the `CFrame` array. Three rows fix the two terms and
+  leave nothing to test them against.
+- **The share the measured per-call work explains.** Conclusion: "of which the per-call work
+  already measured accounts for an eighth at most". Neither side of this comparison emits the blob
+  channel: `d7af243` is an ancestor of rbxts-transformer-surge `35253a6` and of `aa6f04b`. The
+  channel is therefore not in the 0.2 µs. Whether `finishWrite`'s copy is in it is open, per the
+  correction of this date to [per-call-overhead.md](per-call-overhead.md). The statement should
+  have said that the per-call work measured so far accounts for none of the 0.2 µs, with the copy
+  unsettled.

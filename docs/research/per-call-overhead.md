@@ -199,3 +199,61 @@ measured here differ by more than an order of magnitude.
 - The drift figures: the run committed at surge `a878aac` against the
   reference, the same comparison
   [frame-starvation.md](frame-starvation.md) uses for its own control.
+
+## Correction, 2026-09-23
+
+This corrects ten statements. Like every figure above, the figures below are read from printed
+medians, because the probe files keep nothing else. That rounding is up to about 0.6% of a cell,
+which is hundreds of nanoseconds on the slowest rows. For example, serio's −4.5 ns encode median in
+the blob table becomes −31.6 ns when the reference is read from its trials, while surge's +25.7 ns
+becomes +25.4 ns. The Discussion does not list this limit.
+
+- **The sign of the copy result.** Abstract: "−14 ns, the sign wrong for a cost"; Results: "its
+  sign is wrong for a cost removed". Under the paper's own `1/probe − 1/reference`, a probe that
+  removes work shows a real cost as a negative figure. −14.0 ns has the sign a removed cost gives.
+- **The copy's control.** Results: "Removing the copy did not make encoding faster"; Abstract and
+  Conclusion: "costs nothing". This probe was read against the drift between two invocations, not
+  against the untouched columns in the same run, which are the control the Method names. Against
+  those (`data/finish-write-without-copy.md` against `speed.md` at `ed28683`), surge moved −14.0
+  ns per encode call where fbs moved +12.2, serio +13.5, blink −1.5 and the baseline +2.0. On the
+  five fastest rows, surge moved 1.030× where fbs moved 0.994×, serio 0.995×, blink 0.981× and the
+  baseline 0.985×. That separation, about 3.5% to 5% in the direction a removed cost predicts, is
+  close to the blob channel's. The data supports that the copy's cost does not grow with the
+  payload. It does not settle whether the copy has a small per-call cost. The statements that
+  rest on "costs nothing" are not established: "does independently measure at nothing, twice
+  now", "a `buffer.copy` … does not", "at any payload size", and "differ by more than an order
+  of magnitude".
+- **The drift run.** Data: "the run committed at surge `a878aac` against the reference, the same
+  comparison frame-starvation.md uses". At `a878aac` the committed `speed.md` is the pre-yield
+  run. The drift figures are read from `speed.md` as committed at surge `6dff513`, which was
+  recorded at `e98cb8c` with uncommitted changes and rbxts-transformer-surge `fcebbd6`, against
+  the reference. frame-starvation.md's control compares `fcdd3f5^` with `fcdd3f5`, a different
+  pair. The Method's "the previously committed run" is correct.
+- **The two cells' spreads.** Method: "Two individual cells moved 0.74× and 0.79× with within-run
+  spreads of ±2%". surge's encode on `Blink: Entities` prints ±5% in the reference and ±2% at
+  `6dff513`. blink's encode on `Blink: Booleans` prints ±2% in both.
+- **The floor.** Discussion: "about twice the ±14 ns floor". The Method gives the floor as a median
+  of −13.0 ns. The statement should have said about twice the 13 ns floor.
+- **Share of a call, and the worst case.** Abstract: "3.6% to 6.4% of a call"; Discussion: "Six
+  percent of the fastest row's encode is the worst case". 3.6% to 6.4% is throughput lost, one
+  minus the ratio. As a share of call time, the channel adds 3.7% to 6.8%. The fastest row, the
+  small flat struct, lost 5.9% of its throughput. The worst case is toggles (packed), at 6.4% of
+  throughput and 6.8% of time.
+- **The eleven slower rows.** Results: "the ratio median is 0.992× encode". That median includes
+  surge's encode on `Blink: Booleans`, which the recorder marks noisy and the Method excludes.
+  Without it, the median over the ten quiet rows is 0.994×.
+- **The constant cost.** Discussion: "it is the same 25.7 ns on a row that encodes in 0.37 µs and
+  on one that takes 8 µs". 25.7 ns is a median over rows. The per-row figures on the slowest rows
+  are +120 ns on the large array and −268 ns on the large record. On those two rows, two
+  invocations of unchanged code differ by −156 ns and +69 ns. The slow rows neither show nor
+  contradict a constant per-call cost. The median is consistent with one.
+- **The gap to hand-written Luau.** Discussion: "26 ns is roughly an eighth, and that eighth is
+  already removed … Per-call work accounts for part of that gap". The gap of about 0.2 µs was read
+  from the reference run. Its transformer, `aa6f04b`, already includes `d7af243`, so it emits no
+  channel on any catalog row. The channel is therefore not part of that gap. The statement should
+  have said that the channel is not in the gap as measured today, and that whether the copy is in
+  it is open.
+- **The cited document.** Background: "generated-code-performance.md concluded from the first";
+  Discussion: "settles the rest of the per-call list". That text has since been removed from the
+  document. It is in `docs/future-work/generated-code-performance.md` as committed at surge
+  `824a279`.

@@ -50,7 +50,7 @@ Prose follows [../contributing-docs.md](../contributing-docs.md).
 | -------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
 | [frame-starvation.md](frame-starvation.md)                                       | What a Studio benchmark run that never yields does to its own numbers, and where the onset is.                                           |
 | [september-2026-review.md](september-2026-review.md)                             | What the review of 2026-09-18 found by executing the transformer, what has landed since, and what it did not find.                       |
-| [per-call-overhead.md](per-call-overhead.md)                                     | What surge's per-call work costs: the blob side channel at 25.7 ns a call, and `finishWrite`'s copy at nothing.                          |
+| [per-call-overhead.md](per-call-overhead.md)                                     | What surge's per-call work costs: the blob side channel at 25.7 ns a call, and whether `finishWrite`'s copy grows with the payload.      |
 | [file-directives-on-generated-code.md](file-directives-on-generated-code.md)     | What `--!native` and `--!optimize 2` are worth on the generated code: 1.335× on encode and nothing, against 1.02× and nothing on record. |
 | [noise-in-the-speed-tier.md](noise-in-the-speed-tier.md)                         | What a cell's trials disagree by, what two invocations of unchanged code disagree by, and which of the two matters.                      |
 | [generated-code-against-hand-written.md](generated-code-against-hand-written.md) | What the inline reservation bought, at 1.54× on encode against 4.15× on record, and the per-call gap to hand-written Luau it left.       |
@@ -58,7 +58,4 @@ Prose follows [../contributing-docs.md](../contributing-docs.md).
 | [compile-time-specialization.md](compile-time-specialization.md)                 | Where fbs's per-call cost is, that a roblox-ts transformer can emit flat code instead, and six compiler behaviors it routes around.      |
 
 A paper's own run output, where nothing else records it, is under
-[data/](data/). Which papers are planned, and where the measurements behind
-each one are recorded today, are in
-[../future-work/documentation-restructure.md](../future-work/documentation-restructure.md).
-Each is listed here as it lands.
+[data/](data/). A new paper follows the format above and is listed here.

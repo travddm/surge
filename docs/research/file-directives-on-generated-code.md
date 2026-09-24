@@ -224,3 +224,41 @@ against level 2 in the reference, and the null result is a comparison between
 two levels rather than an empty one. That `run-in-roblox`'s injected script
 takes the same default as a Studio test session is the documented default
 applied to it, not something this run observed.
+
+## Second correction, 2026-09-23
+
+This corrects six statements.
+
+- **The type-annotation arithmetic.** Discussion: "dismissed by dividing that by the 1.10× … to
+  get 1.01×" and "Against 1.180× the arithmetic gives about 1.04×". The entry, as committed in
+  `docs/future-work/generated-code-performance.md` at surge `824a279`, took "a ninth of" native's
+  gain. It did not divide, since 1.09 divided by 1.10 is 0.99. By that rule 1.180× gives about
+  1.02×. About 1.04× follows only from the encode figure, 1.335×. The statement should have said
+  about 1.02× against decode and about 1.04× against encode.
+- **Why the earlier figures read low.** Background: "a run that never yields lets the heap grow
+  until allocation is what the loop measures" and "biased toward 1.00× by construction";
+  Discussion: "in the direction the slow mode predicts". [frame-starvation.md](frame-starvation.md)
+  does not establish that mechanism, and its correction of this date finds that the catalog did
+  not slow most where allocation is heaviest. What is established is that the three earlier
+  measurements were taken in a mode that depressed most cells, by a factor that differs per cell.
+  Why they read near 1.00× is not established here.
+- **What stayed at level 2.** `--!optimize 2`: "both other libraries' codecs and surge's own
+  runtime package, still pinned at level 2". The run has three other libraries. fbs's and Blink's
+  codecs, the hand-written baseline, and surge's runtime package carry `--!optimize 2`. serio's
+  codec carries no directive (`speed.md` at `ed28683`), so it ran at the default level in both
+  runs.
+- **The other files that name the factory.** Method: "the one other file that names
+  `createBinarySerializer` mentions it in a comment". At surge `824a279`, two files outside the
+  twelve fixture modules name it: `tests/src/bench/adapters/fbs.ts` and
+  `tests/src/bench/adapters/surge.ts`. Each names it in a comment, so the conclusion drawn from the
+  statement does not change.
+- **Loop bounds.** `--!optimize 2`: "every generated loop is bounded by a count read out of the
+  buffer at run time". That holds for the read side. A write loop is bounded by the length of the
+  value being written, which is also known only at run time. The exact form of
+  `DataType.Length<T, L>` emits a loop bounded by a literal: rbxts-transformer-surge's
+  `test/emit.test.ts` has "an exact array loops a literal number of times on both sides". No
+  catalog fixture uses that form, so the result above is unaffected.
+- **The cited document.** Background: "built a section on the first", with its "2.25× to 11.68×"
+  form; Discussion: "the six dismissals generated-code-performance.md built on this figure". That
+  section has since been removed from the document. It is in
+  `docs/future-work/generated-code-performance.md` as committed at surge `824a279`.

@@ -139,3 +139,40 @@ can separate a real change from.
 - The recorded before figures are from
   [benchmark-tooling.md](../future-work/benchmark-tooling.md), which read them
   from a run whose trials were not kept.
+
+## Correction, 2026-09-23
+
+This corrects seven statements.
+
+- **The earlier run.** Method: "The run committed at surge `a878aac`"; Data: "`speed.md` as
+  committed at surge `a878aac`". At `a878aac` the committed `speed.md` is the pre-yield run. The
+  between-invocation figures are read from the printed medians of `speed.md` as committed at surge
+  `6dff513` against the reference. That run was recorded at `e98cb8c` with uncommitted changes and
+  rbxts-transformer-surge `fcebbd6`. Besides the emitter split and the `checks` option, the
+  transformer commits between that run and the reference include `ce7b615`, whose message states
+  that every existing emitter snapshot is unmoved.
+- **The interquartile median.** Results: "0.023 by interquartile range"; Discussion: "2.3% at the
+  median"; Conclusion: "median 2.3%". The statistic `speed.md` prints as `±`, recomputed from the
+  trials at `ed28683` with the recorder's own quartile positions, has a median of 0.022. 0.023
+  comes from a different quartile method. The statements should have said 0.022, or 2.2%.
+- **Column agreement.** Abstract: "agree to within 3% on a column median". The largest column
+  median is serio's decode, at 1.033×, so the columns agree to within 3.3%. Results: "Every column
+  moved the same way". Nine of the ten column medians rose, by 1.7% to 3.3%, and blink's encode
+  fell, to 0.995×.
+- **The two cells' spreads.** Results: "within-run spreads of ±2% in both files". surge's encode on
+  `Blink: Entities` prints ±5% in the reference and ±2% at `6dff513`. blink's encode on
+  `Blink: Booleans` prints ±2% in both. Neither cell is flagged, and neither spread approaches its
+  move.
+- **The readable threshold.** Discussion: "unreadable below roughly 1.3×". blink's encode on
+  `Blink: Booleans` moved 0.742×, which is 1.35× read earlier over later. The band this pair of
+  invocations shows reaches 1.35×, so a per-cell ratio below that is not readable from one pair.
+- **The before counts.** Background and Results: 27, 11 and 4 cells, "all 11 of them on the flat
+  struct, the nested object, the wide struct, or the large array". These come from a run whose
+  trials were not kept. Two pre-yield runs did keep each cell's slowest and fastest trial. By the
+  same statistic over five trials, `speed-trials.tsv` at surge `4afeaca` gives 33, 13 and 5, and
+  at `afde7bc` it gives 28, 15 and 4. In both, cells over three tenths fall on the large record
+  row and none on the large array, and at `afde7bc` three of the 15 are decode cells. Against
+  either run, no cell spreads by more than three tenths now.
+- **The cited document.** Data: "The recorded before figures are from benchmark-tooling.md". That
+  passage has since been removed from the document. It is in
+  `docs/future-work/benchmark-tooling.md` as committed at surge `3bb0a57`.

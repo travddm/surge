@@ -152,3 +152,17 @@ axis-aligned `Packed<T>` rotation, which is also the only exact one.
   the committed file; the recorder is `tests/scripts/lune-size-runner.luau`.
 - The per-row descriptions and round-trip errors are in that file's table,
   and the fixtures that produce each row are under `tests/src/bench/`.
+
+## Correction, 2026-09-23
+
+This corrects two statements, both against `docs/benchmarks/size.md`.
+
+- **What a thousand booleans cost surge.** Results, the Zap paragraph: "a thousand booleans cost
+  it 1002 bytes, as they cost surge and Blink". On `Blink: Booleans`, surge writes 1004 bytes,
+  against 1002 for Blink and Zap. The two extra bytes are surge's u32 array count. The statement
+  should have said "as they cost Blink".
+- **The packed arbitrary-rotation row.** Results: "The two they differ on are both `Packed<T>`
+  rotations"; Discussion: "Where surge and fbs disagree it is on purpose". Only the axis-aligned
+  row is explained. On `CFrame array (packed, arbitrary)`, surge writes 1254 bytes, against 1212
+  for fbs and 919 for serio. This paper does not explain the 42 bytes surge writes beyond fbs, and
+  does not establish that they are deliberate.

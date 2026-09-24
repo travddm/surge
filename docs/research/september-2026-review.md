@@ -138,3 +138,37 @@ were each found by the first thing that ran the generated code on a value.
 - The commits named in the tables above, in both repositories.
 - The git log of both repositories between `bc06cf7`/`6908124` and
   `07d0f33`/`aa6f04b`.
+
+## Correction, 2026-09-23
+
+This corrects five statements.
+
+- **How the later defects were found.** Abstract: "every one by something that ran the generated
+  code"; Conclusion: "each found by the first thing that ran the generated code on a value". The
+  table under "What it did not find" says otherwise. Only the `unknown` defect needed a value to
+  be encoded and decoded. The enum-union defect was found while transformer `4067844` landed, and
+  one of its two forms is a build error. The six shapes and the dictionary-key defect are
+  type-check failures, and the dictionary-key defect was found by writing fixtures. The statements
+  should have said that one of the four was found by running generated code on a value, and three
+  while building or type-checking it. The Discussion's "A review that stops at the emitter's
+  output" does not match the Method either: the review compiled probe files with `rbxtsc`.
+- **How each defect was confirmed.** Abstract: "checked it by executing the compiled transformer
+  … rather than by reading it"; Discussion: "Every one of the seven defects was confirmed on a
+  concrete case before it was filed". The Method, as edited in surge `824a279`, names two
+  exceptions. One union case in `walker-emitter-robustness.md` is from code reading, and the enum
+  index overflow rests on a member count. The statements should have said that each defect was
+  confirmed on a concrete case except for those two parts.
+- **What "closed" counts.** Discussion: "all seven are closed"; Abstract: "seven of the fifteen
+  are closed and eight are open in part". The two count different things. The Abstract's seven
+  are the documents deleted by surge `07d0f33`: five defects and two gaps,
+  `round-trip-test-coverage.md` and `deserialize-hardening.md`. The fixes for all seven defects
+  landed, but `enum-encoding.md` and `blob-classification.md` stay open for one further item each.
+  Of the eight documents not closed, six are open in part. Two, `documentation-gaps.md` and
+  `ci-and-release.md`, are open in full.
+- **The size of the coverage table.** Discussion: "over a table of sixty rows". The type coverage
+  table in `docs/transformer.md` has 21 data rows at surge `bc06cf7` and at `f5d8134`, and 22 at
+  `7cce55e`. Nothing in the repository supports sixty.
+- **How many were silent.** Abstract: "three of them silent"; Discussion: "The two silent ones".
+  Per the table, the `unknown` defect is silent. The enum-union defect is silent when both enums
+  have a member of the same name, and a build error otherwise. The six shapes and the
+  dictionary-key defect fail the build. The Abstract should have said two, one of them in part.
