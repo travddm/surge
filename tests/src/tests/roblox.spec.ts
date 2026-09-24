@@ -116,7 +116,7 @@ class RobloxTest {
 		const { buffer: buf, blobs } = sequencesSerializer.serialize(value);
 		// u8 count + 3 x (f32 time + 3 x u8), then u8 count + 2 x (f32 time + f32 value + f32 envelope).
 		Assert.equal(1 + 3 * 7 + 1 + 2 * 12, buffer.len(buf));
-		Assert.empty(blobs);
+		Assert.equal(undefined, blobs);
 		const result = sequencesSerializer.deserialize(buf, blobs);
 		Assert.equal(value.colors, result.colors);
 		Assert.equal(value.numbers, result.numbers);
@@ -226,7 +226,7 @@ class RobloxTest {
 				insetOrLabel: rng.bool() ? inset : rng.str(),
 			};
 			const { buffer, blobs } = fixedDatatypesSerializer.serialize(value);
-			Assert.empty(blobs);
+			Assert.equal(undefined, blobs);
 			Assert.equal(undefined, difference(value, fixedDatatypesSerializer.deserialize(buffer, blobs)));
 		}
 	}
@@ -253,7 +253,7 @@ class RobloxTest {
 				path,
 			};
 			const { buffer, blobs } = narrowedComponentsSerializer.serialize(value);
-			Assert.empty(blobs);
+			Assert.equal(undefined, blobs);
 			Assert.equal(undefined, difference(value, narrowedComponentsSerializer.deserialize(buffer, blobs)));
 		}
 	}

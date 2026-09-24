@@ -71,22 +71,22 @@ Use it anywhere else:
 import { PlayerState, playerState } from "shared/serializers";
 
 function send(remote: RemoteEvent, state: PlayerState) {
-	const { buffer, blobs } = playerState.serialize(state);
-	remote.FireAllClients(buffer, blobs);
+	remote.FireAllClients(playerState.serialize(state).buffer);
 }
 
-function receive(input: buffer, blobs: Array<defined>): PlayerState {
-	return playerState.deserialize(input, blobs);
+function receive(input: buffer): PlayerState {
+	return playerState.deserialize(input);
 }
 ```
 
 At compile time the transformer replaces `createBinarySerializer<PlayerState>()`
 with code written for `PlayerState` alone. There is no schema at run time.
 
-- `serialize` returns the bytes and a `blobs` array. `blobs` holds the values
-  the bytes cannot carry, such as an `Instance`, in the order they were met.
-  Send both, and pass both to `deserialize`. A type with nothing of that kind
-  returns an empty `blobs` array.
+- `serialize` returns the bytes as `buffer`. A type that can hold a value the
+  bytes cannot carry, such as an `Instance`, also gets a `blobs` array, which
+  holds those values in the order they were met: send it with the bytes, and
+  pass both to `deserialize`. `PlayerState` holds none, so its result has no
+  `blobs`.
 - `DataType.u8` and `DataType.Length` choose how many bytes a value takes.
   Without them a `number` takes 8 bytes and a container's count takes 4. See
   [data-types.md](data-types.md).
@@ -118,9 +118,9 @@ result in a `pcall`:
 ```ts
 const readFromClient = createDeserializer<PlayerState>({ checks: true });
 
-remote.OnServerEvent.Connect((player, input, blobs) => {
-	if (!typeIs(input, "buffer") || !typeIs(blobs, "table")) return;
-	const [ok, state] = pcall(() => readFromClient(input, blobs as Array<defined>));
+remote.OnServerEvent.Connect((player, input) => {
+	if (!typeIs(input, "buffer")) return;
+	const [ok, state] = pcall(() => readFromClient(input));
 	if (!ok) return;
 	// `state` is a PlayerState. Whether its values are acceptable is the game's
 	// to decide.

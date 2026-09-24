@@ -1,7 +1,114 @@
 //!optimize 2
-/** The bundled `serialize`/`deserialize` pair, matching fbs's `Serializer<T>` shape exactly. */
-export interface Serializer<T> {
-	serialize: (value: T) => { buffer: buffer; blobs: Array<defined> };
+/**
+ * The Roblox types surge writes into the buffer (Transformer 4.1 in
+ * docs/specs/transformer.md). Each carries a `_nominal_*` property, as the
+ * Roblox types surge passes through as blobs do, so they are matched first.
+ * An enum item carries none, and is matched here before its members are.
+ */
+type EncodedRobloxType =
+	| Vector2
+	| Vector3
+	| CFrame
+	| Color3
+	| ColorSequence
+	| NumberSequence
+	| Vector3int16
+	| UDim
+	| UDim2
+	| BrickColor
+	| NumberRange
+	| Rect
+	| DateTime
+	| EnumItem;
+
+/** A property name that is not one of `DataType`'s brand markers. */
+type FieldKey<T> = Exclude<keyof T, `_surge_${string}`>;
+
+/**
+ * The properties `T` has beyond the Roblox type it extends. The transformer
+ * encodes that type only as itself or under a `DataType` brand, and passes
+ * one with other properties, such as `Vector3 & { tag: 1 }`, through as a blob.
+ */
+type ExtraKeys<T> = EncodedRobloxType extends infer R
+	? R extends unknown
+		? T extends R
+			? Exclude<FieldKey<T>, keyof R>
+			: never
+		: never
+	: never;
+
+/** Whether `A` and `B` are the same type, not only assignable to each other. */
+type Same<A, B> = (<G>() => G extends A ? 1 : 2) extends <G>() => G extends B ? 1 : 2 ? true : false;
+
+/** Whether `T` is one of the types in `Seen`. */
+type Includes<Seen extends unknown[], T> = Seen extends [infer Head, ...infer Rest]
+	? Same<Head, T> extends true
+		? true
+		: Includes<Rest, T>
+	: false;
+
+/**
+ * `true` when a value of `T` can put anything in `blobs`, and `false` when
+ * every part of it is written into the buffer (Runtime API 3.12 in
+ * docs/specs/runtime-api.md). It follows the transformer's classification
+ * (Transformer 4.1), and is `true` wherever it cannot tell: an empty `blobs`
+ * array is a correct result, and a missing one is not. The transformer checks
+ * the one direction that matters, and reports a shape whose blob this type
+ * misses (Transformer 7.3).
+ *
+ * `Seen` holds the types being walked on the way down. A recursive type meets
+ * itself again, and what it holds is already being walked there, so the
+ * second meeting adds nothing.
+ */
+type MayCarryBlobs<T, Seen extends unknown[] = []> = 0 extends 1 & T
+	? true
+	: unknown extends T
+		? true
+		: true extends (T extends unknown ? PartCarriesBlobs<T, Seen> : never)
+			? true
+			: false;
+
+/** One member of a union, as {@link MayCarryBlobs} classifies it. */
+type PartCarriesBlobs<T, Seen extends unknown[]> = T extends string | number | boolean | undefined | void | buffer
+	? false
+	: T extends EncodedRobloxType
+		? [ExtraKeys<T>] extends [never]
+			? false
+			: true
+		: Includes<Seen, T> extends true
+			? false
+			: T extends ReadonlyArray<infer E>
+				? MayCarryBlobs<E, [...Seen, T]>
+				: T extends ReadonlyMap<infer K, infer V>
+					? MayCarryBlobs<K | V, [...Seen, T]>
+					: T extends ReadonlySet<infer E>
+						? MayCarryBlobs<E, [...Seen, T]>
+						: [Extract<keyof T, `_nominal_${string}`>] extends [never]
+							? [FieldKey<T>] extends [never]
+								? true
+								: true extends { [K in FieldKey<T>]: MayCarryBlobs<T[K], [...Seen, T]> }[FieldKey<T>]
+									? true
+									: false
+							: true;
+
+/**
+ * What `serialize` returns. `blobs` holds the values the buffer cannot carry,
+ * and is there only when `T` can have one: for any other `T`, `serialize`
+ * returns the buffer alone, and `blobs` reads `undefined`.
+ */
+export type Serialized<T> =
+	MayCarryBlobs<T> extends true ? { buffer: buffer; blobs: Array<defined> } : { buffer: buffer; blobs?: undefined };
+
+/**
+ * The bundled `serialize`/`deserialize` pair, in the shape of fbs's `Serializer<T>`.
+ *
+ * `in out` states that `T` is invariant, which it is: `serialize` takes a `T`
+ * and `deserialize` returns one. Stated, the checker does not measure it,
+ * and measuring it walks {@link Serialized} with an unknown `T` until it
+ * reports the instantiation as too deep.
+ */
+export interface Serializer<in out T> {
+	serialize: (value: T) => Serialized<T>;
 	deserialize: (input: buffer, inputBlobs?: Array<defined>) => T;
 }
 
@@ -50,9 +157,7 @@ export interface SerializerOptions {
  * Runtime API 3.4 in docs/specs/runtime-api.md). Calling this directly means the
  * transformer isn't registered for this project.
  */
-export function createSerializer<T>(
-	options?: Pick<SerializerOptions, "writeChecks">,
-): (value: T) => { buffer: buffer; blobs: Array<defined> } {
+export function createSerializer<T>(options?: Pick<SerializerOptions, "writeChecks">): (value: T) => Serialized<T> {
 	return notConfigured();
 }
 

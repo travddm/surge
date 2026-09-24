@@ -63,7 +63,7 @@ class FactoriesTest {
 	public deserializesAShapeWithNoBlobWithoutInputBlobs(): void {
 		const value: Reading = { sensor: "s", values: [4] };
 		const { buffer, blobs } = writeReading(value);
-		Assert.empty(blobs);
+		Assert.equal(undefined, blobs);
 		Assert.equal(undefined, difference(value, readReading(buffer)));
 	}
 

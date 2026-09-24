@@ -66,8 +66,13 @@ from the array it is given:
   `undefined` value keeps later blobs in their place;
 - a union whose members are all of these.
 
+`serialize` returns a `blobs` array for a type that can hold one of these,
+and for the few others that its result type cannot classify, where the array
+is always empty ([specs/runtime-api.md](specs/runtime-api.md) 3.12). Any
+other type's result has no `blobs`.
+
 A `RemoteEvent` carries an `Instance` in `blobs` as it carries any argument.
-A `DataStore` cannot, so a type saved there should have nothing in `blobs`.
+A `DataStore` cannot, so a type saved there should hold none of these.
 
 ## Rejected when the project builds
 

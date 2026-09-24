@@ -58,7 +58,7 @@ class StringsTest {
 			list: [buffer.fromstring("a"), buffer.create(0)],
 		};
 		const { buffer: buf, blobs } = buffersSerializer.serialize(value);
-		Assert.empty(blobs);
+		Assert.equal(undefined, blobs);
 		const result = buffersSerializer.deserialize(buf, blobs);
 		Assert.equal(undefined, difference(value, result));
 		// A copy, not a view of the payload or the original.

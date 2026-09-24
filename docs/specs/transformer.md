@@ -1,8 +1,8 @@
 # Transformer specification
 
 Status: current
-Applies to: `@rbxts/surge` at commit `a822f0c`, `rbxts-transformer-surge` at
-commit `0710f5d` (no tagged release yet)
+Applies to: `@rbxts/surge` at commit `984a9cc`, `rbxts-transformer-surge` at
+commit `08bd04e` (no tagged release yet)
 
 ## 1. Scope
 
@@ -219,8 +219,7 @@ function is not handled.
 **5.9** The blob channel's entry points, `beginWriteBlobs`,
 `finishWriteBlobs` and `beginReadBlobs`, are emitted only where the body
 reaches `pushBlob` or `nextBlob`, including from inside a recursion helper.
-Otherwise `serialize` returns an empty `blobs` array and the
-`inputBlobs` parameter is named `_inputBlobs`.
+Otherwise the `inputBlobs` parameter is named `_inputBlobs`.
 
 **5.10** Read-side checks are emitted only at a call site that sets
 `checks: true`: one `buffer.len` per `deserialize`, a bound after every
@@ -258,6 +257,13 @@ a float width, with its whole part, before it is written (Wire format 4.17).
 **5.15** The value a generated `deserialize` returns is asserted as the call
 site's type argument, so it types as that argument, literal properties
 included, and is assignable wherever the caller's own type is.
+
+**5.16** The table a generated `serialize` returns has a `blobs` property
+exactly where the result type `@rbxts/surge` declares for the call site,
+`Serialized<T>` (Runtime API 3.6), has a `blobs` array: the blob channel's
+list where the body reaches `pushBlob`, and a new empty array otherwise.
+Where the declared result has none, the table holds `buffer` alone and is
+asserted as `{ buffer: buffer; blobs?: undefined }`.
 
 ## 6. Injected imports
 
@@ -319,7 +325,8 @@ A union with a constituent that reports one of these reports that diagnostic
 alone, and none of its own for the union.
 
 **7.3** The entry point reports a diagnostic for a call site that breaks 3.2
-or 3.3.
+or 3.3, and for one whose `serialize` reaches `pushBlob` where the result type
+`@rbxts/surge` declares has no `blobs` array (5.16).
 
 **7.4** A walk diagnostic points at the declaration of the property whose
 type the walk was in, when that declaration is in the file being transformed.
@@ -372,18 +379,21 @@ of `rbxts-transformer-surge`, cited by `describe` block. Source paths are in
 | 5.13      | `transform`: `transform generated code` (the single-sided factories on a recursive type); `tests/src/tests/factories.spec.ts`: `roundTripsARecursiveTypeThroughASeparateSerializerAndDeserializer`                                                                                                                                                                      |
 | 5.14      | `emit`: `Emitter write-side checks`; `transform`: `transform writeChecks option`; `tests/src/tests/checks.spec.ts`: `rejectsAnExactLengthValueOfAnyOtherLength`, `letsAnExactArrayOfOptionalsBeShorterButNotLonger`, `rejectsACountPastItsWidth`, `rejectsANumberItsRangeDoesNotAdmit`                                                                                  |
 | 5.15      | `transform`: `transform generated code` (a deserialize result with each of seven shapes is assignable to its type argument)                                                                                                                                                                                                                                             |
+| 5.16      | `transform`: `transform (end-to-end)` (the declared result has a blobs array exactly when the walk finds a blob, and an array the shape never fills), `transform generated code` (a caller reading blobs off a result); `test/golden.test.mjs`: a shape with no blob field returns no blobs table                                                                       |
 | 6.1, 6.2  | `transform`: `transform injected imports`, and in `transform (end-to-end)` the single shared import and the same-named local function; `tests/src/tests/coverage.spec.ts`: `leavesAUserDeclarationNamedAfterAnInjectedImportAlone`                                                                                                                                      |
 | 6.3       | `test/golden.test.mjs`: a file directive survives the transformer's injected imports; `transform`: `transform generated code` (the three directive tests)                                                                                                                                                                                                               |
 | 6.4       | `transform`: `transform injected imports` (a `createDeserializer` call site)                                                                                                                                                                                                                                                                                            |
 | 6.5       | Source only: `src/emit/`                                                                                                                                                                                                                                                                                                                                                |
 | 7.1       | `transform`: `transform diagnostics` (the category). Source only for the code string: `report` in `src/index.ts`                                                                                                                                                                                                                                                        |
 | 7.2       | `walk`: `TypeWalker blob classification`, `TypeWalker bare EnumItem`, `TypeWalker classification with fixture packages`, `TypeWalker tuples`, `TypeWalker classification`, `TypeWalker union guards`, the brand blocks under 4.3, and `TypeWalker bit sets inside Packed<T>`. Source only for a constituent of a kind no guard covers: `classifyUnion` in `src/walk.ts` |
-| 7.3       | `transform`: `transform diagnostics`, `transform checks option`. Source only: the cases listed under 3.2 and 3.3                                                                                                                                                                                                                                                        |
+| 7.3       | `transform`: `transform diagnostics`, `transform checks option`. Source only: the cases listed under 3.2 and 3.3, and a missed blob, `buildReplacement` in `src/index.ts`, which no type in either repository reaches                                                                                                                                                   |
 | 7.4       | `walk`: `TypeWalker diagnostic position`; `transform`: `transform diagnostics`, `transform checks option` (the positions). Source only for a property declared in another file: `nodeForProperty` in `src/walk.ts`                                                                                                                                                      |
 | 7.5       | `transform`: `transform diagnostics`                                                                                                                                                                                                                                                                                                                                    |
 
 ## Changes
 
+- `984a9cc` / `08bd04e`: adds 5.16 (`serialize` returns `blobs` only where
+  `Serialized<T>` declares it); 5.9 and 7.3 follow it.
 - `a822f0c` / `0710f5d`: 4.1 and 4.16 state which `Set` keys make a `bitSet`
   by the kind the key walks to, so `Set<boolean>` is a `dict`.
 - `45454d2` / `0710f5d`: 7.2 states that a union reports a rejected

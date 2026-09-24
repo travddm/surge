@@ -1,8 +1,8 @@
 # Benchmark harness specification
 
 Status: current
-Applies to: `@rbxts/surge` at commit `aff15c3`, `rbxts-transformer-surge` at
-commit `b8ace27` (no tagged release yet)
+Applies to: `@rbxts/surge` at commit `984a9cc`, `rbxts-transformer-surge` at
+commit `08bd04e` (no tagged release yet)
 
 ## 1. Scope
 
@@ -94,6 +94,13 @@ generated modules, as its compiler emits them. serio's modules carry neither.
 **4.7** A timed call also runs harness code in
 `tests/src/bench/speed.spec.ts`, `adapter.ts` and `adapters/`, which carry
 `--!optimize 2` and not `--!native`. This is the same for every column.
+
+**4.8** An adapter uses what a library returns the way that library's own
+documentation shows, and does no other work in a timed call. surge's and
+fbs's adapters keep the table `serialize` returns as the payload and pass its
+`buffer` and `blobs` to `deserialize`. serio's keeps the `SerializedData`
+`serialize` returns and passes it to `deserialize`. Blink's and the
+baseline's keep the buffer their write function returns.
 
 ## 5. The size tier
 
@@ -209,6 +216,7 @@ for the reasons in section 6 of [test-harness.md](test-harness.md).
 | 4.5       | `docs/benchmarks/size.md` shows equal byte counts for the baseline and surge on its three rows. Unverified: that the bytes are equal byte for byte. Source: `tests/src/bench/baseline/codecs.luau`                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 | 4.6       | Source: the first lines of `tests/src/bench/fixtures/*.ts`, `tests/src/bench/baseline/codecs.luau`, `tests/src/bench/blink/server.luau`, and `@rbxts/flamework-binary-serializer` 0.7.0's `out/serialization/createSerializer.lua` and `createDeserializer.lua`; `@rbxts/serio` 1.2.7's `out/` carries no directive. `test/golden.test.mjs` pins `--!native` and `--!optimize 2` on surge's `alloc`, `blobs`, `cframe` and `pack` modules, and pins that `--!optimize 2` survives the transformer's injected imports on three modules of the tests place, none of them a fixture. No test checks a directive on a fixture, on the baseline, or in fbs or Blink |
 | 4.7       | Source: the first lines of `tests/src/bench/speed.spec.ts`, `adapter.ts` and `adapters/*.ts`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| 4.8       | Source: `tests/src/bench/adapters/`. The documentation each follows: `docs/getting-started.md` for surge; the README of `@rbxts/flamework-binary-serializer` 0.7.0 and the comments on its `Serializer<T>`; the README of `@rbxts/serio` 1.2.7                                                                                                                                                                                                                                                                                                                                                                                                                 |
 | 5.1–5.3   | Source: `tests/scripts/lune-size-runner.luau` and `tests/src/bench/size.ts`; a regenerated `size.md` with no diff                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | 6.1       | Source: `RUNS` and `runOnce` in `tests/scripts/record-speed-benchmarks.mjs`, and the `bench:speed` scripts in `package.json` and `tests/package.json`; `main()` in `tests/src/index.ts` runs only `tests` ([test-harness.md](test-harness.md) 3.4)                                                                                                                                                                                                                                                                                                                                                                                                             |
 | 6.2–6.5   | Source: the constants and comment block of `tests/src/bench/speed.spec.ts`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
@@ -219,6 +227,9 @@ for the reasons in section 6 of [test-harness.md](test-harness.md).
 
 ## Changes
 
+- `984a9cc` / `08bd04e`: adds 4.8 (an adapter uses a library's result as its
+  documentation shows); surge's and fbs's adapters no longer copy the result
+  into a table of their own.
 - `aff15c3` / `b8ace27`: corrected against the code: Terms (Row, Cell), 3.2
   (the large record; brands moved to 3.5), 4.3 (the Zap flow), 4.4 (the two
   definitions declare different rows), 4.6, 5.2, 6.1 (one Studio process per

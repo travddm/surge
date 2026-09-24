@@ -27,26 +27,22 @@ and the nested object, and a part paid per element, which is most of it on
 the fifty-element `CFrame` array
 ([generated-code-against-hand-written.md](../research/generated-code-against-hand-written.md)
 and its correction).
-Most of the per-call part is three tables
-([tables-around-serialize.md](../research/tables-around-serialize.md)): the
-wrapper and the empty `blobs` array the generated `serialize()` returns, and
-the payload table the benchmark's surge adapter builds and the baseline's does
-not. Calling `finishWrite` instead of inlining it costs nothing measurable.
-With all three tables gone, a small part of the per-call gap is left.
+Most of the per-call part was three tables
+([tables-around-serialize.md](../research/tables-around-serialize.md)). A
+shape with no blob field no longer returns an empty `blobs` array (Runtime
+API 3.6 in [specs/runtime-api.md](../specs/runtime-api.md)), and the
+benchmark's adapters no longer copy the result into a table of their own
+(Benchmark harness 4.8 in
+[specs/benchmark-harness.md](../specs/benchmark-harness.md)). Calling
+`finishWrite` instead of inlining it costs nothing measurable.
 
-**What `serialize()` returns.** A decision before it is a change: its two
-tables are the largest per-call cost left in the generated code, and each way
-to remove them changes what a caller gets. Both are free before the first
-release.
-
-- Keep `{ buffer, blobs }` and stop creating `blobs` per call: one empty array
-  per serializer or per package, frozen, since every later call would return
-  the same array. Worth the cheaper of the two tables (probe A, which shared
-  an array it did not freeze). `Serializer<T>` keeps the shape fbs declares.
-- Return no table: the buffer alone where the shape has no blob field, or the
-  buffer and the blob array as two return values. Worth both tables (probe D),
-  and changes the shape `Serializer<T>` shares with fbs, which a user replacing
-  fbs relies on.
+**The table around the buffer.** `serialize()` still returns a table, which
+holds the buffer, because `Serializer<T>` keeps the shape fbs declares. It is
+the larger of the two tables probe D of
+[tables-around-serialize.md](../research/tables-around-serialize.md) removed.
+Returning the buffer alone
+would remove it, and would change what every caller reads, so it waits for a
+reason to leave fbs's shape.
 
 **What is left per call.** What remains once the three tables are gone
 (probe E) was not probed. The candidates in the code are `finishWrite`'s
@@ -189,8 +185,8 @@ means, but it is still not surge's to decide for a file surge does not own.
 Every item here is measurement-driven, and the method is settled: a change is
 its own full catalog run against a reference taken in the same session, read
 as medians over many cells against the untouched libraries as controls. The
-per-call gap is the largest open item. Most of it is measured, and what
-`serialize()` returns waits on the decision above. The two reopened entries
+per-call gap is the largest open item. Most of it is measured, and two of the
+three tables behind it are gone. The two reopened entries
 need an argument against a current figure, not a change. The rest is small,
 or needs a fixture before anything can measure it.
 

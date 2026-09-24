@@ -11,6 +11,7 @@ export {
 	createBinarySerializer,
 	createDeserializer,
 	createSerializer,
+	Serialized,
 	Serializer,
 	SerializerOptions,
 } from "./serializer";

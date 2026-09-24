@@ -123,6 +123,18 @@ test("a shape with no blob field pays nothing for the blob side channel", () => 
 	assert.match(withBlobs, /__surge_beginWriteBlobs\(/);
 });
 
+// What the empty `blobs` table cost is in docs/research/tables-around-serialize.md.
+test("a shape with no blob field returns no blobs table", () => {
+	// `Basic` has no blob field, and `Serialized<Basic>` declares no array, so
+	// its result is the buffer alone.
+	const luau = readCompiledLuau("tests/basic.spec.luau");
+	assert.match(luau, /return \{\n\t*buffer = __surge_finishWrite\([^)]*\),\n\t*\}/);
+	assert.doesNotMatch(luau, /blobs = \{\}/);
+	// A positive control: a shape with a blob field still returns its array.
+	const withBlobs = readCompiledLuau("tests/roblox.spec.luau");
+	assert.match(withBlobs, /blobs = __surge_finishWriteBlobs\(\),/);
+});
+
 // Regression checks for the file directives: the package pragma entry in
 // docs/future-work/generated-code-performance.md, and Transformer 6.3 in
 // docs/specs/transformer.md. These two read @rbxts/surge's own compiled output
