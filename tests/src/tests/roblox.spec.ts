@@ -288,7 +288,8 @@ class RobloxTest {
 	// one written, and so is each matrix component (Wire format 7.4 in
 	// docs/specs/wire-format.md). The fixed rotations are the ones a quantized
 	// form is likeliest to get wrong: none, half turns about each axis, where
-	// the angle is at the fold, and a turn about X, which serio's form loses.
+	// the angle is at the fold, angles just either side of it, and a turn about
+	// X, which serio's form loses.
 	@Fact
 	public roundTripsAQuantizedRotationWithinItsStep(): void {
 		const rng = new Rng(31);
@@ -299,6 +300,7 @@ class RobloxTest {
 			CFrame.fromAxisAngle(Vector3.zAxis, -math.pi),
 			CFrame.fromAxisAngle(Vector3.xAxis, 1),
 			CFrame.fromAxisAngle(new Vector3(1, 1, 1).Unit, math.pi - 1e-4),
+			CFrame.fromAxisAngle(new Vector3(1, 2, 3).Unit, math.pi + 0.05),
 		];
 		for (const _ of $range(1, 200)) {
 			rotations.push(CFrame.Angles(rng.next() * 6 - 3, rng.next() * 6 - 3, rng.next() * 6 - 3));

@@ -1,7 +1,7 @@
 # Transformer specification
 
 Status: current
-Applies to: `@rbxts/surge` at commit `45454d2`, `rbxts-transformer-surge` at
+Applies to: `@rbxts/surge` at commit `a822f0c`, `rbxts-transformer-surge` at
 commit `0710f5d` (no tagged release yet)
 
 ## 1. Scope
@@ -92,7 +92,7 @@ declarations (4.10).
 | `T[]`, `ReadonlyArray<T>`                                                                                                                        | `array`                                                        |
 | a tuple whose rest element, if it has one, is last                                                                                               | `tuple`                                                        |
 | `Map<K, V>`, `ReadonlyMap<K, V>`                                                                                                                 | `dict` with a key and a value                                  |
-| `Set<V>`, `ReadonlySet<V>` in a packed subtree, with `V` a union of literal values or one literal value, and not `undefined` (4.16)              | `bitSet`                                                       |
+| `Set<V>`, `ReadonlySet<V>` in a packed subtree, with `V` walking to a `literal` or `literalConst` that is not `undefined` (4.16)                 | `bitSet`                                                       |
 | `Set<V>`, `ReadonlySet<V>`                                                                                                                       | `dict` with a key only                                         |
 | a type with both declared properties and an index signature                                                                                      | a diagnostic (7.2)                                             |
 | an interface or object type with declared properties                                                                                             | `object`                                                       |
@@ -166,7 +166,8 @@ outside a packed subtree, and quantizes that `cframe`'s rotation (Wire format
 **4.16** In a packed subtree, a `Set` or `ReadonlySet` whose key walks to a
 `literal` without `undefined`, or to a `literalConst` other than `undefined`,
 is a `bitSet` of those values (Wire format 8.8). Any other `Set`, and every
-`Set` outside a packed subtree, is a `dict`.
+`Set` outside a packed subtree, is a `dict`. `Set<boolean>` is a `dict`,
+because `boolean` walks to `bool`; `Set<true>` is a `bitSet`.
 
 ## 5. Emission
 
@@ -383,6 +384,8 @@ of `rbxts-transformer-surge`, cited by `describe` block. Source paths are in
 
 ## Changes
 
+- `a822f0c` / `0710f5d`: 4.1 and 4.16 state which `Set` keys make a `bitSet`
+  by the kind the key walks to, so `Set<boolean>` is a `dict`.
 - `45454d2` / `0710f5d`: 7.2 states that a union reports a rejected
   constituent's diagnostic alone; 4.14 states the width rule apart from the
   whole-number rule.
