@@ -7,7 +7,9 @@ import { Rng, difference, hex, unhex } from "../support";
 // The `checks` factory option (Transformer 5.10 in docs/specs/transformer.md): the
 // read side stays inside the input buffer and rejects a count the rest of the
 // input cannot hold. Every payload here is written by hand, because no
-// `serialize` would produce one.
+// `serialize` would produce one. And the `writeChecks` option (Transformer
+// 5.14): `serialize` rejects a value whose length or count does not fit its
+// type.
 
 interface Flat {
 	count: DataType.u32;
@@ -67,6 +69,42 @@ interface WithEnum {
 	material: Enum.Material;
 }
 const withEnum = createBinarySerializer<WithEnum>({ checks: true });
+
+interface Exact {
+	code: DataType.Length<string, 4>;
+	triple: DataType.Length<Array<DataType.u8>, 3>;
+	bytes: DataType.Length<buffer, 2>;
+	slots: DataType.Length<Array<DataType.u8 | undefined>, 3>;
+}
+const exact = createBinarySerializer<Exact>({ writeChecks: true });
+
+interface Narrow {
+	list: DataType.Length<Array<DataType.u8>, DataType.u8>;
+	text: DataType.Length<string, DataType.u8>;
+	tags: DataType.Length<Map<string, boolean>, DataType.u8>;
+}
+const narrow = createBinarySerializer<Narrow>({ writeChecks: true });
+
+// One field, so the element bytes after a wrapped count are left unread
+// rather than misread as the next field.
+interface NarrowList {
+	list: DataType.Length<Array<DataType.u8>, DataType.u8>;
+}
+const narrowListUnchecked = createBinarySerializer<NarrowList>();
+
+function exactValue(): Exact {
+	return { code: "abcd", triple: [1, 2, 3], bytes: buffer.create(2), slots: [1, 2, 3] };
+}
+
+function narrowValue(size: number): Narrow {
+	const list = new Array<DataType.u8>();
+	const tags = new Map<string, boolean>();
+	for (const i of $range(1, size)) {
+		list.push(1 as DataType.u8);
+		tags.set(tostring(i), true);
+	}
+	return { list, text: "", tags };
+}
 
 /** The message of a `deserialize` that raised, or `undefined` if it returned. */
 function rejection(run: () => unknown): string | undefined {
@@ -207,6 +245,44 @@ class ChecksTest {
 		assertRejected(() => withEnum.deserialize(unhex("ff")));
 		const written = withEnum.serialize({ material: Enum.Material.Plastic });
 		Assert.equal(Enum.Material.Plastic, withEnum.deserialize(written.buffer).material);
+	}
+
+	@Fact
+	public rejectsAnExactLengthValueOfAnyOtherLength(): void {
+		Assert.undefined(rejection(() => exact.serialize(exactValue())));
+		assertRejected(() => exact.serialize({ ...exactValue(), code: "abc" }));
+		assertRejected(() => exact.serialize({ ...exactValue(), code: "abcde" }));
+		assertRejected(() => exact.serialize({ ...exactValue(), triple: [1, 2] }));
+		assertRejected(() => exact.serialize({ ...exactValue(), triple: [1, 2, 3, 4] }));
+		assertRejected(() => exact.serialize({ ...exactValue(), bytes: buffer.create(3) }));
+	}
+
+	// An absent optional is what a missing element writes, so an array of
+	// optionals may be shorter (Wire format 6.6); only a longer one is rejected.
+	@Fact
+	public letsAnExactArrayOfOptionalsBeShorterButNotLonger(): void {
+		Assert.undefined(rejection(() => exact.serialize({ ...exactValue(), slots: [1] })));
+		assertRejected(() => exact.serialize({ ...exactValue(), slots: [1, 2, 3, 4] }));
+	}
+
+	@Fact
+	public rejectsACountPastItsWidth(): void {
+		Assert.undefined(rejection(() => narrow.serialize(narrowValue(255))));
+		assertRejected(() => narrow.serialize(narrowValue(256)));
+		assertRejected(() => narrow.serialize({ ...narrowValue(0), text: string.rep("x", 256) }));
+		const tags = new Map<string, boolean>();
+		for (const i of $range(1, 256)) {
+			tags.set(tostring(i), true);
+		}
+		assertRejected(() => narrow.serialize({ ...narrowValue(0), tags }));
+	}
+
+	// Unchecked, the count's write wraps it modulo its width, which is what
+	// writeChecks exists to catch: 256 elements under a u8 count read back as none.
+	@Fact
+	public wrapsACountPastItsWidthWithoutWriteChecks(): void {
+		const written = narrowListUnchecked.serialize({ list: narrowValue(256).list });
+		Assert.equal(0, narrowListUnchecked.deserialize(written.buffer, written.blobs).list.size());
 	}
 
 	@Fact

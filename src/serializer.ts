@@ -26,10 +26,23 @@ export interface SerializerOptions {
 	 *
 	 * Turn it on wherever the bytes come from somewhere that is not trusted,
 	 * which a remote event is and a `DataStore` of this game's own writing is
-	 * not. It costs a branch per read and it checks lengths, never values: a
-	 * payload that is the right shape but the wrong data still deserializes.
+	 * not. It costs a branch per read. It checks lengths, counts, and the
+	 * indexes that name an enum item or a packed rotation, and no other value:
+	 * a payload that is the right shape but the wrong data still deserializes.
 	 */
 	readonly checks?: boolean;
+	/**
+	 * Check, on every write, that a value's lengths and counts fit its type:
+	 * that a `DataType.Length<T, N>` value is exactly `N` long, and that a
+	 * count fits the width `DataType.Length<T, L>` gives it. A value that does
+	 * not raises a string beginning `@rbxts/surge: ` from `serialize`, where
+	 * unchecked it would be padded, truncated, or have its count wrap. Defaults
+	 * to `false`.
+	 *
+	 * It catches a value this game built wrong rather than input it was sent,
+	 * so it costs a branch per container on the write side only.
+	 */
+	readonly writeChecks?: boolean;
 }
 
 /**
@@ -37,12 +50,16 @@ export interface SerializerOptions {
  * Runtime API 3.4 in docs/specs/runtime-api.md). Calling this directly means the
  * transformer isn't registered for this project.
  */
-export function createSerializer<T>(): (value: T) => { buffer: buffer; blobs: Array<defined> } {
+export function createSerializer<T>(
+	options?: Pick<SerializerOptions, "writeChecks">,
+): (value: T) => { buffer: buffer; blobs: Array<defined> } {
 	return notConfigured();
 }
 
-/** See {@link createSerializer}. Takes {@link SerializerOptions}. */
-export function createDeserializer<T>(options?: SerializerOptions): (input: buffer, inputBlobs?: Array<defined>) => T {
+/** See {@link createSerializer}. Takes the read side of {@link SerializerOptions}. */
+export function createDeserializer<T>(
+	options?: Pick<SerializerOptions, "checks">,
+): (input: buffer, inputBlobs?: Array<defined>) => T {
 	return notConfigured();
 }
 

@@ -64,8 +64,8 @@ buffer bytes.
 | functions, `null`      | rejected with a diagnostic                            | side                                    | side                                               | n/a                                               | n/a                                          |
 | `symbol`               | rejected with a diagnostic                            | side                                    | side                                               | n/a                                               | n/a                                          |
 | generics               | yes (keyed by type identity)                          | yes                                     | yes                                                | struct/map/enum generics                          | none                                         |
-| write-side validation  | none                                                  | none                                    | range and NaN on every number                      | `option WriteValidations`                         | `write_checks` (default on)                  |
-| read-side checks       | none                                                  | none                                    | none                                               | bounds validated                                  | server always, client optional               |
+| write-side validation  | lengths and counts (`writeChecks`)                    | none                                    | range and NaN on every number                      | `option WriteValidations`                         | `write_checks` (default on)                  |
+| read-side checks       | bounds, counts and indexes (`checks`)                 | none                                    | none                                               | bounds validated                                  | server always, client optional               |
 
 Some cells have since been measured rather than read, by the
 harness in [benchmark-tooling.md](benchmark-tooling.md):
@@ -162,11 +162,12 @@ bound without a helper type.
 2. Numeric ranges as a brand (`DataType.Range<Min, Max>`): validation on
    write, and narrowing to the smallest width that fits (which neither
    Blink nor Zap does; serio validates but does not narrow).
-3. Opt-in write-side validation. The read-side half has landed as the
-   factory's `checks` option (section 4 of
-   [specs/runtime-api.md](../specs/runtime-api.md)); what is left is checking a value on the way
-   in, which is the same option's other half and is what `Range<Min, Max>`
-   above needs. Every other library has at least one of the two.
+3. Write-side validation of values. Both halves of opt-in validation have
+   landed for structure: `checks` on what `deserialize` reads, and
+   `writeChecks` on the lengths and counts `serialize` writes (Runtime API
+   3.10 in [specs/runtime-api.md](../specs/runtime-api.md)). What is left is
+   a number outside the range its width or its type allows, which wraps
+   today, and is what `Range<Min, Max>` above needs.
 4. A quantized rotation option for `CFrame` (serio's 18-byte form, with
    its documented ~0.05 error) for shapes that can accept it.
 

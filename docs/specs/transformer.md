@@ -1,8 +1,8 @@
 # Transformer specification
 
 Status: current
-Applies to: `@rbxts/surge` at commit `1ed333b`, `rbxts-transformer-surge` at
-commit `33e2082` (no tagged release yet)
+Applies to: `@rbxts/surge` at commit `ca7bb09`, `rbxts-transformer-surge` at
+commit `8792c27` (no tagged release yet)
 
 ## 1. Scope
 
@@ -40,10 +40,11 @@ does not resolve to one of those is not transformed.
 never inferred from the call's contextual type.
 
 **3.3** A call site may pass one options argument. It must be an object
-literal whose only property, if it has one, is `checks: true` or
-`checks: false`, with `checks` written as an identifier: a quoted key, a
-shorthand property and a spread are rejected. `createSerializer` takes no
-options.
+literal whose properties, if it has any, are `checks` and `writeChecks`, each
+written as an identifier with the literal `true` or `false`: a quoted key, a
+shorthand property and a spread are rejected. `createSerializer` takes only
+`writeChecks`, `createDeserializer` only `checks`, and `createBinarySerializer`
+both.
 
 **3.4** Each call site is transformed independently of every other: two call
 sites for one type generate two serializers, and write the same bytes.
@@ -222,6 +223,14 @@ rotation code is from 24 to 30 is rejected.
 side it returns, recursion helpers included, so its generated code refers to
 no state its closure does not declare (5.3).
 
+**5.14** Write-side checks are emitted only at a call site that sets
+`writeChecks: true`: a comparison of each exact-form value's length with its
+`N` before it is written, which is `>` for an `array` or tuple rest of
+`optional` elements and `!==` otherwise, and a comparison of each count with
+the largest its `u8`, `u16` or `u24` width holds. A `dict`'s count is compared
+once the entries are written, before it is written back. A `u32` count is not
+compared.
+
 ## 6. Injected imports
 
 **6.1** The transformer adds one import of `@rbxts/surge` to each file where a
@@ -295,7 +304,7 @@ of `rbxts-transformer-surge`, cited by `describe` block. Source paths are in
 | Statement | Pinned by                                                                                                                                                                                                                                                                                                                       |
 | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 3.1       | `detect`: `resolveFactoryName`; `tests/src/tests/factories.spec.ts`: `transformsAFactoryImportedUnderAnotherName`                                                                                                                                                                                                               |
-| 3.2, 3.3  | `transform`: `transform diagnostics`, `transform checks option`. Source only for more than one argument, options that are not an object literal, and a quoted or shorthand `checks`: `readChecksOption` in `src/index.ts`                                                                                                       |
+| 3.2, 3.3  | `transform`: `transform diagnostics`, `transform checks option`, `transform writeChecks option`. Source only for more than one argument, options that are not an object literal, and a quoted or shorthand `checks`: `readChecksOption` in `src/index.ts`                                                                       |
 | 3.4       | `tests/src/tests/factories.spec.ts`: `writesTheSameBytesFromTwoCallSitesForOneType`                                                                                                                                                                                                                                             |
 | 4.1       | `walk`: `TypeWalker classification`, `TypeWalker classification with fixture packages`, `TypeWalker blob classification`, `TypeWalker tuples`, `TypeWalker union guards`, `TypeWalker wire-format determinism`, and the brand blocks under 4.3                                                                                  |
 | 4.2       | `walk`: `TypeWalker recursion through unions`, `TypeWalker union guards` (a recursive object type); `test/golden.test.mjs`: the recursion-helper checks; `walk`: `TypeWalker recursion through arrays and tuples`                                                                                                               |
@@ -323,6 +332,7 @@ of `rbxts-transformer-surge`, cited by `describe` block. Source paths are in
 | 5.11      | `tests/src/tests/roblox.spec.ts`: `keepsLaterBlobsInPlaceWhenAnUnknownIsUndefined`, `writesNoBlobForAnAbsentOptionalBlob`                                                                                                                                                                                                       |
 | 5.12      | `emit`: `Emitter read-side checks` (a packed CFrame); `tests/src/tests/checks.spec.ts`: `rejectsATruncatedPackedCFrame`, `rejectsAPackedRotationCodeThatNamesNoRotation`                                                                                                                                                        |
 | 5.13      | `transform`: `transform generated code` (the single-sided factories on a recursive type); `tests/src/tests/factories.spec.ts`: `roundTripsARecursiveTypeThroughASeparateSerializerAndDeserializer`                                                                                                                              |
+| 5.14      | `emit`: `Emitter write-side checks`; `transform`: `transform writeChecks option`; `tests/src/tests/checks.spec.ts`: `rejectsAnExactLengthValueOfAnyOtherLength`, `letsAnExactArrayOfOptionalsBeShorterButNotLonger`, `rejectsACountPastItsWidth`                                                                                |
 | 6.1, 6.2  | `transform`: `transform injected imports`, and in `transform (end-to-end)` the single shared import and the same-named local function; `tests/src/tests/coverage.spec.ts`: `leavesAUserDeclarationNamedAfterAnInjectedImportAlone`                                                                                              |
 | 6.3       | `test/golden.test.mjs`: a file directive survives the transformer's injected imports; `transform`: `transform generated code` (the three directive tests)                                                                                                                                                                       |
 | 6.4       | `transform`: `transform injected imports` (a `createDeserializer` call site)                                                                                                                                                                                                                                                    |
@@ -335,6 +345,8 @@ of `rbxts-transformer-surge`, cited by `describe` block. Source paths are in
 
 ## Changes
 
+- `ca7bb09` / `8792c27`: 3.3 (the options each factory takes, now
+  with `writeChecks`); adds 5.14 (the write-side checks).
 - `1ed333b` / `33e2082`: 4.7 (every `dict` key kind type-checks) now
   states a guarantee; adds 4.13 (a width-branded `Record` key).
 - `f0b68ef` / `b954fd2`: the remaining known defects of the walk

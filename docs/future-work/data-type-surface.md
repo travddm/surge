@@ -33,9 +33,11 @@ Three Tier B items need no brand:
 
 - A bit-packed set of a fixed member list (Blink's `set`) is
   `Packed<Set<"a" | "b" | ...>>`, a composition of what already exists.
-- Opt-in validation is the factory's `checks` option, not a type. Its read
-  half has landed; see section 4 of
-  [specs/runtime-api.md](../specs/runtime-api.md). `Range<Min, Max>` adds the write half.
+- Opt-in validation is the factory's `checks` and `writeChecks` options, not
+  a type. Both have landed: `checks` for what `deserialize` reads (section 4
+  of [specs/runtime-api.md](../specs/runtime-api.md)), and `writeChecks` for
+  lengths and counts on `serialize` (3.10 there). `Range<Min, Max>` adds a
+  value's range to what `writeChecks` rejects.
 - **`AlignedCFrame` is dropped.** `Packed<T>` already gives a `CFrame` the
   1-, 13-, or 25-byte form, which is Zap's 13-byte form plus a smaller case
   and a fallback. Zap asserts on a rotation its table misses, which is the
@@ -102,10 +104,9 @@ that, u32 wins on two things that are not about bandwidth:
 
 - Rule 4. u32 is what an unbranded container writes today, so every pinned
   buffer in `bytes.spec.ts` stays green and no existing wire format moves.
-- A u16 default truncates a container above 65535 entries, and nothing
-  detects it until write-side validation lands, which is item 3 of Tier B in
-  [type-coverage-parity.md](type-coverage-parity.md). A u32 default has no
-  matching failure: its cost is two bytes, paid visibly.
+- A u16 default wraps the count of a container above 65535 entries, which
+  only a call site that sets `writeChecks` detects (Wire format 6.8). A u32
+  default has no matching failure: its cost is two bytes, paid visibly.
 
 So the trade is two bytes per container against a silent ceiling, and a
 consumer takes the two bytes back per container with `Length<T, u16>`.
@@ -147,17 +148,17 @@ bounds`. A short array or tuple rest writes each missing element as `nil`,
   `optional` pads as absent and reads back at its own length, which is the
   contract; a `bool`, a `literal`, a `literalConst` and some `guardedUnion`s
   pad silently and read back changed; a `blob` appends nothing, so the blob
-  channel falls out of step; every other kind raises. Write validation is what
-  closes the silent cases: with it on, a short value in the exact form should
-  raise before anything is written.
+  channel falls out of step; every other kind raises. `writeChecks` closes the
+  silent cases: with it on, a value of any other length raises before anything
+  is written (Runtime API 3.10).
 - What an integer component width does to a value outside it, which
   `Vector<X, Y, Z>` and `Transform<X, Y, Z>` leave to the `buffer` call.
   Measured under Lune 0.10.5: `buffer.writeu8` of `3.7` reads back 3, of
   `-1` reads back 255, and of `300` reads back 44; `buffer.writei16` of
   `-1.5` reads back -1 and of `40000` reads back -25536; a NaN and an
   infinity both read back 0. None of them raises, so truncation toward
-  zero and wrapping modulo the range is the contract until write-side
-  validation lands.
+  zero and wrapping modulo the range is the contract. `writeChecks` examines
+  lengths and counts, not these; `Range<Min, Max>` is what would reject them.
 - `Range<Min, Max>` and an explicit width brand can disagree. The explicit
   width wins, and a range that does not fit it is a diagnostic rather than a
   silent widening.

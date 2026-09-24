@@ -1,8 +1,8 @@
 # Runtime API specification
 
 Status: current
-Applies to: `@rbxts/surge` at commit `f0b68ef`, `rbxts-transformer-surge` at
-commit `b954fd2` (no tagged release yet)
+Applies to: `@rbxts/surge` at commit `ca7bb09`, `rbxts-transformer-surge` at
+commit `8792c27` (no tagged release yet)
 
 ## 1. Scope
 
@@ -42,11 +42,11 @@ interface Serializer<T> {
 This is the shape and blob-array calling convention of
 flamework-binary-serializer's `Serializer<T>`.
 
-**3.2** `createSerializer<T>()` returns the `serialize` function alone. It
-takes no options.
+**3.2** `createSerializer<T>(options?: Pick<SerializerOptions, "writeChecks">)`
+returns the `serialize` function alone.
 
-**3.3** `createDeserializer<T>(options?: SerializerOptions)` returns the
-`deserialize` function alone.
+**3.3** `createDeserializer<T>(options?: Pick<SerializerOptions, "checks">)`
+returns the `deserialize` function alone.
 
 **3.4** Every factory call site must be replaced by the transformer at compile
 time. A factory that runs untransformed raises a string saying that
@@ -64,13 +64,27 @@ field returns an empty array.
 taking blob fields from `inputBlobs` in the order `serialize` produced them.
 `inputBlobs` may be omitted when `T` has no blob field.
 
-**3.8** `SerializerOptions.checks` must be written as a literal at the call
-site, because the transformer decides from it what to emit. It defaults to
-`false`.
+**3.8** `SerializerOptions.checks` and `SerializerOptions.writeChecks` must be
+written as literals at the call site, because the transformer decides from
+them what to emit. Each defaults to `false`. `checks` governs `deserialize`
+(section 4) and `writeChecks` governs `serialize` (3.10 and 3.11).
 
 **3.9** The package exports the `DataType` namespace of width, length and
 packing brands. What each brand does to the bytes is in
 [wire-format.md](wire-format.md).
+
+**3.10** With `writeChecks`, `serialize` raises a string beginning
+`@rbxts/surge:` for a value whose length or count does not fit its type: a
+value in the exact form of `DataType.Length<T, N>` that is not `N` long, and a
+count larger than the `u8`, `u16` or `u24` width `DataType.Length<T, L>` gives
+it. An `array` or tuple rest of `optional` elements in the exact form may be
+shorter than `N`, which [wire-format.md](wire-format.md) 6.6 makes valid; only
+a longer one raises.
+
+**3.11** Without `writeChecks`, `serialize` does not examine lengths or counts:
+a value in the exact form is truncated or padded as
+[wire-format.md](wire-format.md) 6.3 and 6.7 state, and a count too large for
+its width wraps as 6.8 states. `writeChecks` examines no other value.
 
 ## 4. What `deserialize` does with input it did not write
 
@@ -184,8 +198,10 @@ A test file named `*.spec.ts` is under `tests/src/tests/`. A path starting
 | 3.5                         | `bytes.spec.ts`, which compares every pinned encoding's whole buffer                                                                                                                                                                                    |
 | 3.6                         | `roblox.spec.ts`: `passesUnknownAndInstanceValuesThroughTheBlobChannel`, `keepsLaterBlobsInPlaceWhenAnUnknownIsUndefined`, `writesNoBlobForAnAbsentOptionalBlob`; the empty array: `factories.spec.ts`: `deserializesAShapeWithNoBlobWithoutInputBlobs` |
 | 3.7                         | `factories.spec.ts`: `deserializesAShapeWithNoBlobWithoutInputBlobs`                                                                                                                                                                                    |
-| 3.8                         | `test/golden.test.mjs`: a serializer without `checks` carries no read-side check, and one with it carries them                                                                                                                                          |
+| 3.8                         | `test/golden.test.mjs`: a serializer without `checks` carries no read-side check, and one with it carries them; `rbxts-transformer-surge` `test/transform.test.ts`: `transform checks option`, `transform writeChecks option`                           |
 | 3.9                         | Source: `src/data-type.ts`; each brand's bytes are pinned in `bytes.spec.ts`                                                                                                                                                                            |
+| 3.10                        | `checks.spec.ts`: `rejectsAnExactLengthValueOfAnyOtherLength`, `letsAnExactArrayOfOptionalsBeShorterButNotLonger`, `rejectsACountPastItsWidth`                                                                                                          |
+| 3.11                        | `checks.spec.ts`: `wrapsACountPastItsWidthWithoutWriteChecks`; `collections.spec.ts`: `padsAShortExactArrayOfOptionalsInsteadOfRaising`                                                                                                                 |
 | 4.1                         | Source only: the unchecked read path under `emit/`; a statement of what is not guaranteed has nothing to pin                                                                                                                                            |
 | 4.2–4.4                     | `checks.spec.ts`: `rejectsATruncatedPayload`, `rejectsATruncatedPackedCFrame`, `rejectsACountTheInputCannotHold`, `rejectsACountOfElementsThatReadNoBytes`                                                                                              |
 | 4.3 (no over-rejection)     | `checks.spec.ts`: `acceptsWhatSerializeWrote`, `acceptsEveryKindThatReadsACount`, `acceptsEmptyContainers`                                                                                                                                              |
@@ -205,6 +221,9 @@ A test file named `*.spec.ts` is under `tests/src/tests/`. A path starting
 
 ## Changes
 
+- `ca7bb09` / `8792c27`: adds `writeChecks`. 3.2, 3.3 and 3.8 give
+  each factory the options of its own side; adds 3.10 (what `writeChecks`
+  rejects) and 3.11 (what `serialize` does without it).
 - `f0b68ef` / `b954fd2`: the two gaps in `checks` closed. 4.2 (a
   packed `CFrame` is bounded) and 4.9 (checks reject an `enum` index past its
   items and a rotation code that names no rotation) now state guarantees;

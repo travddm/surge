@@ -1,8 +1,8 @@
 # Wire format specification
 
 Status: current
-Applies to: `@rbxts/surge` at commit `38b634f`, `rbxts-transformer-surge` at
-commit `6967359` (no tagged release yet)
+Applies to: `@rbxts/surge` at commit `ca7bb09`, `rbxts-transformer-surge` at
+commit `8792c27` (no tagged release yet)
 
 ## 1. Scope
 
@@ -158,9 +158,10 @@ at that width. `Length<T>` and `Length<T, u32>` produce the same bytes as `T`.
 
 **6.3** With `L` a whole number literal, no count is written and both sides
 use exactly `L` bytes (for `str` and `buffer`) or elements (for `array` and a
-tuple's rest). Nothing checks the value's length. A longer value is truncated
-to `L`, and a shorter `str` or `buffer` raises. A shorter `array` or tuple rest
-is in 6.6 and 6.7.
+tuple's rest). Without `writeChecks` ([runtime-api.md](runtime-api.md) 3.10),
+nothing checks the value's length: a longer value is truncated to `L`, and a
+shorter `str` or `buffer` raises. A shorter `array` or tuple rest is in 6.6
+and 6.7.
 
 **6.4** A `dict` takes a width but not a whole number literal.
 
@@ -172,8 +173,8 @@ missing element as `nil`. An `optional` element, or a `literal` element whose
 last value in canonical literal order is `undefined`, writes `nil` as absent,
 and the value reads back at its own length.
 
-**6.7** Known defect, not a guarantee: in the exact form of 6.3, a missing
-element that 6.6 does not cover raises or changes the value without raising:
+**6.7** Without `writeChecks`, in the exact form of 6.3, a missing element
+that 6.6 does not cover raises or changes the value without raising:
 
 - a `bool` is written as `false`;
 - a `literal` is written as its last value in canonical literal order;
@@ -188,9 +189,14 @@ element that 6.6 does not cover raises or changes the value without raising:
   `literalConst`, reads back as a present value.
 
 Each element that does not raise and is not a `blob` reads back present, so
-the value reads back at length `L`. Write validation, tracked in
-[../future-work/data-type-surface.md](../future-work/data-type-surface.md),
-is what would close this.
+the value reads back at length `L`. With `writeChecks`, such a value raises
+before anything is written ([runtime-api.md](runtime-api.md) 3.10).
+
+**6.8** A count is written at its width modulo that width's range. Without
+`writeChecks`, a count too large for a `u8`, `u16` or `u24` width therefore
+wraps, and the read side reads the wrapped count: 256 elements under a `u8`
+count read back as none. With `writeChecks`, such a count raises
+([runtime-api.md](runtime-api.md) 3.10).
 
 ## 7. Per-component widths
 
@@ -313,7 +319,8 @@ in `@rbxts/surge`.
 | 6.4                | `walk.test.ts`, `TypeWalker Length<T, L>`                                                                                                                                                                                                                                                                                                          |
 | 6.5                | `bytes.spec.ts`: `pinsBoundedContainers`                                                                                                                                                                                                                                                                                                           |
 | 6.6                | An `optional`: `collections.spec.ts`: `padsAShortExactArrayOfOptionalsInsteadOfRaising`. A `literal`: source only, `literalIndexExpr` in `emit/write.ts` maps `nil` to the last index                                                                                                                                                              |
-| 6.7                | Source only: `writeBool`, `literalIndexExpr` and `writeGuardedUnion` in `emit/write.ts`; `pushBlob` in `src/blobs.ts` appends nothing for `nil`                                                                                                                                                                                                    |
+| 6.7                | Source only: `writeBool`, `literalIndexExpr` and `writeGuardedUnion` in `emit/write.ts`; `pushBlob` in `src/blobs.ts` appends nothing for `nil`. With `writeChecks`: `checks.spec.ts`: `rejectsAnExactLengthValueOfAnyOtherLength`                                                                                                                 |
+| 6.8                | `checks.spec.ts`: `wrapsACountPastItsWidthWithoutWriteChecks`, `rejectsACountPastItsWidth`                                                                                                                                                                                                                                                         |
 | 7.1, 7.2           | `bytes.spec.ts`: `pinsPerComponentWidths`, `pinsThatDefaultedComponentWidthsMoveNoBytes`                                                                                                                                                                                                                                                           |
 | 7.3                | Source only: `writeNumberAt` in `emit/context.ts` passes the component unconverted to Luau's `buffer` writes and `bit32`                                                                                                                                                                                                                           |
 | 8.1–8.4            | `bytes.spec.ts`: `pinsPackedBooleans`, `pinsPackedOptionals`, `pinsAPackedTagBit`                                                                                                                                                                                                                                                                  |
@@ -328,6 +335,9 @@ in `@rbxts/surge`.
 
 ## Changes
 
+- `ca7bb09` / `8792c27`: 6.3 and 6.7 state what `writeChecks`
+  changes, and 6.7 is no longer a known defect but the unchecked behavior;
+  adds 6.8 (a count too large for its width wraps).
 - `38b634f` / `6967359`: 6.7 names the future-work document that tracks it.
 - `8c4d5f5` / `87813e5`: corrected against the code: 4.8 (24 bytes only without
   `Transform`), 4.12 (a union of some items indexes those items), 5.7 (index
