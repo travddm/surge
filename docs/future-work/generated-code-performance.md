@@ -13,6 +13,8 @@ code the transformer generates runs. What has been measured is under
 - [noise-in-the-speed-tier.md](../research/noise-in-the-speed-tier.md) — how
   far apart two runs of unchanged code land, which is the band every
   measurement here is read against.
+- [tables-around-serialize.md](../research/tables-around-serialize.md) — the
+  tables around a `serialize()` call, and the call to `finishWrite`.
 
 This document holds what is still open.
 
@@ -25,21 +27,31 @@ and the nested object, and a part paid per element, which is most of it on
 the fifty-element `CFrame` array
 ([generated-code-against-hand-written.md](../research/generated-code-against-hand-written.md)
 and its correction).
-Two per-call costs have been measured
-([per-call-overhead.md](../research/per-call-overhead.md)), and neither
-explains the gap: the blob side channel is emitted only where a shape uses it,
-and none of these three rows does; `finishWrite`'s copy does not grow with the
-payload, and what it costs per call is not settled.
+Most of the per-call part is three tables
+([tables-around-serialize.md](../research/tables-around-serialize.md)): the
+wrapper and the empty `blobs` array the generated `serialize()` returns, and
+the payload table the benchmark's surge adapter builds and the baseline's does
+not. Calling `finishWrite` instead of inlining it costs nothing measurable.
+With all three tables gone, a small part of the per-call gap is left.
 
-The next candidate is what the generated `serialize()` returns. The
-hand-written codec creates one buffer and returns it. The generated code
-writes into a scratch buffer, calls into the package for `finishWrite`, and
-returns a new table `{ buffer = …, blobs = {} }` — one allocation for the
-wrapper and one for the empty `blobs` array, which the transformer emits
-because `Serializer<T>` declares the property. From what the blob probe cost
-([per-call-overhead.md](../research/per-call-overhead.md)), two tables and one
-call are a plausible share of the per-call part and not plausibly all of it.
-None of this is measured.
+**What `serialize()` returns.** A decision before it is a change: its two
+tables are the largest per-call cost left in the generated code, and each way
+to remove them changes what a caller gets. Both are free before the first
+release.
+
+- Keep `{ buffer, blobs }` and stop creating `blobs` per call: one empty array
+  per serializer or per package, frozen, since every later call would return
+  the same array. Worth the cheaper of the two tables (probe A, which shared
+  an array it did not freeze). `Serializer<T>` keeps the shape fbs declares.
+- Return no table: the buffer alone where the shape has no blob field, or the
+  buffer and the blob array as two return values. Worth both tables (probe D),
+  and changes the shape `Serializer<T>` shares with fbs, which a user replacing
+  fbs relies on.
+
+**What is left per call.** What remains once the three tables are gone
+(probe E) was not probed. The candidates in the code are `finishWrite`'s
+copy, the reads and writes of the scratch state in the closure, and the
+capacity check. Exact sizing, below, removes the copy and the check together.
 
 One design the `finishWrite` probe did not reach: handing the caller a buffer
 surge owns and reuses, which removes the allocation as well as the copy. It
@@ -177,9 +189,10 @@ means, but it is still not surge's to decide for a file surge does not own.
 Every item here is measurement-driven, and the method is settled: a change is
 its own full catalog run against a reference taken in the same session, read
 as medians over many cells against the untouched libraries as controls. The
-per-call gap is the largest open item, and its next measurement is named. The
-two reopened entries need an argument against a current figure, not a change.
-The rest is small, or needs a fixture before anything can measure it.
+per-call gap is the largest open item. Most of it is measured, and what
+`serialize()` returns waits on the decision above. The two reopened entries
+need an argument against a current figure, not a change. The rest is small,
+or needs a fixture before anything can measure it.
 
 ## How, briefly
 

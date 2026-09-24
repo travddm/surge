@@ -39,10 +39,12 @@ The first two are step 2 of the [index](README.md), after the per-call gap.
 Widening the baseline measures nothing new until the gap the three existing
 rows already show is understood:
 surge's encode has a gap to the hand-written codec that is paid once per call
-([generated-code-against-hand-written.md](../research/generated-code-against-hand-written.md)),
-the per-call costs measured so far do not explain it, and
-[generated-code-performance.md](generated-code-performance.md) names two table
-allocations per call as the next thing to measure. The code-size measurement
+([generated-code-against-hand-written.md](../research/generated-code-against-hand-written.md)).
+Most of it is three tables per call: the two `serialize()` returns, and one
+that the benchmark's own surge adapter builds and the baseline's does not
+([tables-around-serialize.md](../research/tables-around-serialize.md)).
+Whether the first two go is open in
+[generated-code-performance.md](generated-code-performance.md). The code-size measurement
 needs the fixtures restructured, one call per module. Tier 3 has no driver:
 nothing yet asks what a serializer costs on the wire once a networking layer
 batches it, and [networking.md](networking.md) is where that would come from.
@@ -51,9 +53,9 @@ the transcription as much as Zap.
 
 ## How, briefly
 
-1. Measure the per-call gap's next candidate, then add the tagged union and
-   packed `toggles` to `tests/src/bench/baseline/codecs.luau`, each writing
-   surge's exact bytes, which the size tier confirms.
+1. Once what `serialize()` returns is settled, add the tagged union and packed
+   `toggles` to `tests/src/bench/baseline/codecs.luau`, each writing surge's
+   exact bytes, which the size tier confirms.
 2. Split the fixtures so each factory call is a module of its own, and report
    each module's compiled size beside the speed table.
 3. Tier 3 only if wire cost with batching becomes a question the serializer
