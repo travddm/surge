@@ -260,3 +260,9 @@ before-side file keeps nothing else.
   correction of this date to [per-call-overhead.md](per-call-overhead.md). The statement should
   have said that the per-call work measured so far accounts for none of the 0.2 µs, with the copy
   unsettled.
+- **Edited after publication.** This paper was published in surge `95de1dd`. Surge `c3cfdd6` then
+  changed the Abstract's claim about which rows the gain can be read on, and added the Discussion
+  paragraph on `--!native`, in place rather than as an appended correction. The text above is the
+  edited version; `git show 95de1dd:docs/research/generated-code-against-hand-written.md` is the
+  one first published. The Discussion paragraph's expectation that the gain is larger under native
+  code generation was not measured.

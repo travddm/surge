@@ -7,11 +7,11 @@
 
 `Packed<T>` changes a shape's bytes, and this asks what it does to speed on
 the two catalog pairs that encode the same values both ways. On the toggles
-pair, surge decodes the packed shape at 0.576× the unpacked rate, and encode
-is inside the noise. On the pair of fifty arbitrary `CFrame` rotations,
-surge encodes the packed shape at 0.644×, decode is inside the noise, and the
-packed form is 50 bytes larger. Both results held in both runs of the
-invocation, and fbs and serio also run slower packed.
+pair, surge decodes the packed shape at 0.576× the unpacked rate. On the pair
+of fifty arbitrary `CFrame` rotations, surge encodes the packed shape at
+0.644×, and the packed form is 50 bytes larger. Both results held in both runs
+of the invocation; the other half of each pair is too close to 1.00× for one
+invocation to settle. fbs and serio also run slower packed.
 
 ## Background
 
@@ -33,8 +33,8 @@ Two pairs of catalog rows encode the same value plain and in `Packed<T>`:
 
 The byte counts are from [../benchmarks/size.md](../benchmarks/size.md). The
 axis-aligned packed `CFrame` row has no unpacked twin with the same values, so
-it is not read here. Earlier readings of the toggles pair were all taken
-before the speed suite yielded, and are not results
+it is not read here. Every other recorded reading of the toggles pair was
+taken before the speed suite yielded, and is not a result
 ([frame-starvation.md](frame-starvation.md)).
 
 ## Method
@@ -51,7 +51,10 @@ before the speed suite yielded, and are not results
   disagree by: up to about 1.35× on a single cell
   ([noise-in-the-speed-tier.md](noise-in-the-speed-tier.md) and its
   correction). A ratio further from 1.00× than that, in both runs, is read as
-  a result.
+  a result. That band is the wider of the two available on purpose: the
+  narrower one, how far a cell moved between the two runs of this invocation
+  (at most 7%, per `speed.md`), says nothing about how two rows of one Studio
+  session drift against each other across sessions.
 - `±` is the recorder's spread: the trials at the quarter and three-quarter
   positions of the sorted pooled trials, over the median.
 
@@ -88,8 +91,10 @@ The arbitrary-rotation `CFrame` pair:
 Two of surge's four readings are outside the noise, one per pair and on
 opposite halves. The toggles decode is 1.74× in time and the `CFrame` encode
 1.55×, each against a band of about 1.35×, and each run agrees with the pooled
-figure within two points. The toggles encode (1.060×) and the
-`CFrame` decode (0.889×) are inside the band and are not established.
+figure within two points. The toggles encode (1.060×) is inside both bands.
+The `CFrame` decode (0.889×, and 0.898× and 0.883× by run) is outside the
+within-invocation movement and inside the between-invocation band, so this
+paper does not establish it; a second invocation would.
 
 The toggles decode loses about 0.28 µs a call, about 23 ns for each of its
 twelve `unpackBit` calls, where the write side builds the region inline and
@@ -117,9 +122,9 @@ that reads or writes the packed parts inline, may give a different ratio.
 
 On the toggles shape, `Packed<T>` saves ten of 26 bytes and costs surge's
 decode 42% of its rate. On fifty arbitrary `CFrame` rotations, it adds 50
-bytes and costs surge's encode 36% of its rate. The other half of each pair is
-inside the noise, and both results held in both runs of the reference
-invocation.
+bytes and costs surge's encode 36% of its rate. Both results held in both runs
+of the reference invocation. The other half of each pair is not established by
+one invocation.
 
 ## Data
 

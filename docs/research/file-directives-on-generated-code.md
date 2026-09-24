@@ -262,3 +262,8 @@ This corrects six statements.
   form; Discussion: "the six dismissals generated-code-performance.md built on this figure". That
   section has since been removed from the document. It is in
   `docs/future-work/generated-code-performance.md` as committed at surge `824a279`.
+- **Edited after publication.** This paper was first published as `native-on-generated-code.md`
+  in surge `3bb0a57`, covering `--!native` alone. Surge `46c7985` widened it in place to both
+  directives and renamed it, and `8880b4b` changed one sentence of its Discussion, rather than
+  publishing a second paper or appending a correction.
+  `git show 3bb0a57:docs/research/native-on-generated-code.md` is the one first published.
