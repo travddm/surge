@@ -1,8 +1,8 @@
 # Transformer specification
 
 Status: current
-Applies to: `@rbxts/surge` at commit `ca7bb09`, `rbxts-transformer-surge` at
-commit `f7270b3` (no tagged release yet)
+Applies to: `@rbxts/surge` at commit `ac76821`, `rbxts-transformer-surge` at
+commit `3278123` (no tagged release yet)
 
 ## 1. Scope
 
@@ -232,6 +232,10 @@ the largest its `u8`, `u16` or `u24` width holds. A `dict`'s count is compared
 once the entries are written, before it is written back. A `u32` count is not
 compared.
 
+**5.15** The value a generated `deserialize` returns is asserted as the call
+site's type argument, so it types as that argument, literal properties
+included, and is assignable wherever the caller's own type is.
+
 ## 6. Injected imports
 
 **6.1** The transformer adds one import of `@rbxts/surge` to each file where a
@@ -334,6 +338,7 @@ of `rbxts-transformer-surge`, cited by `describe` block. Source paths are in
 | 5.12      | `emit`: `Emitter read-side checks` (a packed CFrame); `tests/src/tests/checks.spec.ts`: `rejectsATruncatedPackedCFrame`, `rejectsAPackedRotationCodeThatNamesNoRotation`                                                                                                                                                        |
 | 5.13      | `transform`: `transform generated code` (the single-sided factories on a recursive type); `tests/src/tests/factories.spec.ts`: `roundTripsARecursiveTypeThroughASeparateSerializerAndDeserializer`                                                                                                                              |
 | 5.14      | `emit`: `Emitter write-side checks`; `transform`: `transform writeChecks option`; `tests/src/tests/checks.spec.ts`: `rejectsAnExactLengthValueOfAnyOtherLength`, `letsAnExactArrayOfOptionalsBeShorterButNotLonger`, `rejectsACountPastItsWidth`                                                                                |
+| 5.15      | `transform`: `transform generated code` (a deserialize result with each of seven shapes is assignable to its type argument)                                                                                                                                                                                                     |
 | 6.1, 6.2  | `transform`: `transform injected imports`, and in `transform (end-to-end)` the single shared import and the same-named local function; `tests/src/tests/coverage.spec.ts`: `leavesAUserDeclarationNamedAfterAnInjectedImportAlone`                                                                                              |
 | 6.3       | `test/golden.test.mjs`: a file directive survives the transformer's injected imports; `transform`: `transform generated code` (the three directive tests)                                                                                                                                                                       |
 | 6.4       | `transform`: `transform injected imports` (a `createDeserializer` call site)                                                                                                                                                                                                                                                    |
@@ -346,6 +351,8 @@ of `rbxts-transformer-surge`, cited by `describe` block. Source paths are in
 
 ## Changes
 
+- `ac76821` / `3278123`: adds 5.15 (a `deserialize` result types as the type
+  argument).
 - `ca7bb09` / `f7270b3`: 3.3 (the options each factory takes, now
   with `writeChecks`); adds 5.14 (the write-side checks).
 - `1ed333b` / `33e2082`: 4.7 (every `dict` key kind type-checks) now
