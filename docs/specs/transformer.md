@@ -127,9 +127,11 @@ of one literal value or a literal union. It is tracked in
 unconstrained type parameter walk to `blob` by the last row of 4.1, with no
 diagnostic. A call site inside a generic function whose type argument is the
 function's own type parameter therefore generates a blob serializer. A plain
-`blob` has no presence byte ([wire-format.md](wire-format.md) 9.3). Whether a
-plain `blob` that holds `undefined` keeps later blobs in encounter order is
-unverified.
+`blob` has no presence byte ([wire-format.md](wire-format.md) 9.3), so one
+that holds `undefined` appends nothing to `blobs`, as a missing element does in
+[wire-format.md](wire-format.md) 6.7. `deserialize` then reads each later blob
+one position early and raises past the end of `inputBlobs`
+([runtime-api.md](runtime-api.md) 4.5).
 
 **4.9** Known defect, not a guarantee: a type parameter constrained to an
 object type walks as an `object` of the constraint's properties, with no
