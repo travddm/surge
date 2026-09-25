@@ -23,13 +23,11 @@ export interface Encoded {
 }
 
 /**
- * A column of the tables: the comparison libraries, surge itself, and the
- * hand-written baseline, which is not a library at all but is driven through
- * the same interface (see section 4.5 of docs/specs/benchmark-harness.md).
- * `surge (readChecks)` is surge with `readChecks` on, which only the speed
- * table has (section 4.9): its bytes are surge's.
+ * A column of the size table: the four comparison libraries, surge itself,
+ * and the hand-written baseline, which is not a library at all but is driven
+ * through the same interface (see section 4.5 of docs/specs/benchmark-harness.md).
  */
-export type Library = "surge" | "surge (readChecks)" | "fbs" | "serio" | "blink" | "zap" | "baseline";
+export type Library = "surge" | "fbs" | "serio" | "blink" | "zap" | "baseline";
 
 /**
  * Column order of `docs/benchmarks/size.md`. surge comes first: the other

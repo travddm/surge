@@ -50,9 +50,7 @@ interface SerioEntities {
 }
 
 const booleansSerializer = createCodec<Booleans>();
-const booleansSerializerWithChecks = createCodec<Booleans>({ readChecks: true });
 const entitiesSerializer = createCodec<Entities>();
-const entitiesSerializerWithChecks = createCodec<Entities>({ readChecks: true });
 const fbsBooleansSerializer = createFbsSerializer<Booleans>();
 const fbsEntitiesSerializer = createFbsSerializer<FbsEntities>();
 const serioBooleansSerializer = createSerioSerializer<Booleans>();
@@ -82,7 +80,6 @@ export const blinkBooleans: Fixture = {
 	note: `${BOOLEAN_COUNT} booleans in one array, a byte each, as Blink also writes them`,
 	entries: [
 		defineEntry<Booleans>("surge", { values }, surgeAdapter(booleansSerializer)),
-		defineEntry<Booleans>("surge (readChecks)", { values }, surgeAdapter(booleansSerializerWithChecks)),
 		defineEntry<Booleans>("fbs", { values }, fbsAdapter(fbsBooleansSerializer)),
 		defineEntry<Booleans>("serio", { values }, serioAdapter(serioBooleansSerializer)),
 		defineEntry("blink", { values }, blinkAdapter(blinkBooleansCodec)),
@@ -99,7 +96,6 @@ export const blinkEntities: Fixture = {
 	note: `${ENTITY_COUNT} structs of six u8 fields`,
 	entries: [
 		defineEntry<Entities>("surge", { entities }, surgeAdapter(entitiesSerializer)),
-		defineEntry<Entities>("surge (readChecks)", { entities }, surgeAdapter(entitiesSerializerWithChecks)),
 		defineEntry<FbsEntities>("fbs", { entities }, fbsAdapter(fbsEntitiesSerializer)),
 		defineEntry<SerioEntities>("serio", { entities }, serioAdapter(serioEntitiesSerializer)),
 		defineEntry("blink", { entities }, blinkAdapter(blinkEntitiesCodec)),

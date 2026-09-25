@@ -72,9 +72,9 @@ game's own shapes before deciding on the strength of one.
 ## What the checks cost
 
 `readChecks` adds a comparison to every read and a check of the input's shape
-to every call. The `surge (readChecks)` column of
-[benchmarks/speed.md](benchmarks/speed.md) measures it on every row: its
-decode ratio against surge is what the checks cost. It belongs on the server,
+to every call, which costs a decode a few percent
+([research/read-checks-cost.md](research/read-checks-cost.md)). It belongs on
+the server,
 for what clients send, and not where the bytes are the game's own
 ([errors-and-guarantees.md](errors-and-guarantees.md)).
 

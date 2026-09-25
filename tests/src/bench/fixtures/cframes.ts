@@ -37,9 +37,7 @@ interface Transforms {
 }
 
 const serializer = createCodec<Transforms>();
-const serializerWithChecks = createCodec<Transforms>({ readChecks: true });
 const packedSerializer = createCodec<DataType.Packed<Transforms>>();
-const packedSerializerWithChecks = createCodec<DataType.Packed<Transforms>>({ readChecks: true });
 const fbsSerializer = createFbsSerializer<Transforms>();
 const fbsPackedSerializer = createFbsSerializer<Fbs.Packed<Transforms>>();
 const serioSerializer = createSerioSerializer<Transforms>();
@@ -82,7 +80,6 @@ export const cframeArray: Fixture = {
 	note: `${COUNT} arbitrary rotations, unpacked: position plus axis-angle`,
 	entries: [
 		defineEntry<Transforms>("surge", { list: arbitrary }, surgeAdapter(serializer)),
-		defineEntry<Transforms>("surge (readChecks)", { list: arbitrary }, surgeAdapter(serializerWithChecks)),
 		defineEntry<Transforms>("fbs", { list: arbitrary }, fbsAdapter(fbsSerializer)),
 		defineEntry<Transforms>("serio", { list: arbitrary }, serioAdapter(serioSerializer)),
 		defineEntry("blink", { list: arbitrary }, blinkAdapter(blinkCodec)),
@@ -100,11 +97,6 @@ export const cframeArrayPackedAligned: Fixture = {
 	note: `${COUNT} axis-aligned rotations in \`Packed<T>\`: header byte plus position`,
 	entries: [
 		defineEntry<DataType.Packed<Transforms>>("surge", { list: aligned }, surgeAdapter(packedSerializer)),
-		defineEntry<DataType.Packed<Transforms>>(
-			"surge (readChecks)",
-			{ list: aligned },
-			surgeAdapter(packedSerializerWithChecks),
-		),
 		defineEntry<Fbs.Packed<Transforms>>("fbs", { list: aligned }, fbsAdapter(fbsPackedSerializer)),
 		defineEntry<Serio.Packed<Transforms>>("serio", { list: aligned }, serioAdapter(serioPackedSerializer)),
 	],
@@ -115,11 +107,6 @@ export const cframeArrayPackedArbitrary: Fixture = {
 	note: `${COUNT} arbitrary rotations in \`Packed<T>\`: header byte, position, and axis-angle`,
 	entries: [
 		defineEntry<DataType.Packed<Transforms>>("surge", { list: arbitrary }, surgeAdapter(packedSerializer)),
-		defineEntry<DataType.Packed<Transforms>>(
-			"surge (readChecks)",
-			{ list: arbitrary },
-			surgeAdapter(packedSerializerWithChecks),
-		),
 		defineEntry<Fbs.Packed<Transforms>>("fbs", { list: arbitrary }, fbsAdapter(fbsPackedSerializer)),
 		defineEntry<Serio.Packed<Transforms>>("serio", { list: arbitrary }, serioAdapter(serioPackedSerializer)),
 	],

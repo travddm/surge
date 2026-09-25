@@ -31,7 +31,6 @@ interface EnumHeavy {
 }
 
 const serializer = createCodec<EnumHeavy>();
-const serializerWithChecks = createCodec<EnumHeavy>({ readChecks: true });
 const fbsSerializer = createFbsSerializer<EnumHeavy>();
 const serioSerializer = createSerioSerializer<EnumHeavy>();
 
@@ -53,7 +52,6 @@ export const enumHeavy: Fixture = {
 	note: `${COUNT} Enum.Material items plus two scalar enum fields, one index byte each`,
 	entries: [
 		defineEntry<EnumHeavy>("surge", value, surgeAdapter(serializer)),
-		defineEntry<EnumHeavy>("surge (readChecks)", value, surgeAdapter(serializerWithChecks)),
 		defineEntry<EnumHeavy>("fbs", value, fbsAdapter(fbsSerializer)),
 		defineEntry<EnumHeavy>("serio", value, serioAdapter(serioSerializer)),
 	],

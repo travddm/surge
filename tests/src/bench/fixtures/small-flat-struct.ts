@@ -47,7 +47,6 @@ interface SerioSmallFlatStruct {
 }
 
 const serializer = createCodec<SmallFlatStruct>();
-const serializerWithChecks = createCodec<SmallFlatStruct>({ readChecks: true });
 const fbsSerializer = createFbsSerializer<FbsSmallFlatStruct>();
 const serioSerializer = createSerioSerializer<SerioSmallFlatStruct>();
 
@@ -58,7 +57,6 @@ export const smallFlatStruct: Fixture = {
 	note: "five fixed-size fields, no container",
 	entries: [
 		defineEntry<SmallFlatStruct>("surge", value, surgeAdapter(serializer)),
-		defineEntry<SmallFlatStruct>("surge (readChecks)", value, surgeAdapter(serializerWithChecks)),
 		defineEntry<FbsSmallFlatStruct>("fbs", value, fbsAdapter(fbsSerializer)),
 		defineEntry<SerioSmallFlatStruct>("serio", value, serioAdapter(serioSerializer)),
 		defineEntry("blink", value, blinkAdapter(blinkCodec)),
