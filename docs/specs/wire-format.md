@@ -201,7 +201,7 @@ that 6.6 does not cover raises or changes the value without raising:
 - a `guardedUnion` is written as its last variant in the order of 5.7, which
   raises unless that variant is a `literalConst`;
 - a `blob` appends nothing to `blobs`, so a `deserialize` given those `blobs`
-  reads past the end of `inputBlobs` and raises
+  reads past the end of `blobs` and raises
   ([runtime-api.md](runtime-api.md) 4.5);
 - every other kind raises when its write reads the missing element. One whose
   write does not read it, such as an `object` whose properties are all
@@ -293,7 +293,7 @@ count. Any other `Set` in a packed subtree is a `dict` (5.4).
 ## 9. The blob channel
 
 **9.1** A `blob` writes no bytes. Its value is appended to the `blobs` array
-in encounter order, and read back from `inputBlobs` in the same order.
+in encounter order, and read back from `blobs` in the same order.
 
 **9.2** A blob inside a branch that writes only when taken — an `optional`'s
 inner value, or one variant of a `taggedUnion` or `guardedUnion` — is appended

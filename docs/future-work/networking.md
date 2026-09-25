@@ -23,7 +23,7 @@ the serializer redesigned when this is picked up.
 - Its own repository and package, `surge-net`: `@rbxts/surge` is the
   serializer's runtime package (Two packages, two repositories in
   [architecture.md](../architecture.md)).
-- Builds on `@rbxts/surge`'s `Serializer<T>` (Runtime API 3.1 in
+- Builds on `@rbxts/surge`'s `Codec<T>` (Runtime API 3.1 in
   [specs/runtime-api.md](../specs/runtime-api.md)) rather than re-deriving its own wire format.
 - Batching a frame's events into one buffer needs the offset entry points in
   [caller-buffers.md](caller-buffers.md). Without them, each event costs a

@@ -1,6 +1,6 @@
 //!optimize 2
 import { Assert, Fact } from "@rbxts/runit";
-import { DataType, createBinarySerializer } from "@rbxts/surge";
+import { DataType, createCodec } from "@rbxts/surge";
 
 import { Rng, difference } from "../support";
 
@@ -17,7 +17,7 @@ interface TenFlags {
 	f8: boolean;
 	f9: boolean;
 }
-const tenFlagsSerializer = createBinarySerializer<DataType.Packed<TenFlags>>();
+const tenFlagsSerializer = createCodec<DataType.Packed<TenFlags>>();
 
 // Booleans of a nested object, next to fields that are not booleans.
 interface Settings {
@@ -29,7 +29,7 @@ interface WithPackedSubtree {
 	settings: DataType.Packed<Settings>;
 	outside: boolean;
 }
-const subtreeSerializer = createBinarySerializer<WithPackedSubtree>();
+const subtreeSerializer = createCodec<WithPackedSubtree>();
 
 // Packed optionals: a presence bit each, and no flag byte. `muted` is a
 // presence bit and a value bit, with no byte of its own.
@@ -41,7 +41,7 @@ interface Profile {
 	muted?: boolean;
 	extra?: unknown;
 }
-const profileSerializer = createBinarySerializer<DataType.Packed<Profile>>();
+const profileSerializer = createCodec<DataType.Packed<Profile>>();
 
 // A packed tagged union with two variants, as a direct property: one tag bit.
 type Toggle = { mode: "off" } | { mode: "on"; level: DataType.u8 };
@@ -52,9 +52,9 @@ interface Device {
 	// Three variants: the tag stays an index byte.
 	source: { from: "battery" } | { from: "mains" } | { from: "solar"; watts: number };
 }
-const deviceSerializer = createBinarySerializer<DataType.Packed<Device>>();
+const deviceSerializer = createCodec<DataType.Packed<Device>>();
 // At the root there is no enclosing object, so the tag stays an index byte.
-const toggleSerializer = createBinarySerializer<DataType.Packed<Toggle>>();
+const toggleSerializer = createCodec<DataType.Packed<Toggle>>();
 
 // A set of literal values is one bit per value it can hold (Wire format 8.8
 // in docs/specs/wire-format.md): nine members cross a byte boundary, and the
@@ -65,11 +65,11 @@ interface WithBitSets {
 	modes?: ReadonlySet<-1 | 2 | false>;
 	each: Array<Set<"x" | "y">>;
 }
-const bitSetsSerializer = createBinarySerializer<DataType.Packed<WithBitSets>>();
+const bitSetsSerializer = createCodec<DataType.Packed<WithBitSets>>();
 const LETTERS: ReadonlyArray<Letter> = ["a", "b", "c", "d", "e", "f", "g", "h", "i"];
 
-const packedCFrameSerializer = createBinarySerializer<DataType.Packed<CFrame>>();
-const packedCFramesSerializer = createBinarySerializer<DataType.Packed<{ list: CFrame[]; maybe?: CFrame }>>();
+const packedCFrameSerializer = createCodec<DataType.Packed<CFrame>>();
+const packedCFramesSerializer = createCodec<DataType.Packed<{ list: CFrame[]; maybe?: CFrame }>>();
 
 // Every product of quarter turns about X, Y, and Z: 64 products, which are the
 // 24 axis-aligned rotations. `CFrame.Angles` leaves components of about 4e-8
@@ -143,7 +143,7 @@ class PackedTest {
 		// `verified` is the last of the bits, which are in name order: extra,
 		// level, muted (present, value), nickname, verified.
 		Assert.equal(32, buffer.readu8(buf, 0));
-		Assert.equal(undefined, difference(value, profileSerializer.deserialize(buf, blobs)));
+		Assert.equal(undefined, difference(value, profileSerializer.deserialize({ buffer: buf, blobs })));
 	}
 
 	@Fact
@@ -159,7 +159,7 @@ class PackedTest {
 				extra: rng.bool() ? rng.str() : undefined,
 			};
 			const { buffer, blobs } = profileSerializer.serialize(value);
-			Assert.equal(undefined, difference(value, profileSerializer.deserialize(buffer, blobs)));
+			Assert.equal(undefined, difference(value, profileSerializer.deserialize({ buffer, blobs })));
 		}
 	}
 

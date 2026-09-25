@@ -110,7 +110,7 @@ the exact sizing above starts.
 - **An array of fixed-size elements.** Each element reserves inside the loop,
   so `Blink: Entities` checks capacity once per element. One reservation of
   the count times the element's size, before the loop, covers every element.
-  With `checks`, the count bound (Runtime API 4.3 in
+  With `readChecks`, the count bound (Runtime API 4.3 in
   [specs/runtime-api.md](../specs/runtime-api.md)) is exact for such an
   element, so the per-element read bounds repeat it.
 - **Tuple elements.** Coalesce a tuple's consecutive fixed-size elements into

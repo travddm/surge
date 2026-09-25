@@ -3,7 +3,7 @@
 import { createBinarySerializer as createFbsSerializer } from "@rbxts/flamework-binary-serializer";
 import createSerioSerializer from "@rbxts/serio";
 import type * as Serio from "@rbxts/serio";
-import { createBinarySerializer } from "@rbxts/surge";
+import { createCodec } from "@rbxts/surge";
 
 import { Rng } from "../../support";
 import type { Fixture } from "../adapter";
@@ -32,7 +32,7 @@ interface SerioGuardedUnion {
 	values: Array<string | Serio.f64 | boolean>;
 }
 
-const serializer = createBinarySerializer<GuardedUnion>();
+const serializer = createCodec<GuardedUnion>();
 const fbsSerializer = createFbsSerializer<GuardedUnion>();
 const serioSerializer = createSerioSerializer<SerioGuardedUnion>();
 

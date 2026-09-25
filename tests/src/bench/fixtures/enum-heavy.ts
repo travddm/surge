@@ -2,7 +2,7 @@
 //!optimize 2
 import { createBinarySerializer as createFbsSerializer } from "@rbxts/flamework-binary-serializer";
 import createSerioSerializer from "@rbxts/serio";
-import { createBinarySerializer } from "@rbxts/surge";
+import { createCodec } from "@rbxts/surge";
 
 import { Rng } from "../../support";
 import type { Fixture } from "../adapter";
@@ -30,7 +30,7 @@ interface EnumHeavy {
 	rig: Enum.HumanoidRigType;
 }
 
-const serializer = createBinarySerializer<EnumHeavy>();
+const serializer = createCodec<EnumHeavy>();
 const fbsSerializer = createFbsSerializer<EnumHeavy>();
 const serioSerializer = createSerioSerializer<EnumHeavy>();
 

@@ -6,14 +6,14 @@ Put serializers in a module of their own, and mark it for native code:
 // src/shared/serializers.ts
 //!native
 //!optimize 2
-import { DataType, createBinarySerializer } from "@rbxts/surge";
+import { DataType, createCodec } from "@rbxts/surge";
 
 export interface Move {
 	position: Vector3;
 	facing: DataType.u16;
 }
 
-export const move = createBinarySerializer<Move>();
+export const move = createCodec<Move>();
 ```
 
 ## The two directives
@@ -71,8 +71,8 @@ game's own shapes before deciding on the strength of one.
 
 ## Checks cost a branch
 
-`checks` adds a comparison to every read, and `writeChecks` one to every
+`readChecks` adds a comparison to every read, and `writeChecks` one to every
 container and every `Range` number it writes. Turn each on where it guards
-something: `checks` on input from outside the game, `writeChecks` where a
+something: `readChecks` on input from outside the game, `writeChecks` where a
 value's lengths or ranges are built at run time
 ([errors-and-guarantees.md](errors-and-guarantees.md)).

@@ -4,7 +4,7 @@ Part of the [surge](../architecture.md) design.
 
 ## What
 
-A way for a `createSerializer<T>()`/`createBinarySerializer<T>()` shape to
+A way for a `createSerializer<T>()`/`createCodec<T>()` shape to
 change over time (fields added, removed, retyped) without silently
 producing incompatible bytes between an old and new build.
 

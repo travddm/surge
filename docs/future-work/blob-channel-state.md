@@ -51,7 +51,7 @@ benchmark catalog has no type with a blob field.
   under the condition that Transformer 5.9 already uses for the entry points:
   only where the body reaches a blob.
 - On write, create a new list in each `serialize`, because the caller keeps
-  the list it is given. On read, take `inputBlobs` and reset the index in each
+  the list it is given. On read, take the input's `blobs` and reset the index in each
   `deserialize`.
 - Keep the errors of Runtime API 4.5 and 4.6 with the same message strings,
   inline or in a function local to the closure.

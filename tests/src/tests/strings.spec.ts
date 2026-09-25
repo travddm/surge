@@ -1,6 +1,6 @@
 //!optimize 2
 import { Assert, Fact, InlineData, Theory } from "@rbxts/runit";
-import { createBinarySerializer } from "@rbxts/surge";
+import { createCodec } from "@rbxts/surge";
 
 import { Rng, difference } from "../support";
 
@@ -9,7 +9,7 @@ interface WithStrings {
 	list: string[];
 	byName: Map<string, string>;
 }
-const stringsSerializer = createBinarySerializer<WithStrings>();
+const stringsSerializer = createCodec<WithStrings>();
 
 // A `buffer` is encoded like a string: a u32 length, then the bytes.
 interface WithBuffers {
@@ -18,7 +18,7 @@ interface WithBuffers {
 	maybeRaw?: buffer;
 	list: buffer[];
 }
-const buffersSerializer = createBinarySerializer<WithBuffers>();
+const buffersSerializer = createCodec<WithBuffers>();
 
 const FUZZ_ITERATIONS = 100;
 

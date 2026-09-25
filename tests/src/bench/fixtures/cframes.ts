@@ -3,7 +3,7 @@
 import { DataType as Fbs, createBinarySerializer as createFbsSerializer } from "@rbxts/flamework-binary-serializer";
 import createSerioSerializer from "@rbxts/serio";
 import type * as Serio from "@rbxts/serio";
-import { DataType, createBinarySerializer } from "@rbxts/surge";
+import { DataType, createCodec } from "@rbxts/surge";
 
 import { Rng } from "../../support";
 import type { Fixture } from "../adapter";
@@ -36,8 +36,8 @@ interface Transforms {
 	list: CFrame[];
 }
 
-const serializer = createBinarySerializer<Transforms>();
-const packedSerializer = createBinarySerializer<DataType.Packed<Transforms>>();
+const serializer = createCodec<Transforms>();
+const packedSerializer = createCodec<DataType.Packed<Transforms>>();
 const fbsSerializer = createFbsSerializer<Transforms>();
 const fbsPackedSerializer = createFbsSerializer<Fbs.Packed<Transforms>>();
 const serioSerializer = createSerioSerializer<Transforms>();

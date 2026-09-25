@@ -1,6 +1,6 @@
 //!optimize 2
 import { Assert, Fact } from "@rbxts/runit";
-import { DataType, createBinarySerializer } from "@rbxts/surge";
+import { DataType, createCodec } from "@rbxts/surge";
 
 import { Rng, difference } from "../support";
 
@@ -16,21 +16,21 @@ interface WithGuardedUnions {
 	scalars: Scalar[];
 	maybeScalar?: Scalar;
 }
-const guardedSerializer = createBinarySerializer<WithGuardedUnions>();
+const guardedSerializer = createCodec<WithGuardedUnions>();
 
 type Command =
 	| { op: "move"; x: number; y: number }
 	| { op: "say"; text: string }
 	| { op: "stop" }
 	| { op: "batch"; commands: Command[] };
-const commandSerializer = createBinarySerializer<Command>();
+const commandSerializer = createCodec<Command>();
 
 // A numeric discriminant, and a packed subtree inside one variant.
 type Packet =
 	| { id: 1; flags: DataType.Packed<{ urgent: boolean; signed: boolean }> }
 	| { id: 2; body: string }
 	| { id: 3; parts: Array<Named | string> };
-const packetSerializer = createBinarySerializer<Packet>();
+const packetSerializer = createCodec<Packet>();
 
 const FUZZ_ITERATIONS = 100;
 

@@ -52,7 +52,7 @@ Put serializers in a module of their own:
 // src/shared/serializers.ts
 //!native
 //!optimize 2
-import { DataType, createBinarySerializer } from "@rbxts/surge";
+import { DataType, createCodec } from "@rbxts/surge";
 
 export interface PlayerState {
 	name: string;
@@ -62,7 +62,7 @@ export interface PlayerState {
 	team?: "red" | "blue";
 }
 
-export const playerState = createBinarySerializer<PlayerState>();
+export const playerState = createCodec<PlayerState>();
 ```
 
 Use it anywhere else:
@@ -79,14 +79,14 @@ function receive(input: buffer): PlayerState {
 }
 ```
 
-At compile time the transformer replaces `createBinarySerializer<PlayerState>()`
+At compile time the transformer replaces `createCodec<PlayerState>()`
 with code written for `PlayerState` alone. There is no schema at run time.
 
 - `serialize` returns the bytes as a `buffer`. A type that can hold a value
   the bytes cannot carry, such as an `Instance`, returns a table instead:
   `buffer` holds the bytes, and `blobs` those values in the order they were
-  met. Send both, and pass both to `deserialize`. `PlayerState` holds none, so
-  `serialize` returns its buffer alone.
+  met. `deserialize` takes whichever `serialize` returned, so send it as it
+  is. `PlayerState` holds none, so `serialize` returns its buffer alone.
 - `DataType.u8` and `DataType.Length` choose how many bytes a value takes.
   Without them a `number` takes 8 bytes and a container's count takes 4. See
   [data-types.md](data-types.md).
@@ -100,23 +100,23 @@ encoded, what goes into `blobs`, and what is rejected.
 
 ## Three factories
 
-| Factory                     | Returns                      | Options                 |
-| --------------------------- | ---------------------------- | ----------------------- |
-| `createBinarySerializer<T>` | `{ serialize, deserialize }` | `checks`, `writeChecks` |
-| `createSerializer<T>`       | the `serialize` function     | `writeChecks`           |
-| `createDeserializer<T>`     | the `deserialize` function   | `checks`                |
+| Factory                 | Returns                                         | Options                     |
+| ----------------------- | ----------------------------------------------- | --------------------------- |
+| `createCodec<T>`        | a `Codec<T>`: `{ serialize, deserialize }`      | `readChecks`, `writeChecks` |
+| `createSerializer<T>`   | the `serialize` function, a `Serializer<T>`     | `writeChecks`               |
+| `createDeserializer<T>` | the `deserialize` function, a `Deserializer<T>` | `readChecks`                |
 
 Each call site generates its own code. Options are written as literals at the
-call site, such as `createDeserializer<PlayerState>({ checks: true })`, and
+call site, such as `createDeserializer<PlayerState>({ readChecks: true })`, and
 default to `false`.
 
 ## Input from a client
 
-A client can send any bytes. Read them with `checks: true`, and call the
+A client can send any bytes. Read them with `readChecks: true`, and call the
 result in a `pcall`:
 
 ```ts
-const readFromClient = createDeserializer<PlayerState>({ checks: true });
+const readFromClient = createDeserializer<PlayerState>({ readChecks: true });
 
 remote.OnServerEvent.Connect((player, input) => {
 	if (!typeIs(input, "buffer")) return;
@@ -127,5 +127,5 @@ remote.OnServerEvent.Connect((player, input) => {
 });
 ```
 
-[errors-and-guarantees.md](errors-and-guarantees.md) says what `checks` and
+[errors-and-guarantees.md](errors-and-guarantees.md) says what `readChecks` and
 `writeChecks` reject, and what neither one does.

@@ -14,7 +14,7 @@ holds the transformer and its own `AGENTS.md`.
 | [docs/getting-started.md](docs/getting-started.md)             | Installing, registering the transformer, and a first serializer                 |
 | [docs/supported-types.md](docs/supported-types.md)             | What each type is written as, passed through, or rejected                       |
 | [docs/data-types.md](docs/data-types.md)                       | The `DataType` brands                                                           |
-| [docs/errors-and-guarantees.md](docs/errors-and-guarantees.md) | `checks`, `writeChecks`, what each side raises, and what is not guaranteed      |
+| [docs/errors-and-guarantees.md](docs/errors-and-guarantees.md) | `readChecks`, `writeChecks`, what each side raises, and what is not guaranteed  |
 | [docs/performance.md](docs/performance.md)                     | The file directives, the module shape, and what to expect                       |
 | [docs/contributing.md](docs/contributing.md)                   | Setup, every task, working across both repositories, and the editor             |
 | [docs/coding-standards.md](docs/coding-standards.md)           | Formatting, types, naming, brands, boundaries, files, comments, generated files |

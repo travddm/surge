@@ -1,6 +1,6 @@
 //!optimize 2
 import { Assert, Fact } from "@rbxts/runit";
-import { DataType, createBinarySerializer } from "@rbxts/surge";
+import { DataType, createCodec } from "@rbxts/surge";
 
 import { Rng, difference } from "../support";
 
@@ -8,7 +8,7 @@ interface WithSequences {
 	colors: ColorSequence;
 	numbers: NumberSequence;
 }
-const sequencesSerializer = createBinarySerializer<WithSequences>();
+const sequencesSerializer = createCodec<WithSequences>();
 
 interface WithBlobs {
 	anything: unknown;
@@ -16,7 +16,7 @@ interface WithBlobs {
 	maybePart?: Part;
 	count: number;
 }
-const blobsSerializer = createBinarySerializer<WithBlobs>();
+const blobsSerializer = createCodec<WithBlobs>();
 
 // An `unknown` that is `undefined` used to push no blob, so every later blob
 // was read one position early (Wire format 9.3 in docs/specs/wire-format.md).
@@ -26,7 +26,7 @@ interface WithAbsentUnknowns {
 	third: unknown;
 	list: unknown[];
 }
-const absentUnknownsSerializer = createBinarySerializer<WithAbsentUnknowns>();
+const absentUnknownsSerializer = createCodec<WithAbsentUnknowns>();
 
 // `undefined` and `void` are constants that write nothing and push no blob, so
 // a blob after them keeps its place (Transformer 4.8 in
@@ -36,7 +36,7 @@ interface WithNothing {
 	alsoNothing: void;
 	after: unknown;
 }
-const nothingSerializer = createBinarySerializer<WithNothing>();
+const nothingSerializer = createCodec<WithNothing>();
 
 interface WithDatatypes {
 	position: Vector3;
@@ -47,12 +47,12 @@ interface WithDatatypes {
 	path: Vector3[];
 	maybeTint?: Color3;
 }
-const datatypesSerializer = createBinarySerializer<WithDatatypes>();
+const datatypesSerializer = createCodec<WithDatatypes>();
 
 interface WithQuantized {
 	placement: DataType.Quantized<CFrame>;
 }
-const quantizedSerializer = createBinarySerializer<WithQuantized>();
+const quantizedSerializer = createCodec<WithQuantized>();
 
 // The datatypes of `FIXED_DATATYPES` in the transformer: a fixed list of numbers each.
 interface WithFixedDatatypes {
@@ -72,7 +72,7 @@ interface WithFixedDatatypes {
 	// Not a union member: the Lune runner's `DateTime` is a stand-in that `typeof` reports as a table.
 	stamp: DateTime;
 }
-const fixedDatatypesSerializer = createBinarySerializer<WithFixedDatatypes>();
+const fixedDatatypesSerializer = createCodec<WithFixedDatatypes>();
 
 // Per-component widths: a `Vector3`'s components and a `CFrame`'s position at
 // a width of their own, wherever a brand has to survive being walked into --
@@ -89,7 +89,7 @@ interface WithNarrowedComponents {
 	placement: DataType.Transform<DataType.i16, DataType.u8, DataType.i16>;
 	path: Array<DataType.Vector<DataType.u8>>;
 }
-const narrowedComponentsSerializer = createBinarySerializer<WithNarrowedComponents>();
+const narrowedComponentsSerializer = createCodec<WithNarrowedComponents>();
 
 const RIGS: ReadonlyArray<Enum.HumanoidRigType> = [Enum.HumanoidRigType.R6, Enum.HumanoidRigType.R15];
 
@@ -134,7 +134,7 @@ class RobloxTest {
 		// `count`, and the presence bytes of `anything` and `maybePart`. A blob writes nothing into the buffer.
 		Assert.equal(8 + 1 + 1, buffer.len(buf));
 		Assert.equal(3, blobs.size());
-		const result = blobsSerializer.deserialize(buf, blobs);
+		const result = blobsSerializer.deserialize({ buffer: buf, blobs });
 		// By identity: a blob is passed through, not copied.
 		Assert.equal(anything, result.anything);
 		Assert.equal(part, result.part);
@@ -149,7 +149,7 @@ class RobloxTest {
 		// Three presence bytes, then the u32 count and one presence byte per element of `list`.
 		Assert.equal(3 + 4 + 2, buffer.len(buf));
 		Assert.equal(3, blobs.size());
-		Assert.equal(undefined, difference(value, absentUnknownsSerializer.deserialize(buf, blobs)));
+		Assert.equal(undefined, difference(value, absentUnknownsSerializer.deserialize({ buffer: buf, blobs })));
 	}
 
 	@Fact
@@ -159,7 +159,7 @@ class RobloxTest {
 		// Only the presence byte of `after`.
 		Assert.equal(1, buffer.len(buf));
 		Assert.equal(1, blobs.size());
-		Assert.equal(undefined, difference(value, nothingSerializer.deserialize(buf, blobs)));
+		Assert.equal(undefined, difference(value, nothingSerializer.deserialize({ buffer: buf, blobs })));
 	}
 
 	@Fact
@@ -167,7 +167,7 @@ class RobloxTest {
 		const value: WithBlobs = { anything: "text", part: new Instance("Part"), count: 0 };
 		const { buffer, blobs } = blobsSerializer.serialize(value);
 		Assert.equal(2, blobs.size());
-		Assert.undefined(blobsSerializer.deserialize(buffer, blobs).maybePart);
+		Assert.undefined(blobsSerializer.deserialize({ buffer, blobs }).maybePart);
 	}
 
 	@Fact

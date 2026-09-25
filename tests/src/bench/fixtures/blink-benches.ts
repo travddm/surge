@@ -3,7 +3,7 @@
 import { DataType as Fbs, createBinarySerializer as createFbsSerializer } from "@rbxts/flamework-binary-serializer";
 import createSerioSerializer from "@rbxts/serio";
 import type * as Serio from "@rbxts/serio";
-import { DataType, createBinarySerializer } from "@rbxts/surge";
+import { DataType, createCodec } from "@rbxts/surge";
 
 import { Rng } from "../../support";
 import type { Fixture } from "../adapter";
@@ -49,8 +49,8 @@ interface SerioEntities {
 	entities: Array<{ a: Serio.u8; b: Serio.u8; c: Serio.u8; d: Serio.u8; e: Serio.u8; f: Serio.u8 }>;
 }
 
-const booleansSerializer = createBinarySerializer<Booleans>();
-const entitiesSerializer = createBinarySerializer<Entities>();
+const booleansSerializer = createCodec<Booleans>();
+const entitiesSerializer = createCodec<Entities>();
 const fbsBooleansSerializer = createFbsSerializer<Booleans>();
 const fbsEntitiesSerializer = createFbsSerializer<FbsEntities>();
 const serioBooleansSerializer = createSerioSerializer<Booleans>();

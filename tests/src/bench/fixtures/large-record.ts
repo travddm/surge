@@ -3,7 +3,7 @@
 import { DataType as Fbs, createBinarySerializer as createFbsSerializer } from "@rbxts/flamework-binary-serializer";
 import createSerioSerializer from "@rbxts/serio";
 import type * as Serio from "@rbxts/serio";
-import { DataType, createBinarySerializer } from "@rbxts/surge";
+import { DataType, createCodec } from "@rbxts/surge";
 
 import { Rng } from "../../support";
 import type { Fixture } from "../adapter";
@@ -36,7 +36,7 @@ interface SerioLargeRecord {
 	entries: Map<string, Serio.u8>;
 }
 
-const serializer = createBinarySerializer<LargeRecord>();
+const serializer = createCodec<LargeRecord>();
 const fbsSerializer = createFbsSerializer<FbsLargeRecord>();
 const serioSerializer = createSerioSerializer<SerioLargeRecord>();
 

@@ -5,7 +5,7 @@ The documents are indexed in [AGENTS.md](../AGENTS.md).
 
 ## Goal
 
-A `createBinarySerializer<T>()` derived from a TypeScript type alone, that
+A `createCodec<T>()` derived from a TypeScript type alone, that
 generates specialized code for each shape at compile time, as
 [Zap](https://github.com/red-blox/zap) does from its own schema, instead of
 interpreting a schema at run time as

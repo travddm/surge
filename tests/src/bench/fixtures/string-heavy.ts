@@ -2,7 +2,7 @@
 //!optimize 2
 import { createBinarySerializer as createFbsSerializer } from "@rbxts/flamework-binary-serializer";
 import createSerioSerializer from "@rbxts/serio";
-import { createBinarySerializer } from "@rbxts/surge";
+import { createCodec } from "@rbxts/surge";
 
 import { Rng } from "../../support";
 import type { Fixture } from "../adapter";
@@ -26,7 +26,7 @@ interface StringHeavy {
 	lines: string[];
 }
 
-const serializer = createBinarySerializer<StringHeavy>();
+const serializer = createCodec<StringHeavy>();
 const fbsSerializer = createFbsSerializer<StringHeavy>();
 const serioSerializer = createSerioSerializer<StringHeavy>();
 

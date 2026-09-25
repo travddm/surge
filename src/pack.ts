@@ -13,20 +13,12 @@
 // `buffer.writebits`/`readbits` already address an arbitrary bit offset
 // directly.
 //
-// The transformer only emits calls into `unpackBit` now: the write side
-// computes a whole packed byte from all its bits at once (one `writeu8`
-// per byte) instead of one `packBit` call per bit, since a bit-at-a-time
-// write left any unused high bits holding whatever an earlier `serialize()`
-// call left in the reused scratch buffer. `packBit` is kept as a public
-// primitive for hand-written callers -- it is otherwise unused by
-// generated code.
+// Only the read side calls into this module: the write side computes a whole
+// packed byte from all its bits at once (one `writeu8` per byte), since a
+// bit-at-a-time write left any unused high bits holding whatever an earlier
+// `serialize()` call left in the reused scratch buffer.
 //
 // The packed `CFrame` form is in cframe.ts.
-
-/** Writes a single packed bit at `byteOffset * 8 + bitIndex`. */
-export function packBit(buf: buffer, byteOffset: number, bitIndex: number, value: boolean): void {
-	buffer.writebits(buf, byteOffset * 8 + bitIndex, 1, value ? 1 : 0);
-}
 
 /** Reads a single packed bit at `byteOffset * 8 + bitIndex`. */
 export function unpackBit(buf: buffer, byteOffset: number, bitIndex: number): boolean {

@@ -3,7 +3,7 @@
 import { DataType as Fbs, createBinarySerializer as createFbsSerializer } from "@rbxts/flamework-binary-serializer";
 import createSerioSerializer from "@rbxts/serio";
 import type * as Serio from "@rbxts/serio";
-import { DataType, createBinarySerializer } from "@rbxts/surge";
+import { DataType, createCodec } from "@rbxts/surge";
 
 import type { Fixture } from "../adapter";
 import { defineEntry } from "../adapter";
@@ -46,7 +46,7 @@ interface SerioSmallFlatStruct {
 	active: boolean;
 }
 
-const serializer = createBinarySerializer<SmallFlatStruct>();
+const serializer = createCodec<SmallFlatStruct>();
 const fbsSerializer = createFbsSerializer<FbsSmallFlatStruct>();
 const serioSerializer = createSerioSerializer<SerioSmallFlatStruct>();
 

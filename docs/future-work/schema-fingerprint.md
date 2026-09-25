@@ -40,14 +40,14 @@ below. The design is small and depends on nothing else in this directory.
       with its bytes, or exchanges it when a connection opens, and compares it
       itself. A call site that never calls the factory is unchanged.
     - An option on the existing factories, such as `fingerprint: true`, written
-      as a literal like `checks` (Runtime API 3.8 in
+      as a literal like `readChecks` (Runtime API 3.8 in
       [specs/runtime-api.md](../specs/runtime-api.md)). `serialize` writes the
       fingerprint ahead of the value, and `deserialize` raises a string
       beginning `@rbxts/surge:` when it differs. The game compares nothing
       itself, and each value costs the fingerprint's bytes where the option is
       on.
 
-    The factory leaves `Serializer<T>` as fbs defines it, and suits a caller
+    The factory leaves `Codec<T>` as it is, and suits a caller
     that stores one fingerprint for many values. The option suits a caller that
     wants every read checked. Either updates Transformer 3 and Runtime API 3;
     the option also updates Wire format 3.3 for the call sites that set it.

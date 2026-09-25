@@ -77,8 +77,8 @@ benchmark speed tier needs Roblox Studio, and it is not part of `ci`.
 - `@rbxts/repr` stays pinned to `1.0.2` in `tests/package.json`: `1.0.3`
   changed its module's shape, and `@rbxts/runit` `1.4.8` calls it the old way
   when it formats a `@Theory`'s arguments.
-- Without `checks`, `deserialize` of bytes no `serialize` wrote is
-  unspecified, so a crash on such bytes is not a defect. With `checks`, it is
+- Without `readChecks`, `deserialize` of bytes no `serialize` wrote is
+  unspecified, so a crash on such bytes is not a defect. With `readChecks`, it is
   one, and `checks.spec.ts` is where it is pinned.
 
 ## CI

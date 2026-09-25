@@ -135,6 +135,27 @@ test("a shape with no blob field returns the buffer alone", () => {
 	assert.match(withBlobs, /blobs = __surge_finishWriteBlobs\(\),/);
 });
 
+test("deserialize takes what serialize returned, as one argument", () => {
+	// `Basic`'s is the buffer itself.
+	const luau = readCompiledLuau("tests/basic.spec.luau");
+	assert.match(luau, /deserialize = function\(input\)$/m);
+	assert.match(luau, /__surge_input = input$/m);
+	// A shape with a blob field takes the table, and reads both of its fields.
+	const withBlobs = readCompiledLuau("tests/roblox.spec.luau");
+	assert.match(withBlobs, /__surge_input = input\.buffer$/m);
+	assert.match(withBlobs, /__surge_beginReadBlobs\(input\.blobs\)$/m);
+});
+
+test("generated code imports its helpers from the package's abi module", () => {
+	const luau = readCompiledLuau("tests/basic.spec.luau");
+	assert.match(luau, /"@rbxts", "surge", "out", "abi"\)$/m);
+	// The package's own exports hold the consumer API and no helper.
+	const index = readFileSync(join(here, "..", "out", "index.d.ts"), "utf8");
+	for (const name of ["finishWrite", "grow", "pushBlob", "nextBlob", "unpackBit"]) {
+		assert.doesNotMatch(index, new RegExp(`\\b${name}\\b`), `index.d.ts exports ${name}`);
+	}
+});
+
 // Regression checks for the file directives: the package pragma entry in
 // docs/future-work/generated-code-performance.md, and Transformer 6.3 in
 // docs/specs/transformer.md. These two read @rbxts/surge's own compiled output
@@ -158,11 +179,13 @@ test("every compiled module of the package opens with its Luau file pragmas", ()
 		assert.equal(lines[0], "--!optimize 2", `${name} line 1`);
 		assert.notEqual(lines[1], "--!native", `${name} line 2`);
 	}
-	// `index` is the exception and carries neither: roblox-ts emits a
-	// re-export-only module as `local exports = {}` and assignments, so a
+	// `index` and `abi` are the exceptions and carry neither: roblox-ts emits
+	// a re-export-only module as `local exports = {}` and assignments, so a
 	// directive would land after code, where Luau ignores it and its linter
 	// warns about it.
-	assert.doesNotMatch(readFileSync(join(here, "..", "out", "init.luau"), "utf8"), /^--!/m);
+	for (const name of ["init.luau", "abi.luau"]) {
+		assert.doesNotMatch(readFileSync(join(here, "..", "out", name), "utf8"), /^--!/m, name);
+	}
 });
 
 test("a file directive survives the transformer's injected imports", () => {
@@ -178,7 +201,7 @@ test("a file directive survives the transformer's injected imports", () => {
 	}
 });
 
-test("a serializer without `checks` carries no read-side check at all", () => {
+test("a serializer without `readChecks` carries no read-side check at all", () => {
 	// The option is opt-in per call site, so the cost has to be absent from
 	// every suite that did not ask for it -- not merely branch-not-taken.
 	for (const path of ["tests/basic.spec.luau", "tests/collections.spec.luau", "tests/roblox.spec.luau"]) {
@@ -188,7 +211,7 @@ test("a serializer without `checks` carries no read-side check at all", () => {
 	}
 });
 
-test("a serializer with `checks` carries them", () => {
+test("a serializer with `readChecks` carries them", () => {
 	// The other half of the claim above: the checks are really emitted, so the
 	// absence elsewhere is the option working and not the test looking wrong.
 	const luau = readCompiledLuau("tests/checks.spec.luau");

@@ -1,6 +1,6 @@
 //!optimize 2
 import { Assert, Fact, InlineData, Theory } from "@rbxts/runit";
-import { createBinarySerializer } from "@rbxts/surge";
+import { createCodec } from "@rbxts/surge";
 
 import { Rng, difference } from "../support";
 
@@ -14,7 +14,7 @@ interface WithLiterals {
 	mixed: Mixed;
 	maybe: "on" | "off" | undefined;
 }
-const literalsSerializer = createBinarySerializer<WithLiterals>();
+const literalsSerializer = createCodec<WithLiterals>();
 
 interface WithConstants {
 	version: 3;
@@ -22,7 +22,7 @@ interface WithConstants {
 	enabled: true;
 	payload: number;
 }
-const constantsSerializer = createBinarySerializer<WithConstants>();
+const constantsSerializer = createCodec<WithConstants>();
 
 enum Suit {
 	Clubs,
@@ -39,12 +39,12 @@ interface WithTsEnums {
 	color: Color;
 	single: Suit.Hearts;
 }
-const tsEnumsSerializer = createBinarySerializer<WithTsEnums>();
+const tsEnumsSerializer = createCodec<WithTsEnums>();
 
 // A negative literal is a minus sign applied to a number literal, and the
 // generated code has to build it that way.
 type Turn = -1 | 0 | 1;
-const turnSerializer = createBinarySerializer<{ turn: Turn; ahead: -2 }>();
+const turnSerializer = createCodec<{ turn: Turn; ahead: -2 }>();
 
 const DIRECTIONS: ReadonlyArray<Direction> = ["north", "east", "south", "west"];
 const LEVELS: ReadonlyArray<Level> = [1, 2, 3];

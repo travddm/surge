@@ -1,6 +1,6 @@
 //!optimize 2
 import { Assert, Fact } from "@rbxts/runit";
-import { createBinarySerializer } from "@rbxts/surge";
+import { createCodec } from "@rbxts/surge";
 
 interface Basic {
 	a: number;
@@ -9,7 +9,7 @@ interface Basic {
 	nickname?: string;
 }
 
-const basicSerializer = createBinarySerializer<Basic>();
+const basicSerializer = createCodec<Basic>();
 
 /**
  * Covers primitives, a plain object, and an optional field, serialized and

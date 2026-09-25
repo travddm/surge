@@ -56,8 +56,8 @@ declaration. Blink's and Zap's declarations are in their definition files
 
 ## 4. The columns
 
-**4.1** surge is driven through `createBinarySerializer<T>()`, fbs through
-its `createBinarySerializer<T>()`, and serio through its default-exported
+**4.1** surge is driven through `createCodec<T>()`, fbs through its
+`createBinarySerializer<T>()`, and serio through its default-exported
 `createSerializer<T>()`.
 
 **4.2** Blink is driven through the `Write` and `Read` its compiler generates
@@ -97,9 +97,8 @@ generated modules, as its compiler emits them. serio's modules carry neither.
 
 **4.8** An adapter uses what a library returns the way that library's own
 documentation shows, and does no other work in a timed call. surge's adapter
-keeps what `serialize` returns as the payload, and passes the buffer, or the
-table's `buffer` and `blobs`, to `deserialize`; it tells the two apart with
-`typeIs`, because it is generic over `T`. fbs's keeps the table `serialize`
+keeps what `serialize` returns as the payload, and passes it to `deserialize`
+unchanged. fbs's keeps the table `serialize`
 returns and passes its `buffer` and `blobs` to `deserialize`. serio's keeps the `SerializedData`
 `serialize` returns and passes it to `deserialize`. Blink's and the
 baseline's keep the buffer their write function returns.

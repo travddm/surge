@@ -1,11 +1,6 @@
 //!optimize 2
 import { Assert, Fact } from "@rbxts/runit";
-import {
-	createBinarySerializer,
-	createDeserializer,
-	createSerializer,
-	createBinarySerializer as makeSerializer,
-} from "@rbxts/surge";
+import { createCodec, createDeserializer, createSerializer, createCodec as makeCodec } from "@rbxts/surge";
 
 import { Rng, SharedShape, difference, hex, sharedShapeSerializer } from "../support";
 
@@ -26,10 +21,10 @@ interface Outline {
 }
 const writeOutline = createSerializer<Outline>();
 const readOutline = createDeserializer<Outline>();
-const aliasedSerializer = makeSerializer<Reading>();
+const aliasedCodec = makeCodec<Reading>();
 
 // The second call site for `SharedShape`. The first is in `support.ts`.
-const localSharedShapeSerializer = createBinarySerializer<SharedShape>();
+const localSharedShapeSerializer = createCodec<SharedShape>();
 
 class FactoriesTest {
 	@Fact
@@ -55,12 +50,12 @@ class FactoriesTest {
 	@Fact
 	public transformsAFactoryImportedUnderAnotherName(): void {
 		const value: Reading = { sensor: "", values: [] };
-		const buffer = aliasedSerializer.serialize(value);
-		Assert.equal(undefined, difference(value, aliasedSerializer.deserialize(buffer)));
+		const buffer = aliasedCodec.serialize(value);
+		Assert.equal(undefined, difference(value, aliasedCodec.deserialize(buffer)));
 	}
 
 	@Fact
-	public deserializesAShapeWithNoBlobWithoutInputBlobs(): void {
+	public passesTheBufferAloneForAShapeWithNoBlob(): void {
 		const value: Reading = { sensor: "s", values: [4] };
 		const buffer = writeReading(value);
 		Assert.equal("buffer", typeOf(buffer));

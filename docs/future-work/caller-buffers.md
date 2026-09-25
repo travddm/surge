@@ -39,8 +39,8 @@ The work is three additions:
 ## Why deferred
 
 No caller needs it yet. Its driver is `surge-net`, which is deferred
-indefinitely. It also adds to the consumer API, which is fbs's
-`Serializer<T>` today (Runtime API 3.1), and the shape of the addition is
+indefinitely. It also adds to the consumer API, which is
+`Codec<T>` today (Runtime API 3.1), and the shape of the addition is
 undecided.
 
 ## How, briefly
@@ -51,7 +51,7 @@ undecided.
   point sets them from the caller's buffer and offset instead of the
   serializer's own buffer and `0`, runs the same body, and returns the buffer
   and the cursor instead of calling `finishWrite`. The read entry point sets
-  the read cursor to the offset, and returns it after the value. The `checks`
+  the read cursor to the offset, and returns it after the value. The `readChecks`
   bounds need no new form: each read is bounded against `buffer.len` of the
   input, and a count against the bytes left after the cursor (Runtime API 4.2
   and 4.3). In a buffer that holds several values, though, the bytes left

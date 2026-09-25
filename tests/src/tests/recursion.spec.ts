@@ -1,6 +1,6 @@
 //!optimize 2
 import { Assert, Fact } from "@rbxts/runit";
-import { createBinarySerializer } from "@rbxts/surge";
+import { createCodec } from "@rbxts/surge";
 
 import { Rng, difference } from "../support";
 
@@ -13,7 +13,7 @@ interface Entry {
 	size: number;
 	folder?: Folder;
 }
-const folderSerializer = createBinarySerializer<Folder>();
+const folderSerializer = createCodec<Folder>();
 
 // Recursion through an optional, a `Map`, and a tuple.
 interface Scope {
@@ -21,14 +21,14 @@ interface Scope {
 	children: Map<string, Scope>;
 	pair?: [Scope, number];
 }
-const scopeSerializer = createBinarySerializer<Scope>();
+const scopeSerializer = createCodec<Scope>();
 
 // Recursion through arrays and tuples alone, with no object or union on the
 // cycle (Transformer 4.11 in docs/specs/transformer.md).
 type Nest = Nest[];
-const nestSerializer = createBinarySerializer<Nest>();
+const nestSerializer = createCodec<Nest>();
 type Branch = [number, Branch[]];
-const branchSerializer = createBinarySerializer<Branch>();
+const branchSerializer = createCodec<Branch>();
 
 function randomFolder(rng: Rng, depth: number): Folder {
 	const entries = new Array<Entry>();

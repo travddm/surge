@@ -2,7 +2,7 @@
 	"name": "@rbxts/surge",
 	"version": "0.1.0",
 	"private": true,
-	"description": "Drop-in-ergonomic alternative to flamework-binary-serializer: specialized serialize/deserialize code generated per shape at TypeScript compile time.",
+	"description": "Binary serializers for roblox-ts, generated per type at compile time.",
 	"main": "out/init.luau",
 	"types": "out/index.d.ts",
 	"files": [

@@ -3,7 +3,7 @@
 import { DataType as Fbs, createBinarySerializer as createFbsSerializer } from "@rbxts/flamework-binary-serializer";
 import createSerioSerializer from "@rbxts/serio";
 import type * as Serio from "@rbxts/serio";
-import { DataType, createBinarySerializer } from "@rbxts/surge";
+import { DataType, createCodec } from "@rbxts/surge";
 
 import type { Fixture } from "../adapter";
 import { defineEntry } from "../adapter";
@@ -69,8 +69,8 @@ interface SerioToggles {
 	offset?: Serio.i16;
 }
 
-const unpackedSerializer = createBinarySerializer<Toggles>();
-const packedSerializer = createBinarySerializer<DataType.Packed<Toggles>>();
+const unpackedSerializer = createCodec<Toggles>();
+const packedSerializer = createCodec<DataType.Packed<Toggles>>();
 const fbsUnpackedSerializer = createFbsSerializer<FbsToggles>();
 const fbsPackedSerializer = createFbsSerializer<Fbs.Packed<FbsToggles>>();
 const serioUnpackedSerializer = createSerioSerializer<SerioToggles>();

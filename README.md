@@ -3,13 +3,13 @@
 [![CI](https://github.com/travddm/surge/actions/workflows/ci.yml/badge.svg)](https://github.com/travddm/surge/actions/workflows/ci.yml)
 
 Binary serializers for roblox-ts, generated from a TypeScript type at compile
-time. Each `createBinarySerializer<T>()` call is replaced by code written for
+time. Each `createCodec<T>()` call is replaced by code written for
 `T`, where
 [flamework-binary-serializer](https://github.com/Fireboltofdeath/flamework-binary-serializer)
 interprets a schema at run time.
 
 ```ts
-import { DataType, createBinarySerializer } from "@rbxts/surge";
+import { DataType, createCodec } from "@rbxts/surge";
 
 interface PlayerState {
 	name: string;
@@ -17,7 +17,7 @@ interface PlayerState {
 	position: Vector3;
 }
 
-export const playerState = createBinarySerializer<PlayerState>();
+export const playerState = createCodec<PlayerState>();
 
 export function roundTrip(state: PlayerState): PlayerState {
 	return playerState.deserialize(playerState.serialize(state));
@@ -38,7 +38,7 @@ release, and register the transformer in `tsconfig.json`:
   what is passed through, and what is rejected.
 - [Data types](docs/data-types.md): the `DataType` brands that choose widths,
   counts and packing.
-- [Errors and guarantees](docs/errors-and-guarantees.md): `checks`,
+- [Errors and guarantees](docs/errors-and-guarantees.md): `readChecks`,
   `writeChecks`, and what the bytes do not carry.
 - [Performance](docs/performance.md): the file directives, and what to
   expect.

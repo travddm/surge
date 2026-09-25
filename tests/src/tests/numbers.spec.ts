@@ -1,6 +1,6 @@
 //!optimize 2
 import { Assert, Fact, InlineData, Theory } from "@rbxts/runit";
-import { DataType, createBinarySerializer } from "@rbxts/surge";
+import { DataType, createCodec } from "@rbxts/surge";
 
 import { Rng, difference } from "../support";
 
@@ -14,14 +14,14 @@ interface Integers {
 	u24: DataType.u24;
 	i24: DataType.i24;
 }
-const integersSerializer = createBinarySerializer<Integers>();
+const integersSerializer = createCodec<Integers>();
 
 interface Floats {
 	single: DataType.f32;
 	double: DataType.f64;
 	plain: number;
 }
-const floatsSerializer = createBinarySerializer<Floats>();
+const floatsSerializer = createCodec<Floats>();
 
 // Each range narrows to a different width (Wire format 4.16 in
 // docs/specs/wire-format.md), and `ratio` keeps the float width it asks for.
@@ -32,7 +32,7 @@ interface Ranged {
 	huge: DataType.Range<number, 0, 1e12>;
 	ratio: DataType.Range<DataType.f32, -1, 1>;
 }
-const rangedSerializer = createBinarySerializer<Ranged>();
+const rangedSerializer = createCodec<Ranged>();
 
 const FUZZ_ITERATIONS = 200;
 

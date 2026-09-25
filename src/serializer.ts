@@ -99,22 +99,28 @@ type PartCarriesBlobs<T, Seen extends unknown[]> = T extends string | number | b
 export type Serialized<T> = MayCarryBlobs<T> extends true ? { buffer: buffer; blobs: Array<defined> } : buffer;
 
 /**
- * The bundled `serialize`/`deserialize` pair.
+ * Writes a value of `T`, and returns its {@link Serialized} form.
  *
- * `in out` states that `T` is invariant, which it is: `serialize` takes a `T`
- * and `deserialize` returns one. Stated, the checker does not measure it,
- * and measuring it walks {@link Serialized} with an unknown `T` until it
- * reports the instantiation as too deep.
+ * `in out` states that `T` is invariant, as it is on each of the three
+ * types here. Stated, the checker does not measure it, and measuring it walks
+ * {@link Serialized} with an unknown `T` until it reports the instantiation
+ * as too deep.
  */
-export interface Serializer<in out T> {
-	serialize: (value: T) => Serialized<T>;
-	deserialize: (input: buffer, inputBlobs?: Array<defined>) => T;
+export type Serializer<in out T> = (value: T) => Serialized<T>;
+
+/** Reads back a value of `T` from what a {@link Serializer} of `T` returned. */
+export type Deserializer<in out T> = (input: Serialized<T>) => T;
+
+/** A {@link Serializer} and a {@link Deserializer} of the same `T`. */
+export interface Codec<in out T> {
+	serialize: Serializer<T>;
+	deserialize: Deserializer<T>;
 }
 
 function notConfigured(): never {
 	throw (
 		"rbxts-transformer-surge is not registered in this project's tsconfig.json `plugins`. " +
-		"createSerializer/createDeserializer/createBinarySerializer have no real implementation on " +
+		"createCodec/createSerializer/createDeserializer have no real implementation on " +
 		"their own -- the transformer replaces every call to them at compile time."
 	);
 }
@@ -123,7 +129,7 @@ function notConfigured(): never {
  * Options read at the call site, where they must be written as literals: the
  * transformer decides what to emit from them at compile time.
  */
-export interface SerializerOptions {
+export interface CodecOptions {
 	/**
 	 * Check, on every read, that `deserialize` stays inside the input buffer,
 	 * and that a count it reads back is one the rest of the input could hold.
@@ -136,7 +142,7 @@ export interface SerializerOptions {
 	 * indexes that name an enum item or a packed rotation, and no other value:
 	 * a payload that is the right shape but the wrong data still deserializes.
 	 */
-	readonly checks?: boolean;
+	readonly readChecks?: boolean;
 	/**
 	 * Check, on every write, that a value's lengths and counts fit its type:
 	 * that a `DataType.Length<T, N>` value is exactly `N` long, and that a
@@ -156,18 +162,16 @@ export interface SerializerOptions {
  * Runtime API 3.4 in docs/specs/runtime-api.md). Calling this directly means the
  * transformer isn't registered for this project.
  */
-export function createSerializer<T>(options?: Pick<SerializerOptions, "writeChecks">): (value: T) => Serialized<T> {
+export function createCodec<T>(options?: CodecOptions): Codec<T> {
 	return notConfigured();
 }
 
-/** See {@link createSerializer}. Takes the read side of {@link SerializerOptions}. */
-export function createDeserializer<T>(
-	options?: Pick<SerializerOptions, "checks">,
-): (input: buffer, inputBlobs?: Array<defined>) => T {
+/** See {@link createCodec}. Takes the write side of {@link CodecOptions}. */
+export function createSerializer<T>(options?: Pick<CodecOptions, "writeChecks">): Serializer<T> {
 	return notConfigured();
 }
 
-/** See {@link createSerializer}. Takes {@link SerializerOptions}. */
-export function createBinarySerializer<T>(options?: SerializerOptions): Serializer<T> {
+/** See {@link createCodec}. Takes the read side of {@link CodecOptions}. */
+export function createDeserializer<T>(options?: Pick<CodecOptions, "readChecks">): Deserializer<T> {
 	return notConfigured();
 }

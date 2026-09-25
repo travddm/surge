@@ -1,6 +1,6 @@
 //!optimize 2
 import { Assert, Fact } from "@rbxts/runit";
-import { DataType, createBinarySerializer } from "@rbxts/surge";
+import { DataType, createCodec } from "@rbxts/surge";
 
 import { difference, hex } from "../support";
 
@@ -22,8 +22,8 @@ interface Label {
 	id: DataType.u16;
 }
 
-const readings = createBinarySerializer<Readings>();
-const label = createBinarySerializer<Label>();
+const readings = createCodec<Readings>();
+const label = createCodec<Label>();
 
 const VALUES: ReadonlyArray<number> = [1, 2.5, -3];
 const LABEL: Label = { name: "inner", id: 7 };

@@ -1,10 +1,10 @@
 //!optimize 2
 import { Assert, Fact } from "@rbxts/runit";
-import { DataType, createBinarySerializer } from "@rbxts/surge";
+import { DataType, createCodec } from "@rbxts/surge";
 
 import { Rng, difference, hex, unhex } from "../support";
 
-// The `checks` factory option (Transformer 5.10 in docs/specs/transformer.md): the
+// The `readChecks` factory option (Transformer 5.10 in docs/specs/transformer.md): the
 // read side stays inside the input buffer and rejects a count the rest of the
 // input cannot hold. Every payload here is written by hand, because no
 // `serialize` would produce one. And the `writeChecks` option (Transformer
@@ -15,13 +15,13 @@ interface Flat {
 	count: DataType.u32;
 	flag: boolean;
 }
-const flat = createBinarySerializer<Flat>({ checks: true });
-const flatUnchecked = createBinarySerializer<Flat>();
+const flat = createCodec<Flat>({ readChecks: true });
+const flatUnchecked = createCodec<Flat>();
 
 interface WithList {
 	list: Array<DataType.f64>;
 }
-const list = createBinarySerializer<WithList>({ checks: true });
+const list = createCodec<WithList>({ readChecks: true });
 
 // A literal constant reads no bytes, so its count has nothing to bound it but
 // the cap: this is the shape a short payload could otherwise turn into
@@ -29,13 +29,13 @@ const list = createBinarySerializer<WithList>({ checks: true });
 interface WithConstants {
 	marks: Array<"x">;
 }
-const constants = createBinarySerializer<WithConstants>({ checks: true });
+const constants = createCodec<WithConstants>({ readChecks: true });
 
 interface WithBlobs {
 	first: unknown;
 	second: unknown;
 }
-const blobs = createBinarySerializer<WithBlobs>({ checks: true });
+const blobs = createCodec<WithBlobs>({ readChecks: true });
 
 // Every kind that reads a count, each with an element whose own minimum is
 // worth getting wrong: a bound that overstated any of them would reject a
@@ -55,7 +55,7 @@ interface Everything {
 	tagged: { kind: "one"; value: DataType.u8 } | { kind: "two" } | { kind: "three"; text: string };
 	tree: Node;
 }
-const everything = createBinarySerializer<Everything>({ checks: true });
+const everything = createCodec<Everything>({ readChecks: true });
 
 // A packed `CFrame`'s size is in its own header, and an enum index names one of
 // a fixed list of items. Checks bound both before the value is read (Runtime
@@ -63,12 +63,12 @@ const everything = createBinarySerializer<Everything>({ checks: true });
 interface WithPackedCFrame {
 	placement: DataType.Packed<{ at: CFrame }>;
 }
-const packedCFrame = createBinarySerializer<WithPackedCFrame>({ checks: true });
+const packedCFrame = createCodec<WithPackedCFrame>({ readChecks: true });
 
 interface WithEnum {
 	material: Enum.Material;
 }
-const withEnum = createBinarySerializer<WithEnum>({ checks: true });
+const withEnum = createCodec<WithEnum>({ readChecks: true });
 
 interface Exact {
 	code: DataType.Length<string, 4>;
@@ -77,21 +77,21 @@ interface Exact {
 	slots: DataType.Length<Array<DataType.u8 | undefined>, 3>;
 	marks: DataType.Length<Array<"a" | "b" | undefined>, 3>;
 }
-const exact = createBinarySerializer<Exact>({ writeChecks: true });
+const exact = createCodec<Exact>({ writeChecks: true });
 
 interface Narrow {
 	list: DataType.Length<Array<DataType.u8>, DataType.u8>;
 	text: DataType.Length<string, DataType.u8>;
 	tags: DataType.Length<Map<string, boolean>, DataType.u8>;
 }
-const narrow = createBinarySerializer<Narrow>({ writeChecks: true });
+const narrow = createCodec<Narrow>({ writeChecks: true });
 
 // One field, so the element bytes after a wrapped count are left unread
 // rather than misread as the next field.
 interface NarrowList {
 	list: DataType.Length<Array<DataType.u8>, DataType.u8>;
 }
-const narrowListUnchecked = createBinarySerializer<NarrowList>();
+const narrowListUnchecked = createCodec<NarrowList>();
 
 // `writeChecks` holds a number to its `Range` (Runtime API 3.10): outside the
 // bounds, a NaN, and a fraction where the range holds whole numbers.
@@ -100,8 +100,8 @@ interface Ranged {
 	offset: DataType.Range<DataType.i16, -1000, 1000>;
 	ratio: DataType.Range<DataType.f32, 0, 1>;
 }
-const ranged = createBinarySerializer<Ranged>({ writeChecks: true });
-const rangedUnchecked = createBinarySerializer<Ranged>();
+const ranged = createCodec<Ranged>({ writeChecks: true });
+const rangedUnchecked = createCodec<Ranged>();
 
 function rangedValue(): Ranged {
 	return { health: 100, offset: -1000, ratio: 0.5 };
@@ -332,8 +332,8 @@ class ChecksTest {
 	public rejectsAReadPastTheEndOfTheBlobs(): void {
 		const value: WithBlobs = { first: "a", second: "b" };
 		const { buffer: bytes, blobs: sent } = blobs.serialize(value);
-		Assert.equal("a", blobs.deserialize(bytes, sent).first);
-		assertRejected(() => blobs.deserialize(bytes, [sent[0]]));
+		Assert.equal("a", blobs.deserialize({ buffer: bytes, blobs: sent }).first);
+		assertRejected(() => blobs.deserialize({ buffer: bytes, blobs: [sent[0]] }));
 	}
 }
 

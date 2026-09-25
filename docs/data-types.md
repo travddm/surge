@@ -4,7 +4,7 @@
 TypeScript type in any way the rest of the code sees:
 
 ```ts
-import { DataType, createBinarySerializer } from "@rbxts/surge";
+import { DataType, createCodec } from "@rbxts/surge";
 
 interface Snapshot {
 	tick: DataType.u32; // 4 bytes instead of 8
@@ -15,7 +15,7 @@ interface Snapshot {
 	flags: DataType.Packed<{ grounded: boolean; crouching: boolean; target?: Player }>;
 }
 
-export const snapshot = createBinarySerializer<Snapshot>();
+export const snapshot = createCodec<Snapshot>();
 ```
 
 A branded value is still a `number`, `string` or object to the code that
@@ -55,7 +55,7 @@ The range writes no bytes of its own. It is what `writeChecks` checks: with
 range, a NaN, and a fraction where the range holds whole numbers
 ([errors-and-guarantees.md](errors-and-guarantees.md)). Without it, a value
 outside the range wraps as its width does. `deserialize` does not check a
-range, with or without `checks`.
+range, with or without `readChecks`.
 
 ## Counts: `Length<T, L>`
 

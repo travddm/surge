@@ -1,6 +1,6 @@
 //!optimize 2
 import { Assert, Fact } from "@rbxts/runit";
-import { DataType, createBinarySerializer } from "@rbxts/surge";
+import { DataType, createCodec } from "@rbxts/surge";
 
 import { hex } from "../support";
 
@@ -17,20 +17,20 @@ interface Primitives {
 	b: DataType.i16;
 	a: DataType.u8;
 }
-const primitivesSerializer = createBinarySerializer<Primitives>();
+const primitivesSerializer = createCodec<Primitives>();
 
 interface Floats {
 	double: number;
 	single: DataType.f32;
 }
-const floatsSerializer = createBinarySerializer<Floats>();
+const floatsSerializer = createCodec<Floats>();
 
 interface Containers {
 	list: DataType.u16[];
 	pair: [DataType.u8, boolean, ...DataType.u8[]];
 	record: Record<string, DataType.u8>;
 }
-const containersSerializer = createBinarySerializer<Containers>();
+const containersSerializer = createCodec<Containers>();
 
 // The same five count-writing kinds as `Containers`, each with a narrower
 // count. `record`'s key stays unbranded, so its own u32 length prefix is the
@@ -43,7 +43,7 @@ interface Bounded {
 	record: DataType.Length<Record<string, DataType.u8>, DataType.u8>;
 	text: DataType.Length<string, DataType.u16>;
 }
-const boundedSerializer = createBinarySerializer<Bounded>();
+const boundedSerializer = createCodec<Bounded>();
 
 // The exact form: a numeric literal instead of a width, so no count is
 // written at all and both sides use exactly that many bytes or elements.
@@ -53,7 +53,7 @@ interface Exact {
 	pair: DataType.Length<[DataType.u8, ...DataType.u8[]], 2>;
 	text: DataType.Length<string, 4>;
 }
-const exactSerializer = createBinarySerializer<Exact>();
+const exactSerializer = createCodec<Exact>();
 
 // Every argument defaulted. Rule 4 of the brand convention in
 // docs/coding-standards.md says this has to write exactly what `Containers`
@@ -63,61 +63,57 @@ interface DefaultedContainers {
 	pair: DataType.Length<[DataType.u8, boolean, ...DataType.u8[]], DataType.u32>;
 	record: DataType.Length<Record<string, DataType.u8>>;
 }
-const defaultedSerializer = createBinarySerializer<DefaultedContainers>();
+const defaultedSerializer = createCodec<DefaultedContainers>();
 
 interface WithOptional {
 	n?: DataType.u8;
 }
-const optionalSerializer = createBinarySerializer<WithOptional>();
+const optionalSerializer = createCodec<WithOptional>();
 
 interface Flags {
 	a: boolean;
 	b: boolean;
 	c: boolean;
 }
-const flagsSerializer = createBinarySerializer<DataType.Packed<Flags>>();
+const flagsSerializer = createCodec<DataType.Packed<Flags>>();
 
 interface Choices {
 	direction: "north" | "east" | "south" | "west";
 	rig: Enum.HumanoidRigType;
 	version: 1;
 }
-const choicesSerializer = createBinarySerializer<Choices>();
+const choicesSerializer = createCodec<Choices>();
 
 type Shape = { kind: "circle"; radius: number } | { kind: "rect"; width: number; height: number };
-const shapeSerializer = createBinarySerializer<Shape>();
+const shapeSerializer = createCodec<Shape>();
 
 type StringOrNumber = string | number;
-const guardedSerializer = createBinarySerializer<StringOrNumber>();
+const guardedSerializer = createCodec<StringOrNumber>();
 
 interface Datatypes {
 	tint: Color3;
 	offset: Vector2;
 	position: Vector3;
 }
-const datatypesSerializer = createBinarySerializer<Datatypes>();
+const datatypesSerializer = createCodec<Datatypes>();
 
 // One fact per row of `FIXED_DATATYPES` in the transformer.
-const vector3int16Serializer = createBinarySerializer<Vector3int16>();
-const insetSerializer = createBinarySerializer<UDim>();
-const sizeSerializer = createBinarySerializer<UDim2>();
-const paintSerializer = createBinarySerializer<BrickColor>();
-const spanSerializer = createBinarySerializer<NumberRange>();
-const boundsSerializer = createBinarySerializer<Rect>();
-const rawSerializer = createBinarySerializer<buffer>();
-const sequencesSerializer = createBinarySerializer<{ colors: ColorSequence; numbers: NumberSequence }>();
-const mediumSerializer = createBinarySerializer<{ signed: DataType.i24; unsigned: DataType.u24 }>();
-const placementSerializer = createBinarySerializer<CFrame>();
+const vector3int16Serializer = createCodec<Vector3int16>();
+const insetSerializer = createCodec<UDim>();
+const sizeSerializer = createCodec<UDim2>();
+const paintSerializer = createCodec<BrickColor>();
+const spanSerializer = createCodec<NumberRange>();
+const boundsSerializer = createCodec<Rect>();
+const rawSerializer = createCodec<buffer>();
+const sequencesSerializer = createCodec<{ colors: ColorSequence; numbers: NumberSequence }>();
+const mediumSerializer = createCodec<{ signed: DataType.i24; unsigned: DataType.u24 }>();
+const placementSerializer = createCodec<CFrame>();
 const packedOptionalsSerializer =
-	createBinarySerializer<
-		DataType.Packed<{ count?: DataType.u8; flag: boolean; maybeFlag?: boolean; text: string }>
-	>();
-const stampSerializer = createBinarySerializer<DateTime>();
-const packedPlacementSerializer = createBinarySerializer<DataType.Packed<CFrame>>();
+	createCodec<DataType.Packed<{ count?: DataType.u8; flag: boolean; maybeFlag?: boolean; text: string }>>();
+const stampSerializer = createCodec<DateTime>();
+const packedPlacementSerializer = createCodec<DataType.Packed<CFrame>>();
 const packedTagSerializer =
-	createBinarySerializer<
-		DataType.Packed<{ first: { mode: "off" } | { mode: "on"; level: DataType.u8 }; flag: boolean }>
-	>();
+	createCodec<DataType.Packed<{ first: { mode: "off" } | { mode: "on"; level: DataType.u8 }; flag: boolean }>>();
 
 // Per-component widths: `cell` stores a `Vector3`'s three components at a
 // width each, and `placement` a `CFrame`'s position, whose rotation stays an
@@ -126,7 +122,7 @@ interface Narrowed {
 	cell: DataType.Vector<DataType.u8, DataType.i16, DataType.u24>;
 	placement: DataType.Transform<DataType.i16>;
 }
-const narrowedSerializer = createBinarySerializer<Narrowed>();
+const narrowedSerializer = createCodec<Narrowed>();
 
 // Every argument defaulted. Rule 4 of the brand convention in
 // docs/coding-standards.md says this has to write what an unbranded `Vector3`
@@ -135,7 +131,7 @@ interface DefaultedComponents {
 	cell: DataType.Vector;
 	placement: DataType.Transform<DataType.f32>;
 }
-const defaultedComponentsSerializer = createBinarySerializer<DefaultedComponents>();
+const defaultedComponentsSerializer = createCodec<DefaultedComponents>();
 
 // `number` narrows to the narrowest width that holds the range, and a width
 // brand is kept. The range itself writes nothing.
@@ -145,14 +141,13 @@ interface Ranged {
 	ratio: DataType.Range<DataType.f32, 0, 1>;
 	turn: DataType.Range<number, -1, 1>;
 }
-const rangedSerializer = createBinarySerializer<Ranged>();
+const rangedSerializer = createCodec<Ranged>();
 
-const quantizedSerializer = createBinarySerializer<DataType.Quantized<CFrame>>();
+const quantizedSerializer = createCodec<DataType.Quantized<CFrame>>();
 
-const tagsSerializer = createBinarySerializer<DataType.Packed<{ tags: Set<"c" | "a" | "b"> }>>();
-const lettersSerializer =
-	createBinarySerializer<DataType.Packed<Set<"a" | "b" | "c" | "d" | "e" | "f" | "g" | "h" | "i">>>();
-const mixedSerializer = createBinarySerializer<DataType.Packed<Set<"x" | 2 | true>>>();
+const tagsSerializer = createCodec<DataType.Packed<{ tags: Set<"c" | "a" | "b"> }>>();
+const lettersSerializer = createCodec<DataType.Packed<Set<"a" | "b" | "c" | "d" | "e" | "f" | "g" | "h" | "i">>>();
+const mixedSerializer = createCodec<DataType.Packed<Set<"x" | 2 | true>>>();
 
 class BytesTest {
 	@Fact

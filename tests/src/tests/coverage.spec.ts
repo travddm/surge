@@ -1,6 +1,6 @@
 //!optimize 2
 import { Assert, Fact } from "@rbxts/runit";
-import { DataType, createBinarySerializer } from "@rbxts/surge";
+import { DataType, createCodec } from "@rbxts/surge";
 
 import { difference } from "../support";
 
@@ -11,7 +11,7 @@ interface WithCollections {
 	map: Map<string, number>;
 	set: Set<string>;
 }
-const collectionsSerializer = createBinarySerializer<WithCollections>();
+const collectionsSerializer = createCodec<WithCollections>();
 
 interface WithRobloxTypes {
 	position: Vector3;
@@ -19,14 +19,14 @@ interface WithRobloxTypes {
 	tint: Color3;
 	rig: Enum.HumanoidRigType;
 }
-const robloxSerializer = createBinarySerializer<WithRobloxTypes>();
+const robloxSerializer = createCodec<WithRobloxTypes>();
 
 // Wire format 4.6 in docs/specs/wire-format.md: Vector2 gets its own real 2xf32
 // encoding instead of routing through the blob side channel.
 interface WithVector2 {
 	offset: Vector2;
 }
-const vector2Serializer = createBinarySerializer<WithVector2>();
+const vector2Serializer = createCodec<WithVector2>();
 
 // Transformer 4.1 in docs/specs/transformer.md: a Roblox datatype with no encoding of its own
 // (unlike Vector2/Vector3/CFrame/Color3 above) must still round-trip, via its
@@ -35,26 +35,26 @@ const vector2Serializer = createBinarySerializer<WithVector2>();
 interface WithUnencodedDatatype {
 	offset: Vector2int16;
 }
-const unencodedDatatypeSerializer = createBinarySerializer<WithUnencodedDatatype>();
+const unencodedDatatypeSerializer = createCodec<WithUnencodedDatatype>();
 
 type Shape = { kind: "circle"; radius: number } | { kind: "rect"; width: number; height: number };
-const shapeSerializer = createBinarySerializer<Shape>();
+const shapeSerializer = createCodec<Shape>();
 
 type StringOrNumber = string | number;
-const guardedSerializer = createBinarySerializer<StringOrNumber>();
+const guardedSerializer = createCodec<StringOrNumber>();
 
 interface Flags {
 	a: DataType.Packed<boolean>;
 	b: DataType.Packed<boolean>;
 	c: DataType.Packed<boolean>;
 }
-const flagsSerializer = createBinarySerializer<Flags>();
+const flagsSerializer = createCodec<Flags>();
 
 interface TreeNode {
 	value: number;
 	children: TreeNode[];
 }
-const treeSerializer = createBinarySerializer<TreeNode>();
+const treeSerializer = createCodec<TreeNode>();
 
 // Each note below that opens with a name is a regression for the review finding of that
 // name, listed with what closed it in docs/research/september-2026-review.md.
@@ -69,13 +69,13 @@ interface WithGenerics {
 	a: Box<number>;
 	b: Box<string>;
 }
-const genericsSerializer = createBinarySerializer<WithGenerics>();
+const genericsSerializer = createCodec<WithGenerics>();
 
 // recursive-union-types: a recursive discriminated union used to crash
 // the whole `rbxtsc` build with an uncaught stack overflow instead of
 // compiling to a recursion helper.
 type Expr = { kind: "num"; v: number } | { kind: "add"; l: Expr; r: Expr };
-const exprSerializer = createBinarySerializer<Expr>();
+const exprSerializer = createCodec<Expr>();
 
 // walker-emitter-robustness: property names that are not identifiers
 // used to emit `value.my-key`/`value.0`, which is invalid TypeScript.
@@ -86,12 +86,12 @@ interface WithOddKeys {
 	"1": string;
 	plain: boolean;
 }
-const oddKeysSerializer = createBinarySerializer<WithOddKeys>();
+const oddKeysSerializer = createCodec<WithOddKeys>();
 
 // walker-emitter-robustness: a Roblox datatype as a bare union member used
 // to crash the emitter (`guardFor` had no case for it).
 type PlacementOrLabel = CFrame | Vector2 | string;
-const datatypeUnionSerializer = createBinarySerializer<PlacementOrLabel>();
+const datatypeUnionSerializer = createCodec<PlacementOrLabel>();
 
 // walker-emitter-robustness: so did a recursive object type as a bare
 // union member.
@@ -99,20 +99,20 @@ interface Chain {
 	label: string;
 	next: Chain | string;
 }
-const chainSerializer = createBinarySerializer<Chain>();
+const chainSerializer = createCodec<Chain>();
 
 // walker-emitter-robustness: a re-aliased `Packed<T>` used to be walked
 // structurally, leaving the booleans byte-aligned and serializing the
 // `_surge_packed` brand property as an extra field.
 type PackedPair = DataType.Packed<{ first: boolean; second: boolean }>;
-const packedPairSerializer = createBinarySerializer<PackedPair>();
+const packedPairSerializer = createCodec<PackedPair>();
 
 // Transformer 5.8 in docs/specs/transformer.md: 100 fixed-size fields in one function used to
 // exceed Luau's 200 registers, which fails when the module loads.
 type Digit = "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9";
 type Wide = { [K in `f${"0" | "1"}${Digit}${Digit}`]: number };
 const WIDE_FIELD_COUNT = 200;
-const wideSerializer = createBinarySerializer<Wide>();
+const wideSerializer = createCodec<Wide>();
 
 // walker-emitter-robustness: a user declaration named after an injected
 // `@rbxts/surge` import used to collide with it.
@@ -181,7 +181,7 @@ class CoverageTest {
 		// assertion (not just round-trip equality) is what would have caught
 		// the walker recursing into Vector2int16's declared properties instead.
 		Assert.equal(0, buffer.len(buf));
-		const result = unencodedDatatypeSerializer.deserialize(buf, blobs);
+		const result = unencodedDatatypeSerializer.deserialize({ buffer: buf, blobs });
 		Assert.equal(value.offset, result.offset);
 	}
 

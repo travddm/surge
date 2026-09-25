@@ -1,6 +1,6 @@
 //!optimize 2
 import { Assert, Fact } from "@rbxts/runit";
-import { DataType, createBinarySerializer } from "@rbxts/surge";
+import { DataType, createCodec } from "@rbxts/surge";
 
 import { Rng, difference } from "../support";
 
@@ -15,7 +15,7 @@ interface WithDictionaries {
 	readonlySet: ReadonlySet<number>;
 	indexed: { [key: string]: boolean };
 }
-const dictionariesSerializer = createBinarySerializer<WithDictionaries>();
+const dictionariesSerializer = createCodec<WithDictionaries>();
 
 // Keys a `Record` cannot type, which the read side used to rebuild into one
 // (Transformer 4.7 in docs/specs/transformer.md), and a branded key, written at
@@ -26,14 +26,14 @@ interface WithUncommonKeys {
 	flags: Set<"on" | "off">;
 	bySlot: Record<DataType.u8, string>;
 }
-const uncommonKeysSerializer = createBinarySerializer<WithUncommonKeys>();
+const uncommonKeysSerializer = createCodec<WithUncommonKeys>();
 
 interface WithTuples {
 	rest: [string, ...number[]];
 	optionalTail: [number, string?];
 	nested: [Point, [boolean, Point[]]];
 }
-const tuplesSerializer = createBinarySerializer<WithTuples>();
+const tuplesSerializer = createCodec<WithTuples>();
 
 interface WithNestedOptionals {
 	point?: Point;
@@ -41,10 +41,10 @@ interface WithNestedOptionals {
 	inner?: { deep?: { value?: string } };
 	items: Array<Point | undefined>;
 }
-const optionalsSerializer = createBinarySerializer<WithNestedOptionals>();
+const optionalsSerializer = createCodec<WithNestedOptionals>();
 
 type Grid = number[][];
-const gridSerializer = createBinarySerializer<Grid>();
+const gridSerializer = createCodec<Grid>();
 
 // Every kind that writes a count, each bounded to a narrower one. The
 // counts are read back at the same width they were written at, which a byte
@@ -58,7 +58,7 @@ interface WithBounds {
 	set: DataType.Length<Set<string>, DataType.u8>;
 	text: DataType.Length<string, DataType.u16>;
 }
-const boundsSerializer = createBinarySerializer<WithBounds>();
+const boundsSerializer = createCodec<WithBounds>();
 
 // The exact form, where the count lives in the type and not in the buffer.
 // The value has to have exactly this many; these always do.
@@ -70,10 +70,10 @@ interface WithExactLengths {
 	pair: DataType.Length<[string, ...number[]], 3>;
 	text: DataType.Length<string, 5>;
 }
-const exactSerializer = createBinarySerializer<WithExactLengths>();
+const exactSerializer = createCodec<WithExactLengths>();
 
 type ExactOptionals = DataType.Length<Array<Point | undefined>, 3>;
-const exactOptionalsSerializer = createBinarySerializer<ExactOptionals>();
+const exactOptionalsSerializer = createCodec<ExactOptionals>();
 
 const FUZZ_ITERATIONS = 100;
 

@@ -1,5 +1,5 @@
 //!optimize 2
-import { createBinarySerializer } from "@rbxts/surge";
+import { createCodec } from "@rbxts/surge";
 
 // Lives next to `bench/`, not in `src/tests/`, so that directory holds suites only.
 
@@ -144,4 +144,4 @@ export interface SharedShape {
 	mango: boolean[];
 	kind: "left" | "right";
 }
-export const sharedShapeSerializer = createBinarySerializer<SharedShape>();
+export const sharedShapeSerializer = createCodec<SharedShape>();

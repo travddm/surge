@@ -3,7 +3,7 @@
 import { DataType as Fbs, createBinarySerializer as createFbsSerializer } from "@rbxts/flamework-binary-serializer";
 import createSerioSerializer from "@rbxts/serio";
 import type * as Serio from "@rbxts/serio";
-import { DataType, createBinarySerializer } from "@rbxts/surge";
+import { DataType, createCodec } from "@rbxts/surge";
 
 import type { Fixture } from "../adapter";
 import { defineEntry } from "../adapter";
@@ -64,7 +64,7 @@ interface SerioNestedObject {
 	version: Serio.u8;
 }
 
-const serializer = createBinarySerializer<NestedObject>();
+const serializer = createCodec<NestedObject>();
 const fbsSerializer = createFbsSerializer<FbsNestedObject>();
 const serioSerializer = createSerioSerializer<SerioNestedObject>();
 
