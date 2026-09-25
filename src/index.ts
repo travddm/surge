@@ -4,6 +4,8 @@
 // others are silent. Nothing runs here anyway.
 export { DataType } from "./data-type";
 export {
+	CheckedCodec,
+	CheckedDeserializer,
 	Codec,
 	CodecOptions,
 	createCodec,

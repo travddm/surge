@@ -108,17 +108,31 @@ export type Serialized<T> = MayCarryBlobs<T> extends true ? { buffer: buffer; bl
  */
 export type Serializer<in out T> = (value: T) => Serialized<T>;
 
+/** Reads back a value of `T` from what a {@link Serializer} of `T` returned. */
+export type Deserializer<in out T> = (input: Serialized<T>) => T;
+
 /**
- * Reads back a value of `T` from what a {@link Serializer} of `T` returned.
- * `Input` is what it takes: {@link Serialized}, or `unknown` under
- * {@link CodecOptions.readChecks}, which checks the input's shape itself.
+ * A {@link Deserializer} under {@link CodecOptions.readChecks}: it also takes
+ * `unknown`, and raises for anything that is not {@link Serialized}.
+ *
+ * The first signature is what it expects, and the transformer reads the shape
+ * it checks from it. The second takes whatever a remote delivered.
  */
-export type Deserializer<in out T, in Input = Serialized<T>> = (input: Input) => T;
+export interface CheckedDeserializer<in out T> {
+	(input: Serialized<T>): T;
+	(input: unknown): T;
+}
 
 /** A {@link Serializer} and a {@link Deserializer} of the same `T`. */
-export interface Codec<in out T, in Input = Serialized<T>> {
+export interface Codec<in out T> {
 	serialize: Serializer<T>;
-	deserialize: Deserializer<T, Input>;
+	deserialize: Deserializer<T>;
+}
+
+/** A {@link Codec} under {@link CodecOptions.readChecks}. */
+export interface CheckedCodec<in out T> {
+	serialize: Serializer<T>;
+	deserialize: CheckedDeserializer<T>;
 }
 
 function notConfigured(): never {
@@ -140,9 +154,9 @@ export interface CodecOptions {
 	 * A payload that fails either raises a string beginning `@rbxts/surge: `,
 	 * so a caller `pcall`s at the boundary. Defaults to `false`.
 	 *
-	 * `deserialize` then takes `unknown`, and raises the same way for an input
-	 * that is neither a buffer nor a table of a buffer and a `blobs` array, so
-	 * what a remote delivered can be passed to it as it is.
+	 * `deserialize` then also takes `unknown`, and raises the same way for an
+	 * input that is not what `serialize` returns for this type, so what a
+	 * remote delivered can be passed to it as it is.
 	 *
 	 * Turn it on wherever the bytes come from somewhere that is not trusted,
 	 * which a remote event is and a `DataStore` of this game's own writing is
@@ -170,9 +184,9 @@ export interface CodecOptions {
  * Runtime API 3.4 in docs/specs/runtime-api.md). Calling this directly means the
  * transformer isn't registered for this project.
  */
-export function createCodec<T>(options: CodecOptions & { readonly readChecks: true }): Codec<T, unknown>;
+export function createCodec<T>(options: CodecOptions & { readonly readChecks: true }): CheckedCodec<T>;
 export function createCodec<T>(options?: CodecOptions): Codec<T>;
-export function createCodec<T>(options?: CodecOptions): Codec<T, unknown> {
+export function createCodec<T>(options?: CodecOptions): CheckedCodec<T> {
 	return notConfigured();
 }
 
@@ -182,8 +196,8 @@ export function createSerializer<T>(options?: Pick<CodecOptions, "writeChecks">)
 }
 
 /** See {@link createCodec}. Takes the read side of {@link CodecOptions}. */
-export function createDeserializer<T>(options: { readonly readChecks: true }): Deserializer<T, unknown>;
+export function createDeserializer<T>(options: { readonly readChecks: true }): CheckedDeserializer<T>;
 export function createDeserializer<T>(options?: Pick<CodecOptions, "readChecks">): Deserializer<T>;
-export function createDeserializer<T>(options?: Pick<CodecOptions, "readChecks">): Deserializer<T, unknown> {
+export function createDeserializer<T>(options?: Pick<CodecOptions, "readChecks">): CheckedDeserializer<T> {
 	return notConfigured();
 }

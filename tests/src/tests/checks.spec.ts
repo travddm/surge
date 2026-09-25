@@ -336,33 +336,34 @@ class ChecksTest {
 		assertRejected(() => blobs.deserialize({ buffer: bytes, blobs: [sent[0]] }));
 	}
 
-	// With `readChecks`, `deserialize` takes `unknown`, so what a remote
-	// delivered can be passed to it as it is (Runtime API 3.14 in
-	// docs/specs/runtime-api.md).
+	// With `readChecks`, `deserialize` also takes `unknown`, so what a remote
+	// delivered can be passed to it as it is, and anything but what `serialize`
+	// returns for the type is rejected before it is read (Runtime API 3.14 and
+	// 4.11 in docs/specs/runtime-api.md).
 	@Fact
-	public rejectsAnInputThatIsNeitherABufferNorATableOfOne(): void {
+	public rejectsAnythingButABufferForAShapeWithNoBlob(): void {
 		const bytes = flat.serialize({ count: 7, flag: true });
 		assertRejected(() => flat.deserialize(undefined));
-		for (const input of [
-			7,
-			"text",
-			{},
-			{ buffer: "text", blobs: [] },
-			{ buffer: bytes },
-			{ buffer: bytes, blobs: 7 },
-		]) {
+		for (const input of [7, "text", {}, { buffer: bytes, blobs: [] }]) {
 			assertRejected(() => flat.deserialize(input));
 		}
-		// Either form `serialize` returns is read, whichever one the type's is.
 		Assert.equal(7, flat.deserialize(bytes).count);
-		Assert.equal(7, flat.deserialize({ buffer: bytes, blobs: [] }).count);
 	}
 
-	// A buffer alone has no `blobs` for a shape that reads one (Runtime API 4.6).
 	@Fact
-	public rejectsABufferAloneForAShapeThatReadsABlob(): void {
+	public rejectsAnythingButItsTableForAShapeWithABlob(): void {
 		const { buffer: bytes, blobs: sent } = blobs.serialize({ first: "a", second: "b" });
-		assertRejected(() => blobs.deserialize(bytes));
+		assertRejected(() => blobs.deserialize(undefined));
+		for (const input of [
+			bytes,
+			7,
+			{},
+			{ buffer: bytes },
+			{ buffer: "text", blobs: sent },
+			{ buffer: bytes, blobs: 7 },
+		]) {
+			assertRejected(() => blobs.deserialize(input));
+		}
 		Assert.equal("b", blobs.deserialize({ buffer: bytes, blobs: sent }).second);
 	}
 }

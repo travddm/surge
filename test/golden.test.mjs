@@ -218,6 +218,8 @@ test("a serializer with `readChecks` carries them", () => {
 	assert.match(luau, /@rbxts\/surge: deserialize read past the end of the input buffer/);
 	assert.match(luau, /@rbxts\/surge: deserialize found a count/);
 	assert.match(luau, /__surge_inputLength = buffer\.len\(__surge_input\)/);
-	// `deserialize` takes `unknown`, and checks what it was given first.
-	assert.match(luau, /@rbxts\/surge: deserialize was given neither a buffer nor a table/);
+	// `deserialize` also takes `unknown`, and first checks that it is
+	// `Serialized<T>`: `Flat`'s is a buffer, and `WithBlobs`'s the table.
+	assert.match(luau, /@rbxts\/surge: deserialize was given something other than a buffer"/);
+	assert.match(luau, /@rbxts\/surge: deserialize was given something other than a table of a buffer/);
 });

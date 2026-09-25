@@ -36,9 +36,9 @@ of the same type wrote, it may raise an unrelated Luau error, return a wrong
 value, or loop for as long as a count in the input says. Use `readChecks: true`
 wherever the bytes come from outside the game's own code, which a
 `RemoteEvent` is, and call it in a `pcall`. With `readChecks`, `deserialize`
-takes `unknown`, so what a remote delivers can be passed to it as it is: an
-input that is neither a buffer nor a table of a buffer and a `blobs` array
-raises. Either form is read, whichever one `serialize` returns for the type.
+also takes `unknown`, so what a remote delivers can be passed to it as it is:
+an input that is not what `serialize` returns for the type raises before
+anything is read.
 
 With `readChecks`, an input that passes deserializes to a value of the declared
 type. It does not follow that the value is one the game accepts. A number

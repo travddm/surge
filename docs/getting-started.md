@@ -113,8 +113,8 @@ default to `false`.
 ## Input from a client
 
 A client can send anything. Read it with `readChecks: true`, which makes
-`deserialize` take `unknown` and check what it is given, and call it in a
-`pcall`:
+`deserialize` a `CheckedDeserializer<T>`: it also takes `unknown`, and checks
+that it was given what `serialize` returns. Call it in a `pcall`:
 
 ```ts
 const readFromClient = createDeserializer<PlayerState>({ readChecks: true });
