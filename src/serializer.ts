@@ -92,15 +92,14 @@ type PartCarriesBlobs<T, Seen extends unknown[]> = T extends string | number | b
 							: true;
 
 /**
- * What `serialize` returns. `blobs` holds the values the buffer cannot carry,
- * and is there only when `T` can have one: for any other `T`, `serialize`
- * returns the buffer alone, and `blobs` reads `undefined`.
+ * What `serialize` returns: the buffer alone for a `T` that can hold no blob,
+ * and otherwise a table of the buffer and `blobs`, the values the buffer
+ * cannot carry.
  */
-export type Serialized<T> =
-	MayCarryBlobs<T> extends true ? { buffer: buffer; blobs: Array<defined> } : { buffer: buffer; blobs?: undefined };
+export type Serialized<T> = MayCarryBlobs<T> extends true ? { buffer: buffer; blobs: Array<defined> } : buffer;
 
 /**
- * The bundled `serialize`/`deserialize` pair, in the shape of fbs's `Serializer<T>`.
+ * The bundled `serialize`/`deserialize` pair.
  *
  * `in out` states that `T` is invariant, which it is: `serialize` takes a `T`
  * and `deserialize` returns one. Stated, the checker does not measure it,

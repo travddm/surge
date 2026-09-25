@@ -59,8 +59,8 @@ class RecursionTest {
 			name: "root",
 			entries: [{ size: 1 }, { size: 2, folder: { name: "child", entries: [{ size: 3 }] } }],
 		};
-		const { buffer, blobs } = folderSerializer.serialize(value);
-		Assert.equal(undefined, difference(value, folderSerializer.deserialize(buffer, blobs)));
+		const buffer = folderSerializer.serialize(value);
+		Assert.equal(undefined, difference(value, folderSerializer.deserialize(buffer)));
 	}
 
 	@Fact
@@ -71,15 +71,15 @@ class RecursionTest {
 			children: new Map([["a", { children: new Map([["b", leaf]]) }]]),
 			pair: [leaf, 5],
 		};
-		const { buffer, blobs } = scopeSerializer.serialize(value);
-		Assert.equal(undefined, difference(value, scopeSerializer.deserialize(buffer, blobs)));
+		const buffer = scopeSerializer.serialize(value);
+		Assert.equal(undefined, difference(value, scopeSerializer.deserialize(buffer)));
 	}
 
 	@Fact
 	public roundTripsRecursionThroughArraysAndTuplesAlone(): void {
 		const nest: Nest = [[], [[], [[]]]];
 		const writtenNest = nestSerializer.serialize(nest);
-		Assert.equal(undefined, difference(nest, nestSerializer.deserialize(writtenNest.buffer, writtenNest.blobs)));
+		Assert.equal(undefined, difference(nest, nestSerializer.deserialize(writtenNest)));
 
 		const branch: Branch = [
 			1,
@@ -89,10 +89,7 @@ class RecursionTest {
 			],
 		];
 		const writtenBranch = branchSerializer.serialize(branch);
-		Assert.equal(
-			undefined,
-			difference(branch, branchSerializer.deserialize(writtenBranch.buffer, writtenBranch.blobs)),
-		);
+		Assert.equal(undefined, difference(branch, branchSerializer.deserialize(writtenBranch)));
 	}
 
 	@Fact
@@ -101,17 +98,11 @@ class RecursionTest {
 		for (const _ of $range(1, 50)) {
 			const folder = randomFolder(rng, 4);
 			const writtenFolder = folderSerializer.serialize(folder);
-			Assert.equal(
-				undefined,
-				difference(folder, folderSerializer.deserialize(writtenFolder.buffer, writtenFolder.blobs)),
-			);
+			Assert.equal(undefined, difference(folder, folderSerializer.deserialize(writtenFolder)));
 
 			const scope = randomScope(rng, 4);
 			const writtenScope = scopeSerializer.serialize(scope);
-			Assert.equal(
-				undefined,
-				difference(scope, scopeSerializer.deserialize(writtenScope.buffer, writtenScope.blobs)),
-			);
+			Assert.equal(undefined, difference(scope, scopeSerializer.deserialize(writtenScope)));
 		}
 	}
 }

@@ -3,10 +3,10 @@
 [![CI](https://github.com/travddm/surge/actions/workflows/ci.yml/badge.svg)](https://github.com/travddm/surge/actions/workflows/ci.yml)
 
 Binary serializers for roblox-ts, generated from a TypeScript type at compile
-time. surge is a drop-in alternative to
-[flamework-binary-serializer](https://github.com/Fireboltofdeath/flamework-binary-serializer):
-the same `createBinarySerializer<T>()` call, with code written for `T` in place
-of a schema interpreted at run time.
+time. Each `createBinarySerializer<T>()` call is replaced by code written for
+`T`, where
+[flamework-binary-serializer](https://github.com/Fireboltofdeath/flamework-binary-serializer)
+interprets a schema at run time.
 
 ```ts
 import { DataType, createBinarySerializer } from "@rbxts/surge";
@@ -20,7 +20,7 @@ interface PlayerState {
 export const playerState = createBinarySerializer<PlayerState>();
 
 export function roundTrip(state: PlayerState): PlayerState {
-	return playerState.deserialize(playerState.serialize(state).buffer);
+	return playerState.deserialize(playerState.serialize(state));
 }
 ```
 

@@ -143,12 +143,12 @@ class ChecksTest {
 	@Fact
 	public acceptsWhatSerializeWrote(): void {
 		const value: Flat = { count: 7, flag: true };
-		const { buffer: bytes } = flat.serialize(value);
-		Assert.equal(hex(flatUnchecked.serialize(value).buffer), hex(bytes));
+		const bytes = flat.serialize(value);
+		Assert.equal(hex(flatUnchecked.serialize(value)), hex(bytes));
 		Assert.equal(7, flat.deserialize(bytes).count);
 		const many: WithList = { list: [1, 2, 3] };
-		Assert.equal(3, list.deserialize(list.serialize(many).buffer).list.size());
-		Assert.equal(0, list.deserialize(list.serialize({ list: [] }).buffer).list.size());
+		Assert.equal(3, list.deserialize(list.serialize(many)).list.size());
+		Assert.equal(0, list.deserialize(list.serialize({ list: [] })).list.size());
 	}
 
 	// The bound of every count-carrying kind must be a true lower bound: one
@@ -186,8 +186,8 @@ class ChecksTest {
 				tagged: rng.bool() ? { kind: "one", value: rng.int(0, 255) } : { kind: "three", text: rng.str() },
 				tree: { name: rng.str(), children: rng.bool() ? [leaf] : [] },
 			};
-			const { buffer: bytes, blobs: sent } = everything.serialize(value);
-			Assert.equal(undefined, difference(value, everything.deserialize(bytes, sent)));
+			const bytes = everything.serialize(value);
+			Assert.equal(undefined, difference(value, everything.deserialize(bytes)));
 		}
 	}
 
@@ -204,13 +204,13 @@ class ChecksTest {
 			tagged: { kind: "two" },
 			tree: { name: "", children: [] },
 		};
-		const { buffer: bytes, blobs: sent } = everything.serialize(value);
-		Assert.equal(undefined, difference(value, everything.deserialize(bytes, sent)));
+		const bytes = everything.serialize(value);
+		Assert.equal(undefined, difference(value, everything.deserialize(bytes)));
 	}
 
 	@Fact
 	public rejectsATruncatedPayload(): void {
-		const full = hex(flat.serialize({ count: 7, flag: true }).buffer);
+		const full = hex(flat.serialize({ count: 7, flag: true }));
 		// Every prefix short of the whole is a read past the end.
 		for (const bytes of $range(0, full.size() / 2 - 1)) {
 			assertRejected(() => flat.deserialize(unhex(full.sub(1, bytes * 2))));
@@ -238,7 +238,7 @@ class ChecksTest {
 	public rejectsATruncatedPackedCFrame(): void {
 		// An arbitrary rotation away from the origin takes all 25 bytes.
 		const value: WithPackedCFrame = { placement: { at: CFrame.Angles(0.1, 0.2, 0.3).add(new Vector3(1, 2, 3)) } };
-		const full = hex(packedCFrame.serialize(value).buffer);
+		const full = hex(packedCFrame.serialize(value));
 		Assert.equal(25 * 2, full.size());
 		for (const bytes of $range(0, full.size() / 2 - 1)) {
 			assertRejected(() => packedCFrame.deserialize(unhex(full.sub(1, bytes * 2))));
@@ -259,7 +259,7 @@ class ChecksTest {
 	public rejectsAnEnumIndexPastItsItems(): void {
 		assertRejected(() => withEnum.deserialize(unhex("ff")));
 		const written = withEnum.serialize({ material: Enum.Material.Plastic });
-		Assert.equal(Enum.Material.Plastic, withEnum.deserialize(written.buffer).material);
+		Assert.equal(Enum.Material.Plastic, withEnum.deserialize(written).material);
 	}
 
 	@Fact
@@ -280,7 +280,7 @@ class ChecksTest {
 		Assert.undefined(rejection(() => exact.serialize({ ...exactValue(), slots: [1] })));
 		assertRejected(() => exact.serialize({ ...exactValue(), slots: [1, 2, 3, 4] }));
 		const written = exact.serialize({ ...exactValue(), marks: ["b"] });
-		Assert.equal(1, exact.deserialize(written.buffer, written.blobs).marks.size());
+		Assert.equal(1, exact.deserialize(written).marks.size());
 		assertRejected(() => exact.serialize({ ...exactValue(), marks: ["a", "a", "a", "a"] }));
 	}
 
@@ -301,7 +301,7 @@ class ChecksTest {
 	@Fact
 	public wrapsACountPastItsWidthWithoutWriteChecks(): void {
 		const written = narrowListUnchecked.serialize({ list: narrowValue(256).list });
-		Assert.equal(0, narrowListUnchecked.deserialize(written.buffer, written.blobs).list.size());
+		Assert.equal(0, narrowListUnchecked.deserialize(written).list.size());
 	}
 
 	@Fact
@@ -325,7 +325,7 @@ class ChecksTest {
 	@Fact
 	public wrapsANumberOutsideItsRangeWithoutWriteChecks(): void {
 		const written = rangedUnchecked.serialize({ ...rangedValue(), health: 300 });
-		Assert.equal(44, rangedUnchecked.deserialize(written.buffer, written.blobs).health);
+		Assert.equal(44, rangedUnchecked.deserialize(written).health);
 	}
 
 	@Fact

@@ -99,9 +99,9 @@ class PackedTest {
 			for (const name of FLAG_NAMES) {
 				value[name] = rng.bool();
 			}
-			const { buffer: buf, blobs } = tenFlagsSerializer.serialize(value);
+			const buf = tenFlagsSerializer.serialize(value);
 			Assert.equal(2, buffer.len(buf));
-			Assert.equal(undefined, difference(value, tenFlagsSerializer.deserialize(buf, blobs)));
+			Assert.equal(undefined, difference(value, tenFlagsSerializer.deserialize(buf)));
 		}
 	}
 
@@ -112,7 +112,7 @@ class PackedTest {
 			for (const name of FLAG_NAMES) {
 				value[name] = name === FLAG_NAMES[i];
 			}
-			const { buffer: buf } = tenFlagsSerializer.serialize(value);
+			const buf = tenFlagsSerializer.serialize(value);
 			Assert.equal(2 ** i, buffer.readu16(buf, 0));
 		}
 	}
@@ -129,8 +129,8 @@ class PackedTest {
 				},
 				outside: rng.bool(),
 			};
-			const { buffer, blobs } = subtreeSerializer.serialize(value);
-			Assert.equal(undefined, difference(value, subtreeSerializer.deserialize(buffer, blobs)));
+			const buffer = subtreeSerializer.serialize(value);
+			Assert.equal(undefined, difference(value, subtreeSerializer.deserialize(buffer)));
 		}
 	}
 
@@ -170,10 +170,10 @@ class PackedTest {
 			for (const y of $range(0, 3)) {
 				for (const z of $range(0, 3)) {
 					const value = quarterTurns(x, y, z);
-					const { buffer: buf, blobs } = packedCFrameSerializer.serialize(value);
+					const buf = packedCFrameSerializer.serialize(value);
 					Assert.equal(1, buffer.len(buf));
 					headers.add(buffer.readu8(buf, 0));
-					assertCFramesMatch(value, packedCFrameSerializer.deserialize(buf, blobs), 1e-6);
+					assertCFramesMatch(value, packedCFrameSerializer.deserialize(buf), 1e-6);
 				}
 			}
 		}
@@ -192,19 +192,19 @@ class PackedTest {
 			[tilted.add(new Vector3(1, 2, 3)), 1 + 12 + 12],
 		];
 		for (const [value, size] of cases) {
-			const { buffer: buf, blobs } = packedCFrameSerializer.serialize(value);
+			const buf = packedCFrameSerializer.serialize(value);
 			Assert.equal(size, buffer.len(buf));
-			assertCFramesMatch(value, packedCFrameSerializer.deserialize(buf, blobs), 1e-4);
+			assertCFramesMatch(value, packedCFrameSerializer.deserialize(buf), 1e-4);
 		}
 	}
 
 	@Fact
 	public doesNotSnapARotationThatIsOnlyNearlyAxisAligned(): void {
 		const value = CFrame.Angles(0, math.rad(90) + 1e-4, 0);
-		const { buffer: buf, blobs } = packedCFrameSerializer.serialize(value);
+		const buf = packedCFrameSerializer.serialize(value);
 		Assert.equal(1 + 12, buffer.len(buf));
 		// Snapping would move a component by 1e-4.
-		assertCFramesMatch(value, packedCFrameSerializer.deserialize(buf, blobs), 1e-5);
+		assertCFramesMatch(value, packedCFrameSerializer.deserialize(buf), 1e-5);
 	}
 
 	@Fact
@@ -219,8 +219,8 @@ class PackedTest {
 				list.push(rng.bool() ? rotation : rotation.add(new Vector3(rng.f32(), rng.f32(), rng.f32())));
 			}
 			const value = { list, maybe: rng.bool() ? list[0] : undefined };
-			const { buffer, blobs } = packedCFramesSerializer.serialize(value);
-			const result = packedCFramesSerializer.deserialize(buffer, blobs);
+			const buffer = packedCFramesSerializer.serialize(value);
+			const result = packedCFramesSerializer.deserialize(buffer);
 			Assert.equal(list.size(), result.list.size());
 			list.forEach((expected, i) => assertCFramesMatch(expected, result.list[i], 1e-4));
 			Assert.equal(value.maybe === undefined, result.maybe === undefined);
@@ -235,14 +235,14 @@ class PackedTest {
 			secondary: { mode: "on", level: 9 },
 			source: { from: "mains" },
 		};
-		const { buffer: buf, blobs } = deviceSerializer.serialize(value);
+		const buf = deviceSerializer.serialize(value);
 		// The packed region (2 tag bits), `name`, the level of `secondary`, and the index byte of `source`.
 		Assert.equal(1 + 4 + 1 + 1, buffer.len(buf));
 		// Bit 0 is `primary` (off, the first variant), bit 1 is `secondary` (on, the second).
 		Assert.equal(2, buffer.readu8(buf, 0));
-		Assert.equal(undefined, difference(value, deviceSerializer.deserialize(buf, blobs)));
+		Assert.equal(undefined, difference(value, deviceSerializer.deserialize(buf)));
 		// One index byte and nothing else.
-		Assert.equal(1, buffer.len(toggleSerializer.serialize({ mode: "off" }).buffer));
+		Assert.equal(1, buffer.len(toggleSerializer.serialize({ mode: "off" })));
 	}
 
 	@Fact
@@ -262,10 +262,10 @@ class PackedTest {
 							? { from: "mains" }
 							: { from: "solar", watts: rng.f64() },
 			};
-			const { buffer, blobs } = deviceSerializer.serialize(value);
-			Assert.equal(undefined, difference(value, deviceSerializer.deserialize(buffer, blobs)));
+			const buffer = deviceSerializer.serialize(value);
+			Assert.equal(undefined, difference(value, deviceSerializer.deserialize(buffer)));
 			const alone = toggleSerializer.serialize(value.primary);
-			Assert.equal(undefined, difference(value.primary, toggleSerializer.deserialize(alone.buffer, alone.blobs)));
+			Assert.equal(undefined, difference(value.primary, toggleSerializer.deserialize(alone)));
 		}
 	}
 
@@ -291,11 +291,11 @@ class PackedTest {
 				modes: rng.bool() ? new Set<-1 | 2 | false>(rng.bool() ? [-1, false] : [2]) : undefined,
 				each,
 			};
-			const { buffer: bytes, blobs } = bitSetsSerializer.serialize(value);
+			const bytes = bitSetsSerializer.serialize(value);
 			// A presence bit, two bytes of letters, a u32 count, a byte per
 			// element, and a byte of modes when present.
 			Assert.equal(1 + 2 + 4 + each.size() + (value.modes === undefined ? 0 : 1), buffer.len(bytes));
-			Assert.equal(undefined, difference(value, bitSetsSerializer.deserialize(bytes, blobs)));
+			Assert.equal(undefined, difference(value, bitSetsSerializer.deserialize(bytes)));
 		}
 	}
 }

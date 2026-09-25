@@ -63,8 +63,8 @@ class UnionsTest {
 	public roundTripsAGuardedUnionWithATableVariant(): void {
 		for (const who of ["just text", { name: "Ada", aliases: ["A", ""] }] as NameOrText[]) {
 			const value: WithGuardedUnions = { who, scalars: ["s", 1, true, false, "", 0], maybeScalar: false };
-			const { buffer, blobs } = guardedSerializer.serialize(value);
-			Assert.equal(undefined, difference(value, guardedSerializer.deserialize(buffer, blobs)));
+			const buffer = guardedSerializer.serialize(value);
+			Assert.equal(undefined, difference(value, guardedSerializer.deserialize(buffer)));
 		}
 	}
 
@@ -77,14 +77,14 @@ class UnionsTest {
 			{ op: "batch", commands: [{ op: "stop" }, { op: "batch", commands: [] }] },
 		];
 		for (const value of values) {
-			const { buffer, blobs } = commandSerializer.serialize(value);
-			Assert.equal(undefined, difference(value, commandSerializer.deserialize(buffer, blobs)));
+			const buffer = commandSerializer.serialize(value);
+			Assert.equal(undefined, difference(value, commandSerializer.deserialize(buffer)));
 		}
 	}
 
 	@Fact
 	public writesOnlyTheVariantIndexForAVariantWithNoFields(): void {
-		const { buffer: buf } = commandSerializer.serialize({ op: "stop" });
+		const buf = commandSerializer.serialize({ op: "stop" });
 		Assert.equal(1, buffer.len(buf));
 	}
 
@@ -96,11 +96,11 @@ class UnionsTest {
 			{ id: 3, parts: ["a", { name: "b", aliases: [] }] },
 		];
 		for (const value of values) {
-			const { buffer, blobs } = packetSerializer.serialize(value);
-			Assert.equal(undefined, difference(value, packetSerializer.deserialize(buffer, blobs)));
+			const buffer = packetSerializer.serialize(value);
+			Assert.equal(undefined, difference(value, packetSerializer.deserialize(buffer)));
 		}
 		// The variant index and one byte for both packed booleans.
-		Assert.equal(2, buffer.len(packetSerializer.serialize(values[0]).buffer));
+		Assert.equal(2, buffer.len(packetSerializer.serialize(values[0])));
 	}
 
 	@Fact
@@ -117,17 +117,11 @@ class UnionsTest {
 				maybeScalar: rng.bool() ? randomScalar(rng) : undefined,
 			};
 			const writtenGuarded = guardedSerializer.serialize(guarded);
-			Assert.equal(
-				undefined,
-				difference(guarded, guardedSerializer.deserialize(writtenGuarded.buffer, writtenGuarded.blobs)),
-			);
+			Assert.equal(undefined, difference(guarded, guardedSerializer.deserialize(writtenGuarded)));
 
 			const command = randomCommand(rng, 3);
 			const writtenCommand = commandSerializer.serialize(command);
-			Assert.equal(
-				undefined,
-				difference(command, commandSerializer.deserialize(writtenCommand.buffer, writtenCommand.blobs)),
-			);
+			Assert.equal(undefined, difference(command, commandSerializer.deserialize(writtenCommand)));
 		}
 	}
 }

@@ -93,8 +93,8 @@ class CollectionsTest {
 			readonlySet: new Set([0, -1, 2 ** 40]),
 			indexed: { yes: true, no: false },
 		};
-		const { buffer, blobs } = dictionariesSerializer.serialize(value);
-		Assert.equal(undefined, difference(value, dictionariesSerializer.deserialize(buffer, blobs)));
+		const buffer = dictionariesSerializer.serialize(value);
+		Assert.equal(undefined, difference(value, dictionariesSerializer.deserialize(buffer)));
 	}
 
 	@Fact
@@ -108,17 +108,17 @@ class CollectionsTest {
 			// A branded key is a number with a brand no literal carries, so the table is cast.
 			bySlot: { [0]: "first", [255]: "last" } as Record<DataType.u8, string>,
 		};
-		const { buffer: written, blobs } = uncommonKeysSerializer.serialize(value);
-		Assert.equal(undefined, difference(value, uncommonKeysSerializer.deserialize(written, blobs)));
+		const written = uncommonKeysSerializer.serialize(value);
+		Assert.equal(undefined, difference(value, uncommonKeysSerializer.deserialize(written)));
 	}
 
 	@Fact
 	public roundTripsEmptyDictionaries(): void {
 		const value: WithDictionaries = { byId: {}, readonlyMap: new Map(), readonlySet: new Set(), indexed: {} };
-		const { buffer: buf, blobs } = dictionariesSerializer.serialize(value);
+		const buf = dictionariesSerializer.serialize(value);
 		// Four u32 counts and nothing else.
 		Assert.equal(4 * 4, buffer.len(buf));
-		Assert.equal(undefined, difference(value, dictionariesSerializer.deserialize(buf, blobs)));
+		Assert.equal(undefined, difference(value, dictionariesSerializer.deserialize(buf)));
 	}
 
 	@Fact
@@ -128,15 +128,15 @@ class CollectionsTest {
 			optionalTail: [7, "tail"],
 			nested: [{ x: 1, y: 2 }, [true, [{ x: 3, y: 4 }]]],
 		};
-		const { buffer, blobs } = tuplesSerializer.serialize(value);
-		Assert.equal(undefined, difference(value, tuplesSerializer.deserialize(buffer, blobs)));
+		const buffer = tuplesSerializer.serialize(value);
+		Assert.equal(undefined, difference(value, tuplesSerializer.deserialize(buffer)));
 	}
 
 	@Fact
 	public roundTripsATupleWithAnEmptyRestAndAnAbsentOptionalElement(): void {
 		const value: WithTuples = { rest: ["head"], optionalTail: [7], nested: [{ x: 0, y: 0 }, [false, []]] };
-		const { buffer, blobs } = tuplesSerializer.serialize(value);
-		Assert.equal(undefined, difference(value, tuplesSerializer.deserialize(buffer, blobs)));
+		const buffer = tuplesSerializer.serialize(value);
+		Assert.equal(undefined, difference(value, tuplesSerializer.deserialize(buffer)));
 	}
 
 	@Fact
@@ -150,16 +150,16 @@ class CollectionsTest {
 				{ x: 2, y: 2 },
 			],
 		};
-		const { buffer, blobs } = optionalsSerializer.serialize(value);
-		Assert.equal(undefined, difference(value, optionalsSerializer.deserialize(buffer, blobs)));
+		const buffer = optionalsSerializer.serialize(value);
+		Assert.equal(undefined, difference(value, optionalsSerializer.deserialize(buffer)));
 	}
 
 	@Fact
 	public roundTripsNestedOptionalsAbsentAtEachDepth(): void {
 		for (const inner of [undefined, {}, { deep: {} }] as Array<WithNestedOptionals["inner"]>) {
 			const value: WithNestedOptionals = { inner, items: [] };
-			const { buffer, blobs } = optionalsSerializer.serialize(value);
-			Assert.equal(undefined, difference(value, optionalsSerializer.deserialize(buffer, blobs)));
+			const buffer = optionalsSerializer.serialize(value);
+			Assert.equal(undefined, difference(value, optionalsSerializer.deserialize(buffer)));
 		}
 	}
 
@@ -179,10 +179,7 @@ class CollectionsTest {
 			}
 			const dictionaries: WithDictionaries = { byId, readonlyMap, readonlySet, indexed };
 			const written = dictionariesSerializer.serialize(dictionaries);
-			Assert.equal(
-				undefined,
-				difference(dictionaries, dictionariesSerializer.deserialize(written.buffer, written.blobs)),
-			);
+			Assert.equal(undefined, difference(dictionaries, dictionariesSerializer.deserialize(written)));
 
 			const grid: Grid = [];
 			for (const __ of $range(1, rng.int(0, 5))) {
@@ -193,10 +190,7 @@ class CollectionsTest {
 				grid.push(row);
 			}
 			const writtenGrid = gridSerializer.serialize(grid);
-			Assert.equal(
-				undefined,
-				difference(grid, gridSerializer.deserialize(writtenGrid.buffer, writtenGrid.blobs)),
-			);
+			Assert.equal(undefined, difference(grid, gridSerializer.deserialize(writtenGrid)));
 		}
 	}
 
@@ -213,8 +207,8 @@ class CollectionsTest {
 				// Always present: a Luau array cannot hold `undefined`.
 				items: [randomPoint(rng), randomPoint(rng)],
 			};
-			const { buffer, blobs } = optionalsSerializer.serialize(value);
-			Assert.equal(undefined, difference(value, optionalsSerializer.deserialize(buffer, blobs)));
+			const buffer = optionalsSerializer.serialize(value);
+			Assert.equal(undefined, difference(value, optionalsSerializer.deserialize(buffer)));
 		}
 	}
 
@@ -243,8 +237,8 @@ class CollectionsTest {
 				set: new Set([rng.str(), rng.str()]),
 				text: rng.str(),
 			};
-			const { buffer: written, blobs } = boundsSerializer.serialize(value);
-			Assert.equal(undefined, difference(value, boundsSerializer.deserialize(written, blobs)));
+			const written = boundsSerializer.serialize(value);
+			Assert.equal(undefined, difference(value, boundsSerializer.deserialize(written)));
 		}
 	}
 
@@ -267,8 +261,8 @@ class CollectionsTest {
 				pair: [text, ...rest],
 				text,
 			};
-			const { buffer: written, blobs } = exactSerializer.serialize(value);
-			Assert.equal(undefined, difference(value, exactSerializer.deserialize(written, blobs)));
+			const written = exactSerializer.serialize(value);
+			Assert.equal(undefined, difference(value, exactSerializer.deserialize(written)));
 		}
 	}
 
@@ -283,11 +277,11 @@ class CollectionsTest {
 			{ x: 1, y: 2 },
 			{ x: 3, y: 4 },
 		];
-		const { buffer: written, blobs } = exactOptionalsSerializer.serialize(short);
+		const written = exactOptionalsSerializer.serialize(short);
 		// Three elements written: two present (a presence byte and two f64
 		// each) and one absent (a presence byte alone).
 		Assert.equal(2 * 17 + 1, buffer.len(written));
-		Assert.equal(undefined, difference(short, exactOptionalsSerializer.deserialize(written, blobs)));
+		Assert.equal(undefined, difference(short, exactOptionalsSerializer.deserialize(written)));
 	}
 }
 

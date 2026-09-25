@@ -1,32 +1,41 @@
 //!optimize 2
-import type { Serialized, Serializer } from "@rbxts/surge";
+import type { Serializer } from "@rbxts/surge";
 
 import type { Adapter } from "../adapter";
+
+/** What `serialize` returns for a shape that can hold a blob. */
+interface WithBlobs {
+	buffer: buffer;
+	blobs: Array<defined>;
+}
 
 /**
  * surge's own driver: `createBinarySerializer<T>()` directly, which is what
  * a user writes. The blob array is the side table -- it holds the values the
- * buffer cannot carry (`Instance`, `unknown`, `any`), and `serialize` returns
- * none for a fixture whose shape has none.
+ * buffer cannot carry (`Instance`, `unknown`, `any`) -- and `serialize`
+ * returns the buffer alone for a fixture whose shape can hold none.
  *
- * The result is the payload, and `decode` passes its two fields to
- * `deserialize`, as docs/getting-started.md does with them. Copying them
- * into a table of the adapter's own would time work a user does not do
- * (Benchmark harness 4.8 in docs/specs/benchmark-harness.md).
+ * What `serialize` returns is the payload, and `decode` passes it to
+ * `deserialize` as docs/getting-started.md does: the buffer, or the table's
+ * two fields (Benchmark harness 4.8 in docs/specs/benchmark-harness.md). `T`
+ * is unknown here, so `typeIs` tells the two apart, as any generic caller must.
  */
 export function surgeAdapter<T>(serializer: Serializer<T>): Adapter<T> {
 	return {
 		encode: (value) => {
 			const result = serializer.serialize(value);
-			return {
-				bytes: buffer.len(result.buffer),
-				side: result.blobs === undefined ? 0 : result.blobs.size(),
-				payload: result,
-			};
+			if (typeIs(result, "buffer")) {
+				return { bytes: buffer.len(result), side: 0, payload: result };
+			}
+			const { buffer: bytes, blobs } = result as WithBlobs;
+			return { bytes: buffer.len(bytes), side: blobs.size(), payload: result };
 		},
 		decode: (payload) => {
-			const result = payload as Serialized<T>;
-			return serializer.deserialize(result.buffer, result.blobs);
+			if (typeIs(payload, "buffer")) {
+				return serializer.deserialize(payload);
+			}
+			const { buffer: bytes, blobs } = payload as WithBlobs;
+			return serializer.deserialize(bytes, blobs);
 		},
 	};
 }

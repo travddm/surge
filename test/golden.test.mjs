@@ -123,13 +123,13 @@ test("a shape with no blob field pays nothing for the blob side channel", () => 
 	assert.match(withBlobs, /__surge_beginWriteBlobs\(/);
 });
 
-// What the empty `blobs` table cost is in docs/research/tables-around-serialize.md.
-test("a shape with no blob field returns no blobs table", () => {
-	// `Basic` has no blob field, and `Serialized<Basic>` declares no array, so
-	// its result is the buffer alone.
+// What the tables around a result cost is in docs/research/tables-around-serialize.md.
+test("a shape with no blob field returns the buffer alone", () => {
+	// `Basic` has no blob field, so `Serialized<Basic>` is `buffer`, and no
+	// table is built around it.
 	const luau = readCompiledLuau("tests/basic.spec.luau");
-	assert.match(luau, /return \{\n\t*buffer = __surge_finishWrite\([^)]*\),\n\t*\}/);
-	assert.doesNotMatch(luau, /blobs = \{\}/);
+	assert.match(luau, /return __surge_finishWrite\(__surge_scratch, __surge_cursor\)$/m);
+	assert.doesNotMatch(luau, /buffer = __surge_finishWrite\(/);
 	// A positive control: a shape with a blob field still returns its array.
 	const withBlobs = readCompiledLuau("tests/roblox.spec.luau");
 	assert.match(withBlobs, /blobs = __surge_finishWriteBlobs\(\),/);

@@ -113,11 +113,11 @@ class RobloxTest {
 				new NumberSequenceKeypoint(1, 8, 0.5),
 			]),
 		};
-		const { buffer: buf, blobs } = sequencesSerializer.serialize(value);
+		const buf = sequencesSerializer.serialize(value);
 		// u8 count + 3 x (f32 time + 3 x u8), then u8 count + 2 x (f32 time + f32 value + f32 envelope).
 		Assert.equal(1 + 3 * 7 + 1 + 2 * 12, buffer.len(buf));
-		Assert.equal(undefined, blobs);
-		const result = sequencesSerializer.deserialize(buf, blobs);
+		Assert.equal("buffer", typeOf(buf));
+		const result = sequencesSerializer.deserialize(buf);
 		Assert.equal(value.colors, result.colors);
 		Assert.equal(value.numbers, result.numbers);
 		// Asserted on its own, in case `==` on a sequence ignores the envelope.
@@ -188,8 +188,8 @@ class RobloxTest {
 				path,
 				maybeTint: rng.bool() ? Color3.fromRGB(rng.int(0, 255), 0, 255) : undefined,
 			};
-			const { buffer, blobs } = datatypesSerializer.serialize(value);
-			Assert.equal(undefined, difference(value, datatypesSerializer.deserialize(buffer, blobs)));
+			const buffer = datatypesSerializer.serialize(value);
+			Assert.equal(undefined, difference(value, datatypesSerializer.deserialize(buffer)));
 		}
 	}
 
@@ -225,9 +225,9 @@ class RobloxTest {
 				inset,
 				insetOrLabel: rng.bool() ? inset : rng.str(),
 			};
-			const { buffer, blobs } = fixedDatatypesSerializer.serialize(value);
-			Assert.equal(undefined, blobs);
-			Assert.equal(undefined, difference(value, fixedDatatypesSerializer.deserialize(buffer, blobs)));
+			const buffer = fixedDatatypesSerializer.serialize(value);
+			Assert.equal("buffer", typeOf(buffer));
+			Assert.equal(undefined, difference(value, fixedDatatypesSerializer.deserialize(buffer)));
 		}
 	}
 
@@ -252,9 +252,9 @@ class RobloxTest {
 				placement: new CFrame(rng.int(-32768, 32767), rng.int(0, 255), rng.int(-32768, 32767)),
 				path,
 			};
-			const { buffer, blobs } = narrowedComponentsSerializer.serialize(value);
-			Assert.equal(undefined, blobs);
-			Assert.equal(undefined, difference(value, narrowedComponentsSerializer.deserialize(buffer, blobs)));
+			const buffer = narrowedComponentsSerializer.serialize(value);
+			Assert.equal("buffer", typeOf(buffer));
+			Assert.equal(undefined, difference(value, narrowedComponentsSerializer.deserialize(buffer)));
 		}
 	}
 
@@ -273,8 +273,8 @@ class RobloxTest {
 				rig: Enum.HumanoidRigType.R6,
 				path: [],
 			};
-			const { buffer, blobs } = datatypesSerializer.serialize(value);
-			const result = datatypesSerializer.deserialize(buffer, blobs).placement;
+			const buffer = datatypesSerializer.serialize(value);
+			const result = datatypesSerializer.deserialize(buffer).placement;
 			const expectedComponents = [...placement.GetComponents()];
 			const actualComponents = [...result.GetComponents()];
 			for (const i of $range(0, 11)) {
@@ -307,9 +307,9 @@ class RobloxTest {
 		}
 		for (const rotation of rotations) {
 			const placement = rotation.add(randomVector3(rng));
-			const { buffer: bytes, blobs } = quantizedSerializer.serialize({ placement });
+			const bytes = quantizedSerializer.serialize({ placement });
 			Assert.equal(18, buffer.len(bytes));
-			const result = quantizedSerializer.deserialize(bytes, blobs).placement;
+			const result = quantizedSerializer.deserialize(bytes).placement;
 			const expectedComponents = [...placement.GetComponents()];
 			const actualComponents = [...result.GetComponents()];
 			for (const i of $range(0, 11)) {

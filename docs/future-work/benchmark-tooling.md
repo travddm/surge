@@ -42,8 +42,7 @@ surge's encode has a gap to the hand-written codec that is paid once per call
 ([generated-code-against-hand-written.md](../research/generated-code-against-hand-written.md)).
 Most of it was three tables per call
 ([tables-around-serialize.md](../research/tables-around-serialize.md)), and
-two of them are gone. The table around the buffer is open in
-[generated-code-performance.md](generated-code-performance.md). The code-size measurement
+all three are gone for a shape with no blob field. The code-size measurement
 needs the fixtures restructured, one call per module. Tier 3 has no driver:
 nothing yet asks what a serializer costs on the wire once a networking layer
 batches it, and [networking.md](networking.md) is where that would come from.

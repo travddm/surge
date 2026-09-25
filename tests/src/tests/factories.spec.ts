@@ -35,8 +35,8 @@ class FactoriesTest {
 	@Fact
 	public roundTripsThroughASeparateSerializerAndDeserializer(): void {
 		const value: Reading = { sensor: "thermal", values: [1, 2.5, -3] };
-		const { buffer, blobs } = writeReading(value);
-		Assert.equal(undefined, difference(value, readReading(buffer, blobs)));
+		const buffer = writeReading(value);
+		Assert.equal(undefined, difference(value, readReading(buffer)));
 	}
 
 	@Fact
@@ -48,22 +48,22 @@ class FactoriesTest {
 				{ title: "b", children: [{ title: "b1", children: [] }], next: { title: "c", children: [] } },
 			],
 		};
-		const { buffer, blobs } = writeOutline(value);
-		Assert.equal(undefined, difference(value, readOutline(buffer, blobs)));
+		const buffer = writeOutline(value);
+		Assert.equal(undefined, difference(value, readOutline(buffer)));
 	}
 
 	@Fact
 	public transformsAFactoryImportedUnderAnotherName(): void {
 		const value: Reading = { sensor: "", values: [] };
-		const { buffer, blobs } = aliasedSerializer.serialize(value);
-		Assert.equal(undefined, difference(value, aliasedSerializer.deserialize(buffer, blobs)));
+		const buffer = aliasedSerializer.serialize(value);
+		Assert.equal(undefined, difference(value, aliasedSerializer.deserialize(buffer)));
 	}
 
 	@Fact
 	public deserializesAShapeWithNoBlobWithoutInputBlobs(): void {
 		const value: Reading = { sensor: "s", values: [4] };
-		const { buffer, blobs } = writeReading(value);
-		Assert.equal(undefined, blobs);
+		const buffer = writeReading(value);
+		Assert.equal("buffer", typeOf(buffer));
 		Assert.equal(undefined, difference(value, readReading(buffer)));
 	}
 
@@ -77,12 +77,12 @@ class FactoriesTest {
 				mango: [rng.bool(), rng.bool()],
 				kind: rng.bool() ? "left" : "right",
 			};
-			const here = hex(localSharedShapeSerializer.serialize(value).buffer);
-			const there = hex(sharedShapeSerializer.serialize(value).buffer);
+			const here = hex(localSharedShapeSerializer.serialize(value));
+			const there = hex(sharedShapeSerializer.serialize(value));
 			Assert.equal(there, here);
 			// Each side reads what the other wrote.
 			const written = sharedShapeSerializer.serialize(value);
-			Assert.equal(undefined, difference(value, localSharedShapeSerializer.deserialize(written.buffer)));
+			Assert.equal(undefined, difference(value, localSharedShapeSerializer.deserialize(written)));
 		}
 	}
 }

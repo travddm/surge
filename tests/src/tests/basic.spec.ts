@@ -20,8 +20,8 @@ class BasicRoundTripTest {
 	@Fact
 	public roundTripsWithOptionalPresent(): void {
 		const value: Basic = { a: 1.5, flag: true, name: "hello", nickname: "hi" };
-		const { buffer, blobs } = basicSerializer.serialize(value);
-		const result = basicSerializer.deserialize(buffer, blobs);
+		const buffer = basicSerializer.serialize(value);
+		const result = basicSerializer.deserialize(buffer);
 		Assert.equal(value.a, result.a);
 		Assert.equal(value.flag, result.flag);
 		Assert.equal(value.name, result.name);
@@ -31,8 +31,8 @@ class BasicRoundTripTest {
 	@Fact
 	public roundTripsWithOptionalAbsent(): void {
 		const value: Basic = { a: -2, flag: false, name: "" };
-		const { buffer, blobs } = basicSerializer.serialize(value);
-		const result = basicSerializer.deserialize(buffer, blobs);
+		const buffer = basicSerializer.serialize(value);
+		const result = basicSerializer.deserialize(buffer);
 		Assert.equal(value.a, result.a);
 		Assert.equal(value.flag, result.flag);
 		Assert.equal(value.name, result.name);

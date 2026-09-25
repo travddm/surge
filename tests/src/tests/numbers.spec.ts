@@ -55,9 +55,9 @@ class NumbersTest {
 		i24: number,
 	): void {
 		const value: Integers = { u8, u16, u32, i8, i16, i32, u24, i24 };
-		const { buffer: buf, blobs } = integersSerializer.serialize(value);
+		const buf = integersSerializer.serialize(value);
 		Assert.equal(1 + 2 + 4 + 1 + 2 + 4 + 3 + 3, buffer.len(buf));
-		Assert.equal(undefined, difference(value, integersSerializer.deserialize(buf, blobs)));
+		Assert.equal(undefined, difference(value, integersSerializer.deserialize(buf)));
 	}
 
 	@Theory
@@ -70,16 +70,16 @@ class NumbersTest {
 	@InlineData(-16777216)
 	public roundTripsFloatEdgeValues(edge: number): void {
 		const value: Floats = { single: edge, double: edge, plain: edge };
-		const { buffer: buf, blobs } = floatsSerializer.serialize(value);
+		const buf = floatsSerializer.serialize(value);
 		Assert.equal(4 + 8 + 8, buffer.len(buf));
-		Assert.equal(undefined, difference(value, floatsSerializer.deserialize(buf, blobs)));
+		Assert.equal(undefined, difference(value, floatsSerializer.deserialize(buf)));
 	}
 
 	@Fact
 	public keepsFullDoublePrecisionForAPlainNumber(): void {
 		const value: Floats = { single: 0, double: 0.1, plain: 2 ** 53 - 1 };
-		const { buffer: buf, blobs } = floatsSerializer.serialize(value);
-		Assert.equal(undefined, difference(value, floatsSerializer.deserialize(buf, blobs)));
+		const buf = floatsSerializer.serialize(value);
+		Assert.equal(undefined, difference(value, floatsSerializer.deserialize(buf)));
 	}
 
 	@Fact
@@ -96,8 +96,8 @@ class NumbersTest {
 				u24: rng.int(0, 16777215),
 				i24: rng.int(-8388608, 8388607),
 			};
-			const { buffer: buf, blobs } = integersSerializer.serialize(value);
-			Assert.equal(undefined, difference(value, integersSerializer.deserialize(buf, blobs)));
+			const buf = integersSerializer.serialize(value);
+			Assert.equal(undefined, difference(value, integersSerializer.deserialize(buf)));
 		}
 	}
 
@@ -119,10 +119,10 @@ class NumbersTest {
 			});
 		}
 		for (const value of values) {
-			const { buffer: buf, blobs } = rangedSerializer.serialize(value);
+			const buf = rangedSerializer.serialize(value);
 			// small: u8 | signed: i16 | wide: i32 | huge: f64 | ratio: f32
 			Assert.equal(1 + 2 + 4 + 8 + 4, buffer.len(buf));
-			Assert.equal(undefined, difference(value, rangedSerializer.deserialize(buf, blobs)));
+			Assert.equal(undefined, difference(value, rangedSerializer.deserialize(buf)));
 		}
 	}
 
@@ -131,8 +131,8 @@ class NumbersTest {
 		const rng = new Rng(2);
 		for (const _ of $range(1, FUZZ_ITERATIONS)) {
 			const value: Floats = { single: rng.f32(), double: rng.f64(), plain: rng.f64() };
-			const { buffer: buf, blobs } = floatsSerializer.serialize(value);
-			Assert.equal(undefined, difference(value, floatsSerializer.deserialize(buf, blobs)));
+			const buf = floatsSerializer.serialize(value);
+			Assert.equal(undefined, difference(value, floatsSerializer.deserialize(buf)));
 		}
 	}
 }

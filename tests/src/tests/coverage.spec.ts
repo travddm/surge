@@ -141,8 +141,8 @@ class CoverageTest {
 			map: new Map<string, number>([["k", 9]]),
 			set: new Set<string>(["p", "q"]),
 		};
-		const { buffer, blobs } = collectionsSerializer.serialize(value);
-		Assert.equal(undefined, difference(value, collectionsSerializer.deserialize(buffer, blobs)));
+		const buffer = collectionsSerializer.serialize(value);
+		Assert.equal(undefined, difference(value, collectionsSerializer.deserialize(buffer)));
 	}
 
 	@Fact
@@ -154,20 +154,20 @@ class CoverageTest {
 			tint: Color3.fromRGB(128, 64, 191),
 			rig: Enum.HumanoidRigType.R15,
 		};
-		const { buffer, blobs } = robloxSerializer.serialize(value);
+		const buffer = robloxSerializer.serialize(value);
 		// Every component above is exact in an f32, so each datatype compares
 		// equal. `roblox.spec.ts` covers a `CFrame` with a rotation.
-		Assert.equal(undefined, difference(value, robloxSerializer.deserialize(buffer, blobs)));
+		Assert.equal(undefined, difference(value, robloxSerializer.deserialize(buffer)));
 	}
 
 	@Fact
 	public roundTripsVector2(): void {
 		const value: WithVector2 = { offset: new Vector2(4, 5) };
-		const { buffer: buf, blobs } = vector2Serializer.serialize(value);
+		const buf = vector2Serializer.serialize(value);
 		// 2xf32, not the 0-byte blob side channel -- this is the real encoding
 		// of Wire format 4.6, not the passthrough fallback.
 		Assert.equal(8, buffer.len(buf));
-		const result = vector2Serializer.deserialize(buf, blobs);
+		const result = vector2Serializer.deserialize(buf);
 		Assert.fuzzyEqual(value.offset.X, result.offset.X, 0.001);
 		Assert.fuzzyEqual(value.offset.Y, result.offset.Y, 0.001);
 	}
@@ -191,8 +191,8 @@ class CoverageTest {
 			{ kind: "rect", width: 2, height: 3 },
 			{ kind: "circle", radius: 1.5 },
 		] as Shape[]) {
-			const { buffer, blobs } = shapeSerializer.serialize(value);
-			Assert.equal(undefined, difference(value, shapeSerializer.deserialize(buffer, blobs)));
+			const buffer = shapeSerializer.serialize(value);
+			Assert.equal(undefined, difference(value, shapeSerializer.deserialize(buffer)));
 		}
 	}
 
@@ -200,21 +200,21 @@ class CoverageTest {
 	public roundTripsGuardedUnion(): void {
 		const stringValue: StringOrNumber = "hello";
 		const numberValue: StringOrNumber = 42;
-		const { buffer: buf1, blobs: blobs1 } = guardedSerializer.serialize(stringValue);
-		Assert.equal(stringValue, guardedSerializer.deserialize(buf1, blobs1));
-		const { buffer: buf2, blobs: blobs2 } = guardedSerializer.serialize(numberValue);
-		Assert.equal(numberValue, guardedSerializer.deserialize(buf2, blobs2));
+		const buf1 = guardedSerializer.serialize(stringValue);
+		Assert.equal(stringValue, guardedSerializer.deserialize(buf1));
+		const buf2 = guardedSerializer.serialize(numberValue);
+		Assert.equal(numberValue, guardedSerializer.deserialize(buf2));
 	}
 
 	@Fact
 	public roundTripsPackedBooleans(): void {
 		const value: Flags = { a: true, b: false, c: true };
-		const { buffer: buf, blobs } = flagsSerializer.serialize(value);
+		const buf = flagsSerializer.serialize(value);
 		// Asserts the packed size, not just round-trip equality -- three
 		// unpacked booleans would also round-trip correctly while silently
 		// costing 3 bytes instead of 1, which a pure equality check can't catch.
 		Assert.equal(1, buffer.len(buf));
-		const result = flagsSerializer.deserialize(buf, blobs);
+		const result = flagsSerializer.deserialize(buf);
 		Assert.equal(value.a, result.a);
 		Assert.equal(value.b, result.b);
 		Assert.equal(value.c, result.c);
@@ -223,8 +223,8 @@ class CoverageTest {
 	@Fact
 	public roundTripsRecursiveType(): void {
 		const value: TreeNode = { value: 1, children: [{ value: 2, children: [] }] };
-		const { buffer, blobs } = treeSerializer.serialize(value);
-		const result = treeSerializer.deserialize(buffer, blobs);
+		const buffer = treeSerializer.serialize(value);
+		const result = treeSerializer.deserialize(buffer);
 		Assert.equal(value.value, result.value);
 		Assert.equal(value.children[0].value, result.children[0].value);
 	}
@@ -232,8 +232,8 @@ class CoverageTest {
 	@Fact
 	public roundTripsTwoInstantiationsOfOneGeneric(): void {
 		const value: WithGenerics = { a: { v: 7 }, b: { v: "seven" } };
-		const { buffer, blobs } = genericsSerializer.serialize(value);
-		const result = genericsSerializer.deserialize(buffer, blobs);
+		const buffer = genericsSerializer.serialize(value);
+		const result = genericsSerializer.deserialize(buffer);
 		// Asserts both instantiations decode with their own type, not `b`
 		// silently sharing `a`'s `f64` field classification.
 		Assert.equal(value.a.v, result.a.v);
@@ -243,8 +243,8 @@ class CoverageTest {
 	@Fact
 	public roundTripsRecursiveDiscriminatedUnion(): void {
 		const value: Expr = { kind: "add", l: { kind: "num", v: 1 }, r: { kind: "num", v: 2 } };
-		const { buffer, blobs } = exprSerializer.serialize(value);
-		const result = exprSerializer.deserialize(buffer, blobs);
+		const buffer = exprSerializer.serialize(value);
+		const result = exprSerializer.deserialize(buffer);
 		Assert.equal(value.kind, result.kind);
 		if (value.kind === "add" && result.kind === "add") {
 			Assert.equal(value.l.kind, result.l.kind);
@@ -259,9 +259,9 @@ class CoverageTest {
 		// payload's field count must come back zero even when the shared
 		// scratch buffer still holds a larger previous payload's bytes here.
 		flagsSerializer.serialize({ a: true, b: true, c: true });
-		const { buffer: buf, blobs } = flagsSerializer.serialize({ a: true, b: false, c: false });
+		const buf = flagsSerializer.serialize({ a: true, b: false, c: false });
 		Assert.equal(1, buffer.readu8(buf, 0));
-		const result = flagsSerializer.deserialize(buf, blobs);
+		const result = flagsSerializer.deserialize(buf);
 		Assert.true(result.a);
 		Assert.false(result.b);
 		Assert.false(result.c);
@@ -269,8 +269,8 @@ class CoverageTest {
 	@Fact
 	public roundTripsPropertyNamesThatAreNotIdentifiers(): void {
 		const value: WithOddKeys = { "my-key": 7, 0: "zero", "1": "one", plain: true };
-		const { buffer, blobs } = oddKeysSerializer.serialize(value);
-		const result = oddKeysSerializer.deserialize(buffer, blobs);
+		const buffer = oddKeysSerializer.serialize(value);
+		const result = oddKeysSerializer.deserialize(buffer);
 		Assert.equal(value["my-key"], result["my-key"]);
 		Assert.equal(value[0], result[0]);
 		Assert.equal(value["1"], result["1"]);
@@ -280,16 +280,16 @@ class CoverageTest {
 	@Fact
 	public roundTripsRobloxDatatypesAsUnionMembers(): void {
 		const label: PlacementOrLabel = "spawn";
-		const { buffer: buf1, blobs: blobs1 } = datatypeUnionSerializer.serialize(label);
-		Assert.equal(label, datatypeUnionSerializer.deserialize(buf1, blobs1));
+		const buf1 = datatypeUnionSerializer.serialize(label);
+		Assert.equal(label, datatypeUnionSerializer.deserialize(buf1));
 
-		const { buffer: buf2, blobs: blobs2 } = datatypeUnionSerializer.serialize(new Vector2(4, 5));
-		const offset = datatypeUnionSerializer.deserialize(buf2, blobs2);
+		const buf2 = datatypeUnionSerializer.serialize(new Vector2(4, 5));
+		const offset = datatypeUnionSerializer.deserialize(buf2);
 		Assert.true(typeIs(offset, "Vector2"));
 		Assert.fuzzyEqual(5, (offset as Vector2).Y, 0.001);
 
-		const { buffer: buf3, blobs: blobs3 } = datatypeUnionSerializer.serialize(new CFrame(1, 2, 3));
-		const placement = datatypeUnionSerializer.deserialize(buf3, blobs3);
+		const buf3 = datatypeUnionSerializer.serialize(new CFrame(1, 2, 3));
+		const placement = datatypeUnionSerializer.deserialize(buf3);
 		Assert.true(typeIs(placement, "CFrame"));
 		Assert.fuzzyEqual(3, (placement as CFrame).Position.Z, 0.001);
 	}
@@ -297,8 +297,8 @@ class CoverageTest {
 	@Fact
 	public roundTripsARecursiveTypeAsAUnionMember(): void {
 		const value: Chain = { label: "a", next: { label: "b", next: "end" } };
-		const { buffer, blobs } = chainSerializer.serialize(value);
-		const result = chainSerializer.deserialize(buffer, blobs);
+		const buffer = chainSerializer.serialize(value);
+		const result = chainSerializer.deserialize(buffer);
 		const nextLink = result.next;
 		Assert.true(typeIs(nextLink, "table"));
 		if (typeIs(nextLink, "table")) {
@@ -310,10 +310,10 @@ class CoverageTest {
 	@Fact
 	public roundTripsAReAliasedPacked(): void {
 		const value: PackedPair = { first: true, second: false };
-		const { buffer: buf, blobs } = packedPairSerializer.serialize(value);
+		const buf = packedPairSerializer.serialize(value);
 		// One byte: both booleans packed, and no presence byte for the brand property.
 		Assert.equal(1, buffer.len(buf));
-		const result = packedPairSerializer.deserialize(buf, blobs);
+		const result = packedPairSerializer.deserialize(buf);
 		Assert.true(result.first);
 		Assert.false(result.second);
 	}
@@ -324,9 +324,9 @@ class CoverageTest {
 		for (const i of $range(0, WIDE_FIELD_COUNT - 1)) {
 			fields[string.format("f%03d", i)] = i;
 		}
-		const { buffer: buf, blobs } = wideSerializer.serialize(fields as Wide);
+		const buf = wideSerializer.serialize(fields as Wide);
 		Assert.equal(WIDE_FIELD_COUNT * 8, buffer.len(buf));
-		const result = wideSerializer.deserialize(buf, blobs) as Record<string, number>;
+		const result = wideSerializer.deserialize(buf) as Record<string, number>;
 		for (const i of $range(0, WIDE_FIELD_COUNT - 1)) {
 			Assert.equal(i, result[string.format("f%03d", i)]);
 		}

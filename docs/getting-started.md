@@ -71,7 +71,7 @@ Use it anywhere else:
 import { PlayerState, playerState } from "shared/serializers";
 
 function send(remote: RemoteEvent, state: PlayerState) {
-	remote.FireAllClients(playerState.serialize(state).buffer);
+	remote.FireAllClients(playerState.serialize(state));
 }
 
 function receive(input: buffer): PlayerState {
@@ -82,11 +82,11 @@ function receive(input: buffer): PlayerState {
 At compile time the transformer replaces `createBinarySerializer<PlayerState>()`
 with code written for `PlayerState` alone. There is no schema at run time.
 
-- `serialize` returns the bytes as `buffer`. A type that can hold a value the
-  bytes cannot carry, such as an `Instance`, also gets a `blobs` array, which
-  holds those values in the order they were met: send it with the bytes, and
-  pass both to `deserialize`. `PlayerState` holds none, so its result has no
-  `blobs`.
+- `serialize` returns the bytes as a `buffer`. A type that can hold a value
+  the bytes cannot carry, such as an `Instance`, returns a table instead:
+  `buffer` holds the bytes, and `blobs` those values in the order they were
+  met. Send both, and pass both to `deserialize`. `PlayerState` holds none, so
+  `serialize` returns its buffer alone.
 - `DataType.u8` and `DataType.Length` choose how many bytes a value takes.
   Without them a `number` takes 8 bytes and a container's count takes 4. See
   [data-types.md](data-types.md).

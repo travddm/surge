@@ -1,8 +1,8 @@
 # Benchmark harness specification
 
 Status: current
-Applies to: `@rbxts/surge` at commit `984a9cc`, `rbxts-transformer-surge` at
-commit `08bd04e` (no tagged release yet)
+Applies to: `@rbxts/surge` at commit `4801267`, `rbxts-transformer-surge` at
+commit `32ca81c` (no tagged release yet)
 
 ## 1. Scope
 
@@ -96,9 +96,11 @@ generated modules, as its compiler emits them. serio's modules carry neither.
 `--!optimize 2` and not `--!native`. This is the same for every column.
 
 **4.8** An adapter uses what a library returns the way that library's own
-documentation shows, and does no other work in a timed call. surge's and
-fbs's adapters keep the table `serialize` returns as the payload and pass its
-`buffer` and `blobs` to `deserialize`. serio's keeps the `SerializedData`
+documentation shows, and does no other work in a timed call. surge's adapter
+keeps what `serialize` returns as the payload, and passes the buffer, or the
+table's `buffer` and `blobs`, to `deserialize`; it tells the two apart with
+`typeIs`, because it is generic over `T`. fbs's keeps the table `serialize`
+returns and passes its `buffer` and `blobs` to `deserialize`. serio's keeps the `SerializedData`
 `serialize` returns and passes it to `deserialize`. Blink's and the
 baseline's keep the buffer their write function returns.
 
@@ -227,6 +229,8 @@ for the reasons in section 6 of [test-harness.md](test-harness.md).
 
 ## Changes
 
+- `4801267` / `32ca81c`: 4.8 follows `serialize`'s bare buffer in surge's
+  adapter.
 - `984a9cc` / `08bd04e`: adds 4.8 (an adapter uses a library's result as its
   documentation shows); surge's and fbs's adapters no longer copy the result
   into a table of their own.

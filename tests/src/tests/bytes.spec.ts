@@ -157,14 +157,14 @@ const mixedSerializer = createBinarySerializer<DataType.Packed<Set<"x" | 2 | tru
 class BytesTest {
 	@Fact
 	public pinsPrimitivesInNameOrder(): void {
-		const { buffer } = primitivesSerializer.serialize({ a: 7, b: -2, c: true, d: "hi" });
+		const buffer = primitivesSerializer.serialize({ a: 7, b: -2, c: true, d: "hi" });
 		// a: u8 | b: i16 | c: bool | d: u32 length + bytes
 		Assert.equal("07" + "feff" + "01" + "02000000" + "6869", hex(buffer));
 	}
 
 	@Fact
 	public pinsFloats(): void {
-		const { buffer } = floatsSerializer.serialize({ double: 1.5, single: 1.5 });
+		const buffer = floatsSerializer.serialize({ double: 1.5, single: 1.5 });
 		// double: f64 0x3FF8000000000000 | single: f32 0x3FC00000
 		Assert.equal("000000000000f83f" + "0000c03f", hex(buffer));
 	}
@@ -172,7 +172,7 @@ class BytesTest {
 	@Fact
 	public pinsContainers(): void {
 		// One record entry: the order of several entries is not specified.
-		const { buffer } = containersSerializer.serialize({ list: [1, 258], pair: [9, true, 4, 5], record: { k: 3 } });
+		const buffer = containersSerializer.serialize({ list: [1, 258], pair: [9, true, 4, 5], record: { k: 3 } });
 		const list = "02000000" + "0100" + "0201";
 		// Fixed elements, then a u32 count of rest elements.
 		const pair = "09" + "01" + "02000000" + "04" + "05";
@@ -183,7 +183,7 @@ class BytesTest {
 
 	@Fact
 	public pinsBoundedContainers(): void {
-		const { buffer: buf } = boundedSerializer.serialize({
+		const buf = boundedSerializer.serialize({
 			bytes: buffer.fromstring(string.char(170, 187)),
 			list: [1, 258],
 			pair: [9, true, 4, 5],
@@ -202,7 +202,7 @@ class BytesTest {
 
 	@Fact
 	public pinsExactLengthContainers(): void {
-		const { buffer: buf } = exactSerializer.serialize({
+		const buf = exactSerializer.serialize({
 			bytes: buffer.fromstring(string.char(1, 2, 3)),
 			list: [1, 258],
 			pair: [9, 4, 5],
@@ -215,27 +215,24 @@ class BytesTest {
 	@Fact
 	public pinsDefaultedLengthAsUnbranded(): void {
 		const value: Containers = { list: [1, 258], pair: [9, true, 4, 5], record: { k: 3 } };
-		Assert.equal(
-			hex(containersSerializer.serialize(value).buffer),
-			hex(defaultedSerializer.serialize(value).buffer),
-		);
+		Assert.equal(hex(containersSerializer.serialize(value)), hex(defaultedSerializer.serialize(value)));
 	}
 
 	@Fact
 	public pinsAnOptional(): void {
-		Assert.equal("01" + "05", hex(optionalSerializer.serialize({ n: 5 }).buffer));
-		Assert.equal("00", hex(optionalSerializer.serialize({}).buffer));
+		Assert.equal("01" + "05", hex(optionalSerializer.serialize({ n: 5 })));
+		Assert.equal("00", hex(optionalSerializer.serialize({})));
 	}
 
 	@Fact
 	public pinsPackedBooleans(): void {
 		// Bit 0 is the first field in name order.
-		Assert.equal("05", hex(flagsSerializer.serialize({ a: true, b: false, c: true }).buffer));
+		Assert.equal("05", hex(flagsSerializer.serialize({ a: true, b: false, c: true })));
 	}
 
 	@Fact
 	public pinsLiteralAndEnumIndexes(): void {
-		const { buffer } = choicesSerializer.serialize({
+		const buffer = choicesSerializer.serialize({
 			direction: "south",
 			rig: Enum.HumanoidRigType.R6,
 			version: 1,
@@ -246,7 +243,7 @@ class BytesTest {
 
 	@Fact
 	public pinsATaggedUnion(): void {
-		const { buffer } = shapeSerializer.serialize({ kind: "rect", width: 2, height: 3 });
+		const buffer = shapeSerializer.serialize({ kind: "rect", width: 2, height: 3 });
 		// Variant 1 of circle, rect | height: f64 3 | width: f64 2. The tag itself is not written.
 		Assert.equal("01" + "0000000000000840" + "0000000000000040", hex(buffer));
 	}
@@ -254,13 +251,13 @@ class BytesTest {
 	@Fact
 	public pinsAGuardedUnion(): void {
 		// Variants in `Field` kind order: num, str.
-		Assert.equal("00" + "0000000000004540", hex(guardedSerializer.serialize(42).buffer));
-		Assert.equal("01" + "02000000" + "6869", hex(guardedSerializer.serialize("hi").buffer));
+		Assert.equal("00" + "0000000000004540", hex(guardedSerializer.serialize(42)));
+		Assert.equal("01" + "02000000" + "6869", hex(guardedSerializer.serialize("hi")));
 	}
 
 	@Fact
 	public pinsFixedSizeDatatypes(): void {
-		const { buffer } = datatypesSerializer.serialize({
+		const buffer = datatypesSerializer.serialize({
 			tint: Color3.fromRGB(255, 128, 0),
 			offset: new Vector2(1, -2),
 			position: new Vector3(0.5, 0, 2),
@@ -274,16 +271,13 @@ class BytesTest {
 	@Fact
 	public pinsVector3int16(): void {
 		// 3 x i16
-		Assert.equal(
-			"0100" + "feff" + "0300",
-			hex(vector3int16Serializer.serialize(new Vector3int16(1, -2, 3)).buffer),
-		);
+		Assert.equal("0100" + "feff" + "0300", hex(vector3int16Serializer.serialize(new Vector3int16(1, -2, 3))));
 	}
 
 	@Fact
 	public pinsUDim(): void {
 		// f32 scale + i32 offset
-		Assert.equal("0000003f" + "f9ffffff", hex(insetSerializer.serialize(new UDim(0.5, -7)).buffer));
+		Assert.equal("0000003f" + "f9ffffff", hex(insetSerializer.serialize(new UDim(0.5, -7))));
 	}
 
 	@Fact
@@ -291,20 +285,20 @@ class BytesTest {
 		// 2 x UDim: f32 + i32 for X, then for Y
 		Assert.equal(
 			"0000003f" + "f9ffffff" + "0000803e" + "03000000",
-			hex(sizeSerializer.serialize(new UDim2(0.5, -7, 0.25, 3)).buffer),
+			hex(sizeSerializer.serialize(new UDim2(0.5, -7, 0.25, 3))),
 		);
 	}
 
 	@Fact
 	public pinsBrickColor(): void {
 		// u16 `.Number`
-		Assert.equal("ec03", hex(paintSerializer.serialize(new BrickColor(1004)).buffer));
+		Assert.equal("ec03", hex(paintSerializer.serialize(new BrickColor(1004))));
 	}
 
 	@Fact
 	public pinsNumberRange(): void {
 		// 2 x f32: Min, Max
-		Assert.equal("0000803f" + "00002040", hex(spanSerializer.serialize(new NumberRange(1, 2.5)).buffer));
+		Assert.equal("0000803f" + "00002040", hex(spanSerializer.serialize(new NumberRange(1, 2.5))));
 	}
 
 	@Fact
@@ -312,22 +306,19 @@ class BytesTest {
 		// 4 x f32: Min.X, Min.Y, Max.X, Max.Y
 		Assert.equal(
 			"00000000" + "000020c0" + "00000040" + "0000803f",
-			hex(boundsSerializer.serialize(new Rect(0, -2.5, 2, 1)).buffer),
+			hex(boundsSerializer.serialize(new Rect(0, -2.5, 2, 1))),
 		);
 	}
 
 	@Fact
 	public pinsABuffer(): void {
 		// u32 length + bytes
-		Assert.equal(
-			"03000000" + "0102ff",
-			hex(rawSerializer.serialize(buffer.fromstring(string.char(1, 2, 255))).buffer),
-		);
+		Assert.equal("03000000" + "0102ff", hex(rawSerializer.serialize(buffer.fromstring(string.char(1, 2, 255)))));
 	}
 
 	@Fact
 	public pinsSequences(): void {
-		const { buffer } = sequencesSerializer.serialize({
+		const buffer = sequencesSerializer.serialize({
 			colors: new ColorSequence(Color3.fromRGB(255, 0, 128)),
 			numbers: new NumberSequence([new NumberSequenceKeypoint(0, 2, 0.5), new NumberSequenceKeypoint(1, 0.5, 0)]),
 		});
@@ -341,7 +332,7 @@ class BytesTest {
 	@Fact
 	public pinsThe24BitWidths(): void {
 		// signed: -2 in two's complement | unsigned: 0x010203, low byte first
-		Assert.equal("feffff" + "030201", hex(mediumSerializer.serialize({ signed: -2, unsigned: 0x010203 }).buffer));
+		Assert.equal("feffff" + "030201", hex(mediumSerializer.serialize({ signed: -2, unsigned: 0x010203 })));
 	}
 
 	@Fact
@@ -349,7 +340,7 @@ class BytesTest {
 		// 3 x f32 position, then 3 x f32 axis * angle, which is zero with no
 		// rotation. A rotation is not pinned: its axis-angle form is not exact.
 		const position = "0000803f" + "00000040" + "00004040";
-		Assert.equal(position + string.rep("00", 12), hex(placementSerializer.serialize(new CFrame(1, 2, 3)).buffer));
+		Assert.equal(position + string.rep("00", 12), hex(placementSerializer.serialize(new CFrame(1, 2, 3))));
 	}
 
 	@Fact
@@ -358,7 +349,7 @@ class BytesTest {
 		// position, then the rotation's 3 x f32, zero with no rotation.
 		const cell = "03" + "feff" + "030201";
 		const position = "0100" + "0200" + "0300";
-		const { buffer } = narrowedSerializer.serialize({
+		const buffer = narrowedSerializer.serialize({
 			cell: new Vector3(3, -2, 0x010203),
 			placement: new CFrame(1, 2, 3),
 		});
@@ -371,7 +362,7 @@ class BytesTest {
 		// `pinsACFrameWithNoRotation` pin for the unbranded types.
 		const cell = "0000003f" + "00000000" + "00000040";
 		const position = "0000803f" + "00000040" + "00004040";
-		const { buffer } = defaultedComponentsSerializer.serialize({
+		const buffer = defaultedComponentsSerializer.serialize({
 			cell: new Vector3(0.5, 0, 2),
 			placement: new CFrame(1, 2, 3),
 		});
@@ -380,7 +371,7 @@ class BytesTest {
 
 	@Fact
 	public pinsRangeWidths(): void {
-		const { buffer } = rangedSerializer.serialize({ health: 100, offset: -2, ratio: 0.5, turn: -1 });
+		const buffer = rangedSerializer.serialize({ health: 100, offset: -2, ratio: 0.5, turn: -1 });
 		// health: u8 | offset: i16 | ratio: f32, as its brand asks | turn: i8
 		Assert.equal("64" + "feff" + "0000003f" + "ff", hex(buffer));
 	}
@@ -392,26 +383,23 @@ class BytesTest {
 		// which rounds to 8192.
 		const position = "0000803f" + "00000040" + "00004040";
 		const eighth = CFrame.fromAxisAngle(Vector3.xAxis, math.pi / 4).add(new Vector3(1, 2, 3));
-		Assert.equal(position + "0020" + "0000" + "0000", hex(quantizedSerializer.serialize(eighth).buffer));
+		Assert.equal(position + "0020" + "0000" + "0000", hex(quantizedSerializer.serialize(eighth)));
 		// Five eighths of a turn about Y is folded to three eighths the other way
 		// round: -24575.25, which rounds to -24575, 0xa001.
 		const folded = CFrame.fromAxisAngle(Vector3.yAxis, (math.pi * 5) / 4);
-		Assert.equal(
-			string.rep("00", 12) + "0000" + "01a0" + "0000",
-			hex(quantizedSerializer.serialize(folded).buffer),
-		);
+		Assert.equal(string.rep("00", 12) + "0000" + "01a0" + "0000", hex(quantizedSerializer.serialize(folded)));
 	}
 
 	@Fact
 	public pinsABitSet(): void {
 		// One bit per member in canonical literal order, least significant first,
 		// and no count: a and c are bits 0 and 2.
-		Assert.equal("05", hex(tagsSerializer.serialize({ tags: new Set(["a", "c"]) }).buffer));
-		Assert.equal("00", hex(tagsSerializer.serialize({ tags: new Set() }).buffer));
+		Assert.equal("05", hex(tagsSerializer.serialize({ tags: new Set(["a", "c"]) })));
+		Assert.equal("00", hex(tagsSerializer.serialize({ tags: new Set() })));
 		// Nine members take two bytes, and i is bit 8, the first bit of the second.
-		Assert.equal("01" + "01", hex(lettersSerializer.serialize(new Set(["a", "i"])).buffer));
+		Assert.equal("01" + "01", hex(lettersSerializer.serialize(new Set(["a", "i"]))));
 		// Booleans, then numbers, then strings: true, 2, "x".
-		Assert.equal("05", hex(mixedSerializer.serialize(new Set<"x" | 2 | true>([true, "x"])).buffer));
+		Assert.equal("05", hex(mixedSerializer.serialize(new Set<"x" | 2 | true>([true, "x"]))));
 	}
 
 	@Fact
@@ -419,24 +407,24 @@ class BytesTest {
 		// The packed region is first. Bits in name order: count present, flag,
 		// maybeFlag present, maybeFlag value. Then count: u8, and text.
 		const present = packedOptionalsSerializer.serialize({ count: 9, flag: true, maybeFlag: false, text: "a" });
-		Assert.equal("07" + "09" + "01000000" + "61", hex(present.buffer));
+		Assert.equal("07" + "09" + "01000000" + "61", hex(present));
 		const absent = packedOptionalsSerializer.serialize({ flag: false, text: "" });
-		Assert.equal("00" + "00000000", hex(absent.buffer));
+		Assert.equal("00" + "00000000", hex(absent));
 		const flagged = packedOptionalsSerializer.serialize({ flag: false, maybeFlag: true, text: "" });
-		Assert.equal("0c" + "00000000", hex(flagged.buffer));
+		Assert.equal("0c" + "00000000", hex(flagged));
 	}
 
 	@Fact
 	public pinsDateTime(): void {
 		// f64 `UnixTimestampMillis`
-		Assert.equal("0000000000408f40", hex(stampSerializer.serialize(DateTime.fromUnixTimestampMillis(1000)).buffer));
+		Assert.equal("0000000000408f40", hex(stampSerializer.serialize(DateTime.fromUnixTimestampMillis(1000))));
 	}
 
 	@Fact
 	public pinsAPackedCFrame(): void {
 		// Header: bits 0-4 the rotation (0-23 axis-aligned, 31 other), bits 5-6
 		// the position (1 zero, 3 one, 0 other, then 3 x f32).
-		const header = (value: CFrame) => hex(packedPlacementSerializer.serialize(value).buffer);
+		const header = (value: CFrame) => hex(packedPlacementSerializer.serialize(value));
 		// The identity is rotation 0: X along +X, and Y the first of the four directions off the X axis.
 		Assert.equal("20", header(new CFrame()));
 		Assert.equal("60", header(new CFrame(1, 1, 1)));
@@ -449,9 +437,9 @@ class BytesTest {
 	public pinsAPackedTagBit(): void {
 		// Region bits in name order: the tag of `first` (set for "on", the second variant), then `flag`.
 		const on = packedTagSerializer.serialize({ first: { mode: "on", level: 7 }, flag: false });
-		Assert.equal("01" + "07", hex(on.buffer));
+		Assert.equal("01" + "07", hex(on));
 		const off = packedTagSerializer.serialize({ first: { mode: "off" }, flag: true });
-		Assert.equal("02", hex(off.buffer));
+		Assert.equal("02", hex(off));
 	}
 }
 

@@ -37,14 +37,14 @@ class StringsTest {
 				[`${text}!`, text],
 			]),
 		};
-		const { buffer, blobs } = stringsSerializer.serialize(value);
-		Assert.equal(undefined, difference(value, stringsSerializer.deserialize(buffer, blobs)));
+		const buffer = stringsSerializer.serialize(value);
+		Assert.equal(undefined, difference(value, stringsSerializer.deserialize(buffer)));
 	}
 
 	@Fact
 	public prefixesAStringWithItsByteLengthNotItsCharacterCount(): void {
 		const value: WithStrings = { single: "é", list: [], byName: new Map() };
-		const { buffer: buf } = stringsSerializer.serialize(value);
+		const buf = stringsSerializer.serialize(value);
 		// Fields in name order: byName (u32 count), list (u32 count), single (u32 length + 2 bytes of UTF-8).
 		Assert.equal(4 + 4 + 4 + 2, buffer.len(buf));
 		Assert.equal(2, buffer.readu32(buf, 8));
@@ -57,9 +57,9 @@ class StringsTest {
 			rawOrText: buffer.fromstring("bytes\0"),
 			list: [buffer.fromstring("a"), buffer.create(0)],
 		};
-		const { buffer: buf, blobs } = buffersSerializer.serialize(value);
-		Assert.equal(undefined, blobs);
-		const result = buffersSerializer.deserialize(buf, blobs);
+		const buf = buffersSerializer.serialize(value);
+		Assert.equal("buffer", typeOf(buf));
+		const result = buffersSerializer.deserialize(buf);
 		Assert.equal(undefined, difference(value, result));
 		// A copy, not a view of the payload or the original.
 		Assert.notEqual(value.rawOrText, result.rawOrText);
@@ -75,8 +75,8 @@ class StringsTest {
 				maybeRaw: rng.bool() ? buffer.fromstring(rng.str()) : undefined,
 				list: [buffer.fromstring(rng.str()), buffer.fromstring(rng.str())],
 			};
-			const { buffer: buf, blobs } = buffersSerializer.serialize(value);
-			Assert.equal(undefined, difference(value, buffersSerializer.deserialize(buf, blobs)));
+			const buf = buffersSerializer.serialize(value);
+			Assert.equal(undefined, difference(value, buffersSerializer.deserialize(buf)));
 		}
 	}
 
@@ -93,8 +93,8 @@ class StringsTest {
 				list.push(rng.str(40));
 			}
 			const value: WithStrings = { single: rng.str(300), list, byName };
-			const { buffer, blobs } = stringsSerializer.serialize(value);
-			Assert.equal(undefined, difference(value, stringsSerializer.deserialize(buffer, blobs)));
+			const buffer = stringsSerializer.serialize(value);
+			Assert.equal(undefined, difference(value, stringsSerializer.deserialize(buffer)));
 		}
 	}
 }

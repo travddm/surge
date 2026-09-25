@@ -5,14 +5,17 @@ The documents are indexed in [AGENTS.md](../AGENTS.md).
 
 ## Goal
 
-A drop-in alternative to
-[flamework-binary-serializer](https://github.com/Fireboltofdeath/flamework-binary-serializer)
-(fbs): a `createBinarySerializer<T>()` derived from a TypeScript type alone,
-that generates specialized code for each shape at compile time, as
+A `createBinarySerializer<T>()` derived from a TypeScript type alone, that
+generates specialized code for each shape at compile time, as
 [Zap](https://github.com/red-blox/zap) does from its own schema, instead of
-interpreting a schema at run time. It covers fbs's type surface and adds
-types fbs cannot express, such as `Record<K, V>` and index-signature
-dictionaries. Why generating code is the faster design is in
+interpreting a schema at run time as
+[flamework-binary-serializer](https://github.com/Fireboltofdeath/flamework-binary-serializer)
+(fbs) does. It covers fbs's type surface and adds types fbs cannot express,
+such as `Record<K, V>` and index-signature dictionaries. Its API is shaped by
+what the generated code returns, not by fbs's: `serialize` returns a bare
+buffer for a type with nothing to pass beside the bytes
+([specs/runtime-api.md](specs/runtime-api.md) 3.6). Why generating code is
+the faster design is in
 [research/compile-time-specialization.md](research/compile-time-specialization.md).
 
 ## Two packages, two repositories
@@ -85,13 +88,6 @@ else.
 Neither repository commits compiled output. Each builds it in `prepare`, so a
 `github:` install clones the repository, installs its devDependencies, and
 compiles before the package can be used.
-
-## Against fbs as a drop-in
-
-fbs needs no `tsconfig.json` entry of its own, because it runs inside
-Flamework's transformer, which a Flamework project already registers. surge
-needs a second `plugins` entry. Moving from fbs is an import path change plus
-that one `tsconfig.json` edit.
 
 ## Non-goals
 

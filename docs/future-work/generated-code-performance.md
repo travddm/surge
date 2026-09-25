@@ -29,20 +29,11 @@ the fifty-element `CFrame` array
 and its correction).
 Most of the per-call part was three tables
 ([tables-around-serialize.md](../research/tables-around-serialize.md)). A
-shape with no blob field no longer returns an empty `blobs` array (Runtime
-API 3.6 in [specs/runtime-api.md](../specs/runtime-api.md)), and the
-benchmark's adapters no longer copy the result into a table of their own
-(Benchmark harness 4.8 in
-[specs/benchmark-harness.md](../specs/benchmark-harness.md)). Calling
-`finishWrite` instead of inlining it costs nothing measurable.
-
-**The table around the buffer.** `serialize()` still returns a table, which
-holds the buffer, because `Serializer<T>` keeps the shape fbs declares. It is
-the larger of the two tables probe D of
-[tables-around-serialize.md](../research/tables-around-serialize.md) removed.
-Returning the buffer alone
-would remove it, and would change what every caller reads, so it waits for a
-reason to leave fbs's shape.
+shape with no blob field now returns the buffer alone (Runtime API 3.6 in
+[specs/runtime-api.md](../specs/runtime-api.md)), and the benchmark's
+adapters no longer copy the result into a table of their own (Benchmark
+harness 4.8 in [specs/benchmark-harness.md](../specs/benchmark-harness.md)).
+Calling `finishWrite` instead of inlining it costs nothing measurable.
 
 **What is left per call.** What remains once the three tables are gone
 (probe E) was not probed. The candidates in the code are `finishWrite`'s
@@ -185,8 +176,8 @@ means, but it is still not surge's to decide for a file surge does not own.
 Every item here is measurement-driven, and the method is settled: a change is
 its own full catalog run against a reference taken in the same session, read
 as medians over many cells against the untouched libraries as controls. The
-per-call gap is the largest open item. Most of it is measured, and two of the
-three tables behind it are gone. The two reopened entries
+per-call gap is the largest open item. Most of it is measured, and the three
+tables behind it are gone for a shape with no blob field. The two reopened entries
 need an argument against a current figure, not a change. The rest is small,
 or needs a fixture before anything can measure it.
 

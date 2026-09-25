@@ -7,11 +7,9 @@ type FbsPayload = ReturnType<Serializer<unknown>["serialize"]>;
 
 /**
  * fbs's driver: `createBinarySerializer<T>()` from
- * `@rbxts/flamework-binary-serializer`, whose surface surge is a drop-in
- * alternative to -- so this is surge's adapter, except that fbs returns a
- * `blobs` array for every shape. It stays a separate module because the two
- * libraries version independently. fbs reads the schema at runtime from the
- * metadata its Flamework macro emits, so the fixture modules must compile
+ * `@rbxts/flamework-binary-serializer`, which returns a table of the buffer
+ * and a `blobs` array for every shape. fbs reads the schema at runtime from
+ * the metadata its Flamework macro emits, so the fixture modules must compile
  * through `rbxts-transformer-flamework` as well (they already do; see
  * tests/tsconfig.json).
  *

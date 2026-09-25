@@ -1,8 +1,8 @@
 # Transformer specification
 
 Status: current
-Applies to: `@rbxts/surge` at commit `984a9cc`, `rbxts-transformer-surge` at
-commit `08bd04e` (no tagged release yet)
+Applies to: `@rbxts/surge` at commit `4801267`, `rbxts-transformer-surge` at
+commit `32ca81c` (no tagged release yet)
 
 ## 1. Scope
 
@@ -258,12 +258,11 @@ a float width, with its whole part, before it is written (Wire format 4.17).
 site's type argument, so it types as that argument, literal properties
 included, and is assignable wherever the caller's own type is.
 
-**5.16** The table a generated `serialize` returns has a `blobs` property
-exactly where the result type `@rbxts/surge` declares for the call site,
-`Serialized<T>` (Runtime API 3.6), has a `blobs` array: the blob channel's
-list where the body reaches `pushBlob`, and a new empty array otherwise.
-Where the declared result has none, the table holds `buffer` alone and is
-asserted as `{ buffer: buffer; blobs?: undefined }`.
+**5.16** A generated `serialize` returns what the result type `@rbxts/surge`
+declares for the call site, `Serialized<T>` (Runtime API 3.6): the buffer
+alone where that is `buffer`, and otherwise a table of `buffer` and `blobs`,
+where `blobs` is the blob channel's list if the body reaches `pushBlob` and a
+new empty array if it does not.
 
 ## 6. Injected imports
 
@@ -326,7 +325,7 @@ alone, and none of its own for the union.
 
 **7.3** The entry point reports a diagnostic for a call site that breaks 3.2
 or 3.3, and for one whose `serialize` reaches `pushBlob` where the result type
-`@rbxts/surge` declares has no `blobs` array (5.16).
+`@rbxts/surge` declares is `buffer` (5.16).
 
 **7.4** A walk diagnostic points at the declaration of the property whose
 type the walk was in, when that declaration is in the file being transformed.
@@ -379,7 +378,7 @@ of `rbxts-transformer-surge`, cited by `describe` block. Source paths are in
 | 5.13      | `transform`: `transform generated code` (the single-sided factories on a recursive type); `tests/src/tests/factories.spec.ts`: `roundTripsARecursiveTypeThroughASeparateSerializerAndDeserializer`                                                                                                                                                                      |
 | 5.14      | `emit`: `Emitter write-side checks`; `transform`: `transform writeChecks option`; `tests/src/tests/checks.spec.ts`: `rejectsAnExactLengthValueOfAnyOtherLength`, `letsAnExactArrayOfOptionalsBeShorterButNotLonger`, `rejectsACountPastItsWidth`, `rejectsANumberItsRangeDoesNotAdmit`                                                                                  |
 | 5.15      | `transform`: `transform generated code` (a deserialize result with each of seven shapes is assignable to its type argument)                                                                                                                                                                                                                                             |
-| 5.16      | `transform`: `transform (end-to-end)` (the declared result has a blobs array exactly when the walk finds a blob, and an array the shape never fills), `transform generated code` (a caller reading blobs off a result); `test/golden.test.mjs`: a shape with no blob field returns no blobs table                                                                       |
+| 5.16      | `transform`: `transform (end-to-end)` (the declared result has a blobs array exactly when the walk finds a blob, and an array the shape never fills), `transform generated code` (a caller of a result with no blob and with one); `test/golden.test.mjs`: a shape with no blob field returns the buffer alone                                                          |
 | 6.1, 6.2  | `transform`: `transform injected imports`, and in `transform (end-to-end)` the single shared import and the same-named local function; `tests/src/tests/coverage.spec.ts`: `leavesAUserDeclarationNamedAfterAnInjectedImportAlone`                                                                                                                                      |
 | 6.3       | `test/golden.test.mjs`: a file directive survives the transformer's injected imports; `transform`: `transform generated code` (the three directive tests)                                                                                                                                                                                                               |
 | 6.4       | `transform`: `transform injected imports` (a `createDeserializer` call site)                                                                                                                                                                                                                                                                                            |
@@ -392,6 +391,8 @@ of `rbxts-transformer-surge`, cited by `describe` block. Source paths are in
 
 ## Changes
 
+- `4801267` / `32ca81c`: 5.16 returns the buffer alone where `Serialized<T>`
+  is `buffer`; 7.3 follows it.
 - `984a9cc` / `08bd04e`: adds 5.16 (`serialize` returns `blobs` only where
   `Serialized<T>` declares it); 5.9 and 7.3 follow it.
 - `a822f0c` / `0710f5d`: 4.1 and 4.16 state which `Set` keys make a `bitSet`

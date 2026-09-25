@@ -58,10 +58,10 @@ class LiteralsTest {
 	@InlineData("south", 2, false, undefined)
 	public roundTripsLiteralUnions(direction: Direction, level: Level, mixed: Mixed, maybe?: "on" | "off"): void {
 		const value: WithLiterals = { direction, level, mixed, maybe };
-		const { buffer: buf, blobs } = literalsSerializer.serialize(value);
+		const buf = literalsSerializer.serialize(value);
 		// One u8 index per field.
 		Assert.equal(4, buffer.len(buf));
-		Assert.equal(undefined, difference(value, literalsSerializer.deserialize(buf, blobs)));
+		Assert.equal(undefined, difference(value, literalsSerializer.deserialize(buf)));
 	}
 
 	@Theory
@@ -70,19 +70,19 @@ class LiteralsTest {
 	@InlineData(1)
 	public roundTripsANegativeLiteral(turn: Turn): void {
 		const value = { turn, ahead: -2 as const };
-		const { buffer: buf, blobs } = turnSerializer.serialize(value);
+		const buf = turnSerializer.serialize(value);
 		// Index 0 of -1, 0, 1 is -1, and `ahead` is a constant.
 		Assert.equal(1, buffer.len(buf));
-		Assert.equal(undefined, difference(value, turnSerializer.deserialize(buf, blobs)));
+		Assert.equal(undefined, difference(value, turnSerializer.deserialize(buf)));
 	}
 
 	@Fact
 	public writesNoBytesForASingleLiteral(): void {
 		const value: WithConstants = { version: 3, tag: "header", enabled: true, payload: 9 };
-		const { buffer: buf, blobs } = constantsSerializer.serialize(value);
+		const buf = constantsSerializer.serialize(value);
 		// Only `payload`.
 		Assert.equal(8, buffer.len(buf));
-		Assert.equal(undefined, difference(value, constantsSerializer.deserialize(buf, blobs)));
+		Assert.equal(undefined, difference(value, constantsSerializer.deserialize(buf)));
 	}
 
 	@Theory
@@ -90,10 +90,10 @@ class LiteralsTest {
 	@InlineData(Suit.Spades, Color.Green)
 	public roundTripsTypeScriptEnums(suit: Suit, color: Color): void {
 		const value: WithTsEnums = { suit, color, single: Suit.Hearts };
-		const { buffer: buf, blobs } = tsEnumsSerializer.serialize(value);
+		const buf = tsEnumsSerializer.serialize(value);
 		// `single` has one possible value and takes no bytes.
 		Assert.equal(2, buffer.len(buf));
-		Assert.equal(undefined, difference(value, tsEnumsSerializer.deserialize(buf, blobs)));
+		Assert.equal(undefined, difference(value, tsEnumsSerializer.deserialize(buf)));
 	}
 
 	@Fact
@@ -106,8 +106,8 @@ class LiteralsTest {
 				mixed: rng.pick(MIXED),
 				maybe: rng.bool() ? rng.pick(MAYBE) : undefined,
 			};
-			const { buffer, blobs } = literalsSerializer.serialize(value);
-			Assert.equal(undefined, difference(value, literalsSerializer.deserialize(buffer, blobs)));
+			const buffer = literalsSerializer.serialize(value);
+			Assert.equal(undefined, difference(value, literalsSerializer.deserialize(buffer)));
 		}
 	}
 }

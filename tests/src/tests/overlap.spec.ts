@@ -59,13 +59,13 @@ class OverlapTest {
 		const inner: buffer[] = [];
 		const value: Readings = {
 			values: iteratingWith(VALUES, () => {
-				inner.push(label.serialize(LABEL).buffer);
+				inner.push(label.serialize(LABEL));
 			}),
 		};
-		const written = readings.serialize(value).buffer;
+		const written = readings.serialize(value);
 
 		Assert.equal(VALUES.size(), inner.size());
-		Assert.equal(hex(readings.serialize({ values: [...VALUES] }).buffer), hex(written));
+		Assert.equal(hex(readings.serialize({ values: [...VALUES] })), hex(written));
 		for (const bytes of inner) {
 			Assert.equal(undefined, difference(LABEL, label.deserialize(bytes)));
 		}
