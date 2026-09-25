@@ -33,6 +33,7 @@ interface SerioGuardedUnion {
 }
 
 const serializer = createCodec<GuardedUnion>();
+const serializerWithChecks = createCodec<GuardedUnion>({ readChecks: true });
 const fbsSerializer = createFbsSerializer<GuardedUnion>();
 const serioSerializer = createSerioSerializer<SerioGuardedUnion>();
 
@@ -54,6 +55,7 @@ export const guardedUnion: Fixture = {
 	note: `${COUNT} values over string, number, and boolean`,
 	entries: [
 		defineEntry<GuardedUnion>("surge", { values }, surgeAdapter(serializer)),
+		defineEntry<GuardedUnion>("surge (readChecks)", { values }, surgeAdapter(serializerWithChecks)),
 		defineEntry<GuardedUnion>("fbs", { values }, fbsAdapter(fbsSerializer)),
 		defineEntry<SerioGuardedUnion>("serio", { values }, serioAdapter(serioSerializer)),
 		defineEntry(

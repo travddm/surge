@@ -1,8 +1,8 @@
 # Benchmark harness specification
 
 Status: current
-Applies to: `@rbxts/surge` at commit `b7b0746`, `rbxts-transformer-surge` at
-commit `7422117` (no tagged release yet)
+Applies to: `@rbxts/surge` at commit `9eed31d`, `rbxts-transformer-surge` at
+commit `ac69b4d` (no tagged release yet)
 
 ## 1. Scope
 
@@ -18,7 +18,8 @@ results file records. How to run a tier and read a result is in
 - **Row**: one shape in the catalog: a `Fixture` that a module under
   `tests/src/bench/fixtures/` exports. One module may export more than one
   row.
-- **Column**: one library, or the hand-written baseline.
+- **Column**: one library, the hand-written baseline, or surge with
+  `readChecks` (4.9).
 - **Cell**: one column's measurement of one row. In the speed tier, a cell is
   also one half: encode or decode.
 - **Trial**: one timed measurement of a cell.
@@ -103,6 +104,13 @@ returns and passes its `buffer` and `blobs` to `deserialize`. serio's keeps the 
 `serialize` returns and passes it to `deserialize`. Blink's and the
 baseline's keep the buffer their write function returns.
 
+**4.9** The speed tier has one more column, `surge (readChecks)`: every
+row's surge declaration again, through `createCodec<T>({ readChecks: true })`
+and surge's adapter. Its decode half measures what `readChecks` costs, and its
+encode half runs the same generated code as surge's, because `readChecks`
+changes only the read side. The size tier has no such column: its bytes are
+surge's.
+
 ## 5. The size tier
 
 **5.1** `mise run bench:size` runs under Lune through
@@ -182,8 +190,8 @@ surge is marked `†` when either of its two cells is.
 **8.6** `mise run bench:speed:render` rewrites `speed.md` from
 `speed-trials.tsv` without a run.
 
-**8.7** The summary gives, per library other than surge and per half, the
-geometric mean of that library's throughput over surge's, across the rows
+**8.7** The summary gives, per column other than surge and per half, the
+geometric mean of that column's throughput over surge's, across the rows
 where both have a cell and neither cell is marked. It states how many of the
 rows both have that mean covers.
 
@@ -218,6 +226,7 @@ for the reasons in section 6 of [test-harness.md](test-harness.md).
 | 4.6       | Source: the first lines of `tests/src/bench/fixtures/*.ts`, `tests/src/bench/baseline/codecs.luau`, `tests/src/bench/blink/server.luau`, and `@rbxts/flamework-binary-serializer` 0.7.0's `out/serialization/createSerializer.lua` and `createDeserializer.lua`; `@rbxts/serio` 1.2.7's `out/` carries no directive. `test/golden.test.mjs` pins `--!native` and `--!optimize 2` on surge's `alloc`, `blobs`, `cframe` and `pack` modules, and pins that `--!optimize 2` survives the transformer's injected imports on three modules of the tests place, none of them a fixture. No test checks a directive on a fixture, on the baseline, or in fbs or Blink |
 | 4.7       | Source: the first lines of `tests/src/bench/speed.spec.ts`, `adapter.ts` and `adapters/*.ts`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
 | 4.8       | Source: `tests/src/bench/adapters/`. The documentation each follows: `docs/getting-started.md` for surge; the README of `@rbxts/flamework-binary-serializer` 0.7.0 and the comments on its `Serializer<T>`; the README of `@rbxts/serio` 1.2.7                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| 4.9       | Source: `Library` and `LIBRARIES` in `tests/src/bench/adapter.ts`, which leaves the column out of the size tier, and the fixtures                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | 5.1–5.3   | Source: `tests/scripts/lune-size-runner.luau` and `tests/src/bench/size.ts`; a regenerated `size.md` with no diff                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | 6.1       | Source: `RUNS` and `runOnce` in `tests/scripts/record-speed-benchmarks.mjs`, and the `bench:speed` scripts in `package.json` and `tests/package.json`; `main()` in `tests/src/index.ts` runs only `tests` ([test-harness.md](test-harness.md) 3.4)                                                                                                                                                                                                                                                                                                                                                                                                             |
 | 6.2–6.5   | Source: the constants and comment block of `tests/src/bench/speed.spec.ts`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
@@ -228,6 +237,8 @@ for the reasons in section 6 of [test-harness.md](test-harness.md).
 
 ## Changes
 
+- `9eed31d` / `ac69b4d`: adds 4.9 (the `surge (readChecks)` column); Terms
+  (Column) and 8.7 follow it.
 - `b7b0746` / `7422117`: 4.1 names `createCodec`; 4.8: surge's adapter
   passes what `serialize` returns to `deserialize` unchanged.
 - `4801267` / `32ca81c`: 4.8 follows `serialize`'s bare buffer in surge's

@@ -65,6 +65,7 @@ interface SerioNestedObject {
 }
 
 const serializer = createCodec<NestedObject>();
+const serializerWithChecks = createCodec<NestedObject>({ readChecks: true });
 const fbsSerializer = createFbsSerializer<FbsNestedObject>();
 const serioSerializer = createSerioSerializer<SerioNestedObject>();
 
@@ -81,6 +82,7 @@ export const nestedObject: Fixture = {
 	note: "five levels of objects, one field each level",
 	entries: [
 		defineEntry<NestedObject>("surge", value, surgeAdapter(serializer)),
+		defineEntry<NestedObject>("surge (readChecks)", value, surgeAdapter(serializerWithChecks)),
 		defineEntry<FbsNestedObject>("fbs", value, fbsAdapter(fbsSerializer)),
 		defineEntry<SerioNestedObject>("serio", value, serioAdapter(serioSerializer)),
 		defineEntry("blink", value, blinkAdapter(blinkCodec)),

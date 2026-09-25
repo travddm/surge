@@ -70,7 +70,9 @@ interface SerioToggles {
 }
 
 const unpackedSerializer = createCodec<Toggles>();
+const unpackedSerializerWithChecks = createCodec<Toggles>({ readChecks: true });
 const packedSerializer = createCodec<DataType.Packed<Toggles>>();
+const packedSerializerWithChecks = createCodec<DataType.Packed<Toggles>>({ readChecks: true });
 const fbsUnpackedSerializer = createFbsSerializer<FbsToggles>();
 const fbsPackedSerializer = createFbsSerializer<Fbs.Packed<FbsToggles>>();
 const serioUnpackedSerializer = createSerioSerializer<SerioToggles>();
@@ -97,6 +99,7 @@ export const unpackedStruct: Fixture = {
 	note: "ten booleans, a u8, and two optionals, one byte per flag and per presence",
 	entries: [
 		defineEntry<Toggles>("surge", value, surgeAdapter(unpackedSerializer)),
+		defineEntry<Toggles>("surge (readChecks)", value, surgeAdapter(unpackedSerializerWithChecks)),
 		defineEntry<FbsToggles>("fbs", value, fbsAdapter(fbsUnpackedSerializer)),
 		defineEntry<SerioToggles>("serio", value, serioAdapter(serioUnpackedSerializer)),
 		defineEntry("blink", value, blinkAdapter(blinkCodec)),
@@ -108,6 +111,7 @@ export const packedStruct: Fixture = {
 	note: "the same shape in `Packed<T>`: one bit per flag and per presence",
 	entries: [
 		defineEntry<DataType.Packed<Toggles>>("surge", value, surgeAdapter(packedSerializer)),
+		defineEntry<DataType.Packed<Toggles>>("surge (readChecks)", value, surgeAdapter(packedSerializerWithChecks)),
 		defineEntry<Fbs.Packed<FbsToggles>>("fbs", value, fbsAdapter(fbsPackedSerializer)),
 		defineEntry<Serio.Packed<SerioToggles>>("serio", value, serioAdapter(serioPackedSerializer)),
 		defineEntry(

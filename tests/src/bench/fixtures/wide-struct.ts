@@ -180,6 +180,7 @@ interface SerioWideStruct {
 }
 
 const serializer = createCodec<WideStruct>();
+const serializerWithChecks = createCodec<WideStruct>({ readChecks: true });
 const fbsSerializer = createFbsSerializer<FbsWideStruct>();
 const serioSerializer = createSerioSerializer<SerioWideStruct>();
 
@@ -241,6 +242,7 @@ export const wideStruct: Fixture = {
 	note: "50 f32 fields, no container",
 	entries: [
 		defineEntry<WideStruct>("surge", value, surgeAdapter(serializer)),
+		defineEntry<WideStruct>("surge (readChecks)", value, surgeAdapter(serializerWithChecks)),
 		defineEntry<FbsWideStruct>("fbs", value, fbsAdapter(fbsSerializer)),
 		defineEntry<SerioWideStruct>("serio", value, serioAdapter(serioSerializer)),
 		defineEntry("blink", value, blinkAdapter(blinkCodec)),

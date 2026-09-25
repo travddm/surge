@@ -27,6 +27,7 @@ interface StringHeavy {
 }
 
 const serializer = createCodec<StringHeavy>();
+const serializerWithChecks = createCodec<StringHeavy>({ readChecks: true });
 const fbsSerializer = createFbsSerializer<StringHeavy>();
 const serioSerializer = createSerioSerializer<StringHeavy>();
 
@@ -43,6 +44,7 @@ export const stringHeavy: Fixture = {
 	note: `two short strings and ${COUNT} of up to 40 bytes, each with a u32 length prefix`,
 	entries: [
 		defineEntry<StringHeavy>("surge", value, surgeAdapter(serializer)),
+		defineEntry<StringHeavy>("surge (readChecks)", value, surgeAdapter(serializerWithChecks)),
 		defineEntry<StringHeavy>("fbs", value, fbsAdapter(fbsSerializer)),
 		defineEntry<StringHeavy>("serio", value, serioAdapter(serioSerializer)),
 		defineEntry("blink", value, blinkAdapter(blinkCodec)),

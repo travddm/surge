@@ -48,6 +48,7 @@ interface SerioTaggedUnion {
 }
 
 const serializer = createCodec<TaggedUnion>();
+const serializerWithChecks = createCodec<TaggedUnion>({ readChecks: true });
 const fbsSerializer = createFbsSerializer<FbsTaggedUnion>();
 const serioSerializer = createSerioSerializer<SerioTaggedUnion>();
 
@@ -91,6 +92,7 @@ export const taggedUnion: Fixture = {
 	note: `${COUNT} events over four variants, discriminated by a literal field`,
 	entries: [
 		defineEntry<TaggedUnion>("surge", { events }, surgeAdapter(serializer)),
+		defineEntry<TaggedUnion>("surge (readChecks)", { events }, surgeAdapter(serializerWithChecks)),
 		defineEntry<FbsTaggedUnion>("fbs", { events }, fbsAdapter(fbsSerializer)),
 		defineEntry<SerioTaggedUnion>("serio", { events }, serioAdapter(serioSerializer)),
 		defineEntry("blink", { events }, blinkAdapter(blinkCodec)),

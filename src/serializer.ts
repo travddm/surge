@@ -158,9 +158,10 @@ export interface CodecOptions {
 	 * input that is not what `serialize` returns for this type, so what a
 	 * remote delivered can be passed to it as it is.
 	 *
-	 * Turn it on wherever the bytes come from somewhere that is not trusted,
-	 * which a remote event is and a `DataStore` of this game's own writing is
-	 * not. It costs a branch per read. It checks lengths, counts, and the
+	 * Turn it on where the server reads what a client sent, since an exploiter
+	 * can send anything. The game's own bytes, such as what the server sends a
+	 * client or what the game saved to a `DataStore`, do not need it. It costs
+	 * a branch per read, and a check of the input's shape per call. It checks lengths, counts, and the
 	 * indexes that name an enum item or a packed rotation, and no other value:
 	 * a payload that is the right shape but the wrong data still deserializes.
 	 */
@@ -175,7 +176,8 @@ export interface CodecOptions {
 	 *
 	 * It catches a value this game built wrong rather than input it was sent,
 	 * so it costs a branch per container and per ranged number, on the write
-	 * side only.
+	 * side only. A type with no narrowed or exact `DataType.Length` and no
+	 * `DataType.Range` gets no check, and pays nothing.
 	 */
 	readonly writeChecks?: boolean;
 }

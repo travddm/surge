@@ -37,6 +37,7 @@ interface SerioLargeRecord {
 }
 
 const serializer = createCodec<LargeRecord>();
+const serializerWithChecks = createCodec<LargeRecord>({ readChecks: true });
 const fbsSerializer = createFbsSerializer<FbsLargeRecord>();
 const serioSerializer = createSerioSerializer<SerioLargeRecord>();
 
@@ -54,6 +55,7 @@ export const largeRecord: Fixture = {
 	note: `${COUNT} string keys, each with a u8 value; a \`Map\` under fbs and serio`,
 	entries: [
 		defineEntry<LargeRecord>("surge", { entries }, surgeAdapter(serializer)),
+		defineEntry<LargeRecord>("surge (readChecks)", { entries }, surgeAdapter(serializerWithChecks)),
 		defineEntry<FbsLargeRecord>("fbs", { entries: mapEntries }, fbsAdapter(fbsSerializer)),
 		defineEntry<SerioLargeRecord>("serio", { entries: mapEntries }, serioAdapter(serioSerializer)),
 		defineEntry("blink", { entries }, blinkAdapter(blinkCodec)),

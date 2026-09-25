@@ -31,6 +31,7 @@ interface SerioLargeArray {
 }
 
 const serializer = createCodec<LargeArray>();
+const serializerWithChecks = createCodec<LargeArray>({ readChecks: true });
 const fbsSerializer = createFbsSerializer<FbsLargeArray>();
 const serioSerializer = createSerioSerializer<SerioLargeArray>();
 
@@ -45,6 +46,7 @@ export const largeArray: Fixture = {
 	note: `${COUNT} u16 elements behind one u32 length prefix`,
 	entries: [
 		defineEntry<LargeArray>("surge", { values }, surgeAdapter(serializer)),
+		defineEntry<LargeArray>("surge (readChecks)", { values }, surgeAdapter(serializerWithChecks)),
 		defineEntry<FbsLargeArray>("fbs", { values }, fbsAdapter(fbsSerializer)),
 		defineEntry<SerioLargeArray>("serio", { values }, serioAdapter(serioSerializer)),
 		defineEntry("blink", { values }, blinkAdapter(blinkCodec)),

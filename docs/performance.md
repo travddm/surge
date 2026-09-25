@@ -69,10 +69,15 @@ What the directives are worth on the generated code is measured in
 Each benchmark result is one shape in a warm loop on one machine. Measure a
 game's own shapes before deciding on the strength of one.
 
-## Checks cost a branch
+## What the checks cost
 
-`readChecks` adds a comparison to every read, and `writeChecks` one to every
-container and every `Range` number it writes. Turn each on where it guards
-something: `readChecks` on input from outside the game, `writeChecks` where a
-value's lengths or ranges are built at run time
+`readChecks` adds a comparison to every read and a check of the input's shape
+to every call. The `surge (readChecks)` column of
+[benchmarks/speed.md](benchmarks/speed.md) measures it on every row: its
+decode ratio against surge is what the checks cost. It belongs on the server,
+for what clients send, and not where the bytes are the game's own
 ([errors-and-guarantees.md](errors-and-guarantees.md)).
+
+`writeChecks` adds a comparison to every narrowed or exact `Length` and every
+`Range` number it writes, and nothing to a type with neither. Turn it on
+where such a value is built at run time.

@@ -8,7 +8,7 @@ import { createCodec, createDeserializer } from "@rbxts/surge";
 // Bytes this game wrote, such as its own DataStore: no checks needed.
 const inventory = createCodec<Inventory>();
 
-// Bytes a client sent: bounded reads, and a pcall around every call.
+// What a client sent, read on the server: checked, and in a pcall.
 const readRequest = createDeserializer<TradeRequest>({ readChecks: true });
 
 const [ok, request] = pcall(() => readRequest(input));
@@ -19,26 +19,36 @@ const [ok, request] = pcall(() => readRequest(input));
 |                | `readChecks`                                                                                                                                                           | `writeChecks`                                                                                                                                              |
 | -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Governs        | `deserialize`                                                                                                                                                          | `serialize`                                                                                                                                                |
-| Guards against | bytes that did not come from `serialize`                                                                                                                               | a value that does not fit its `DataType` brands                                                                                                            |
+| Guards against | input a client crafted, read on the server                                                                                                                             | a value of the game's own that does not fit its `DataType` brands                                                                                          |
 | Rejects        | an input that is not what `serialize` returns, a read past the end, a count the rest cannot hold, an enum index past its items, a packed rotation code that names none | an exact `Length<T, N>` value that is not `N` long, a count too large for its `u8`, `u16` or `u24` width, a number its `Range<T, Min, Max>` does not admit |
 | Taken by       | `createDeserializer`, `createCodec`                                                                                                                                    | `createSerializer`, `createCodec`                                                                                                                          |
-| Costs          | a branch per read                                                                                                                                                      | a branch per container and per ranged number                                                                                                               |
+| Costs          | a branch per read and a shape check per call, measured in [benchmarks/speed.md](benchmarks/speed.md)                                                                   | a branch per narrowed or exact `Length` and per `Range` number; nothing for a type with neither                                                            |
 
 Both default to `false`, and both must be written as `true` or `false` at the
 call site, because they decide what code is generated. Every error either one
 raises is a string that begins `@rbxts/surge:`, so a `pcall` can tell it
 from an error in the game's own code.
 
-## Reading bytes from a client
+## Reading what a client sent
 
-Without `readChecks`, `deserialize` trusts its input. Given bytes no `serialize`
-of the same type wrote, it may raise an unrelated Luau error, return a wrong
-value, or loop for as long as a count in the input says. Use `readChecks: true`
-wherever the bytes come from outside the game's own code, which a
-`RemoteEvent` is, and call it in a `pcall`. With `readChecks`, `deserialize`
-also takes `unknown`, so what a remote delivers can be passed to it as it is:
-an input that is not what `serialize` returns for the type raises before
-anything is read.
+A client controls what it sends: an exploiter can fire a remote with any
+arguments. On the server, read what a client sent with `readChecks: true`,
+and call it in a `pcall`. `deserialize` then also takes `unknown`, so what
+the remote delivered can be passed to it as it is, and an input that is not
+what `serialize` returns for the type raises before anything is read.
+
+Without `readChecks`, `deserialize` trusts its input. Given bytes no
+`serialize` of the same type wrote, it may raise an unrelated Luau error,
+return a value its type does not allow, such as `undefined` for an enum item,
+or loop and allocate for as long as a count in the input says. A `pcall`
+turns the first into a rejection, and does not see the other two.
+
+The game's own bytes do not need `readChecks`: what the server sends a
+client, and what the game saved to its own `DataStore`. Nor does packet loss:
+Roblox drops a lost `UnreliableRemoteEvent` event rather than delivering part
+of it. And `readChecks` does not catch bytes written for a different type,
+such as a save from before the type changed
+([What the bytes do not carry](#what-the-bytes-do-not-carry)).
 
 With `readChecks`, an input that passes deserializes to a value of the declared
 type. It does not follow that the value is one the game accepts. A number
@@ -70,6 +80,10 @@ nothing:
 It examines a number only when its type is a `Range<T, Min, Max>`, and then
 raises for a value outside the range, a NaN, and a fraction where the range
 holds whole numbers. To have `serialize` check a number, give it a `Range`.
+
+`writeChecks` guards the game's own values, not what crosses the network. A
+type with no narrowed or exact `Length` and no `Range` gets no check from it,
+so turning it on costs such a type nothing.
 
 ## What the bytes do not carry
 
