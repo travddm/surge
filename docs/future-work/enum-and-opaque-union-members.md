@@ -28,7 +28,7 @@ support:
 ## Why deferred
 
 Each shape is a diagnostic, not a wrong encoding, so the work is support
-rather than a fix. Support for the first three shapes changes the
+rather than a fix. Support for any of the three shapes changes the
 `guardedUnion` variant order, which is part of the wire format (Wire format
 5.7 in [specs/wire-format.md](../specs/wire-format.md)). `bytes.spec.ts` pins
 no union with an enum or opaque member, so these stages move no pinned

@@ -121,7 +121,7 @@ function narrowValue(size: number): Narrow {
 	return { list, text: "", tags };
 }
 
-/** The message of a `deserialize` that raised, or `undefined` if it returned. */
+/** The message of a call that raised, or `undefined` if it returned. */
 function rejection(run: () => unknown): string | undefined {
 	const [ok, err] = pcall(run);
 	if (ok) {

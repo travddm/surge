@@ -1,8 +1,8 @@
 # Test harness specification
 
 Status: current
-Applies to: `@rbxts/surge` at commit `f0d9639`, `rbxts-transformer-surge` at
-commit `fd89bf5` (no tagged release yet)
+Applies to: `@rbxts/surge` at commit `a564714`, `rbxts-transformer-surge` at
+commit `642062d` (no tagged release yet)
 
 ## 1. Scope
 
@@ -32,8 +32,10 @@ the walk, the emitter's output for each `Field` kind, the end-to-end
 transform of a fixture program, and detection.
 
 **3.2** The golden checks run in Node against the compiled Luau under
-`tests/out/`, and one of them against this package's own `out/`. Each check
-pins one decision about the shape of the emitted code, and none executes it.
+`tests/out/`, and two of them against this package's own `out/`: its
+modules' file pragmas, and the exports its `index.d.ts` declares. Each check
+pins one decision about the shape of the emitted code or the package, and
+none executes it.
 
 **3.3** The round-trip suite executes the generated code. A round-trip fact
 encodes a value, decodes it, and compares the result with the input as a
@@ -161,6 +163,8 @@ file in its `lib/` for the snapshot to copy.
 
 ## Changes
 
+- `a564714` / `642062d`: 3.2 counts the golden check that reads the
+  package's `out/index.d.ts`.
 - `f0d9639` / `fd89bf5`: 4.5 (no round trip keys a table by an `EnumItem` or
   a `Vector3`).
 - `a7cb730` / `84e0abb`: 4.6 (the recorded instance table is a copy).

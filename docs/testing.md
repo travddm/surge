@@ -36,8 +36,9 @@ benchmark speed tier needs Roblox Studio, and it is not part of `ci`.
   `RUNIT_RESULT:` line that carries the verdict, and what a run rebuilds first
   are in [specs/test-harness.md](specs/test-harness.md).
 - **Golden checks** (surge, `mise run test`): Node checks that read the
-  compiled Luau under `tests/out/` and pin decisions about its shape, such as
-  one reservation per run of fixed-size fields.
+  compiled Luau under `tests/out/`, and the package's own `out/`, and pin
+  decisions about their shape, such as one reservation per run of fixed-size
+  fields.
 - **Transformer unit tests** (transformer, `mise run test`): Jest suites for
   the walk (`walk.test.ts`), the emitter's output per `Field` kind
   (`emit.test.ts`, with snapshots), the whole transform (`transform.test.ts`),

@@ -1,11 +1,10 @@
 //!optimize 2
 /**
  * Branded number types the transformer recognizes as an explicit width
- * request, matching fbs's own `DataType.*` branding convention (see Wire format
- * 4.1 in docs/specs/wire-format.md) so existing fbs call sites migrate with only
- * an import-path change. A plain `number` with no brand defaults to `f64`.
+ * request, spelled as fbs spells its own (`DataType.u8`; see Wire format 4.1 in
+ * docs/specs/wire-format.md). A plain `number` with no brand defaults to `f64`.
  */
-// eslint-disable-next-line @typescript-eslint/no-namespace -- a namespace is the only way to get fbs's exact `DataType.f32` dotted-type-reference syntax.
+// eslint-disable-next-line @typescript-eslint/no-namespace -- a namespace is the only way to get the dotted `DataType.f32` type reference.
 export namespace DataType {
 	export type f32 = number & { readonly _surge_f32?: never };
 	export type f64 = number & { readonly _surge_f64?: never };
@@ -29,12 +28,14 @@ export namespace DataType {
 	 * a count of that width is written ahead of the contents. The default is
 	 * `u32`, which is what an unbranded container writes, so `Length<T>` and
 	 * `T` encode identically. A narrower width saves the difference on every
-	 * value and truncates silently above what it can count, so it states a
-	 * bound the shape is known to keep.
+	 * value, and above what it can count the count wraps unless `writeChecks`
+	 * is on, which raises instead (Wire format 6.8), so it states a bound the
+	 * shape is known to keep.
 	 *
 	 * With a whole number literal (`Length<string, 8>`) no count is written
 	 * at all and both sides use exactly that many bytes or elements. The
-	 * value must have exactly that many, and nothing checks it. A longer one
+	 * value must have exactly that many, and only `writeChecks` checks it
+	 * (Runtime API 3.10 in docs/specs/runtime-api.md). Without it, a longer one
 	 * is truncated. A shorter string or buffer raises. A shorter array or
 	 * tuple rest writes each missing element as `nil` (Wire format 6.6 and
 	 * 6.7 in docs/specs/wire-format.md):

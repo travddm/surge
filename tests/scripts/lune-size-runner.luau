@@ -88,7 +88,10 @@ end
 paragraph(
 	"`Round trip` names each library whose decoded value differs from the input,",
 	"with the largest difference in any component. About 1e-7 is f32 rounding of",
-	"a `CFrame` rotation; a larger figure is quantization on purpose."
+	"a `CFrame` rotation, and about 1e-4 a quantized one. A difference near 1 is a",
+	"loss in the library or in this runner, which",
+	"[research/serialized-size-across-libraries.md](../research/serialized-size-across-libraries.md)",
+	"explains."
 )
 
 paragraph(

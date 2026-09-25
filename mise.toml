@@ -11,7 +11,7 @@ node = "24.21.0"
 "github:rojo-rbx/run-in-roblox" = "0.3.0"
 # Compiles the benchmark's Blink twins (tests/src/bench/definitions/catalog.blink) into the
 # generated modules the Blink adapter drives, via `mise run bench:definitions`. Pinned to the
-# version the coverage matrix in future-work/type-coverage-parity.md was read at, since the
+# version the coverage matrix in docs/research/type-coverage-across-libraries.md was read at, since the
 # bytes it emits are a result this repository checks in.
 "github:1Axen/blink" = "0.18.8"
 # Compiles the benchmark's Zap twins (tests/src/bench/definitions/catalog.zap) into the modules

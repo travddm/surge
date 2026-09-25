@@ -101,8 +101,8 @@ export type Serialized<T> = MayCarryBlobs<T> extends true ? { buffer: buffer; bl
 /**
  * Writes a value of `T`, and returns its {@link Serialized} form.
  *
- * `in out` states that `T` is invariant, as it is on each of the three
- * types here. Stated, the checker does not measure it, and measuring it walks
+ * `in out` states that `T` is invariant, as it is on each of the types
+ * here. Stated, the checker does not measure it, and measuring it walks
  * {@link Serialized} with an unknown `T` until it reports the instantiation
  * as too deep.
  */
@@ -166,15 +166,16 @@ export interface CodecOptions {
 	 */
 	readonly readChecks?: boolean;
 	/**
-	 * Check, on every write, that a value's lengths and counts fit its type:
-	 * that a `DataType.Length<T, N>` value is exactly `N` long, and that a
-	 * count fits the width `DataType.Length<T, L>` gives it. A value that does
-	 * not raises a string beginning `@rbxts/surge: ` from `serialize`, where
-	 * unchecked it would be padded, truncated, or have its count wrap. Defaults
-	 * to `false`.
+	 * Check, on every write, that a value fits its type: that a
+	 * `DataType.Length<T, N>` value is exactly `N` long, that a count fits the
+	 * width `DataType.Length<T, L>` gives it, and that a number is one its
+	 * `DataType.Range<T, Min, Max>` admits. A value that does not raises a
+	 * string beginning `@rbxts/surge: ` from `serialize`, where unchecked it
+	 * would be padded, truncated, or wrapped. Defaults to `false`.
 	 *
 	 * It catches a value this game built wrong rather than input it was sent,
-	 * so it costs a branch per container on the write side only.
+	 * so it costs a branch per container and per ranged number, on the write
+	 * side only.
 	 */
 	readonly writeChecks?: boolean;
 }

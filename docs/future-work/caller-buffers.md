@@ -9,9 +9,9 @@ reads one value from the start of a buffer and returns nothing else (Runtime
 API 3.1, 3.5 and 4.8 in [specs/runtime-api.md](../specs/runtime-api.md)). A
 caller that puts several values in one buffer pays for both:
 
-- **On write**, each value costs a result table, a buffer from `finishWrite`
-  and a copy into the caller's buffer, where one write into the caller's
-  buffer would do.
+- **On write**, each value costs a buffer from `finishWrite`, a
+  `{ buffer, blobs }` table for a type that can hold a blob, and a copy into
+  the caller's buffer, where one write into the caller's buffer would do.
 - **On read**, `deserialize` cannot start at an offset and does not say where
   the value ended. The caller must frame each value with its own length, and
   copy it into a buffer of its own before reading it.

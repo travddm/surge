@@ -12,7 +12,7 @@ let writeBlobs: Array<defined> = [];
 let readBlobs: Array<defined> | undefined;
 let readIndex = 0;
 
-/** Resets the write-side blob list. Called once per top-level `serialize()`. */
+/** Resets the write-side blob list. Called once per top-level `serialize()` of a type with a blob field. */
 export function beginWriteBlobs(): void {
 	writeBlobs = [];
 }
@@ -27,7 +27,10 @@ export function finishWriteBlobs(): Array<defined> {
 	return writeBlobs;
 }
 
-/** Sets the input blob list and resets the read index. Called once per top-level `deserialize()`. */
+/**
+ * Sets the input blob list and resets the read index. Called once per top-level
+ * `deserialize()` of a type with a blob field.
+ */
 export function beginReadBlobs(blobs: Array<defined> | undefined): void {
 	readBlobs = blobs;
 	readIndex = 0;

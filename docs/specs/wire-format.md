@@ -1,8 +1,8 @@
 # Wire format specification
 
 Status: current
-Applies to: `@rbxts/surge` at commit `86f729b`, `rbxts-transformer-surge` at
-commit `c8481d3` (no tagged release yet)
+Applies to: `@rbxts/surge` at commit `b7b0746`, `rbxts-transformer-surge` at
+commit `7422117` (no tagged release yet)
 
 ## 1. Scope
 
@@ -374,6 +374,8 @@ in `@rbxts/surge`.
 
 ## Changes
 
+- `b7b0746` / `7422117`: 6.7 and 9.1 read blobs back from the input's
+  `blobs`, since `deserialize` takes no separate `inputBlobs`.
 - `86f729b` / `c8481d3`: adds 4.16 and 4.17 (`DataType.Range<T, Min, Max>`),
   7.4 (`DataType.Quantized<T>`) and 8.8 (a `bitSet`); 2, 3.2, 4.1, 4.8, 4.15 and
   8.6 follow them.

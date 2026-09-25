@@ -19,13 +19,15 @@ through `file:../../rbxts-transformer-surge`, so the two must be siblings.
 
 Both repositories:
 
-| Task                                       | Does                                                     |
-| ------------------------------------------ | -------------------------------------------------------- |
-| `mise run ci`                              | every check, in order; must pass before a change is done |
-| `mise run compile`                         | build the package                                        |
-| `mise run lint:fix`, `mise run format:fix` | apply ESLint, markdownlint and Prettier fixes            |
-| `mise run test`                            | the transformer's unit tests, or surge's golden checks   |
-| `mise run hooks:install`                   | opt in to a pre-push hook that runs `mise run ci`        |
+| Task                                           | Does                                                      |
+| ---------------------------------------------- | --------------------------------------------------------- |
+| `mise run ci`                                  | every check, in order; must pass before a change is done  |
+| `mise run compile`                             | build the package                                         |
+| `mise run lint:fix`, `mise run format:fix`     | apply ESLint, markdownlint and Prettier fixes             |
+| `mise run lint:check`, `mise run format:check` | the same checks, reporting without fixing                 |
+| `mise run spell`                               | cspell over the documentation and the last commit message |
+| `mise run test`                                | the transformer's unit tests, or surge's golden checks    |
+| `mise run hooks:install`                       | opt in to a pre-push hook that runs `mise run ci`         |
 
 surge only:
 
@@ -38,6 +40,9 @@ surge only:
 | `mise run bench:speed:render`                           | rewrite the speed table from its trials, without a run        |
 | `mise run bench:definitions`                            | recompile the Blink and Zap definitions the benchmark drives  |
 | `mise run dev:tests`                                    | watch-compile the test place and serve it to Studio with Rojo |
+| `mise run tests:compile:watch`, `mise run tests:serve`  | the two halves of `dev:tests`, one at a time                  |
+| `mise run tests:sourcemap`                              | write the test place's Rojo sourcemap                         |
+| `mise run tests:build`                                  | build the test place into a `.rbxl`                           |
 
 ## Working across both repositories
 
@@ -56,8 +61,9 @@ surge only:
 
 ## Editors
 
-Each repository's `.vscode/tasks.json` maps every `mise` task to a VS Code
-task, labeled `surge: <task>` or `transformer: <task>`, with a Windows shell
+Each repository's `.vscode/tasks.json` maps its `mise` tasks to VS Code
+tasks, labeled `surge: <task>` or `transformer: <task>`, except surge's
+`bench:definitions` and the two `:only` tasks, with a Windows shell
 override to Git Bash because the tasks assume a POSIX shell.
 
 `surge.code-workspace` opens both repositories in one window, and expects

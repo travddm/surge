@@ -25,4 +25,7 @@ without an error.
   `detect.ts` already checks declarations in `@rbxts/types`, or `defined` left
   as a documented exception.
 - Update Transformer 4.1 and [supported-types.md](../supported-types.md),
-  which list `{}` as a blob, in the same change.
+  which list `{}` as a blob, in the same change, and `MayCarryBlobs` in
+  `src/serializer.ts` with Runtime API 3.12, which also count a type with no
+  properties as one; otherwise `Serialized<T>` of such a type stays the table
+  with an empty `blobs`, where it could be the buffer alone.

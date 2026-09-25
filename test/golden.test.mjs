@@ -1,6 +1,6 @@
-// Golden/invariant tests on the actual compiled `.luau` output (see Golden
-// checks in docs/testing.md): they read text the real
-// pipeline already produced, they don't execute anything. This is the
+// Golden/invariant tests on the actual compiled `.luau` output, and on the
+// package's own `out/index.d.ts` (see Golden checks in docs/testing.md): they
+// read text the real pipeline already produced, they don't execute anything. This is the
 // falsifiable claim the whole design rests on -- specialized code per shape
 // at compile time, not a runtime interpreter reading a schema -- so these
 // assert it stays true as an automated regression instead of only a

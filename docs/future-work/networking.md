@@ -14,9 +14,9 @@ These are Zap's other headline speed contributors beyond serialization,
 but they're networking-layer, not serializer-layer — explicitly out of
 scope for the current `rbxts-transformer-surge`/`@rbxts/surge` work (see
 Non-goals in [architecture.md](../architecture.md)). The serializer is
-designed so a networking layer can sit underneath it later (the same way
-fbs's own use inside Flamework networking works today) without needing
-the serializer redesigned when this is picked up.
+designed to sit under a networking layer later, as fbs sits under
+Flamework's networking today, without being redesigned when this is picked
+up.
 
 ## How, briefly
 

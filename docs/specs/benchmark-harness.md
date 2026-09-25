@@ -1,8 +1,8 @@
 # Benchmark harness specification
 
 Status: current
-Applies to: `@rbxts/surge` at commit `4801267`, `rbxts-transformer-surge` at
-commit `32ca81c` (no tagged release yet)
+Applies to: `@rbxts/surge` at commit `b7b0746`, `rbxts-transformer-surge` at
+commit `7422117` (no tagged release yet)
 
 ## 1. Scope
 
@@ -228,6 +228,8 @@ for the reasons in section 6 of [test-harness.md](test-harness.md).
 
 ## Changes
 
+- `b7b0746` / `7422117`: 4.1 names `createCodec`; 4.8: surge's adapter
+  passes what `serialize` returns to `deserialize` unchanged.
 - `4801267` / `32ca81c`: 4.8 follows `serialize`'s bare buffer in surge's
   adapter.
 - `984a9cc` / `08bd04e`: adds 4.8 (an adapter uses a library's result as its

@@ -1,7 +1,7 @@
 # Runtime API specification
 
 Status: current
-Applies to: `@rbxts/surge` at commit `85f2241`, `rbxts-transformer-surge` at
+Applies to: `@rbxts/surge` at commit `a564714`, `rbxts-transformer-surge` at
 commit `642062d` (no tagged release yet)
 
 ## 1. Scope
@@ -60,10 +60,6 @@ returns the `serialize` function alone, typed `Serializer<T>`.
 
 **3.3** `createDeserializer<T>(options?: Pick<CodecOptions, "readChecks">)`
 returns the `deserialize` function alone, typed `Deserializer<T>`.
-
-`createCodec` and `createDeserializer` return `CheckedCodec<T>` and
-`CheckedDeserializer<T>` instead when `readChecks: true` is written at the
-call site (3.14).
 
 **3.4** Every factory call site must be replaced by the transformer at compile
 time. A factory that runs untransformed raises a string saying that
@@ -126,10 +122,11 @@ a diagnostic (Transformer 7.3).
 `Codec`, `CheckedCodec`, `Serializer`, `Deserializer`, `CheckedDeserializer`,
 `Serialized` and `CodecOptions`, and `DataType`. The helper ABI is a module of its own (5.1).
 
-**3.14** With checks, `deserialize` takes `unknown` as well as
-`Serialized<T>`, in the second call signature of `CheckedDeserializer<T>`. It
-reads an input of the shape `Serialized<T>` names, as 3.7 states, and any
-other input raises by 4.11.
+**3.14** With checks, `createCodec` returns `CheckedCodec<T>` and
+`createDeserializer` returns `CheckedDeserializer<T>`, whose second call
+signature takes `unknown` as well as the first's `Serialized<T>`.
+`deserialize` reads an input of the shape `Serialized<T>` names, as 3.7
+states, and any other input raises by 4.11.
 
 ## 4. What `deserialize` does with input it did not write
 
@@ -264,7 +261,7 @@ A test file named `*.spec.ts` is under `tests/src/tests/`. A path starting
 
 | Statement                   | Pinned by                                                                                                                                                                                                                                                                                                                                                                                                                          |
 | --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 3.1–3.3                     | `factories.spec.ts`: round trip through the bundled serializer and through separate ones                                                                                                                                                                                                                                                                                                                                           |
+| 3.1–3.3                     | `factories.spec.ts`: round trip through a codec and through a separate serializer and deserializer                                                                                                                                                                                                                                                                                                                                 |
 | 3.4                         | Source only: `notConfigured` in `src/serializer.ts`; no test runs a factory untransformed                                                                                                                                                                                                                                                                                                                                          |
 | 3.5                         | `bytes.spec.ts`, which compares every pinned encoding's whole buffer                                                                                                                                                                                                                                                                                                                                                               |
 | 3.6                         | `roblox.spec.ts`: `passesUnknownAndInstanceValuesThroughTheBlobChannel`, `keepsLaterBlobsInPlaceWhenAnUnknownIsUndefined`, `writesNoBlobForAnAbsentOptionalBlob`; the buffer alone: `factories.spec.ts`: `passesTheBufferAloneForAShapeWithNoBlob`, and `test/golden.test.mjs`: a shape with no blob field returns the buffer alone; the empty array: `rbxts-transformer-surge` `test/transform.test.ts`, `transform (end-to-end)` |
@@ -282,7 +279,7 @@ A test file named `*.spec.ts` is under `tests/src/tests/`. A path starting
 | 4.3 (minimum size, lengths) | Source only: `minBytes` in `emit/layout.ts`; `readStr`, `readBuffer` and `readSequence` in `emit/read.ts` check no count                                                                                                                                                                                                                                                                                                           |
 | 4.5                         | With checks: `checks.spec.ts`: `rejectsAReadPastTheEndOfTheBlobs`. Without: source only, `nextBlob` in `src/blobs.ts`, which `readChecks` does not change                                                                                                                                                                                                                                                                          |
 | 4.6                         | Source only: `nextBlob` in `src/blobs.ts`                                                                                                                                                                                                                                                                                                                                                                                          |
-| 4.7                         | `checks.spec.ts`: `acceptsWhatSerializeWrote`; a `DataType.Range`: `rbxts-transformer-surge` `test/emit.test.ts`, `Emitter write-side checks`. Source only for what checks do not examine: the emitter compares no value but the two indexes of 4.9, and `nextBlob` in `src/blobs.ts` returns the element of `inputBlobs` as it is                                                                                                 |
+| 4.7                         | `checks.spec.ts`: `acceptsWhatSerializeWrote`; a `DataType.Range`: `rbxts-transformer-surge` `test/emit.test.ts`, `Emitter write-side checks`. Source only for what checks do not examine: the emitter compares no value but the two indexes of 4.9, and `nextBlob` in `src/blobs.ts` returns the element of the input's `blobs` as it is                                                                                          |
 | 4.8                         | Source only: the generated `deserialize` prologue and `beginReadBlobs`; no test raises and then deserializes again                                                                                                                                                                                                                                                                                                                 |
 | 4.9                         | `checks.spec.ts`: `rejectsAnEnumIndexPastItsItems`, `rejectsAPackedRotationCodeThatNamesNoRotation`                                                                                                                                                                                                                                                                                                                                |
 | 4.10                        | Source only: `enumFromIndexExpr` in `emit/read.ts`; `readPackedCFrame` in `src/cframe.ts`                                                                                                                                                                                                                                                                                                                                          |
@@ -299,6 +296,9 @@ A test file named `*.spec.ts` is under `tests/src/tests/`. A path starting
 
 ## Changes
 
+- `a564714` / `642062d`: 3.14 states what `readChecks` makes `createCodec`
+  and `createDeserializer` return, which an unnumbered paragraph after 3.3
+  said; Conformance rows 3.1–3.3 and 4.7 corrected.
 - `85f2241` / `642062d`: 3.14 and 4.11 accept only the shape `Serialized<T>`
   names, where they accepted either; 3.1, 3.3 and 3.13 name `CheckedCodec<T>`
   and `CheckedDeserializer<T>` in place of the types' second parameter.

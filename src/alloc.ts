@@ -35,7 +35,8 @@ export function grow(current: buffer, live: number, needed: number): buffer {
 
 /**
  * Copies the first `size` bytes of `written` into an exact-size result
- * buffer. Called once per top-level `serialize()`, which is why it is still a
+ * buffer. Called once per top-level `serialize()` of a type that reserves
+ * bytes (Runtime API 5.4), which is why it is still a
  * call: measured at 1.00x, both as a cost of its own and as one more call per
  * serialize.
  */

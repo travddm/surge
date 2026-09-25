@@ -100,11 +100,11 @@ encoded, what goes into `blobs`, and what is rejected.
 
 ## Three factories
 
-| Factory                 | Returns                                         | Options                     |
-| ----------------------- | ----------------------------------------------- | --------------------------- |
-| `createCodec<T>`        | a `Codec<T>`: `{ serialize, deserialize }`      | `readChecks`, `writeChecks` |
-| `createSerializer<T>`   | the `serialize` function, a `Serializer<T>`     | `writeChecks`               |
-| `createDeserializer<T>` | the `deserialize` function, a `Deserializer<T>` | `readChecks`                |
+| Factory                 | Returns                                                                                          | Options                     |
+| ----------------------- | ------------------------------------------------------------------------------------------------ | --------------------------- |
+| `createCodec<T>`        | a `Codec<T>`: `{ serialize, deserialize }`, or a `CheckedCodec<T>` with `readChecks`             | `readChecks`, `writeChecks` |
+| `createSerializer<T>`   | the `serialize` function, a `Serializer<T>`                                                      | `writeChecks`               |
+| `createDeserializer<T>` | the `deserialize` function, a `Deserializer<T>`, or a `CheckedDeserializer<T>` with `readChecks` | `readChecks`                |
 
 Each call site generates its own code. Options are written as literals at the
 call site, such as `createDeserializer<PlayerState>({ readChecks: true })`, and
