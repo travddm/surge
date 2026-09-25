@@ -112,14 +112,14 @@ default to `false`.
 
 ## Input from a client
 
-A client can send any bytes. Read them with `readChecks: true`, and call the
-result in a `pcall`:
+A client can send anything. Read it with `readChecks: true`, which makes
+`deserialize` take `unknown` and check what it is given, and call it in a
+`pcall`:
 
 ```ts
 const readFromClient = createDeserializer<PlayerState>({ readChecks: true });
 
 remote.OnServerEvent.Connect((player, input) => {
-	if (!typeIs(input, "buffer")) return;
 	const [ok, state] = pcall(() => readFromClient(input));
 	if (!ok) return;
 	// `state` is a PlayerState. Whether its values are acceptable is the game's

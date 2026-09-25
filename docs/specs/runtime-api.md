@@ -1,8 +1,8 @@
 # Runtime API specification
 
 Status: current
-Applies to: `@rbxts/surge` at commit `b7b0746`, `rbxts-transformer-surge` at
-commit `7422117` (no tagged release yet)
+Applies to: `@rbxts/surge` at commit `0849e60`, `rbxts-transformer-surge` at
+commit `802a94f` (no tagged release yet)
 
 ## 1. Scope
 
@@ -33,11 +33,11 @@ packages is in [../getting-started.md](../getting-started.md).
 
 ```ts
 type Serializer<in out T> = (value: T) => Serialized<T>;
-type Deserializer<in out T> = (input: Serialized<T>) => T;
+type Deserializer<in out T, in Input = Serialized<T>> = (input: Input) => T;
 
-interface Codec<in out T> {
+interface Codec<in out T, in Input = Serialized<T>> {
 	serialize: Serializer<T>;
-	deserialize: Deserializer<T>;
+	deserialize: Deserializer<T, Input>;
 }
 
 // One of the two, by 3.6.
@@ -49,6 +49,10 @@ returns the `serialize` function alone, typed `Serializer<T>`.
 
 **3.3** `createDeserializer<T>(options?: Pick<CodecOptions, "readChecks">)`
 returns the `deserialize` function alone, typed `Deserializer<T>`.
+
+`createCodec` and `createDeserializer` return `Codec<T, unknown>` and
+`Deserializer<T, unknown>` instead when `readChecks: true` is written at the
+call site (3.14).
 
 **3.4** Every factory call site must be replaced by the transformer at compile
 time. A factory that runs untransformed raises a string saying that
@@ -111,6 +115,11 @@ a diagnostic (Transformer 7.3).
 `Codec`, `Serializer`, `Deserializer`, `Serialized` and `CodecOptions`, and
 `DataType`. The helper ABI is a module of its own (5.1).
 
+**3.14** With checks, `deserialize` takes `unknown`. It reads a buffer as the
+buffer `serialize` returns, and a table whose `buffer` is a buffer and whose
+`blobs` is a table as the table `serialize` returns, whichever of the two
+`Serialized<T>` is. Any other input raises by 4.11.
+
 ## 4. What `deserialize` does with input it did not write
 
 **4.1** Without checks, `deserialize` does not examine its input. On bytes
@@ -161,6 +170,11 @@ beginning `@rbxts/surge:`.
 states: an `enum` index past its items reads back as `undefined`, and a packed
 rotation code from 24 to 30 raises a Luau error that does not begin
 `@rbxts/surge:`.
+
+**4.11** With checks, an input that is neither a buffer nor a table whose
+`buffer` is a buffer and whose `blobs` is a table raises a string beginning
+`@rbxts/surge:`. A buffer given for a `T` with a blob field is read, and
+raises by 4.6 at the first blob field it reads.
 
 ## 5. The helper ABI
 
@@ -249,6 +263,7 @@ A test file named `*.spec.ts` is under `tests/src/tests/`. A path starting
 | 3.11                        | `checks.spec.ts`: `wrapsACountPastItsWidthWithoutWriteChecks`, `wrapsANumberOutsideItsRangeWithoutWriteChecks`; `collections.spec.ts`: `padsAShortExactArrayOfOptionalsInsteadOfRaising`                                                                                                                                                                                                                                           |
 | 3.12                        | `rbxts-transformer-surge` `test/transform.test.ts`, `transform (end-to-end)`: the declared result has a blobs array exactly when the walk finds a blob, on fourteen shapes; every call site under `tests/src/`, each of which Transformer 7.3 would reject. Source: `Serialized` in `src/serializer.ts`                                                                                                                            |
 | 3.13                        | `test/golden.test.mjs`: generated code imports its helpers from the package's abi module, whose second half reads `out/index.d.ts`. Source: `src/index.ts`                                                                                                                                                                                                                                                                         |
+| 3.14                        | `checks.spec.ts`: `rejectsAnInputThatIsNeitherABufferNorATableOfOne` (both forms are read); `rbxts-transformer-surge` `test/transform.test.ts`, `transform readChecks option`: a caller passing `unknown`, and without `readChecks` it does not type-check                                                                                                                                                                         |
 | 4.1                         | Source only: the unchecked read path under `emit/`; a statement of what is not guaranteed has nothing to pin                                                                                                                                                                                                                                                                                                                       |
 | 4.2–4.4                     | `checks.spec.ts`: `rejectsATruncatedPayload`, `rejectsATruncatedPackedCFrame`, `rejectsACountTheInputCannotHold`, `rejectsACountOfElementsThatReadNoBytes`                                                                                                                                                                                                                                                                         |
 | 4.3 (no over-rejection)     | `checks.spec.ts`: `acceptsWhatSerializeWrote`, `acceptsEveryKindThatReadsACount`, `acceptsEmptyContainers`                                                                                                                                                                                                                                                                                                                         |
@@ -259,6 +274,7 @@ A test file named `*.spec.ts` is under `tests/src/tests/`. A path starting
 | 4.8                         | Source only: the generated `deserialize` prologue and `beginReadBlobs`; no test raises and then deserializes again                                                                                                                                                                                                                                                                                                                 |
 | 4.9                         | `checks.spec.ts`: `rejectsAnEnumIndexPastItsItems`, `rejectsAPackedRotationCodeThatNamesNoRotation`                                                                                                                                                                                                                                                                                                                                |
 | 4.10                        | Source only: `enumFromIndexExpr` in `emit/read.ts`; `readPackedCFrame` in `src/cframe.ts`                                                                                                                                                                                                                                                                                                                                          |
+| 4.11                        | `checks.spec.ts`: `rejectsAnInputThatIsNeitherABufferNorATableOfOne`, `rejectsABufferAloneForAShapeThatReadsABlob`; `test/golden.test.mjs`: a serializer with `readChecks` carries them                                                                                                                                                                                                                                            |
 | 5.1                         | `test/golden.test.mjs`: generated code imports its helpers from the package's abi module. Source: the calls the emitter makes under `emit/`, and the exports of `src/abi.ts`                                                                                                                                                                                                                                                       |
 | 5.2                         | `test/golden.test.mjs`: consecutive fixed-size fields share one reservation, inline                                                                                                                                                                                                                                                                                                                                                |
 | 5.3                         | `test/golden.test.mjs`: packed booleans never call a per-bit `packBit` helper                                                                                                                                                                                                                                                                                                                                                      |
@@ -271,6 +287,9 @@ A test file named `*.spec.ts` is under `tests/src/tests/`. A path starting
 
 ## Changes
 
+- `0849e60` / `802a94f`: adds 3.14 (with checks, `deserialize` takes
+  `unknown`) and 4.11 (the input's shape is checked); 3.1 and 3.3 give the
+  types a second parameter for what `deserialize` takes.
 - `b7b0746` / `7422117`: 3.1–3.3 name `createCodec`, `Codec<T>`,
   `Serializer<T>`, `Deserializer<T>` and `CodecOptions`; 3.7:
   `deserialize` takes what `serialize` returned; 3.8 names `readChecks`;

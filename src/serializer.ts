@@ -108,13 +108,17 @@ export type Serialized<T> = MayCarryBlobs<T> extends true ? { buffer: buffer; bl
  */
 export type Serializer<in out T> = (value: T) => Serialized<T>;
 
-/** Reads back a value of `T` from what a {@link Serializer} of `T` returned. */
-export type Deserializer<in out T> = (input: Serialized<T>) => T;
+/**
+ * Reads back a value of `T` from what a {@link Serializer} of `T` returned.
+ * `Input` is what it takes: {@link Serialized}, or `unknown` under
+ * {@link CodecOptions.readChecks}, which checks the input's shape itself.
+ */
+export type Deserializer<in out T, in Input = Serialized<T>> = (input: Input) => T;
 
 /** A {@link Serializer} and a {@link Deserializer} of the same `T`. */
-export interface Codec<in out T> {
+export interface Codec<in out T, in Input = Serialized<T>> {
 	serialize: Serializer<T>;
-	deserialize: Deserializer<T>;
+	deserialize: Deserializer<T, Input>;
 }
 
 function notConfigured(): never {
@@ -135,6 +139,10 @@ export interface CodecOptions {
 	 * and that a count it reads back is one the rest of the input could hold.
 	 * A payload that fails either raises a string beginning `@rbxts/surge: `,
 	 * so a caller `pcall`s at the boundary. Defaults to `false`.
+	 *
+	 * `deserialize` then takes `unknown`, and raises the same way for an input
+	 * that is neither a buffer nor a table of a buffer and a `blobs` array, so
+	 * what a remote delivered can be passed to it as it is.
 	 *
 	 * Turn it on wherever the bytes come from somewhere that is not trusted,
 	 * which a remote event is and a `DataStore` of this game's own writing is
@@ -162,7 +170,9 @@ export interface CodecOptions {
  * Runtime API 3.4 in docs/specs/runtime-api.md). Calling this directly means the
  * transformer isn't registered for this project.
  */
-export function createCodec<T>(options?: CodecOptions): Codec<T> {
+export function createCodec<T>(options: CodecOptions & { readonly readChecks: true }): Codec<T, unknown>;
+export function createCodec<T>(options?: CodecOptions): Codec<T>;
+export function createCodec<T>(options?: CodecOptions): Codec<T, unknown> {
 	return notConfigured();
 }
 
@@ -172,6 +182,8 @@ export function createSerializer<T>(options?: Pick<CodecOptions, "writeChecks">)
 }
 
 /** See {@link createCodec}. Takes the read side of {@link CodecOptions}. */
-export function createDeserializer<T>(options?: Pick<CodecOptions, "readChecks">): Deserializer<T> {
+export function createDeserializer<T>(options: { readonly readChecks: true }): Deserializer<T, unknown>;
+export function createDeserializer<T>(options?: Pick<CodecOptions, "readChecks">): Deserializer<T>;
+export function createDeserializer<T>(options?: Pick<CodecOptions, "readChecks">): Deserializer<T, unknown> {
 	return notConfigured();
 }

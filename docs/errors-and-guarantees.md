@@ -16,13 +16,13 @@ const [ok, request] = pcall(() => readRequest(input));
 
 ## Two options
 
-|                | `readChecks`                                                                                                            | `writeChecks`                                                                                                                                              |
-| -------------- | ----------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Governs        | `deserialize`                                                                                                           | `serialize`                                                                                                                                                |
-| Guards against | bytes that did not come from `serialize`                                                                                | a value that does not fit its `DataType` brands                                                                                                            |
-| Rejects        | a read past the end, a count the rest cannot hold, an enum index past its items, a packed rotation code that names none | an exact `Length<T, N>` value that is not `N` long, a count too large for its `u8`, `u16` or `u24` width, a number its `Range<T, Min, Max>` does not admit |
-| Taken by       | `createDeserializer`, `createCodec`                                                                                     | `createSerializer`, `createCodec`                                                                                                                          |
-| Costs          | a branch per read                                                                                                       | a branch per container and per ranged number                                                                                                               |
+|                | `readChecks`                                                                                                                                                           | `writeChecks`                                                                                                                                              |
+| -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Governs        | `deserialize`                                                                                                                                                          | `serialize`                                                                                                                                                |
+| Guards against | bytes that did not come from `serialize`                                                                                                                               | a value that does not fit its `DataType` brands                                                                                                            |
+| Rejects        | an input that is not what `serialize` returns, a read past the end, a count the rest cannot hold, an enum index past its items, a packed rotation code that names none | an exact `Length<T, N>` value that is not `N` long, a count too large for its `u8`, `u16` or `u24` width, a number its `Range<T, Min, Max>` does not admit |
+| Taken by       | `createDeserializer`, `createCodec`                                                                                                                                    | `createSerializer`, `createCodec`                                                                                                                          |
+| Costs          | a branch per read                                                                                                                                                      | a branch per container and per ranged number                                                                                                               |
 
 Both default to `false`, and both must be written as `true` or `false` at the
 call site, because they decide what code is generated. Every error either one
@@ -35,7 +35,10 @@ Without `readChecks`, `deserialize` trusts its input. Given bytes no `serialize`
 of the same type wrote, it may raise an unrelated Luau error, return a wrong
 value, or loop for as long as a count in the input says. Use `readChecks: true`
 wherever the bytes come from outside the game's own code, which a
-`RemoteEvent` is, and call it in a `pcall`.
+`RemoteEvent` is, and call it in a `pcall`. With `readChecks`, `deserialize`
+takes `unknown`, so what a remote delivers can be passed to it as it is: an
+input that is neither a buffer nor a table of a buffer and a `blobs` array
+raises. Either form is read, whichever one `serialize` returns for the type.
 
 With `readChecks`, an input that passes deserializes to a value of the declared
 type. It does not follow that the value is one the game accepts. A number

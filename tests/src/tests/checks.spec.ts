@@ -335,6 +335,36 @@ class ChecksTest {
 		Assert.equal("a", blobs.deserialize({ buffer: bytes, blobs: sent }).first);
 		assertRejected(() => blobs.deserialize({ buffer: bytes, blobs: [sent[0]] }));
 	}
+
+	// With `readChecks`, `deserialize` takes `unknown`, so what a remote
+	// delivered can be passed to it as it is (Runtime API 3.14 in
+	// docs/specs/runtime-api.md).
+	@Fact
+	public rejectsAnInputThatIsNeitherABufferNorATableOfOne(): void {
+		const bytes = flat.serialize({ count: 7, flag: true });
+		assertRejected(() => flat.deserialize(undefined));
+		for (const input of [
+			7,
+			"text",
+			{},
+			{ buffer: "text", blobs: [] },
+			{ buffer: bytes },
+			{ buffer: bytes, blobs: 7 },
+		]) {
+			assertRejected(() => flat.deserialize(input));
+		}
+		// Either form `serialize` returns is read, whichever one the type's is.
+		Assert.equal(7, flat.deserialize(bytes).count);
+		Assert.equal(7, flat.deserialize({ buffer: bytes, blobs: [] }).count);
+	}
+
+	// A buffer alone has no `blobs` for a shape that reads one (Runtime API 4.6).
+	@Fact
+	public rejectsABufferAloneForAShapeThatReadsABlob(): void {
+		const { buffer: bytes, blobs: sent } = blobs.serialize({ first: "a", second: "b" });
+		assertRejected(() => blobs.deserialize(bytes));
+		Assert.equal("b", blobs.deserialize({ buffer: bytes, blobs: sent }).second);
+	}
 }
 
 export = ChecksTest;

@@ -1,8 +1,8 @@
 # Transformer specification
 
 Status: current
-Applies to: `@rbxts/surge` at commit `b7b0746`, `rbxts-transformer-surge` at
-commit `7422117` (no tagged release yet)
+Applies to: `@rbxts/surge` at commit `0849e60`, `rbxts-transformer-surge` at
+commit `802a94f` (no tagged release yet)
 
 ## 1. Scope
 
@@ -264,7 +264,17 @@ otherwise a table of `buffer` and `blobs`. It is read from the type of
 `deserialize`'s parameter. `serialize`'s `blobs` is the blob channel's list
 if the body reaches `pushBlob`, and a new empty array if it does not.
 `deserialize` reads `blobs` only if the body reaches `nextBlob`, and names
-its parameter `_input` if it reads neither bytes nor `blobs`.
+its parameter `_input` if it reads neither bytes nor `blobs`. Under
+`readChecks: true`, `deserialize`'s parameter is `unknown` instead (5.17).
+
+**5.17** Under `readChecks: true`, a generated `deserialize` takes `unknown`
+and checks its shape before the body runs (Runtime API 3.14 and 4.11): it
+reads the buffer from a table's `buffer`, or takes the input itself when it
+is not a table, and rejects an input whose buffer is not a buffer or whose
+table's `blobs` is not a table. It accepts both forms whatever
+`Serialized<T>` is, because a `createDeserializer` call site declares no
+`Serialized<T>` to read. The two locals that hold the input's parts are
+declared ahead of the body and count toward 5.8.
 
 ## 6. Injected imports
 
@@ -328,7 +338,9 @@ alone, and none of its own for the union.
 
 **7.3** The entry point reports a diagnostic for a call site that breaks 3.2
 or 3.3, and for one whose body reaches `pushBlob` or `nextBlob` where the
-`Serialized<T>` `@rbxts/surge` declares is `buffer` (5.16).
+`Serialized<T>` `@rbxts/surge` declares is `buffer` (5.16). A
+`createDeserializer` call site under `readChecks: true` declares none, and is
+not reported for it.
 
 **7.4** A walk diagnostic points at the declaration of the property whose
 type the walk was in, when that declaration is in the file being transformed.
@@ -382,6 +394,7 @@ of `rbxts-transformer-surge`, cited by `describe` block. Source paths are in
 | 5.14      | `emit`: `Emitter write-side checks`; `transform`: `transform writeChecks option`; `tests/src/tests/checks.spec.ts`: `rejectsAnExactLengthValueOfAnyOtherLength`, `letsAnExactArrayOfOptionalsBeShorterButNotLonger`, `rejectsACountPastItsWidth`, `rejectsANumberItsRangeDoesNotAdmit`                                                                                                                                                                                                |
 | 5.15      | `transform`: `transform generated code` (a deserialize result with each of seven shapes is assignable to its type argument)                                                                                                                                                                                                                                                                                                                                                           |
 | 5.16      | `transform`: `transform (end-to-end)` (the declared result has a blobs array exactly when the walk finds a blob, an array the shape never fills, the declared table at a `createDeserializer` call site, and a `deserialize` that reads nothing), `transform generated code` (a caller of a result with no blob and with one, and separate factories); `test/golden.test.mjs`: a shape with no blob field returns the buffer alone, and `deserialize` takes what `serialize` returned |
+| 5.17      | `transform`: `transform readChecks option` (`deserialize` takes `unknown`, and a caller passing it, with a blob and without, type-checks); `test/golden.test.mjs`: a serializer with `readChecks` carries them; `tests/src/tests/checks.spec.ts`: `rejectsAnInputThatIsNeitherABufferNorATableOfOne`, `rejectsABufferAloneForAShapeThatReadsABlob`                                                                                                                                    |
 | 6.1, 6.2  | `transform`: `transform injected imports`, and in `transform (end-to-end)` the single shared import and the same-named local function; `tests/src/tests/coverage.spec.ts`: `leavesAUserDeclarationNamedAfterAnInjectedImportAlone`; `test/golden.test.mjs`: generated code imports its helpers from the package's abi module                                                                                                                                                          |
 | 6.3       | `test/golden.test.mjs`: a file directive survives the transformer's injected imports; `transform`: `transform generated code` (the three directive tests)                                                                                                                                                                                                                                                                                                                             |
 | 6.4       | `transform`: `transform injected imports` (a `createDeserializer` call site)                                                                                                                                                                                                                                                                                                                                                                                                          |
@@ -394,6 +407,8 @@ of `rbxts-transformer-surge`, cited by `describe` block. Source paths are in
 
 ## Changes
 
+- `0849e60` / `802a94f`: adds 5.17 (under `readChecks`, `deserialize` takes
+  `unknown` and checks its shape); 5.16 and 7.3 follow it.
 - `b7b0746` / `7422117`: 3.1 and 3.3 name `createCodec` and `readChecks`;
   5.16 gives `deserialize` one parameter, the declared `Serialized<T>`; 6.1
   imports from `@rbxts/surge/out/abi`; 5.9, 5.10, 5.12 and 7.3 follow them.
