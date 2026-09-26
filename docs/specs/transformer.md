@@ -1,8 +1,8 @@
 # Transformer specification
 
 Status: current
-Applies to: `@rbxts/surge` at commit `1ad16f9`, `rbxts-transformer-surge` at
-commit `125ed38` (no tagged release yet)
+Applies to: `@rbxts/surge` at commit `02efefc`, `rbxts-transformer-surge` at
+commit `42ce64d` (no tagged release yet)
 
 ## 1. Scope
 
@@ -279,6 +279,12 @@ buffer where that is `buffer`, and otherwise anything but a table whose
 two locals, for its `buffer` and its `blobs`, ahead of the body, which count
 toward 5.8.
 
+**5.18** An `array` whose element is fixed-size (5.5) and reserves at least
+one byte reserves all of its elements at once, after its count and before its
+loop, and each element takes its bytes from that reservation in turn. Under
+`readChecks: true`, that reservation's bound (5.10) replaces one per element. A
+tuple's rest element reserves each element on its own.
+
 ## 6. Injected imports
 
 **6.1** The transformer adds one import of `@rbxts/surge/out/abi`, the
@@ -396,6 +402,7 @@ of `rbxts-transformer-surge`, cited by `describe` block. Source paths are in
 | 5.15      | `transform`: `transform generated code` (a deserialize result with each of seven shapes is assignable to its type argument)                                                                                                                                                                                                                                                                                                                                                                               |
 | 5.16      | `transform`: `transform (end-to-end)` (the declared result has a blobs array exactly when the walk finds a blob, an array the shape never fills, the declared table at a `createDeserializer` call site, and a `deserialize` that reads nothing), `transform generated code` (a caller of a result with no blob and with one, and separate factories); `test/golden.test.mjs`: a shape with no blob field returns the buffer alone, and `deserialize` takes what `serialize` returned                     |
 | 5.17      | `transform`: `transform readChecks option` (`deserialize` takes `unknown`, the table each factory requires for a blob or a declared table it never fills, and a caller passing `unknown`, with a blob and without, type-checks); `test/golden.test.mjs`: a serializer with `readChecks` carries them; `tests/src/tests/checks.spec.ts`: `rejectsAnythingButABufferForAShapeWithNoBlob`, `rejectsAnythingButItsTableForAShapeWithABlob`                                                                    |
+| 5.18      | `emit`: `Emitter element reservations`; `test/golden.test.mjs`: an array of fixed-size elements reserves them all once, ahead of its loop; `tests/src/tests/checks.spec.ts`: `rejectsATruncatedExactLengthArray`                                                                                                                                                                                                                                                                                          |
 | 6.1, 6.2  | `transform`: `transform injected imports`, and in `transform (end-to-end)` the single shared import and the same-named local function; `tests/src/tests/coverage.spec.ts`: `leavesAUserDeclarationNamedAfterAnInjectedImportAlone`; `test/golden.test.mjs`: generated code imports its helpers from the package's abi module                                                                                                                                                                              |
 | 6.3       | `test/golden.test.mjs`: a file directive survives the transformer's injected imports; `transform`: `transform generated code` (the three directive tests)                                                                                                                                                                                                                                                                                                                                                 |
 | 6.4       | `transform`: `transform injected imports` (a `createDeserializer` call site)                                                                                                                                                                                                                                                                                                                                                                                                                              |
@@ -408,6 +415,8 @@ of `rbxts-transformer-surge`, cited by `describe` block. Source paths are in
 
 ## Changes
 
+- `02efefc` / `42ce64d`: adds 5.18 (an array of fixed-size elements
+  reserves them all at once).
 - `1ad16f9` / `125ed38`: 5.5 admits a nested `object` of fixed-size
   properties to a run, and counts its properties toward the bound of 31.
 - `85f2241` / `642062d`: 5.17 checks the input against the declared

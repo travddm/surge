@@ -117,6 +117,15 @@ test("a nested object of fixed-size fields shares the reservation around it", ()
 	assert.match(luau, /__surge_readCursor = pos[0-9]+ [+] 15$/m);
 });
 
+test("an array of fixed-size elements reserves them all once, ahead of its loop", () => {
+	const luau = readCompiledLuau("tests/bytes.spec.luau");
+	// `Containers.list` is a `u16[]`: one reservation of two bytes per
+	// element on each side, and a position each element moves on.
+	assert.match(luau, /__surge_cursor = pos[0-9]+ [+] #arr[0-9]+ [*] 2$/m);
+	assert.match(luau, /__surge_readCursor = pos[0-9]+ [+] count[0-9]+ [*] 2$/m);
+	assert.match(luau, /element[0-9]+ [+]= 2$/m);
+});
+
 // Regression check for the conditional blob side channel. What it is worth is in
 // docs/research/per-call-overhead.md.
 test("a shape with no blob field pays nothing for the blob side channel", () => {

@@ -93,8 +93,9 @@ whatever it is worth.
 
 **Fewer reservations.** A run of consecutive fixed-size properties of one
 object shares one reservation, and a nested object whose properties all have
-a fixed size joins the run around it (Transformer 5.5). Nothing else shares a
-reservation. The places below reserve more often than the bytes require.
+a fixed size joins the run around it (Transformer 5.5). An array of fixed-size
+elements reserves all of them at once (Transformer 5.18). Nothing else shares
+a reservation. The places below reserve more often than the bytes require.
 Merging reservations changes no byte, because reservation order is byte order
 either way. A shape whose reservations all merge makes one reservation per
 call, which is where the exact sizing above starts.
@@ -110,21 +111,12 @@ call, which is where the exact sizing above starts.
 - **A string's count and bytes.** A `str` or a `buffer` reserves its count
   and then its bytes: two reservations where one of the count's width plus
   the length would do.
-- **An array of fixed-size elements.** Each element reserves inside the loop,
-  so `Blink: Entities` checks capacity once per element. One reservation of
-  the count times the element's size, before the loop, covers every element.
-  `fixedBytes` gives that size for an `Entities` element, an object of six
-  `u8`. No catalog row has a nested object of fixed-size properties beside
-  another fixed-size property, so the run that object joins changes no
-  fixture's code, and `Blink: Entities` under this item is the first row to
-  measure it. With `readChecks`, the count bound (Runtime API 4.3 in
-  [specs/runtime-api.md](../specs/runtime-api.md)) is exact for such an
-  element, so the per-element read bounds repeat it.
 - **Tuple elements.** Coalesce a tuple's consecutive fixed-size elements into
-  one reservation, the way an object's fields already are. The mechanism is
-  `fixedBytes`, `allocRuns` and `withAllocRun`, unchanged; what is missing is
-  a benchmark fixture that serializes a tuple, without which nothing measures
-  it.
+  one reservation, the way an object's fields already are, and reserve its
+  rest elements at once, the way an array's are. The mechanism is
+  `fixedBytes`, `allocRuns`, `withAllocRun` and `reserveElements`, unchanged;
+  what is missing is a benchmark fixture that serializes a tuple, without
+  which nothing measures it.
 
 **Smaller items.** Strings evaluate `s.size()` twice. The scratch buffer only
 grows, so one large payload pins its memory for the module's lifetime. An

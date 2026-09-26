@@ -31,6 +31,13 @@ interface WithConstants {
 }
 const constants = createCodec<WithConstants>({ readChecks: true });
 
+// The exact form reads no count, so the one bound on its elements'
+// reservation (Transformer 5.18) is all that stops a short payload.
+interface WithTriple {
+	triple: DataType.Length<Array<DataType.u16>, 3>;
+}
+const triple = createCodec<WithTriple>({ readChecks: true });
+
 interface WithBlobs {
 	first: unknown;
 	second: unknown;
@@ -223,6 +230,12 @@ class ChecksTest {
 	public rejectsACountTheInputCannotHold(): void {
 		assertRejected(() => list.deserialize(unhex("ffffffff")));
 		assertRejected(() => list.deserialize(unhex("0a000000" + "0000000000000000")));
+	}
+
+	@Fact
+	public rejectsATruncatedExactLengthArray(): void {
+		assertRejected(() => triple.deserialize(unhex("0100" + "0200" + "03")));
+		Assert.equal(3, triple.deserialize(unhex("0100" + "0200" + "0300")).triple[2]);
 	}
 
 	// Nothing in the payload grows with the count, so only the cap stops it.
