@@ -17,6 +17,8 @@ code the transformer generates runs. What has been measured is under
   tables around a `serialize()` call, and the call to `finishWrite`.
 - [one-reservation-per-array.md](../research/one-reservation-per-array.md) —
   reserving an array's fixed-size elements once, ahead of its loop.
+- [one-reservation-per-string.md](../research/one-reservation-per-string.md) —
+  reserving a string's count and bytes at once.
 
 This document holds what is still open.
 
