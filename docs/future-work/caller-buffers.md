@@ -38,13 +38,11 @@ The work is three additions:
 
 ## Why deferred
 
-It waits on two other units of work. Its blob handling needs the blob
-channel's state out of the package, which
-[blob-channel-state.md](blob-channel-state.md) describes. Its constant size
-needs `fixedBytes` to cover an object, which is the first item under fewer
-reservations in [generated-code-performance.md](generated-code-performance.md).
-Exact sizing, in the same document, may change the body that the new entry
-points reuse.
+It waits on another unit of work. Its blob handling needs the blob channel's
+state out of the package, which [blob-channel-state.md](blob-channel-state.md)
+describes. Exact sizing, in
+[generated-code-performance.md](generated-code-performance.md), may change the
+body that the new entry points reuse.
 
 It adds to the consumer API, which is `Codec<T>` today (Runtime API 3.1), so
 it lands before the first release in [ci-and-release.md](ci-and-release.md).
@@ -87,13 +85,13 @@ does not wait for `surge-net`, its first caller, which stays deferred
   package first, which [blob-channel-state.md](blob-channel-state.md)
   describes.
 - **A constant size.** `fixedBytes` in the transformer's `emit/layout.ts`
-  gives the size of each kind that has a constant one, but not of an `object`,
-  which is the usual root. A type's constant size therefore needs `fixedBytes`
-  to cover an object whose fields all have one. That is also the first item
-  under fewer reservations in
-  [generated-code-performance.md](generated-code-performance.md). Sizing a
-  type without a constant size is the exact-size question in the same
-  document, not part of this one.
+  gives the size of each kind that has a constant one, including an `object`
+  whose properties all have one. It leaves out an object with a packed
+  region, because the region cannot join a run, but a region of `boolean`s
+  alone has a constant size too, and the constant this unit adds has to count
+  it. Sizing a type without a constant size is the exact-size question in
+  [generated-code-performance.md](generated-code-performance.md), not part of
+  this one.
 - Update Runtime API 3 and 5.1, [getting-started.md](../getting-started.md)
   and [errors-and-guarantees.md](../errors-and-guarantees.md). A new factory
   also updates Transformer 3.1.

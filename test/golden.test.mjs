@@ -108,6 +108,15 @@ test("consecutive fixed-size fields share one reservation", () => {
 	assert.match(luau, /local pos\d+ = pos\d+ \+ \d+/);
 });
 
+test("a nested object of fixed-size fields shares the reservation around it", () => {
+	const luau = readCompiledLuau("tests/basic.spec.luau");
+	// `Placed` is a u32, a nested f64 and i16, and a u8: one 15-byte
+	// reservation on each side, not one before the nested object, one for it
+	// and one after it.
+	assert.match(luau, /__surge_cursor = pos[0-9]+ [+] 15$/m);
+	assert.match(luau, /__surge_readCursor = pos[0-9]+ [+] 15$/m);
+});
+
 // Regression check for the conditional blob side channel. What it is worth is in
 // docs/research/per-call-overhead.md.
 test("a shape with no blob field pays nothing for the blob side channel", () => {

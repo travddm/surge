@@ -114,6 +114,16 @@ type Wide = { [K in `f${"0" | "1"}${Digit}${Digit}`]: number };
 const WIDE_FIELD_COUNT = 200;
 const wideSerializer = createCodec<Wide>();
 
+// Transformer 5.5 and 5.8: a run through nested objects has to stay inside one
+// block once the object is emitted in blocks.
+interface Cell {
+	x: number;
+	at: { y: DataType.u8 };
+}
+type WideCells = { [K in `c${Digit}${Digit}`]: Cell };
+const CELL_COUNT = 100;
+const wideCellsSerializer = createCodec<WideCells>();
+
 // walker-emitter-robustness: a user declaration named after an injected
 // `@rbxts/surge` import used to collide with it.
 function grow(): string {
@@ -329,6 +339,23 @@ class CoverageTest {
 		const result = wideSerializer.deserialize(buf) as Record<string, number>;
 		for (const i of $range(0, WIDE_FIELD_COUNT - 1)) {
 			Assert.equal(i, result[string.format("f%03d", i)]);
+		}
+	}
+
+	@Fact
+	public roundTripsNestedObjectsWiderThanTheLocalRegisterLimit(): void {
+		const cells = {} as Record<string, Cell>;
+		for (const i of $range(0, CELL_COUNT - 1)) {
+			cells[string.format("c%02d", i)] = { x: i + 0.5, at: { y: i } };
+		}
+		const buf = wideCellsSerializer.serialize(cells as WideCells);
+		// An f64 and a u8 per cell.
+		Assert.equal(CELL_COUNT * 9, buffer.len(buf));
+		const result = wideCellsSerializer.deserialize(buf) as Record<string, Cell>;
+		for (const i of $range(0, CELL_COUNT - 1)) {
+			const cell = result[string.format("c%02d", i)];
+			Assert.equal(i + 0.5, cell.x);
+			Assert.equal(i, cell.at.y);
 		}
 	}
 

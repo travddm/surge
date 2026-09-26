@@ -92,25 +92,32 @@ measured again. The change stays for what the emitted code says,
 whatever it is worth.
 
 **Fewer reservations.** A run of consecutive fixed-size properties of one
-object shares one reservation (Transformer 5.5), and nothing else does. The
-places below reserve more often than the bytes require. Merging reservations
-changes no byte, because reservation order is byte order either way. A shape
-whose reservations all merge makes one reservation per call, which is where
-the exact sizing above starts.
+object shares one reservation, and a nested object whose properties all have
+a fixed size joins the run around it (Transformer 5.5). Nothing else shares a
+reservation. The places below reserve more often than the bytes require.
+Merging reservations changes no byte, because reservation order is byte order
+either way. A shape whose reservations all merge makes one reservation per
+call, which is where the exact sizing above starts.
 
-- **Across a nested object.** `fixedBytes` has no case for an `object`, so a
-  run ends at a nested object even when every field inside it has a fixed
-  size. The deeply nested object reserves eight times per call, and the
-  hand-written codec for the same bytes allocates once. The run's cap of 31
-  properties keeps it inside one block of Transformer 5.8, so the cap would
-  count the nested fields too.
+- **Through a nested object of mixed sizes.** A nested object with a
+  variable-size property, such as a `str`, ends the run, and so does the end
+  of that object. The deeply nested object reserves eight times per call, and
+  the hand-written codec for the same bytes allocates once. Its `count` and
+  `flag` are consecutive in the bytes but belong to two objects, so they
+  reserve apart. A run that crossed the boundary would stay open across the
+  emission of more than one object, and would still have to end where a block
+  of Transformer 5.8 does.
 - **A string's count and bytes.** A `str` or a `buffer` reserves its count
   and then its bytes: two reservations where one of the count's width plus
   the length would do.
 - **An array of fixed-size elements.** Each element reserves inside the loop,
   so `Blink: Entities` checks capacity once per element. One reservation of
   the count times the element's size, before the loop, covers every element.
-  With `readChecks`, the count bound (Runtime API 4.3 in
+  `fixedBytes` gives that size for an `Entities` element, an object of six
+  `u8`. No catalog row has a nested object of fixed-size properties beside
+  another fixed-size property, so the run that object joins changes no
+  fixture's code, and `Blink: Entities` under this item is the first row to
+  measure it. With `readChecks`, the count bound (Runtime API 4.3 in
   [specs/runtime-api.md](../specs/runtime-api.md)) is exact for such an
   element, so the per-element read bounds repeat it.
 - **Tuple elements.** Coalesce a tuple's consecutive fixed-size elements into

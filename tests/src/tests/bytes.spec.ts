@@ -19,6 +19,16 @@ interface Primitives {
 }
 const primitivesSerializer = createCodec<Primitives>();
 
+// Every property has a fixed size, so the nested object shares one
+// reservation with its neighbours (Transformer 5.5), and its own name still
+// puts its properties between `a` and `z`.
+interface Nested {
+	z: DataType.u8;
+	middle: { y: DataType.i16; x: DataType.u8 };
+	a: DataType.u8;
+}
+const nestedSerializer = createCodec<Nested>();
+
 interface Floats {
 	double: number;
 	single: DataType.f32;
@@ -155,6 +165,13 @@ class BytesTest {
 		const buffer = primitivesSerializer.serialize({ a: 7, b: -2, c: true, d: "hi" });
 		// a: u8 | b: i16 | c: bool | d: u32 length + bytes
 		Assert.equal("07" + "feff" + "01" + "02000000" + "6869", hex(buffer));
+	}
+
+	@Fact
+	public pinsANestedObjectInNameOrder(): void {
+		const buffer = nestedSerializer.serialize({ a: 7, middle: { x: 1, y: -2 }, z: 9 });
+		// a: u8 | middle.x: u8 | middle.y: i16 | z: u8
+		Assert.equal("07" + "01" + "feff" + "09", hex(buffer));
 	}
 
 	@Fact
