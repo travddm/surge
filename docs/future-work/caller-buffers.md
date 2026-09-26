@@ -38,10 +38,19 @@ The work is three additions:
 
 ## Why deferred
 
-No caller needs it yet. Its driver is `surge-net`, which is deferred
-indefinitely. It also adds to the consumer API, which is
-`Codec<T>` today (Runtime API 3.1), and the shape of the addition is
-undecided.
+It waits on two other units of work. Its blob handling needs the blob
+channel's state out of the package, which
+[blob-channel-state.md](blob-channel-state.md) describes. Its constant size
+needs `fixedBytes` to cover an object, which is the first item under fewer
+reservations in [generated-code-performance.md](generated-code-performance.md).
+Exact sizing, in the same document, may change the body that the new entry
+points reuse.
+
+It adds to the consumer API, which is `Codec<T>` today (Runtime API 3.1), so
+it lands before the first release in [ci-and-release.md](ci-and-release.md).
+The shape of the addition is undecided, and deciding it is the first step. It
+does not wait for `surge-net`, its first caller, which stays deferred
+([networking.md](networking.md)).
 
 ## How, briefly
 
