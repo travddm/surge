@@ -103,10 +103,10 @@ so turning it on costs such a type nothing.
 
 ## One call at a time
 
-A serializer keeps its buffer and cursors between calls. A `serialize` must
+A serializer can keep its buffer and cursors between calls. A `serialize` must
 not start while the same serializer's `serialize` is running, whatever its
-type: the second call resets the cursor the first one uses, and the first then
-returns wrong bytes without an error. The same holds for `deserialize`.
+type: the second call can reset the cursor the first one uses, and the first
+then returns wrong bytes without an error. The same holds for `deserialize`.
 
 The `blobs` array is built and read through state the package shares between
 all serializers. A `serialize` of a type with a blob field must therefore not
@@ -122,8 +122,9 @@ when one of its metamethods serializes, or when the iterator its `__iter`
 metamethod returns yields and another thread serializes before it resumes.
 
 A metamethod also matters when it answers the same question differently
-twice. For most types, `serialize` reads each string and array once to size
-its result and again to write it. A value whose metamethods give a longer
+twice. For most types, `serialize` reads each string's and array's length, and
+whether each optional is there, once to size its result and again to write
+it. A value whose metamethods give a longer
 answer the second time makes `serialize` raise, and a shorter one leaves bytes
 at the end of the result that `deserialize` does not read.
 

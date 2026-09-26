@@ -247,10 +247,11 @@ returns when it runs alone.
 **5.9** A `serialize` of a `T` that the transformer sizes exactly (Transformer
 5.20) creates its result at that size and writes into it. It calls neither
 `grow` nor `finishWrite`, and its buffer and write cursor belong to the call.
-It reads each string and array of the value twice, once to size the result
-and once to write it. A value whose metamethods answer the second read
-differently gets a result of the wrong size: a longer answer raises, and a
-shorter one leaves bytes at the end that `deserialize` does not read.
+It reads each length, count and presence it sizes the result from twice, once
+to size the result and once to write it. A value whose metamethods answer the
+second read differently gets a result of the wrong size: a longer answer
+raises, and a shorter one leaves bytes at the end that `deserialize` does not
+read.
 
 ## 6. Version coupling
 
