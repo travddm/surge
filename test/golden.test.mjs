@@ -126,6 +126,14 @@ test("an array of fixed-size elements reserves them all once, ahead of its loop"
 	assert.match(luau, /element[0-9]+ [+]= 2$/m);
 });
 
+test("a string reserves its count and its bytes at once", () => {
+	const luau = readCompiledLuau("tests/basic.spec.luau");
+	// `Basic.name` is a string: one reservation of its length and a u32
+	// count, and one move of the read cursor past both.
+	assert.match(luau, /__surge_cursor = pos[0-9]+ [+] [(]len[0-9]+ [+] 4[)]$/m);
+	assert.match(luau, /__surge_readCursor = pos[0-9]+ [+] 4 [+] len[0-9]+$/m);
+});
+
 // Regression check for the conditional blob side channel. What it is worth is in
 // docs/research/per-call-overhead.md.
 test("a shape with no blob field pays nothing for the blob side channel", () => {

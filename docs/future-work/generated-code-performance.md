@@ -119,23 +119,21 @@ whatever it is worth.
 **Fewer reservations.** A run of consecutive fixed-size properties of one
 object shares one reservation, and a nested object whose properties all have
 a fixed size joins the run around it (Transformer 5.5). An array of fixed-size
-elements reserves all of them at once (Transformer 5.18). Nothing else shares
-a reservation. The places below reserve more often than the bytes require.
+elements reserves all of them at once (Transformer 5.18), and a `str` or a
+`buffer` its count and its bytes (Transformer 5.19). Nothing else shares a
+reservation. The places below reserve more often than the bytes require.
 Merging reservations changes no byte, because reservation order is byte order
 either way. A shape whose reservations all merge makes one reservation per
 call, which is where the exact sizing above starts.
 
 - **Through a nested object of mixed sizes.** A nested object with a
   variable-size property, such as a `str`, ends the run, and so does the end
-  of that object. The deeply nested object reserves eight times per call, and
+  of that object. The deeply nested object reserves six times per call, and
   the hand-written codec for the same bytes allocates once. Its `count` and
   `flag` are consecutive in the bytes but belong to two objects, so they
   reserve apart. A run that crossed the boundary would stay open across the
   emission of more than one object, and would still have to end where a block
   of Transformer 5.8 does.
-- **A string's count and bytes.** A `str` or a `buffer` reserves its count
-  and then its bytes: two reservations where one of the count's width plus
-  the length would do.
 - **Tuple elements.** Coalesce a tuple's consecutive fixed-size elements into
   one reservation, the way an object's fields already are, and reserve its
   rest elements at once, the way an array's are. The mechanism is
@@ -143,11 +141,10 @@ call, which is where the exact sizing above starts.
   what is missing is a benchmark fixture that serializes a tuple, without
   which nothing measures it.
 
-**Smaller items.** Strings evaluate `s.size()` twice. The scratch buffer only
-grows, so one large payload pins its memory for the module's lifetime. An
-object large enough to be emitted in blocks is read as `const result = {}`
-plus one assignment per field, so its table grows by rehashing instead of
-being sized once by a table constructor.
+**Smaller items.** The scratch buffer only grows, so one large payload pins
+its memory for the module's lifetime. An object large enough to be emitted in
+blocks is read as `const result = {}` plus one assignment per field, so its
+table grows by rehashing instead of being sized once by a table constructor.
 
 **The per-function `@native` attribute, and typed Luau.** Neither is reachable
 through the AST roblox-ts hands a transformer. `@native` has no `ts.factory`

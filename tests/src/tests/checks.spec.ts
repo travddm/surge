@@ -38,6 +38,13 @@ interface WithTriple {
 }
 const triple = createCodec<WithTriple>({ readChecks: true });
 
+// A string's count is read before its bytes are reserved (Transformer 5.19),
+// so it has a bound of its own.
+interface WithText {
+	text: string;
+}
+const withText = createCodec<WithText>({ readChecks: true });
+
 interface WithBlobs {
 	first: unknown;
 	second: unknown;
@@ -230,6 +237,15 @@ class ChecksTest {
 	public rejectsACountTheInputCannotHold(): void {
 		assertRejected(() => list.deserialize(unhex("ffffffff")));
 		assertRejected(() => list.deserialize(unhex("0a000000" + "0000000000000000")));
+	}
+
+	@Fact
+	public rejectsAStringCutInItsCountOrItsBytes(): void {
+		const full = "05000000" + "68656c6c6f";
+		// Two bytes of the count, then the count and three bytes of the string.
+		assertRejected(() => withText.deserialize(unhex(full.sub(1, 4))));
+		assertRejected(() => withText.deserialize(unhex(full.sub(1, 14))));
+		Assert.equal("hello", withText.deserialize(unhex(full)).text);
 	}
 
 	@Fact

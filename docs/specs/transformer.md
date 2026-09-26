@@ -1,8 +1,8 @@
 # Transformer specification
 
 Status: current
-Applies to: `@rbxts/surge` at commit `194ece0`, `rbxts-transformer-surge` at
-commit `8b8be1d` (no tagged release yet)
+Applies to: `@rbxts/surge` at commit `f2d6437`, `rbxts-transformer-surge` at
+commit `ba1331a` (no tagged release yet)
 
 ## 1. Scope
 
@@ -225,7 +225,8 @@ reaches `pushBlob` or `nextBlob`, including from inside a recursion helper.
 
 **5.10** Read-side checks are emitted only at a call site that sets
 `readChecks: true`: one `buffer.len` per `deserialize`, a bound after every
-read-side reservation, and a bound on the count an `array`, a `dict` or a
+read-side reservation, a bound before the count of a `str` or a `buffer` is
+read (5.19), and a bound on the count an `array`, a `dict` or a
 tuple's rest element reads back. That bound is the count times the element's
 minimum size against the bytes left, or a fixed cap where the element reads
 no bytes. A `str` or `buffer` length is bounded by the reservation it sizes.
@@ -285,6 +286,11 @@ its elements at once, after its count and before its loop, and each element
 takes its bytes from that reservation in turn. Under `readChecks: true`, that
 reservation's bound (5.10) replaces one per element. A tuple's rest element
 reserves each element on its own.
+
+**5.19** A `str` or a `buffer` that writes a count takes the value's length once
+and reserves the count and the bytes at once. The read side reads the count,
+then moves the read cursor past the count and the bytes in one step. The
+exact form, which writes no count, reserves its bytes alone.
 
 ## 6. Injected imports
 
@@ -395,7 +401,7 @@ of `rbxts-transformer-surge`, cited by `describe` block. Source paths are in
 | 5.7       | `test/golden.test.mjs`: a count-driven read is a numeric for loop                                                                                                                                                                                                                                                                                                                                                                                                                                         |
 | 5.8       | `emit`: `Emitter local-register ceiling`; `transform`: `transform generated code` (runs through nested objects, past the local budget); `tests/src/tests/coverage.spec.ts`: `roundTripsAnObjectWiderThanTheLocalRegisterLimit`, `roundTripsNestedObjectsWiderThanTheLocalRegisterLimit`                                                                                                                                                                                                                   |
 | 5.9       | `transform`: `transform (end-to-end)` (no blob field, a blob field, and a blob reachable only through a recursion helper); `test/golden.test.mjs`: a shape with no blob field pays nothing for the blob side channel                                                                                                                                                                                                                                                                                      |
-| 5.10      | `emit`: `Emitter read-side checks`; `test/golden.test.mjs`: the two `readChecks` checks; `tests/src/tests/checks.spec.ts`: `rejectsAnEnumIndexPastItsItems`. Source only for the sequence keypoint count: `readSequence` in `src/emit/read.ts`                                                                                                                                                                                                                                                            |
+| 5.10      | `emit`: `Emitter read-side checks`; `test/golden.test.mjs`: the two `readChecks` checks; `tests/src/tests/checks.spec.ts`: `rejectsAnEnumIndexPastItsItems`, `rejectsAStringCutInItsCountOrItsBytes`. Source only for the sequence keypoint count: `readSequence` in `src/emit/read.ts`                                                                                                                                                                                                                   |
 | 5.11      | `tests/src/tests/roblox.spec.ts`: `keepsLaterBlobsInPlaceWhenAnUnknownIsUndefined`, `writesNoBlobForAnAbsentOptionalBlob`                                                                                                                                                                                                                                                                                                                                                                                 |
 | 5.12      | `emit`: `Emitter read-side checks` (a packed CFrame); `tests/src/tests/checks.spec.ts`: `rejectsATruncatedPackedCFrame`, `rejectsAPackedRotationCodeThatNamesNoRotation`                                                                                                                                                                                                                                                                                                                                  |
 | 5.13      | `transform`: `transform generated code` (the single-sided factories on a recursive type); `tests/src/tests/factories.spec.ts`: `roundTripsARecursiveTypeThroughASeparateSerializerAndDeserializer`                                                                                                                                                                                                                                                                                                        |
@@ -404,6 +410,7 @@ of `rbxts-transformer-surge`, cited by `describe` block. Source paths are in
 | 5.16      | `transform`: `transform (end-to-end)` (the declared result has a blobs array exactly when the walk finds a blob, an array the shape never fills, the declared table at a `createDeserializer` call site, and a `deserialize` that reads nothing), `transform generated code` (a caller of a result with no blob and with one, and separate factories); `test/golden.test.mjs`: a shape with no blob field returns the buffer alone, and `deserialize` takes what `serialize` returned                     |
 | 5.17      | `transform`: `transform readChecks option` (`deserialize` takes `unknown`, the table each factory requires for a blob or a declared table it never fills, and a caller passing `unknown`, with a blob and without, type-checks); `test/golden.test.mjs`: a serializer with `readChecks` carries them; `tests/src/tests/checks.spec.ts`: `rejectsAnythingButABufferForAShapeWithNoBlob`, `rejectsAnythingButItsTableForAShapeWithABlob`                                                                    |
 | 5.18      | `emit`: `Emitter element reservations`; `test/golden.test.mjs`: an array of fixed-size elements reserves them all once, ahead of its loop; `tests/src/tests/checks.spec.ts`: `rejectsATruncatedExactLengthArray`; `tests/src/tests/coverage.spec.ts`: `roundTripsAnArrayOfObjectsWiderThanTheLocalRegisterLimit`                                                                                                                                                                                          |
+| 5.19      | `emit`: `Emitter counted bytes`; `test/golden.test.mjs`: a string reserves its count and its bytes at once; `tests/src/tests/checks.spec.ts`: `rejectsAStringCutInItsCountOrItsBytes`                                                                                                                                                                                                                                                                                                                     |
 | 6.1, 6.2  | `transform`: `transform injected imports`, and in `transform (end-to-end)` the single shared import and the same-named local function; `tests/src/tests/coverage.spec.ts`: `leavesAUserDeclarationNamedAfterAnInjectedImportAlone`; `test/golden.test.mjs`: generated code imports its helpers from the package's abi module                                                                                                                                                                              |
 | 6.3       | `test/golden.test.mjs`: a file directive survives the transformer's injected imports; `transform`: `transform generated code` (the three directive tests)                                                                                                                                                                                                                                                                                                                                                 |
 | 6.4       | `transform`: `transform injected imports` (a `createDeserializer` call site)                                                                                                                                                                                                                                                                                                                                                                                                                              |
@@ -416,6 +423,8 @@ of `rbxts-transformer-surge`, cited by `describe` block. Source paths are in
 
 ## Changes
 
+- `f2d6437` / `ba1331a`: adds 5.19 (a counted `str` or `buffer` reserves its
+  count and bytes at once); 5.10 bounds the count before it is read.
 - `194ece0` / `8b8be1d`: 5.18 leaves an element of more than 31 properties
   to reserve on its own.
 - `02efefc` / `42ce64d`: adds 5.18 (an array of fixed-size elements
