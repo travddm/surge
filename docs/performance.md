@@ -62,7 +62,9 @@ What the directives are worth on the generated code is measured in
   [research/tables-around-serialize.md](research/tables-around-serialize.md)
   for the per-call part, and
   [research/one-reservation-per-array.md](research/one-reservation-per-array.md)
-  for an array's elements).
+  for an array's elements). On a shape surge can size without a loop, most
+  of the per-call part is gone
+  ([research/exact-sizing.md](research/exact-sizing.md)).
 - **`Packed<T>`** saves bytes on booleans, optionals and axis-aligned
   `CFrame`s, adds a byte to an arbitrary `CFrame`, and can slow encode or
   decode

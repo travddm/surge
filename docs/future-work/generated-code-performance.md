@@ -19,6 +19,8 @@ code the transformer generates runs. What has been measured is under
   reserving an array's fixed-size elements once, ahead of its loop.
 - [one-reservation-per-string.md](../research/one-reservation-per-string.md) —
   reserving a string's count and bytes at once.
+- [exact-sizing.md](../research/exact-sizing.md) — creating the result at its
+  exact size, and the per-call gap it closed.
 
 This document holds what is still open.
 
@@ -62,12 +64,14 @@ needs checking before the emitter relies on either. A tuple's fixed
 elements have a size known at compile time, so a table constructor may do
 there. Nothing has measured it.
 
-**What is left per call.** What remains once the three tables are gone
-(probe E) was not probed. A shape sized exactly (Transformer 5.20 in
+**What is left per call.** A shape sized exactly (Transformer 5.20 in
 [specs/transformer.md](../specs/transformer.md)) no longer has the three
 candidates the code offered: `finishWrite`'s copy, the scratch state in the
-closure, and the capacity check. A shape that keeps the scratch buffer still
-has all three.
+closure, and the capacity check. That closed most of the flat struct's gap,
+and half of the nested object's
+([exact-sizing.md](../research/exact-sizing.md)). The nested object still
+makes six reservations and reads its two strings' lengths once more for the
+size. A shape that keeps the scratch buffer still has all three candidates.
 
 One design the `finishWrite` probe did not reach: handing the caller a buffer
 surge owns and reuses, which removes the allocation as well as the copy. It
@@ -143,8 +147,11 @@ what merging still saves there is a move of the cursor.
   what is missing is a benchmark fixture that serializes a tuple, without
   which nothing measures it.
 
-**Smaller items.** The scratch buffer only grows, so one large payload pins
-its memory for the module's lifetime. An object large enough to be emitted in
+**Smaller items.** A `serialize` sized exactly still moves its cursor past
+its last reservation, where nothing reads it again, and a shape whose
+reservations all merge could write at constant offsets with no cursor at all,
+as the hand-written codec does. The scratch buffer only grows, so one large
+payload pins its memory for the module's lifetime. An object large enough to be emitted in
 blocks is read as `const result = {}` plus one assignment per field, so its
 table grows by rehashing instead of being sized once by a table constructor.
 
