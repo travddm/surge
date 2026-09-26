@@ -15,6 +15,8 @@ code the transformer generates runs. What has been measured is under
   measurement here is read against.
 - [tables-around-serialize.md](../research/tables-around-serialize.md) — the
   tables around a `serialize()` call, and the call to `finishWrite`.
+- [one-reservation-per-array.md](../research/one-reservation-per-array.md) —
+  reserving an array's fixed-size elements once, ahead of its loop.
 
 This document holds what is still open.
 
@@ -34,6 +36,16 @@ shape with no blob field now returns the buffer alone (Runtime API 3.6 in
 adapters no longer copy the result into a table of their own (Benchmark
 harness 4.8 in [specs/benchmark-harness.md](../specs/benchmark-harness.md)).
 Calling `finishWrite` instead of inlining it costs nothing measurable.
+
+**What is left per element.** On the `CFrame` array it is not the reservation
+each element made: reserving the elements once moved that row's gap no
+further than rows whose code did not change
+([one-reservation-per-array.md](../research/one-reservation-per-array.md)).
+What it is was not probed. The candidates in the code are on encode: surge
+reads a `CFrame`'s `Position` once for each of its three components, where
+the hand-written codec (`tests/src/bench/baseline/codecs.luau`) reads it once
+into a local, and surge's loop is a generic `for` over the array where the
+hand-written one is a numeric `for`.
 
 **What is left per call.** What remains once the three tables are gone
 (probe E) was not probed. The candidates in the code are `finishWrite`'s

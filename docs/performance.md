@@ -59,8 +59,10 @@ What the directives are worth on the generated code is measured in
 - **Against hand-written Luau** that writes the same bytes, surge's encode
   pays a cost once per call and a cost per element
   ([research/generated-code-against-hand-written.md](research/generated-code-against-hand-written.md),
-  and [research/tables-around-serialize.md](research/tables-around-serialize.md)
-  for the per-call part).
+  [research/tables-around-serialize.md](research/tables-around-serialize.md)
+  for the per-call part, and
+  [research/one-reservation-per-array.md](research/one-reservation-per-array.md)
+  for an array's elements).
 - **`Packed<T>`** saves bytes on booleans, optionals and axis-aligned
   `CFrame`s, adds a byte to an arbitrary `CFrame`, and can slow encode or
   decode
