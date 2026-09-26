@@ -65,7 +65,8 @@ test("a count-driven read is a numeric for loop, not a _shouldIncrement flag loo
 	const luau = readCompiledLuau("tests/coverage.spec.luau");
 	// The positive control: without it, the check below would also pass on a
 	// file that stopped emitting count-driven reads at all.
-	assert.match(luau, /for _i\d+ = 1, count\d+ do/);
+	// The index is `i` where the body stores at it, and `_i` where it does not.
+	assert.match(luau, /for _?i\d+ = 1, count\d+ do/);
 	assert.doesNotMatch(luau, /_shouldIncrement/);
 });
 
@@ -132,6 +133,21 @@ test("a string reserves its count and its bytes at once", () => {
 	// count, and one move of the read cursor past both.
 	assert.match(luau, /__surge_cursor = pos[0-9]+ [+] [(]len[0-9]+ [+] 4[)]$/m);
 	assert.match(luau, /__surge_readCursor = pos[0-9]+ [+] 4 [+] len[0-9]+$/m);
+});
+
+// Regression check for the read table created at its size. What it was
+// measured as worth is in docs/research/sized-read-tables.md.
+test("a read creates its table at its size and stores each element at its index", () => {
+	const luau = readCompiledLuau("tests/bytes.spec.luau");
+	// `Containers.list` is a `u16[]`, and `Containers.pair` a tuple of two
+	// fixed elements and a rest.
+	assert.match(luau, /local result[0-9]+ = table[.]create[(]count[0-9]+[)]$/m);
+	assert.match(luau, /result[0-9]+\[i[0-9]+\] = buffer[.]readu16[(]/);
+	assert.match(luau, /local tup[0-9]+ = table[.]create[(]2[)]$/m);
+	assert.match(luau, /tup[0-9]+\[i[0-9]+ [+] 2\] = buffer[.]readu8[(]/);
+	// A generated table is never appended to. The tests' own code appends to
+	// tables of its own names, which carry no numeric suffix.
+	assert.doesNotMatch(luau, /table[.]insert[(](result|tup|keypoints)[0-9]+,/);
 });
 
 test("a shape sized exactly creates its result at that size and checks no capacity", () => {

@@ -1,8 +1,8 @@
 # Transformer specification
 
 Status: current
-Applies to: `@rbxts/surge` at commit `bea5fc0`, `rbxts-transformer-surge` at
-commit `015e1f3` (no tagged release yet)
+Applies to: `@rbxts/surge` at commit `44dcafd`, `rbxts-transformer-surge` at
+commit `0c0f412` (no tagged release yet)
 
 ## 1. Scope
 
@@ -209,7 +209,7 @@ tuple's fixed elements do not share a reservation.
 counted as they are written, and the count is written back once known. Every
 other count is written before its contents, from the size of the value.
 
-**5.7** A count-driven read loop is emitted as `for (const _i of $range(1, count))`,
+**5.7** A count-driven read loop is emitted as `for (const i of $range(1, count))`,
 which roblox-ts lowers to a Luau numeric `for`.
 
 **5.8** The emitter counts the locals each generated function declares, and
@@ -303,6 +303,15 @@ built only of the fixed-size kinds of 5.5, `str`, `buffer`, `blob`,
 whose element is fixed-size, and a tuple whose rest element, if it has one,
 is fixed-size. The size reads each string's and array's length from the
 value, and the write reads it again.
+
+**5.21** A read of an `array`, a tuple, or a sequence's keypoints creates its
+table with `new Array(size)`, which roblox-ts compiles to `table.create(size)`,
+and stores each element at its index. The size is the count read back, or the
+count of the exact form, for an `array` and a sequence, and the number of
+fixed elements for a tuple, whose rest elements are stored past them. An
+element read back as absent leaves its index empty, and the elements after it
+keep their indexes. Under `readChecks: true`, the count's bound (5.10) comes
+before the table is created.
 
 ## 6. Injected imports
 
@@ -424,6 +433,7 @@ of `rbxts-transformer-surge`, cited by `describe` block. Source paths are in
 | 5.18      | `emit`: `Emitter element reservations`; `test/golden.test.mjs`: an array of fixed-size elements reserves them all once, ahead of its loop; `tests/src/tests/checks.spec.ts`: `rejectsATruncatedExactLengthArray`; `tests/src/tests/coverage.spec.ts`: `roundTripsAnArrayOfObjectsWiderThanTheLocalRegisterLimit`                                                                                                                                                                                          |
 | 5.19      | `emit`: `Emitter counted bytes`; `test/golden.test.mjs`: a string reserves its count and its bytes at once; `tests/src/tests/checks.spec.ts`: `rejectsAStringCutInItsCountOrItsBytes`                                                                                                                                                                                                                                                                                                                     |
 | 5.20      | `emit`: `Emitter exact sizing`; `transform`: `transform generated code` (a shape written exactly passes the type check), `transform (end-to-end)` (a shape with no blob field); `test/golden.test.mjs`: a shape sized exactly creates its result at that size and checks no capacity; every round trip and byte pin under `tests/src/tests/`                                                                                                                                                              |
+| 5.21      | `emit`: `Emitter read tables`; `test/golden.test.mjs`: a read creates its table at its size and stores each element at its index; `tests/src/tests/collections.spec.ts`: `keepsAnAbsentTupleElementInItsPlace`                                                                                                                                                                                                                                                                                            |
 | 6.1, 6.2  | `transform`: `transform injected imports`, and in `transform (end-to-end)` the single shared import and the same-named local function; `tests/src/tests/coverage.spec.ts`: `leavesAUserDeclarationNamedAfterAnInjectedImportAlone`; `test/golden.test.mjs`: generated code imports its helpers from the package's abi module                                                                                                                                                                              |
 | 6.3       | `test/golden.test.mjs`: a file directive survives the transformer's injected imports; `transform`: `transform generated code` (the three directive tests)                                                                                                                                                                                                                                                                                                                                                 |
 | 6.4       | `transform`: `transform injected imports` (a `createDeserializer` call site)                                                                                                                                                                                                                                                                                                                                                                                                                              |
@@ -436,6 +446,9 @@ of `rbxts-transformer-surge`, cited by `describe` block. Source paths are in
 
 ## Changes
 
+- `44dcafd` / `0c0f412`: adds 5.21 (a read creates its table at its size and
+  stores each element at its index, so an absent tuple element keeps its
+  place); 5.7 names the loop's index `i`.
 - `bea5fc0` / `015e1f3`: adds 5.20 (a shape sized without a loop is written
   into a buffer of its size); 5.3 and 5.4 follow it.
 - `f2d6437` / `ba1331a`: adds 5.19 (a counted `str` or `buffer` reserves its

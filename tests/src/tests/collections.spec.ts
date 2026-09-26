@@ -43,6 +43,12 @@ interface WithNestedOptionals {
 }
 const optionalsSerializer = createCodec<WithNestedOptionals>();
 
+// A tuple element that can be absent, ahead of one that cannot. A read that
+// appended each element would move the last one down into the absent one's
+// place.
+type WithAbsentMiddle = [number, string | undefined, number];
+const absentMiddleSerializer = createCodec<WithAbsentMiddle>();
+
 type Grid = number[][];
 const gridSerializer = createCodec<Grid>();
 
@@ -137,6 +143,13 @@ class CollectionsTest {
 		const value: WithTuples = { rest: ["head"], optionalTail: [7], nested: [{ x: 0, y: 0 }, [false, []]] };
 		const buffer = tuplesSerializer.serialize(value);
 		Assert.equal(undefined, difference(value, tuplesSerializer.deserialize(buffer)));
+	}
+
+	@Fact
+	public keepsAnAbsentTupleElementInItsPlace(): void {
+		const value: WithAbsentMiddle = [1, undefined, 3];
+		const buffer = absentMiddleSerializer.serialize(value);
+		Assert.equal(undefined, difference(value, absentMiddleSerializer.deserialize(buffer)));
 	}
 
 	@Fact
