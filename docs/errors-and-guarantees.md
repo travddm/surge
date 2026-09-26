@@ -121,6 +121,12 @@ table it is given, so both rules matter only for a value with a metatable:
 when one of its metamethods serializes, or when the iterator its `__iter`
 metamethod returns yields and another thread serializes before it resumes.
 
+A metamethod also matters when it answers the same question differently
+twice. For most types, `serialize` reads each string and array once to size
+its result and again to write it. A value whose metamethods give a longer
+answer the second time makes `serialize` raise, and a shorter one leaves bytes
+at the end of the result that `deserialize` does not read.
+
 ## Build errors
 
 A type the transformer cannot encode is an `error TS surge:` diagnostic at
@@ -130,4 +136,4 @@ call that runs untransformed at run time raises an error that says the
 transformer is not registered in `tsconfig.json`.
 
 The full contract is [specs/runtime-api.md](specs/runtime-api.md) sections 3
-and 4, and 5.5 to 5.8 for calls that overlap.
+and 4, 5.5 to 5.8 for calls that overlap, and 5.9 for a value read twice.

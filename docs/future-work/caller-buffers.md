@@ -40,9 +40,7 @@ The work is three additions:
 
 It waits on another unit of work. Its blob handling needs the blob channel's
 state out of the package, which [blob-channel-state.md](blob-channel-state.md)
-describes. Exact sizing, in
-[generated-code-performance.md](generated-code-performance.md), may change the
-body that the new entry points reuse.
+describes.
 
 It adds to the consumer API, which is `Codec<T>` today (Runtime API 3.1), so
 it lands before the first release in [ci-and-release.md](ci-and-release.md).
@@ -57,7 +55,12 @@ does not wait for `surge-net`, its first caller, which stays deferred
   5.3 in [specs/transformer.md](../specs/transformer.md)). The write entry
   point sets them from the caller's buffer and offset instead of the
   serializer's own buffer and `0`, runs the same body, and returns the buffer
-  and the cursor instead of calling `finishWrite`. The read entry point sets
+  and the cursor instead of calling `finishWrite`. A shape sized exactly
+  (Transformer 5.20) is the exception: its buffer and cursor are locals of
+  `serialize`, and its reservations check no capacity. Its entry point needs
+  the body emitted with the caller's buffer and offset in their place, and one
+  check before the body that the buffer has room for the size, where the
+  scratch path checks at every reservation. The read entry point sets
   the read cursor to the offset, and returns it after the value. The `readChecks`
   bounds need no new form: each read is bounded against `buffer.len` of the
   input, and a count against the bytes left after the cursor (Runtime API 4.2

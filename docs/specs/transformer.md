@@ -1,8 +1,8 @@
 # Transformer specification
 
 Status: current
-Applies to: `@rbxts/surge` at commit `f2d6437`, `rbxts-transformer-surge` at
-commit `ba1331a` (no tagged release yet)
+Applies to: `@rbxts/surge` at commit `bea5fc0`, `rbxts-transformer-surge` at
+commit `015e1f3` (no tagged release yet)
 
 ## 1. Scope
 
@@ -185,11 +185,13 @@ and called at the type's first occurrence and at each `recursiveRef`.
 its write and read cursors, declared in the closure it is generated into.
 The runtime package owns none of them. A factory that returns one function
 declares only that side's state, and a side that reserves no bytes declares
-none: a shape of only `blob` fields declares no state at all.
+none: a shape of only `blob` fields declares no state at all. A `serialize`
+sized exactly (5.20) declares its buffer and write cursor in itself instead.
 
-**5.4** Every write-side reservation is emitted inline and calls `grow` only
-when the write cursor passes the capacity. A top-level `serialize` whose shape
-reserves bytes returns the result of one call to `finishWrite`. One whose
+**5.4** Every write-side reservation is emitted inline. Outside 5.20, it calls
+`grow` only when the write cursor passes the capacity, and a top-level
+`serialize` whose shape reserves bytes returns the result of one call to
+`finishWrite`. One whose
 shape reserves none, such as a shape of only `blob` fields, returns
 `buffer.create(0)` and calls no `finishWrite`.
 
@@ -291,6 +293,16 @@ reserves each element on its own.
 and reserves the count and the bytes at once. The read side reads the count,
 then moves the read cursor past the count and the bytes in one step. The
 exact form, which writes no count, reserves its bytes alone.
+
+**5.20** A `serialize` whose shape can be sized from its value without a loop
+creates its result at that size and writes into it. Its buffer and write
+cursor are locals of `serialize`, no reservation checks the capacity or calls
+`grow`, and it returns that buffer and calls no `finishWrite`. Such a shape is
+built only of the fixed-size kinds of 5.5, `str`, `buffer`, `blob`,
+`optional`, an `object` that is not emitted as a recursion helper, an `array`
+whose element is fixed-size, and a tuple whose rest element, if it has one,
+is fixed-size. The size reads each string's and array's length from the
+value, and the write reads it again.
 
 ## 6. Injected imports
 
@@ -411,6 +423,7 @@ of `rbxts-transformer-surge`, cited by `describe` block. Source paths are in
 | 5.17      | `transform`: `transform readChecks option` (`deserialize` takes `unknown`, the table each factory requires for a blob or a declared table it never fills, and a caller passing `unknown`, with a blob and without, type-checks); `test/golden.test.mjs`: a serializer with `readChecks` carries them; `tests/src/tests/checks.spec.ts`: `rejectsAnythingButABufferForAShapeWithNoBlob`, `rejectsAnythingButItsTableForAShapeWithABlob`                                                                    |
 | 5.18      | `emit`: `Emitter element reservations`; `test/golden.test.mjs`: an array of fixed-size elements reserves them all once, ahead of its loop; `tests/src/tests/checks.spec.ts`: `rejectsATruncatedExactLengthArray`; `tests/src/tests/coverage.spec.ts`: `roundTripsAnArrayOfObjectsWiderThanTheLocalRegisterLimit`                                                                                                                                                                                          |
 | 5.19      | `emit`: `Emitter counted bytes`; `test/golden.test.mjs`: a string reserves its count and its bytes at once; `tests/src/tests/checks.spec.ts`: `rejectsAStringCutInItsCountOrItsBytes`                                                                                                                                                                                                                                                                                                                     |
+| 5.20      | `emit`: `Emitter exact sizing`; `transform`: `transform generated code` (a shape written exactly passes the type check), `transform (end-to-end)` (a shape with no blob field); `test/golden.test.mjs`: a shape sized exactly creates its result at that size and checks no capacity; every round trip and byte pin under `tests/src/tests/`                                                                                                                                                              |
 | 6.1, 6.2  | `transform`: `transform injected imports`, and in `transform (end-to-end)` the single shared import and the same-named local function; `tests/src/tests/coverage.spec.ts`: `leavesAUserDeclarationNamedAfterAnInjectedImportAlone`; `test/golden.test.mjs`: generated code imports its helpers from the package's abi module                                                                                                                                                                              |
 | 6.3       | `test/golden.test.mjs`: a file directive survives the transformer's injected imports; `transform`: `transform generated code` (the three directive tests)                                                                                                                                                                                                                                                                                                                                                 |
 | 6.4       | `transform`: `transform injected imports` (a `createDeserializer` call site)                                                                                                                                                                                                                                                                                                                                                                                                                              |
@@ -423,6 +436,8 @@ of `rbxts-transformer-surge`, cited by `describe` block. Source paths are in
 
 ## Changes
 
+- `bea5fc0` / `015e1f3`: adds 5.20 (a shape sized without a loop is written
+  into a buffer of its size); 5.3 and 5.4 follow it.
 - `f2d6437` / `ba1331a`: adds 5.19 (a counted `str` or `buffer` reserves its
   count and bytes at once); 5.10 bounds the count before it is read.
 - `194ece0` / `8b8be1d`: 5.18 leaves an element of more than 31 properties

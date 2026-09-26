@@ -134,6 +134,18 @@ test("a string reserves its count and its bytes at once", () => {
 	assert.match(luau, /__surge_readCursor = pos[0-9]+ [+] 4 [+] len[0-9]+$/m);
 });
 
+test("a shape sized exactly creates its result at that size and checks no capacity", () => {
+	// Every shape in `basic.spec` can be sized without a loop.
+	const luau = readCompiledLuau("tests/basic.spec.luau");
+	assert.match(luau, /local __surge_scratch = buffer[.]create[(]#value[.]name [+] /);
+	assert.match(luau, /local __surge_scratch = buffer[.]create[(]15[)]$/m);
+	assert.doesNotMatch(luau, /__surge_capacity|__surge_grow|__surge_finishWrite[(]/);
+	// A positive control: an array of strings needs a loop to size, and keeps
+	// the scratch buffer.
+	const collections = readCompiledLuau("tests/collections.spec.luau");
+	assert.match(collections, /__surge_finishWrite[(]__surge_scratch, __surge_cursor[)]/);
+});
+
 // Regression check for the conditional blob side channel. What it is worth is in
 // docs/research/per-call-overhead.md.
 test("a shape with no blob field pays nothing for the blob side channel", () => {
@@ -152,10 +164,11 @@ test("a shape with no blob field pays nothing for the blob side channel", () => 
 // What the tables around a result cost is in docs/research/tables-around-serialize.md.
 test("a shape with no blob field returns the buffer alone", () => {
 	// `Basic` has no blob field, so `Serialized<Basic>` is `buffer`, and no
-	// table is built around it.
+	// table is built around it. It is sized exactly, so that buffer is the one
+	// `serialize` wrote into.
 	const luau = readCompiledLuau("tests/basic.spec.luau");
-	assert.match(luau, /return __surge_finishWrite\(__surge_scratch, __surge_cursor\)$/m);
-	assert.doesNotMatch(luau, /buffer = __surge_finishWrite\(/);
+	assert.match(luau, /return __surge_scratch$/m);
+	assert.doesNotMatch(luau, /buffer = __surge_scratch/);
 	// A positive control: a shape with a blob field still returns its array.
 	const withBlobs = readCompiledLuau("tests/roblox.spec.luau");
 	assert.match(withBlobs, /blobs = __surge_finishWriteBlobs\(\),/);
@@ -173,7 +186,8 @@ test("deserialize takes what serialize returned, as one argument", () => {
 });
 
 test("generated code imports its helpers from the package's abi module", () => {
-	const luau = readCompiledLuau("tests/basic.spec.luau");
+	// `collections.spec` keeps the scratch buffer, so it calls `grow` and `finishWrite`.
+	const luau = readCompiledLuau("tests/collections.spec.luau");
 	assert.match(luau, /"@rbxts", "surge", "out", "abi"\)$/m);
 	// The package's own exports hold the consumer API and no helper.
 	const index = readFileSync(join(here, "..", "out", "index.d.ts"), "utf8");

@@ -12,7 +12,9 @@
 // emitted into, so that reserving bytes is a compare and two moves inline
 // rather than a call into this module (Transformer 5.3 and 5.4 in
 // docs/specs/transformer.md). What removing that call was worth is in
-// docs/research/generated-code-against-hand-written.md.
+// docs/research/generated-code-against-hand-written.md. A serializer whose
+// shape the transformer sizes exactly calls neither function here
+// (Transformer 5.20).
 
 /**
  * Doubles `current` until it holds `needed` bytes and copies the first `live`
@@ -36,9 +38,9 @@ export function grow(current: buffer, live: number, needed: number): buffer {
 /**
  * Copies the first `size` bytes of `written` into an exact-size result
  * buffer. Called once per top-level `serialize()` of a type that reserves
- * bytes (Runtime API 5.4), which is why it is still a
- * call: measured at 1.00x, both as a cost of its own and as one more call per
- * serialize.
+ * bytes and is not sized exactly (Runtime API 5.4 and 5.9), which is why it
+ * is still a call: measured at 1.00x, both as a cost of its own and as one
+ * more call per serialize.
  */
 export function finishWrite(written: buffer, size: number): buffer {
 	const result = buffer.create(size);

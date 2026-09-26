@@ -1,8 +1,8 @@
 # Runtime API specification
 
 Status: current
-Applies to: `@rbxts/surge` at commit `a564714`, `rbxts-transformer-surge` at
-commit `642062d` (no tagged release yet)
+Applies to: `@rbxts/surge` at commit `bea5fc0`, `rbxts-transformer-surge` at
+commit `015e1f3` (no tagged release yet)
 
 ## 1. Scope
 
@@ -191,24 +191,25 @@ the table, any input but a table whose `buffer` is a buffer and whose
 `out/abi` module, which it imports as `@rbxts/surge/out/abi`. Their
 signatures are part of the coupling in section 6.
 
-| Export              | Called                                     | Contract                                                                                                                                                  |
-| ------------------- | ------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `grow`              | when a reservation passes the capacity     | `grow(current, live, needed)` returns a buffer of at least `needed` bytes whose first `live` bytes are `current`'s. `current` must have a nonzero length. |
-| `finishWrite`       | once per `serialize`, except as 5.4 states | `finishWrite(written, size)` returns a new buffer of exactly `size` bytes holding `written`'s first `size`.                                               |
-| `writePackedCFrame` | per `CFrame` inside `Packed<T>`            | writes the packed form at the given offset and returns the bytes it used.                                                                                 |
-| `readPackedCFrame`  | per `CFrame` inside `Packed<T>`            | reads the packed form at the given offset and returns the value and the bytes it used.                                                                    |
-| `unpackBit`         | per bit read inside `Packed<T>`            | `unpackBit(buf, byteOffset, bitIndex)` returns that bit.                                                                                                  |
-| `beginWriteBlobs`   | once per `serialize`, if `T` has a blob    | starts an empty write-side blob list.                                                                                                                     |
-| `pushBlob`          | per blob field written                     | appends a value to the write-side blob list.                                                                                                              |
-| `finishWriteBlobs`  | once per `serialize`, if `T` has a blob    | returns the write-side blob list.                                                                                                                         |
-| `beginReadBlobs`    | once per `deserialize`, if `T` has a blob  | sets the read-side blob list to `input.blobs` and its index to the first element.                                                                         |
-| `nextBlob`          | per blob field read                        | returns the next read-side blob, or raises per 4.5 and 4.6.                                                                                               |
+| Export              | Called                                            | Contract                                                                                                                                                  |
+| ------------------- | ------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `grow`              | when a reservation passes the capacity            | `grow(current, live, needed)` returns a buffer of at least `needed` bytes whose first `live` bytes are `current`'s. `current` must have a nonzero length. |
+| `finishWrite`       | once per `serialize`, except as 5.4 and 5.9 state | `finishWrite(written, size)` returns a new buffer of exactly `size` bytes holding `written`'s first `size`.                                               |
+| `writePackedCFrame` | per `CFrame` inside `Packed<T>`                   | writes the packed form at the given offset and returns the bytes it used.                                                                                 |
+| `readPackedCFrame`  | per `CFrame` inside `Packed<T>`                   | reads the packed form at the given offset and returns the value and the bytes it used.                                                                    |
+| `unpackBit`         | per bit read inside `Packed<T>`                   | `unpackBit(buf, byteOffset, bitIndex)` returns that bit.                                                                                                  |
+| `beginWriteBlobs`   | once per `serialize`, if `T` has a blob           | starts an empty write-side blob list.                                                                                                                     |
+| `pushBlob`          | per blob field written                            | appends a value to the write-side blob list.                                                                                                              |
+| `finishWriteBlobs`  | once per `serialize`, if `T` has a blob           | returns the write-side blob list.                                                                                                                         |
+| `beginReadBlobs`    | once per `deserialize`, if `T` has a blob         | sets the read-side blob list to `input.blobs` and its index to the first element.                                                                         |
+| `nextBlob`          | per blob field read                               | returns the next read-side blob, or raises per 4.5 and 4.6.                                                                                               |
 
 **5.2** The package owns no scratch buffer and no byte cursor. Each generated
 serializer declares, in the closure it is emitted into, the scratch buffer,
 capacity and write cursor its `serialize` uses and the read cursor its
 `deserialize` uses, and reserves bytes inline. The blob channel's state is
-the exception, in 5.5.
+the exception, in 5.5, and a `serialize` sized exactly declares its own, in
+5.9.
 
 **5.3** The write side of a `Packed<T>` bit region calls no helper: it is
 emitted inline, one whole byte at a time.
@@ -227,9 +228,9 @@ another such `deserialize` is running. 5.7 states what can start one.
 must not start while a `serialize` of the same serializer is running, and a
 `deserialize` must not start while a `deserialize` of the same serializer is
 running, whatever `T` is. A call that starts anyway resets the cursor that the
-running call uses. The running `serialize` then returns wrong bytes without
-an error, and the running `deserialize` reads the rest of its value from the
-other call's input.
+running call uses, where the serializer holds it. The running `serialize` then
+returns wrong bytes without an error, and the running `deserialize` reads the
+rest of its value from the other call's input.
 
 **5.7** A serializer runs code that it did not generate only through the
 metamethods of a table it is given. Only a metamethod can therefore start a
@@ -242,6 +243,14 @@ raises. `__index` and `__len` cannot yield.
 **5.8** A call of one serializer may start while a call of a different
 serializer is running, unless 5.5 forbids it. Each call then returns what it
 returns when it runs alone.
+
+**5.9** A `serialize` of a `T` that the transformer sizes exactly (Transformer
+5.20) creates its result at that size and writes into it. It calls neither
+`grow` nor `finishWrite`, and its buffer and write cursor belong to the call.
+It reads each string and array of the value twice, once to size the result
+and once to write it. A value whose metamethods answer the second read
+differently gets a result of the wrong size: a longer answer raises, and a
+shorter one leaves bytes at the end that `deserialize` does not read.
 
 ## 6. Version coupling
 
@@ -292,10 +301,13 @@ A test file named `*.spec.ts` is under `tests/src/tests/`. A path starting
 | 5.6                         | Source only: `writeStateDecls` and `readStateDecls` in `emit/context.ts` declare the state once per closure, and `beginWriteStatements` and `beginReadStatements` reset it per call; no test re-enters a serializer                                                                                                                                                                                                                |
 | 5.7                         | Source only: the emitter reads a value's properties, lengths and `for … in` iterations under `emit/`, and calls nothing else of the value's. Which metamethods may yield is Luau's: `luaD_call` and `luaD_performcally` in its `VM/src/ldo.cpp`. No test yields inside `serialize`, because Lune 0.10.5 bundles Luau 0.709                                                                                                         |
 | 5.8                         | `overlap.spec.ts`: `runsAnotherSerializerInsideAnIterator`, a call from inside an `__iter` iterator. A call while an iterator is suspended is not run, as the 5.7 row states                                                                                                                                                                                                                                                       |
+| 5.9                         | `test/golden.test.mjs`: a shape sized exactly creates its result at that size and checks no capacity. Source only for a second read that differs: `exactSize` in `emit/size.ts`                                                                                                                                                                                                                                                    |
 | 6.1–6.2                     | Source only: no version field is read or written by either package                                                                                                                                                                                                                                                                                                                                                                 |
 
 ## Changes
 
+- `bea5fc0` / `015e1f3`: adds 5.9 (a `serialize` sized exactly owns its
+  buffer and cursor for the call); 5.1, 5.2 and 5.6 follow it.
 - `a564714` / `642062d`: 3.14 states what `readChecks` makes `createCodec`
   and `createDeserializer` return, which an unnumbered paragraph after 3.3
   said; Conformance rows 3.1–3.3 and 4.7 corrected.

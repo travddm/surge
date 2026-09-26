@@ -63,38 +63,38 @@ elements have a size known at compile time, so a table constructor may do
 there. Nothing has measured it.
 
 **What is left per call.** What remains once the three tables are gone
-(probe E) was not probed. The candidates in the code are `finishWrite`'s
-copy, the reads and writes of the scratch state in the closure, and the
-capacity check. Exact sizing, below, removes the copy and the check together.
+(probe E) was not probed. A shape sized exactly (Transformer 5.20 in
+[specs/transformer.md](../specs/transformer.md)) no longer has the three
+candidates the code offered: `finishWrite`'s copy, the scratch state in the
+closure, and the capacity check. A shape that keeps the scratch buffer still
+has all three.
 
 One design the `finishWrite` probe did not reach: handing the caller a buffer
 surge owns and reuses, which removes the allocation as well as the copy. It
 would have to be an opt-in API, since a reused buffer is dead the moment
 anything calls `serialize()` again, and what it is worth is unmeasured.
 
-The copy itself was chosen over two-pass exact sizing: a `size(value)`
-function generated per shape, called first, and a write into a buffer of
-exactly that size with no copy. The copy needs one traversal of the value and
-two-pass sizing needs two. Whether a second traversal could cost less than the
-copy is open: the copy does not grow with the payload, and what it costs per
-call is not settled
+**Sizing a shape with a loop.** Exact sizing (Transformer 5.20) covers a
+shape that a constant and the lengths and counts it reads can size. A shape
+with a loop over elements of varying size, such as an array of strings, a
+`dict`, or an array of union variants, keeps the scratch buffer, its
+capacity checks and `finishWrite`'s copy. Sizing it takes a second traversal
+of the value, as a `size(value)` function generated per shape and called
+first. The copy was chosen over that because it needs one traversal, and
+whether a second traversal could cost less than the copy is open: the copy
+does not grow with the payload, and what it costs per call is not settled
 ([per-call-overhead.md](../research/per-call-overhead.md) and its
-correction).
+correction). Two-pass sizing could be an option of the factory, so that a
+shape opts in where it measures better.
 
-Not every shape needs a second traversal to be sized. The hand-written
-baseline (`tests/src/bench/baseline/codecs.luau`) computes its buffer's size
-from the value before it writes, and has no scratch buffer, no capacity check
-and no copy. The size is a constant for the flat struct, the fixed bytes plus
-each string's length for the nested object, and the count times the element
-size for the `CFrame` array. The `Field` tree gives the transformer the same
-terms at compile time. Only a loop over elements of varying size, such as an
-array of strings or a `dict`, needs a traversal to be sized. An `optional` or
-a union adds its branch to the sizing, which evaluates the branch's test
-twice. Any other shape could be sized from a constant and the lengths and
-counts it reads anyway, then written into one `buffer.create` of that size.
-That removes every capacity check and the call to `finishWrite` with its copy.
-The allocation stays, because the caller gets a buffer of its own. A shape
-with such a loop keeps the scratch buffer. None of this is measured.
+**Kinds exact sizing leaves out.** A union, a sequence and a packed `CFrame`
+are not sized, and neither is anything that holds one. A union could be
+sized from the branch it takes, which evaluates the branch's test twice. A
+sequence could be sized from its keypoint count, which reads its `Keypoints`
+property a second time, and what that read costs is not measured. A packed
+`CFrame`'s size is in the header its runtime
+function chooses, so sizing one needs a function of the package that computes
+the header without writing it.
 
 **Reopened: the package pragma.** The package's hot modules carry
 `--!native`, and this was recorded as worth nothing, because marking only the
@@ -125,8 +125,8 @@ elements reserves all of them at once (Transformer 5.18), and a `str` or a
 `buffer` its count and its bytes (Transformer 5.19). Nothing else shares a
 reservation. The places below reserve more often than the bytes require.
 Merging reservations changes no byte, because reservation order is byte order
-either way. A shape whose reservations all merge makes one reservation per
-call, which is where the exact sizing above starts.
+either way. On a shape sized exactly, a reservation checks no capacity, so
+what merging still saves there is a move of the cursor.
 
 - **Through a nested object of mixed sizes.** A nested object with a
   variable-size property, such as a `str`, ends the run, and so does the end
