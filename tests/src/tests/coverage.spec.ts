@@ -113,6 +113,10 @@ type Digit = "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9";
 type Wide = { [K in `f${"0" | "1"}${Digit}${Digit}`]: number };
 const WIDE_FIELD_COUNT = 200;
 const wideSerializer = createCodec<Wide>();
+// Transformer 5.18: an element with more fields than a run holds is not
+// reserved with the rest of the array, so its own fields can still be
+// emitted in blocks.
+const wideListSerializer = createCodec<{ rows: Wide[] }>();
 
 // Transformer 5.5 and 5.8: a run through nested objects has to stay inside one
 // block once the object is emitted in blocks.
@@ -339,6 +343,26 @@ class CoverageTest {
 		const result = wideSerializer.deserialize(buf) as Record<string, number>;
 		for (const i of $range(0, WIDE_FIELD_COUNT - 1)) {
 			Assert.equal(i, result[string.format("f%03d", i)]);
+		}
+	}
+
+	@Fact
+	public roundTripsAnArrayOfObjectsWiderThanTheLocalRegisterLimit(): void {
+		const rows = new Array<Wide>();
+		for (const row of $range(0, 1)) {
+			const fields = {} as Record<string, number>;
+			for (const i of $range(0, WIDE_FIELD_COUNT - 1)) {
+				fields[string.format("f%03d", i)] = row * 1000 + i;
+			}
+			rows.push(fields as Wide);
+		}
+		const result = wideListSerializer.deserialize(wideListSerializer.serialize({ rows })).rows;
+		Assert.equal(2, result.size());
+		for (const row of $range(0, 1)) {
+			const fields = result[row] as Record<string, number>;
+			for (const i of $range(0, WIDE_FIELD_COUNT - 1)) {
+				Assert.equal(row * 1000 + i, fields[string.format("f%03d", i)]);
+			}
 		}
 	}
 
