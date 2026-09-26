@@ -21,6 +21,8 @@ code the transformer generates runs. What has been measured is under
   reserving a string's count and bytes at once.
 - [exact-sizing.md](../research/exact-sizing.md) — creating the result at its
   exact size, and the per-call gap it closed.
+- [sized-read-tables.md](../research/sized-read-tables.md) — creating a read's
+  table at its size and storing each element at its index.
 
 This document holds what is still open.
 
@@ -41,28 +43,19 @@ adapters no longer copy the result into a table of their own (Benchmark
 harness 4.8 in [specs/benchmark-harness.md](../specs/benchmark-harness.md)).
 Calling `finishWrite` instead of inlining it costs nothing measurable.
 
-**What is left per element.** On the `CFrame` array it is not the reservation
-each element made: reserving the elements once moved that row's gap no
-further than rows whose code did not change
+**What is left per element.** On the `CFrame` array's encode it is not the
+reservation each element made: reserving the elements once moved that row's
+gap no further than rows whose code did not change
 ([one-reservation-per-array.md](../research/one-reservation-per-array.md)).
-What it is was not probed. The candidates in the code are on encode: surge
-reads a `CFrame`'s `Position` once for each of its three components, where
-the hand-written codec (`tests/src/bench/baseline/codecs.luau`) reads it once
+What it is was not probed. The candidates in the code are: surge reads a
+`CFrame`'s `Position` once for each of its three components, where the
+hand-written codec (`tests/src/bench/baseline/codecs.luau`) reads it once
 into a local, and surge's loop is a generic `for` over the array where the
-hand-written one is a numeric `for`.
-
-**The read loop's push.** A read loop appends each element with `push`,
-which roblox-ts compiles to `table.insert`, into a table that starts empty:
-an `array`, a tuple's fixed elements and rest, and a sequence's keypoints.
-The table grows as it fills, and every element is one more call. On the
-thousand-element rows, decode runs several times slower than encode
-([benchmarks/speed.md](../benchmarks/speed.md)). The candidate is a table
-created at its final size and filled by index. Whether roblox-ts compiles
-`new Array<T>(count)` to `table.create(count)`, and an indexed assignment
-inside the `$range` loop to a plain `result[i] = element` with no offset,
-needs checking before the emitter relies on either. A tuple's fixed
-elements have a size known at compile time, so a table constructor may do
-there. Nothing has measured it.
+hand-written one is a numeric `for`. A numeric `for` would also write an
+absent element where the array has a hole, which the generic `for` skips
+while its count includes it. On decode, the row's gap was the table the read
+appended to, and almost none of it is left
+([sized-read-tables.md](../research/sized-read-tables.md)).
 
 **What is left per call.** A shape sized exactly (Transformer 5.20 in
 [specs/transformer.md](../specs/transformer.md)) no longer has the three
@@ -113,7 +106,7 @@ the current figure. The loop's timings are not a result: they were taken
 before the speed suite yielded, and no data file was kept.
 
 **Reopened: the read loop.** Count-driven reads (`array`, `tuple` rest,
-`dict`, sequences) are emitted as `for (const _i of $range(1, count))`, which
+`dict`, sequences) are emitted as `for (const i of $range(1, count))`, which
 roblox-ts lowers to a numeric `for`, instead of a C-style loop it lowers to a
 `while` with a `_shouldIncrement` flag; `test/golden.test.mjs` pins that no
 compiled file has the flag. It measured as no change on the decode rows quiet
@@ -218,9 +211,9 @@ or needs a fixture before anything can measure it.
   not single cells: how far two runs of unchanged code differ, on a column and
   on a cell, is [noise-in-the-speed-tier.md](../research/noise-in-the-speed-tier.md).
 - A golden check in `test/golden.test.mjs` for each change that lands. The
-  read loop's, the tagged union's, the `CFrame`'s, the shared reservation's
-  and the blob channel's are there already, and so are the file pragmas on
-  both sides.
+  read loop's, the tagged union's, the `CFrame`'s, the shared reservation's,
+  the read table's and the blob channel's are there already, and so are the
+  file pragmas on both sides.
 - Predict nothing from the compiled output. Whether a cost is paid per element
   or per call was the heuristic this document used to lean on, and the blob
   channel broke it: a per-call allocation was measurable, and whether a

@@ -113,8 +113,8 @@ end
 
 local function readTransforms(buf)
 	local count = buffer.readu32(buf, 0)
-	-- Sized up front, where surge's reader appends to an empty table: the count is on the wire, so
-	-- a person writing this by hand would use it, and the decode gap on this row is partly that.
+	-- Sized up front: the count is on the wire, so a person writing this by hand would use it. surge's
+	-- reader does the same (Transformer 5.21 in docs/specs/transformer.md).
 	local list = table.create(count)
 
 	local offset = 4
