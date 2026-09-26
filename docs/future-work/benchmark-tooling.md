@@ -21,6 +21,19 @@ library's generated code. Measuring it honestly needs each call in a module of
 its own per fixture and library, and it belongs beside the speed tier, where
 code size against speed is the question.
 
+**A stable fbs and serio column.** Two builds of unchanged source can compile
+an fbs or serio fixture differently. On 2026-09-26, two builds of
+`small-flat-struct.ts` listed the fields of `createFbsSerializer`'s and
+`createSerioSerializer`'s generated schema in the order `x, y, id, z, active`
+in one and `id, x, y, z, active`, the declaration order, in the other. Both
+libraries take the schema from `rbxts-transformer-flamework`, which chose the
+order. surge's own code was the same text in both builds. The cause is not
+known: `tests/flamework.build`, Flamework's cache, holds identifiers and no
+field order. A column whose code can change between two runs is a weaker
+control than one whose code cannot, and a measurement that reads fbs or
+serio as a control on a single row can read a change of field order as
+drift.
+
 **A third tier, for wire cost.** `Stats.DataSendKbps` in a real Roblox
 client and server is Blink's own benchmark method, and the only measure that
 includes remote overhead and batching, so a networking library and a bare
@@ -49,6 +62,12 @@ batches it, and [networking.md](networking.md) is where that would come from.
 A Zap-shaped timing has no driver either, and a transcription would measure
 the transcription as much as Zap.
 
+A stable fbs and serio column waits on nothing. It is not in the way today:
+a measurement reads its controls as a median over many cells, and one that
+changed its code on one row moves that median little.
+[one-reservation-per-array.md](../research/one-reservation-per-array.md) left
+the two cells out.
+
 ## How, briefly
 
 1. Add the tagged union and packed `toggles` to
@@ -56,7 +75,12 @@ the transcription as much as Zap.
    which the size tier confirms.
 2. Split the fixtures so each factory call is a module of its own, and report
    each module's compiled size beside the speed table.
-3. Tier 3 only if wire cost with batching becomes a question the serializer
+3. Find what sets the field order `rbxts-transformer-flamework` emits, by
+   building `tests/` several times from a clean tree and comparing the fbs
+   and serio schemas. Then either make the build choose one order, or have a
+   golden check or the speed recorder say when a fixture's fbs or serio code
+   differs from the last run's.
+4. Tier 3 only if wire cost with batching becomes a question the serializer
    comparison cannot answer.
-4. A Zap-shaped timing only if Zap's speed becomes a question Blink's column,
+5. A Zap-shaped timing only if Zap's speed becomes a question Blink's column,
    the other IDL compiler, cannot answer.

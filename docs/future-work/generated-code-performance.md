@@ -47,6 +47,19 @@ the hand-written codec (`tests/src/bench/baseline/codecs.luau`) reads it once
 into a local, and surge's loop is a generic `for` over the array where the
 hand-written one is a numeric `for`.
 
+**The read loop's push.** A read loop appends each element with `push`,
+which roblox-ts compiles to `table.insert`, into a table that starts empty:
+an `array`, a tuple's fixed elements and rest, and a sequence's keypoints.
+The table grows as it fills, and every element is one more call. On the
+thousand-element rows, decode runs several times slower than encode
+([benchmarks/speed.md](../benchmarks/speed.md)). The candidate is a table
+created at its final size and filled by index. Whether roblox-ts compiles
+`new Array<T>(count)` to `table.create(count)`, and an indexed assignment
+inside the `$range` loop to a plain `result[i] = element` with no offset,
+needs checking before the emitter relies on either. A tuple's fixed
+elements have a size known at compile time, so a table constructor may do
+there. Nothing has measured it.
+
 **What is left per call.** What remains once the three tables are gone
 (probe E) was not probed. The candidates in the code are `finishWrite`'s
 copy, the reads and writes of the scratch state in the closure, and the

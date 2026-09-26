@@ -33,6 +33,10 @@ time:
   serializer today.
 - [transformer-unit-test-coverage.md](transformer-unit-test-coverage.md): a
   test of the package-name cache in `detect.ts`, which needs `fs` mocking.
+- A stable fbs and serio column, in
+  [benchmark-tooling.md](benchmark-tooling.md): two builds of unchanged
+  source can list a fixture's fields in two orders in those libraries'
+  generated schemas.
 
 ## Deferred indefinitely
 
