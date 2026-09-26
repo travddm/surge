@@ -306,9 +306,10 @@ value, and the write reads it again.
 
 **5.21** A read of an `array`, a tuple, or a sequence's keypoints creates its
 table with `new Array(size)`, which roblox-ts compiles to `table.create(size)`,
-and stores each element at its index. The size is the count read back, or the
-count of the exact form, for an `array` and a sequence, and the number of
-fixed elements for a tuple, whose rest elements are stored past them. An
+and stores each element at its index. The size is the count an `array` reads
+back or the count of its exact form, the keypoint count a sequence reads back,
+and the number of fixed elements for a tuple, whose rest elements are stored
+past them. An
 element read back as absent leaves its index empty, and the elements after it
 keep their indexes. Under `readChecks: true`, the count's bound (5.10) comes
 before the table is created.

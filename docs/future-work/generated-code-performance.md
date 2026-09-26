@@ -147,6 +147,9 @@ as the hand-written codec does. The scratch buffer only grows, so one large
 payload pins its memory for the module's lifetime. An object large enough to be emitted in
 blocks is read as `const result = {}` plus one assignment per field, so its
 table grows by rehashing instead of being sized once by a table constructor.
+A tuple's table is created at the number of its fixed elements (Transformer
+5.21), because the rest's count follows them in the bytes, so a tuple with a
+rest still grows its table as the rest is stored.
 
 **The per-function `@native` attribute, and typed Luau.** Neither is reachable
 through the AST roblox-ts hands a transformer. `@native` has no `ts.factory`

@@ -52,8 +52,8 @@ The emitter writes `new Array<T>(count)`, which roblox-ts compiles to
 folds into the index it adds. A tuple's table is created at the number of its
 fixed elements, and a sequence's keypoints at their count. The hand-written
 codec in `tests/src/bench/baseline/codecs.luau` has read the `CFrame` array
-this way from the start, and its comment names the empty table as part of the
-decode gap on that row.
+this way from the start, and until this change its comment named surge's
+empty table as part of the decode gap on that row.
 
 ## Method
 
@@ -153,12 +153,15 @@ over surge's, on the rows the change reached and Blink runs:
 
 | Row               | First reference | Second reference | Change |
 | ----------------- | --------------- | ---------------- | ------ |
-| large array       | 1.255×          | 1.178×           | 0.701× |
-| `Blink: Booleans` | 1.287×          | 1.147×           | 0.671× |
+| large array       | 1.255×†         | 1.178×†          | 0.701× |
+| `Blink: Booleans` | 1.287×†         | 1.147×†          | 0.671× |
 | string-heavy      | 1.162×          | 1.148×           | 1.028× |
 | tagged union      | 0.689×          | 0.670×           | 0.624× |
 | `CFrame` array    | 0.799×          | 0.810×           | 0.761× |
 | `Blink: Entities` | 0.621×          | 0.620×           | 0.581× |
+
+† surge's cell is noise in both references. Blink's is not, and read against
+each reference run on its own, Blink over surge was 0.992× to 1.366×.
 
 ## Discussion
 
@@ -170,9 +173,10 @@ That is what a call to `table.insert`, and the growth of a table filled one
 append at a time, cost against a store into a table of the right size. How the
 saving divides between the call and the growth was not probed.
 
-Blink creates its table at its size, as surge now does, but appends. surge
-decoded the two thousand-element rows 1.15× to 1.29× slower than Blink before
-the change, and 1.43× to 1.49× faster after it. This does not separate the
+Blink creates its table at its size, as surge now does, but appends. Before
+the change, surge decoded the two thousand-element rows as fast as Blink in
+one reference run and up to 1.37× slower in the other three. After it, surge
+decoded them 1.43× to 1.49× faster, in both runs. This does not separate the
 store from the size either: Blink's loop also reads its table out of the
 result object on every append.
 
@@ -214,10 +218,10 @@ What this does not reach:
 
 Creating a read's table at its size and storing each element at its index
 made decode 1.03× to 1.48× as fast on the eight readable rows it reached, and
-at least 1.47× on the two thousand-element rows, 4 to 10 ns per element. It
-closed the `CFrame` array's decode gap to hand-written Luau from 494 ns to 14
-ns a call, and put surge ahead of Blink on the two rows where Blink decoded
-faster.
+at least 1.47× on the two thousand-element rows, 4.2 to 10.3 ns per element.
+It closed the `CFrame` array's decode gap to hand-written Luau from 494 ns to
+14 ns a call. On the two rows where Blink had decoded as fast or faster,
+surge is now ahead in every run.
 
 ## Data
 
