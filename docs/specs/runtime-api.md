@@ -1,8 +1,8 @@
 # Runtime API specification
 
 Status: current
-Applies to: `@rbxts/surge` at commit `bea5fc0`, `rbxts-transformer-surge` at
-commit `015e1f3` (no tagged release yet)
+Applies to: `@rbxts/surge` at commit `5c83147`, `rbxts-transformer-surge` at
+commit `5cd0208` (no tagged release yet)
 
 ## 1. Scope
 
@@ -248,10 +248,12 @@ returns when it runs alone.
 5.20) creates its result at that size and writes into it. It calls neither
 `grow` nor `finishWrite`, and its buffer and write cursor belong to the call.
 It reads each length, count and presence it sizes the result from twice, once
-to size the result and once to write it. A value whose metamethods answer the
-second read differently gets a result of the wrong size: a longer answer
-raises, and a shorter one leaves bytes at the end that `deserialize` does not
-read.
+to size the result and once to write it, and it iterates each `dict`, and
+each `array` whose elements vary in size, twice, so an `__iter` metamethod's
+iterator runs twice in one call. A value whose metamethods answer the second
+read or iteration differently gets a result of the wrong size: a longer
+answer raises, and a shorter one leaves bytes at the end that `deserialize`
+does not read.
 
 ## 6. Version coupling
 
@@ -302,11 +304,13 @@ A test file named `*.spec.ts` is under `tests/src/tests/`. A path starting
 | 5.6                         | Source only: `writeStateDecls` and `readStateDecls` in `emit/context.ts` declare the state once per closure, and `beginWriteStatements` and `beginReadStatements` reset it per call; no test re-enters a serializer                                                                                                                                                                                                                |
 | 5.7                         | Source only: the emitter reads a value's properties, lengths and `for … in` iterations under `emit/`, and calls nothing else of the value's. Which metamethods may yield is Luau's: `luaD_call` and `luaD_performcally` in its `VM/src/ldo.cpp`. No test yields inside `serialize`, because Lune 0.10.5 bundles Luau 0.709                                                                                                         |
 | 5.8                         | `overlap.spec.ts`: `runsAnotherSerializerInsideAnIterator`, a call from inside an `__iter` iterator. A call while an iterator is suspended is not run, as the 5.7 row states                                                                                                                                                                                                                                                       |
-| 5.9                         | `test/golden.test.mjs`: a shape sized exactly creates its result at that size and checks no capacity. Source only for a second read that differs: `exactSize` in `emit/size.ts`                                                                                                                                                                                                                                                    |
+| 5.9                         | `test/golden.test.mjs`: a shape sized exactly creates its result at that size and checks no capacity; `overlap.spec.ts`: `iteratesADictionaryOnceForItsSizeAndOnceForItsWrite`. Source only for a second read that differs: `exactSize` in `emit/size.ts`                                                                                                                                                                          |
 | 6.1–6.2                     | Source only: no version field is read or written by either package                                                                                                                                                                                                                                                                                                                                                                 |
 
 ## Changes
 
+- `5c83147` / `5cd0208`: 5.9 states that a `dict`, and an `array` whose
+  elements vary in size, are iterated twice.
 - `bea5fc0` / `015e1f3`: adds 5.9 (a `serialize` sized exactly owns its
   buffer and cursor for the call); 5.1, 5.2 and 5.6 follow it.
 - `a564714` / `642062d`: 3.14 states what `readChecks` makes `createCodec`

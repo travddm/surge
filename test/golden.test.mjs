@@ -174,10 +174,24 @@ test("a shape sized exactly creates its result at that size and checks no capaci
 	assert.match(luau, /local __surge_scratch = buffer[.]create[(]#value[.]name [+] /);
 	assert.match(luau, /local __surge_scratch = buffer[.]create[(]15[)]$/m);
 	assert.doesNotMatch(luau, /__surge_capacity|__surge_grow|__surge_finishWrite[(]/);
-	// A positive control: an array of strings needs a loop to size, and keeps
-	// the scratch buffer.
-	const collections = readCompiledLuau("tests/collections.spec.luau");
-	assert.match(collections, /__surge_finishWrite[(]__surge_scratch, __surge_cursor[)]/);
+	// A positive control: a recursive type is written through a helper, and
+	// keeps the scratch buffer.
+	const recursion = readCompiledLuau("tests/recursion.spec.luau");
+	assert.match(recursion, /__surge_finishWrite[(]__surge_scratch, __surge_cursor[)]/);
+});
+
+// Regression check for sizing by a loop. What it was measured as worth is in
+// docs/research/exact-sizing-with-loops.md.
+test("a shape whose elements vary in size is sized by a loop over them, ahead of its result", () => {
+	const luau = readCompiledLuau("tests/collections.spec.luau");
+	// `Grid` is a `number[][]`, whose rows vary in length.
+	assert.match(
+		luau,
+		/local (size[0-9]+) = 4\n\s+for _, (item[0-9]+) in value do\n\s+\1 [+]= #\2 [*] 8 [+] 4\n\s+end\n\s+local __surge_scratch = buffer[.]create[(]\1[)]$/m,
+	);
+	// `WithDictionaries.indexed` is keyed by string: the loop binds the key
+	// alone, since the value's size is fixed.
+	assert.match(luau, /for (k[0-9]+) in value[.]indexed do\n\s+size[0-9]+ [+]= #\1 [+] 5$/m);
 });
 
 // Regression check for the conditional blob side channel. What it is worth is in

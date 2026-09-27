@@ -12,6 +12,9 @@ import { difference, hex } from "../support";
 // The other path 5.7 names, an `__iter` iterator that yields while another
 // thread serializes, is not run here: Luau lets that iterator yield from
 // release 0.736, and Lune 0.10.5 bundles Luau 0.709, where the yield raises.
+//
+// Runtime API 5.9: a `serialize` sized ahead of its write iterates a
+// dictionary twice, once for the size and once for the write.
 
 interface Readings {
 	values: number[];
@@ -22,8 +25,13 @@ interface Label {
 	id: DataType.u16;
 }
 
+interface Scores {
+	byName: Map<string, number>;
+}
+
 const readings = createCodec<Readings>();
 const label = createCodec<Label>();
+const scores = createCodec<Scores>();
 
 const VALUES: ReadonlyArray<number> = [1, 2.5, -3];
 const LABEL: Label = { name: "inner", id: 7 };
@@ -53,7 +61,34 @@ function iteratingWith(items: ReadonlyArray<number>, during: () => void): number
 	return setmetatable(copy, metatable as unknown as LuaMetatable<number[]>);
 }
 
+/** A map of `entries` whose `__iter` calls `during` each time an iteration starts. */
+function countingIterations(entries: ReadonlyArray<[string, number]>, during: () => void): Map<string, number> {
+	const copy = new Map(entries);
+	const metatable = {
+		__iter: () => {
+			during();
+			// eslint-disable-next-line roblox-ts/no-user-defined-lua-tuple -- `__iter` returns the iterator function and the table as two values, not one table.
+			return $tuple(next, copy);
+		},
+	};
+	// `LuaMetatable` in `@rbxts/types` does not declare `__iter`.
+	return setmetatable(copy, metatable as unknown as LuaMetatable<Map<string, number>>);
+}
+
 class OverlapTest {
+	@Fact
+	public iteratesADictionaryOnceForItsSizeAndOnceForItsWrite(): void {
+		const entries: ReadonlyArray<[string, number]> = [
+			["a", 1],
+			["bb", 2.5],
+		];
+		let iterations = 0;
+		const written = scores.serialize({ byName: countingIterations(entries, () => iterations++) });
+
+		Assert.equal(2, iterations);
+		Assert.equal(undefined, difference({ byName: new Map(entries) }, scores.deserialize(written)));
+	}
+
 	@Fact
 	public runsAnotherSerializerInsideAnIterator(): void {
 		const inner: buffer[] = [];
