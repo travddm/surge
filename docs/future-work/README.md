@@ -37,6 +37,9 @@ time:
   [benchmark-tooling.md](benchmark-tooling.md): two builds of unchanged
   source can list a fixture's fields in two orders in those libraries'
   generated schemas.
+- A readable `Blink: Booleans` encode cell, in
+  [benchmark-tooling.md](benchmark-tooling.md): surge's encode of that row
+  runs at one of two speeds per Studio process.
 
 ## Deferred indefinitely
 
