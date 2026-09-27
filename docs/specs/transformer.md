@@ -1,8 +1,8 @@
 # Transformer specification
 
 Status: current
-Applies to: `@rbxts/surge` at commit `e2deaf7`, `rbxts-transformer-surge` at
-commit `3260841` (no tagged release yet)
+Applies to: `@rbxts/surge` at commit `2310f16`, `rbxts-transformer-surge` at
+commit `fcc7a9c` (no tagged release yet)
 
 ## 1. Scope
 
@@ -318,6 +318,12 @@ before the table is created.
 of an `array` or in a tuple's rest, is cast to the element's type, so the
 generated code type-checks under a consumer's `noUncheckedIndexedAccess`.
 
+**5.23** An `object` of more than one property, written outside a run of 5.5,
+whose value is not a local, reads its value once into a local and writes
+its properties from that local. A property of a nested object is then one
+property read from its object's local, not a read of the whole path from the
+value `serialize` was given.
+
 ## 6. Injected imports
 
 **6.1** The transformer adds one import of `@rbxts/surge/out/abi`, the
@@ -440,6 +446,7 @@ of `rbxts-transformer-surge`, cited by `describe` block. Source paths are in
 | 5.20      | `emit`: `Emitter exact sizing`; `transform`: `transform generated code` (a shape written exactly passes the type check), `transform (end-to-end)` (a shape with no blob field); `test/golden.test.mjs`: a shape sized exactly creates its result at that size and checks no capacity; every round trip and byte pin under `tests/src/tests/`                                                                                                                                                              |
 | 5.21      | `emit`: `Emitter read tables`; `test/golden.test.mjs`: a read creates its table at its size and stores each element at its index; `tests/src/tests/collections.spec.ts`: `keepsAnAbsentTupleElementInItsPlace`                                                                                                                                                                                                                                                                                            |
 | 5.22      | `emit`: `Emitter exact arrays`; `transform`: `transform generated code` (an array, an exact array and a tuple's rest under `noUncheckedIndexedAccess`)                                                                                                                                                                                                                                                                                                                                                    |
+| 5.23      | `emit`: `Emitter nested object values`; `test/golden.test.mjs`: a nested object reads its value once, not once per property                                                                                                                                                                                                                                                                                                                                                                               |
 | 6.1, 6.2  | `transform`: `transform injected imports`, and in `transform (end-to-end)` the single shared import and the same-named local function; `tests/src/tests/coverage.spec.ts`: `leavesAUserDeclarationNamedAfterAnInjectedImportAlone`; `test/golden.test.mjs`: generated code imports its helpers from the package's abi module                                                                                                                                                                              |
 | 6.3       | `test/golden.test.mjs`: a file directive survives the transformer's injected imports; `transform`: `transform generated code` (the three directive tests)                                                                                                                                                                                                                                                                                                                                                 |
 | 6.4       | `transform`: `transform injected imports` (a `createDeserializer` call site)                                                                                                                                                                                                                                                                                                                                                                                                                              |
@@ -452,6 +459,7 @@ of `rbxts-transformer-surge`, cited by `describe` block. Source paths are in
 
 ## Changes
 
+- `2310f16` / `fcc7a9c`: adds 5.23 (a nested object reads its value once).
 - `e2deaf7` / `3260841`: 5.22 keeps only the cast of an element read at an
   index. The loop by index it stated measured slower than the generic `for`
   ([research/per-element-encode.md](../research/per-element-encode.md)).

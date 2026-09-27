@@ -144,6 +144,15 @@ test("a string reserves its count and its bytes at once", () => {
 	assert.match(luau, /__surge_readCursor = pos[0-9]+ [+] 4 [+] len[0-9]+$/m);
 });
 
+// Regression check for a nested object's value read once. What it was measured
+// as worth is in docs/research/nested-object-values.md.
+test("a nested object reads its value once, not once per property", () => {
+	const luau = readCompiledLuau("tests/packed.spec.luau");
+	// `WithPackedSubtree.settings.audio` is two objects deep.
+	assert.match(luau, /local (obj[0-9]+) = value[.]settings\n[^]*?local obj[0-9]+ = \1[.]audio$/m);
+	assert.doesNotMatch(luau, /value[.]settings[.]audio[.]/);
+});
+
 // Regression check for the read table created at its size. What it was
 // measured as worth is in docs/research/sized-read-tables.md.
 test("a read creates its table at its size and stores each element at its index", () => {
