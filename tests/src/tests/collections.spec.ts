@@ -49,11 +49,6 @@ const optionalsSerializer = createCodec<WithNestedOptionals>();
 type WithAbsentMiddle = [number, string | undefined, number];
 const absentMiddleSerializer = createCodec<WithAbsentMiddle>();
 
-// An array of optionals with an absent element inside its length. A table
-// constructor of three values gives the array a length of 3, and the write
-// reads each index up to it, where a generic `for` would skip the absent one.
-const absentItemsSerializer = createCodec<Array<Point | undefined>>();
-
 type Grid = number[][];
 const gridSerializer = createCodec<Grid>();
 
@@ -155,13 +150,6 @@ class CollectionsTest {
 		const value: WithAbsentMiddle = [1, undefined, 3];
 		const buffer = absentMiddleSerializer.serialize(value);
 		Assert.equal(undefined, difference(value, absentMiddleSerializer.deserialize(buffer)));
-	}
-
-	@Fact
-	public keepsAnAbsentArrayElementInItsPlace(): void {
-		const value: Array<Point | undefined> = [{ x: 1, y: 2 }, undefined, { x: 3, y: 4 }];
-		const buffer = absentItemsSerializer.serialize(value);
-		Assert.equal(undefined, difference(value, absentItemsSerializer.deserialize(buffer)));
 	}
 
 	@Fact

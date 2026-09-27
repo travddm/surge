@@ -131,7 +131,7 @@ test("an array of fixed-size elements reserves them all once, ahead of its loop"
 	const luau = readCompiledLuau("tests/bytes.spec.luau");
 	// `Containers.list` is a `u16[]`: one reservation of two bytes per
 	// element on each side, and a position each element moves on.
-	assert.match(luau, /__surge_cursor = pos[0-9]+ [+] len[0-9]+ [*] 2$/m);
+	assert.match(luau, /__surge_cursor = pos[0-9]+ [+] #arr[0-9]+ [*] 2$/m);
 	assert.match(luau, /__surge_readCursor = pos[0-9]+ [+] count[0-9]+ [*] 2$/m);
 	assert.match(luau, /element[0-9]+ [+]= 2$/m);
 });
@@ -142,17 +142,6 @@ test("a string reserves its count and its bytes at once", () => {
 	// count, and one move of the read cursor past both.
 	assert.match(luau, /__surge_cursor = pos[0-9]+ [+] [(]len[0-9]+ [+] 4[)]$/m);
 	assert.match(luau, /__surge_readCursor = pos[0-9]+ [+] 4 [+] len[0-9]+$/m);
-});
-
-// Regression check for the numeric write loop. What it was measured as worth
-// is in docs/research/per-element-encode.md.
-test("an array writes each element by index, up to its length", () => {
-	const luau = readCompiledLuau("tests/bytes.spec.luau");
-	// `Containers.list` is a `u16[]`: its length taken once, for the count, the
-	// reservation and the loop.
-	assert.match(luau, /local len[0-9]+ = #arr[0-9]+$/m);
-	assert.match(luau, /for (i[0-9]+) = 1, len[0-9]+ do\n\s+local item[0-9]+ = arr[0-9]+\[\1\]$/m);
-	assert.doesNotMatch(luau, /for _, item[0-9]+ in arr[0-9]+ do/);
 });
 
 // Regression check for the read table created at its size. What it was

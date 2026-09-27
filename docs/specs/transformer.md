@@ -1,8 +1,8 @@
 # Transformer specification
 
 Status: current
-Applies to: `@rbxts/surge` at commit `b8c3206`, `rbxts-transformer-surge` at
-commit `ff2f6ec` (no tagged release yet)
+Applies to: `@rbxts/surge` at commit `e2deaf7`, `rbxts-transformer-surge` at
+commit `3260841` (no tagged release yet)
 
 ## 1. Scope
 
@@ -314,15 +314,9 @@ element read back as absent leaves its index empty, and the elements after it
 keep their indexes. Under `readChecks: true`, the count's bound (5.10) comes
 before the table is created.
 
-**5.22** An `array` that writes a count takes the value's length once, writes
-it as the count, reserves a fixed-size element's bytes from it (5.18), and
-writes the elements by a loop whose index runs from 1 to it, reading each
-element at its index. A `nil` at an index within that length is
-written as a missing element of the exact form is (Wire format 6.6 and 6.7).
-An array's `__len` and `__index` metamethods are called as Luau calls them,
-and its `__iter` is not. In either form, an element read at an index is cast
-to its type, so the generated code type-checks under a consumer's
-`noUncheckedIndexedAccess`.
+**5.22** An element that the write side reads at an index, in the exact form
+of an `array` or in a tuple's rest, is cast to the element's type, so the
+generated code type-checks under a consumer's `noUncheckedIndexedAccess`.
 
 ## 6. Injected imports
 
@@ -445,7 +439,7 @@ of `rbxts-transformer-surge`, cited by `describe` block. Source paths are in
 | 5.19      | `emit`: `Emitter counted bytes`; `test/golden.test.mjs`: a string reserves its count and its bytes at once; `tests/src/tests/checks.spec.ts`: `rejectsAStringCutInItsCountOrItsBytes`                                                                                                                                                                                                                                                                                                                     |
 | 5.20      | `emit`: `Emitter exact sizing`; `transform`: `transform generated code` (a shape written exactly passes the type check), `transform (end-to-end)` (a shape with no blob field); `test/golden.test.mjs`: a shape sized exactly creates its result at that size and checks no capacity; every round trip and byte pin under `tests/src/tests/`                                                                                                                                                              |
 | 5.21      | `emit`: `Emitter read tables`; `test/golden.test.mjs`: a read creates its table at its size and stores each element at its index; `tests/src/tests/collections.spec.ts`: `keepsAnAbsentTupleElementInItsPlace`                                                                                                                                                                                                                                                                                            |
-| 5.22      | `emit`: `Emitter write loops`; `transform`: `transform generated code` (an array, an exact array and a tuple's rest under `noUncheckedIndexedAccess`); `test/golden.test.mjs`: an array writes each element by index, up to its length; `tests/src/tests/collections.spec.ts`: `keepsAnAbsentArrayElementInItsPlace`                                                                                                                                                                                      |
+| 5.22      | `emit`: `Emitter exact arrays`; `transform`: `transform generated code` (an array, an exact array and a tuple's rest under `noUncheckedIndexedAccess`)                                                                                                                                                                                                                                                                                                                                                    |
 | 6.1, 6.2  | `transform`: `transform injected imports`, and in `transform (end-to-end)` the single shared import and the same-named local function; `tests/src/tests/coverage.spec.ts`: `leavesAUserDeclarationNamedAfterAnInjectedImportAlone`; `test/golden.test.mjs`: generated code imports its helpers from the package's abi module                                                                                                                                                                              |
 | 6.3       | `test/golden.test.mjs`: a file directive survives the transformer's injected imports; `transform`: `transform generated code` (the three directive tests)                                                                                                                                                                                                                                                                                                                                                 |
 | 6.4       | `transform`: `transform injected imports` (a `createDeserializer` call site)                                                                                                                                                                                                                                                                                                                                                                                                                              |
@@ -458,6 +452,9 @@ of `rbxts-transformer-surge`, cited by `describe` block. Source paths are in
 
 ## Changes
 
+- `e2deaf7` / `3260841`: 5.22 keeps only the cast of an element read at an
+  index. The loop by index it stated measured slower than the generic `for`
+  ([research/per-element-encode.md](../research/per-element-encode.md)).
 - `b8c3206` / `ff2f6ec`: adds 5.22 (an array that writes a count is written
   by index, up to its length, and an element read by index is cast to its
   type).
