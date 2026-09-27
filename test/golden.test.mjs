@@ -96,6 +96,15 @@ test("an unpacked CFrame reserves its 24 bytes once, not 12 bytes twice", () => 
 	assert.match(luau, /buffer[.]readf32[(]__surge_input, pos[0-9]+ [+] 20[)]/);
 });
 
+// Regression check for the single read of a CFrame's position. What it was
+// measured as worth is in docs/research/per-element-encode.md.
+test("an unpacked CFrame reads its Position once for its three components", () => {
+	const luau = readCompiledLuau("tests/coverage.spec.luau");
+	assert.match(luau, /local position[0-9]+ = [a-zA-Z_0-9.]+[.]Position$/m);
+	assert.match(luau, /buffer[.]writef32[(]__surge_scratch, pos[0-9]+ [+] 8, position[0-9]+[.]Z[)]/);
+	assert.doesNotMatch(luau, /buffer[.]write[a-z0-9]+[(]__surge_scratch, .*[.]Position[.][XYZ]/);
+});
+
 // Regression check for the shared reservation. What it was measured as worth is in
 // docs/research/generated-code-against-hand-written.md.
 test("consecutive fixed-size fields share one reservation", () => {
