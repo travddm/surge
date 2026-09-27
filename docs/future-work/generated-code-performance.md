@@ -27,6 +27,9 @@ code the transformer generates runs. What has been measured is under
   `CFrame`'s position once, and a numeric write loop that measured slower.
 - [nested-object-values.md](../research/nested-object-values.md) — reading a
   nested object's value once.
+- [exact-sizing-with-loops.md](../research/exact-sizing-with-loops.md) —
+  sizing a shape by a loop ahead of its result, which pays on an array of
+  unions and not on an array of strings or a dictionary.
 
 This document holds what is still open.
 
@@ -69,27 +72,19 @@ surge owns and reuses, which removes the allocation as well as the copy. It
 would have to be an opt-in API, since a reused buffer is dead the moment
 anything calls `serialize()` again, and what it is worth is unmeasured.
 
-**Sizing a shape with a loop.** Exact sizing (Transformer 5.20) covers a
-shape that a constant and the lengths and counts it reads can size. A shape
-with a loop over elements of varying size, such as an array of strings, a
-`dict`, or an array of union variants, keeps the scratch buffer, its
-capacity checks and `finishWrite`'s copy. Sizing it takes a second traversal
-of the value, as a `size(value)` function generated per shape and called
-first. The copy was chosen over that because it needs one traversal, and
-whether a second traversal could cost less than the copy is open: the copy
-does not grow with the payload, and what it costs per call is not settled
-([per-call-overhead.md](../research/per-call-overhead.md) and its
-correction). Two-pass sizing could be an option of the factory, so that a
-shape opts in where it measures better.
-
-**Kinds exact sizing leaves out.** A union, a sequence and a packed `CFrame`
-are not sized, and neither is anything that holds one. A union could be
-sized from the branch it takes, which evaluates the branch's test twice. A
-sequence could be sized from its keypoint count, which reads its `Keypoints`
-property a second time, and what that read costs is not measured. A packed
-`CFrame`'s size is in the header its runtime
-function chooses, so sizing one needs a function of the package that computes
-the header without writing it.
+**Kinds exact sizing leaves out.** An array of unions is sized by a loop
+ahead of the result (Transformer 5.20). The same loop over an array of
+strings and over a dictionary measured slower than the scratch buffer, so
+those keep it ([exact-sizing-with-loops.md](../research/exact-sizing-with-loops.md)),
+and so do an array of any other element whose size varies, which was not
+measured either way: an array of objects that hold a string, and an array of
+arrays. Why the loop pays on unions and not on strings was not probed. A
+sequence and a packed `CFrame` are not sized, and neither is anything that
+holds one. A sequence could be sized from its keypoint count, which reads its
+`Keypoints` property a second time, and what that read costs is not
+measured. A packed `CFrame`'s size is in the header its runtime function
+chooses, so sizing one needs a function of the package that computes the
+header without writing it.
 
 **Reopened: the package pragma.** The package's hot modules carry
 `--!native`, and this was recorded as worth nothing, because marking only the
