@@ -141,7 +141,11 @@ what merging still saves there is a move of the cursor.
 **Smaller items.** A `serialize` sized exactly still moves its cursor past
 its last reservation, where nothing reads it again, and a shape whose
 reservations all merge could write at constant offsets with no cursor at all,
-as the hand-written codec does. The scratch buffer only grows, so one large
+as the hand-written codec does. Each of these, and merging the reservations
+of a nested object of mixed sizes, saves a few nanoseconds a call at most,
+less than two runs of one build disagree by on the rows it would reach
+([noise-in-the-speed-tier.md](../research/noise-in-the-speed-tier.md)), so
+none can be measured with the speed tier as it is. The scratch buffer only grows, so one large
 payload pins its memory for the module's lifetime. An object large enough to be emitted in
 blocks is read as `const result = {}` plus one assignment per field, so its
 table grows by rehashing instead of being sized once by a table constructor.
