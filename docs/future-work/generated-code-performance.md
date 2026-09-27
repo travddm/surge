@@ -25,6 +25,8 @@ code the transformer generates runs. What has been measured is under
   table at its size and storing each element at its index.
 - [per-element-encode.md](../research/per-element-encode.md) — reading a
   `CFrame`'s position once, and a numeric write loop that measured slower.
+- [nested-object-values.md](../research/nested-object-values.md) — reading a
+  nested object's value once.
 
 This document holds what is still open.
 
@@ -52,9 +54,15 @@ Calling `finishWrite` instead of inlining it costs nothing measurable.
 candidates the code offered: `finishWrite`'s copy, the scratch state in the
 closure, and the capacity check. That closed most of the flat struct's gap,
 and half of the nested object's
-([exact-sizing.md](../research/exact-sizing.md)). The nested object still
-makes six reservations and reads its two strings' lengths once more for the
-size. A shape that keeps the scratch buffer still has all three candidates.
+([exact-sizing.md](../research/exact-sizing.md)). Its writes now read each
+nested object's value once, as the hand-written codec does
+([nested-object-values.md](../research/nested-object-values.md)). The nested
+object still makes six reservations, and its size reads its two strings
+through the whole path from `value` and takes their lengths, which the writes
+take again. Binding the object locals ahead of the result's creation would
+let the size read them, and was not tried. A nested object inside a run of
+Transformer 5.5 still reads its path once per property. A shape that keeps
+the scratch buffer still has all three candidates.
 
 One design the `finishWrite` probe did not reach: handing the caller a buffer
 surge owns and reuses, which removes the allocation as well as the copy. It
