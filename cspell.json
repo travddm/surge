@@ -23,6 +23,7 @@
 		"createbinaryserializer",
 		"datastore",
 		"datatypes",
+		"despawn",
 		"destructures",
 		"desync",
 		"desynchronize",
