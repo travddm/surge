@@ -13,8 +13,8 @@ import { difference, hex } from "../support";
 // thread serializes, is not run here: Luau lets that iterator yield from
 // release 0.736, and Lune 0.10.5 bundles Luau 0.709, where the yield raises.
 //
-// Runtime API 5.9: a `serialize` sized ahead of its write iterates a
-// dictionary twice, once for the size and once for the write.
+// Runtime API 5.9: a `serialize` sized ahead of its write iterates an array
+// of unions twice, once for the size and once for the write.
 
 interface Readings {
 	values: number[];
@@ -25,13 +25,13 @@ interface Label {
 	id: DataType.u16;
 }
 
-interface Scores {
-	byName: Map<string, number>;
+interface Mixed {
+	values: Array<string | number>;
 }
 
 const readings = createCodec<Readings>();
 const label = createCodec<Label>();
-const scores = createCodec<Scores>();
+const mixed = createCodec<Mixed>();
 
 const VALUES: ReadonlyArray<number> = [1, 2.5, -3];
 const LABEL: Label = { name: "inner", id: 7 };
@@ -61,9 +61,9 @@ function iteratingWith(items: ReadonlyArray<number>, during: () => void): number
 	return setmetatable(copy, metatable as unknown as LuaMetatable<number[]>);
 }
 
-/** A map of `entries` whose `__iter` calls `during` each time an iteration starts. */
-function countingIterations(entries: ReadonlyArray<[string, number]>, during: () => void): Map<string, number> {
-	const copy = new Map(entries);
+/** A copy of `items` whose `__iter` calls `during` each time an iteration starts. */
+function countingIterations(items: ReadonlyArray<string | number>, during: () => void): Array<string | number> {
+	const copy = [...items];
 	const metatable = {
 		__iter: () => {
 			during();
@@ -72,21 +72,18 @@ function countingIterations(entries: ReadonlyArray<[string, number]>, during: ()
 		},
 	};
 	// `LuaMetatable` in `@rbxts/types` does not declare `__iter`.
-	return setmetatable(copy, metatable as unknown as LuaMetatable<Map<string, number>>);
+	return setmetatable(copy, metatable as unknown as LuaMetatable<Array<string | number>>);
 }
 
 class OverlapTest {
 	@Fact
-	public iteratesADictionaryOnceForItsSizeAndOnceForItsWrite(): void {
-		const entries: ReadonlyArray<[string, number]> = [
-			["a", 1],
-			["bb", 2.5],
-		];
+	public iteratesAnArrayOfUnionsOnceForItsSizeAndOnceForItsWrite(): void {
+		const items: ReadonlyArray<string | number> = ["a", 2.5, "bb"];
 		let iterations = 0;
-		const written = scores.serialize({ byName: countingIterations(entries, () => iterations++) });
+		const written = mixed.serialize({ values: countingIterations(items, () => iterations++) });
 
 		Assert.equal(2, iterations);
-		Assert.equal(undefined, difference({ byName: new Map(entries) }, scores.deserialize(written)));
+		Assert.equal(undefined, difference({ values: [...items] }, mixed.deserialize(written)));
 	}
 
 	@Fact

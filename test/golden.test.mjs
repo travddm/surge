@@ -148,12 +148,14 @@ test("a string reserves its count and its bytes at once", () => {
 // docs/research/exact-sizing-with-loops.md.
 test("a union is sized by the variant its write picks, with the write's own tests", () => {
 	const luau = readCompiledLuau("tests/unions.spec.luau");
-	// `Packet` is discriminated by a number, and its last variant holds an array.
+	// `WithUnionArrays.readings` is an array of a tagged union, sized by a loop
+	// over its elements, and the size tests each element's tag as its write
+	// does.
 	assert.match(
 		luau,
-		/local (size[0-9]+) = 1\n\s+if value[.]id == 1 then\n\s+\1 [+]= 1\n\s+elseif value[.]id == 2 then\n\s+\1 [+]= #value[.]body [+] 4\n\s+else\n/,
+		/local (size[0-9]+) = 8\n\s+for _, (item[0-9]+) in value[.]readings do\n\s+\1 [+]= [(]if \2[.]kind == "level" then 1 else #\2[.]text [+] 4[)] [+] 1\n\s+end$/m,
 	);
-	assert.match(luau, /local idx[0-9]+ = if value[.]id == 1 then 0 elseif value[.]id == 2 then 1 else 2$/m);
+	assert.match(luau, /local idx[0-9]+ = if item[0-9]+[.]kind == "level" then 0 else 1$/m);
 });
 
 // Regression check for a nested object's value read once. What it was measured
@@ -192,18 +194,20 @@ test("a shape sized exactly creates its result at that size and checks no capaci
 	assert.match(recursion, /__surge_finishWrite[(]__surge_scratch, __surge_cursor[)]/);
 });
 
-// Regression check for sizing by a loop. What it was measured as worth is in
-// docs/research/exact-sizing-with-loops.md.
-test("a shape whose elements vary in size is sized by a loop over them, ahead of its result", () => {
-	const luau = readCompiledLuau("tests/collections.spec.luau");
-	// `Grid` is a `number[][]`, whose rows vary in length.
+// Regression check for the boundary of sizing by a loop. What it was measured
+// as worth is in docs/research/exact-sizing-with-loops.md.
+test("an array of unions is sized by a loop, and an array of anything else that varies is not", () => {
+	const unions = readCompiledLuau("tests/unions.spec.luau");
+	// `WithUnionArrays.scalars` is an array of a guarded union.
+	assert.match(unions, /for _, (item[0-9]+) in value[.]scalars do\n\s+size[0-9]+ [+]= [(]if \1 == false then 0 /);
+	assert.match(unions, /\n\s+local __surge_scratch = buffer[.]create[(]size[0-9]+[)]$/m);
+	// `Grid` is a `number[][]`, whose rows vary in length: it keeps the
+	// scratch buffer, where a loop measured slower.
+	const collections = readCompiledLuau("tests/collections.spec.luau");
 	assert.match(
-		luau,
-		/local (size[0-9]+) = 4\n\s+for _, (item[0-9]+) in value do\n\s+\1 [+]= #\2 [*] 8 [+] 4\n\s+end\n\s+local __surge_scratch = buffer[.]create[(]\1[)]$/m,
+		collections,
+		/local gridSerializer = [(]function[(][)]\n\s+local __surge_scratch = buffer[.]create[(]64[)]$/m,
 	);
-	// `WithDictionaries.indexed` is keyed by string: the loop binds the key
-	// alone, since the value's size is fixed.
-	assert.match(luau, /for (k[0-9]+) in value[.]indexed do\n\s+size[0-9]+ [+]= #\1 [+] 5$/m);
 });
 
 // Regression check for the conditional blob side channel. What it is worth is in

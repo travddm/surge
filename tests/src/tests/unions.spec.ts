@@ -32,6 +32,15 @@ type Packet =
 	| { id: 3; parts: Array<Named | string> };
 const packetSerializer = createCodec<Packet>();
 
+// Arrays of unions with no array of strings in any variant, which a
+// `serialize` sizes by a loop over the elements (Transformer 5.20).
+type Reading = { kind: "text"; text: string } | { kind: "level"; level: DataType.u8 };
+interface WithUnionArrays {
+	readings: Reading[];
+	scalars: Scalar[];
+}
+const unionArraysSerializer = createCodec<WithUnionArrays>();
+
 const FUZZ_ITERATIONS = 100;
 
 function randomScalar(rng: Rng): Scalar {
@@ -118,6 +127,16 @@ class UnionsTest {
 			};
 			const writtenGuarded = guardedSerializer.serialize(guarded);
 			Assert.equal(undefined, difference(guarded, guardedSerializer.deserialize(writtenGuarded)));
+
+			const readings = new Array<Reading>();
+			for (const __ of $range(1, rng.int(0, 5))) {
+				readings.push(
+					rng.bool() ? { kind: "text", text: rng.str() } : { kind: "level", level: rng.int(0, 255) },
+				);
+			}
+			const arrays: WithUnionArrays = { readings, scalars };
+			const writtenArrays = unionArraysSerializer.serialize(arrays);
+			Assert.equal(undefined, difference(arrays, unionArraysSerializer.deserialize(writtenArrays)));
 
 			const command = randomCommand(rng, 3);
 			const writtenCommand = commandSerializer.serialize(command);
