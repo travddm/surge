@@ -23,18 +23,22 @@ code the transformer generates runs. What has been measured is under
   exact size, and the per-call gap it closed.
 - [sized-read-tables.md](../research/sized-read-tables.md) — creating a read's
   table at its size and storing each element at its index.
+- [per-element-encode.md](../research/per-element-encode.md) — reading a
+  `CFrame`'s position once, and a numeric write loop that measured slower.
 
 This document holds what is still open.
 
 ## What
 
 **The per-call gap to hand-written Luau.** On the three rows the hand-written
-baseline covers, surge's encode is behind a Luau codec writing the same bytes.
-The gap has a part paid once per call, which is most of it on the flat struct
-and the nested object, and a part paid per element, which is most of it on
-the fifty-element `CFrame` array
+baseline covers, surge's encode was behind a Luau codec writing the same
+bytes. The gap had a part paid once per call, which was most of it on the flat
+struct and the nested object, and a part paid per element, which was most of
+it on the fifty-element `CFrame` array
 ([generated-code-against-hand-written.md](../research/generated-code-against-hand-written.md)
-and its correction).
+and its correction). The part per element is gone, on encode and on decode
+([per-element-encode.md](../research/per-element-encode.md),
+[sized-read-tables.md](../research/sized-read-tables.md)).
 Most of the per-call part was three tables
 ([tables-around-serialize.md](../research/tables-around-serialize.md)). A
 shape with no blob field now returns the buffer alone (Runtime API 3.6 in
@@ -42,20 +46,6 @@ shape with no blob field now returns the buffer alone (Runtime API 3.6 in
 adapters no longer copy the result into a table of their own (Benchmark
 harness 4.8 in [specs/benchmark-harness.md](../specs/benchmark-harness.md)).
 Calling `finishWrite` instead of inlining it costs nothing measurable.
-
-**What is left per element.** On the `CFrame` array's encode it is not the
-reservation each element made: reserving the elements once moved that row's
-gap no further than rows whose code did not change
-([one-reservation-per-array.md](../research/one-reservation-per-array.md)).
-What it is was not probed. The candidates in the code are: surge reads a
-`CFrame`'s `Position` once for each of its three components, where the
-hand-written codec (`tests/src/bench/baseline/codecs.luau`) reads it once
-into a local, and surge's loop is a generic `for` over the array where the
-hand-written one is a numeric `for`. A numeric `for` would also write an
-absent element where the array has a hole, which the generic `for` skips
-while its count includes it. On decode, the row's gap was the table the read
-appended to, and almost none of it is left
-([sized-read-tables.md](../research/sized-read-tables.md)).
 
 **What is left per call.** A shape sized exactly (Transformer 5.20 in
 [specs/transformer.md](../specs/transformer.md)) no longer has the three
