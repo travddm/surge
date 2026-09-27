@@ -144,6 +144,18 @@ test("a string reserves its count and its bytes at once", () => {
 	assert.match(luau, /__surge_readCursor = pos[0-9]+ [+] 4 [+] len[0-9]+$/m);
 });
 
+// Regression check for sizing a union. What it was measured as worth is in
+// docs/research/exact-sizing-with-loops.md.
+test("a union is sized by the variant its write picks, with the write's own tests", () => {
+	const luau = readCompiledLuau("tests/unions.spec.luau");
+	// `Packet` is discriminated by a number, and its last variant holds an array.
+	assert.match(
+		luau,
+		/local (size[0-9]+) = 1\n\s+if value[.]id == 1 then\n\s+\1 [+]= 1\n\s+elseif value[.]id == 2 then\n\s+\1 [+]= #value[.]body [+] 4\n\s+else\n/,
+	);
+	assert.match(luau, /local idx[0-9]+ = if value[.]id == 1 then 0 elseif value[.]id == 2 then 1 else 2$/m);
+});
+
 // Regression check for a nested object's value read once. What it was measured
 // as worth is in docs/research/nested-object-values.md.
 test("a nested object reads its value once, not once per property", () => {

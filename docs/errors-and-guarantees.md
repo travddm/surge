@@ -121,13 +121,13 @@ table it is given, so both rules matter only for a value with a metatable:
 when one of its metamethods serializes, or when the iterator its `__iter`
 metamethod returns yields and another thread serializes before it resumes.
 
-A metamethod also matters when it answers the same question differently
-twice. For most types, `serialize` reads each string's and array's length, and
-whether each optional is there, once to size its result and again to write
-it, and it walks each dictionary, and each array whose elements vary in size,
-twice as well. A value whose metamethods give a longer answer the second time
-makes `serialize` raise, and a shorter one leaves bytes at the end of the
-result that `deserialize` does not read.
+A metamethod also matters when it answers the same question differently twice.
+For most types, `serialize` reads each string's and array's length, whether
+each optional is there, and which variant each union holds, once to size its
+result and again to write it, and it walks each dictionary, and each array
+whose elements vary in size, twice as well. A value whose metamethods give a
+longer answer the second time makes `serialize` raise, and a shorter one
+leaves bytes at the end of the result that `deserialize` does not read.
 
 ## Build errors
 

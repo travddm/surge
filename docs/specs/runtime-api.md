@@ -1,8 +1,8 @@
 # Runtime API specification
 
 Status: current
-Applies to: `@rbxts/surge` at commit `5c83147`, `rbxts-transformer-surge` at
-commit `5cd0208` (no tagged release yet)
+Applies to: `@rbxts/surge` at commit `a59fabc`, `rbxts-transformer-surge` at
+commit `01801d5` (no tagged release yet)
 
 ## 1. Scope
 
@@ -248,12 +248,13 @@ returns when it runs alone.
 5.20) creates its result at that size and writes into it. It calls neither
 `grow` nor `finishWrite`, and its buffer and write cursor belong to the call.
 It reads each length, count and presence it sizes the result from twice, once
-to size the result and once to write it, and it iterates each `dict`, and
+to size the result and once to write it. It makes each union's tests, a tag's
+comparisons or a guarded union's guards, twice. It iterates each `dict`, and
 each `array` whose elements vary in size, twice, so an `__iter` metamethod's
 iterator runs twice in one call. A value whose metamethods answer the second
-read or iteration differently gets a result of the wrong size: a longer
-answer raises, and a shorter one leaves bytes at the end that `deserialize`
-does not read.
+read or iteration differently gets a result of the wrong size: a longer answer
+raises, and a shorter one leaves bytes at the end that `deserialize` does not
+read.
 
 ## 6. Version coupling
 
@@ -309,6 +310,7 @@ A test file named `*.spec.ts` is under `tests/src/tests/`. A path starting
 
 ## Changes
 
+- `a59fabc` / `01801d5`: 5.9 states that a union's tests are made twice.
 - `5c83147` / `5cd0208`: 5.9 states that a `dict`, and an `array` whose
   elements vary in size, are iterated twice.
 - `bea5fc0` / `015e1f3`: adds 5.9 (a `serialize` sized exactly owns its
