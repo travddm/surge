@@ -153,7 +153,7 @@ test("a union is sized by the variant its write picks, with the write's own test
 	// does.
 	assert.match(
 		luau,
-		/local (size[0-9]+) = 8\n\s+for _, (item[0-9]+) in value[.]readings do\n\s+\1 [+]= [(]if \2[.]kind == "level" then 1 else #\2[.]text [+] 4[)] [+] 1\n\s+end$/m,
+		/local (arr[0-9]+) = value[.]readings\n[^]*?local (size[0-9]+) = 8\n\s+for _, (item[0-9]+) in \1 do\n\s+\2 [+]= [(]if \3[.]kind == "level" then 1 else #\3[.]text [+] 4[)] [+] 1\n\s+end$/m,
 	);
 	assert.match(luau, /local idx[0-9]+ = if item[0-9]+[.]kind == "level" then 0 else 1$/m);
 });
@@ -165,6 +165,20 @@ test("a nested object reads its value once, not once per property", () => {
 	// `WithPackedSubtree.settings.audio` is two objects deep.
 	assert.match(luau, /local (obj[0-9]+) = value[.]settings\n[^]*?local obj[0-9]+ = \1[.]audio$/m);
 	assert.doesNotMatch(luau, /value[.]settings[.]audio[.]/);
+});
+
+// Regression check for a size read through the locals its write binds. What it
+// was measured as worth is in docs/research/size-and-read-locals.md.
+test("a size binds the locals its write reads, ahead of the result", () => {
+	const luau = readCompiledLuau("tests/packed.spec.luau");
+	// `WithPackedSubtree.settings.label` is a string one object deep. The size
+	// reads its length through the object's local and a local of its own, and
+	// the write reads the same two and takes no length again.
+	assert.match(
+		luau,
+		/local (obj[0-9]+) = value[.]settings\n[^]*?local (s[0-9]+) = \1[.]label\n\s+local (len[0-9]+) = #\2\n\s+local __surge_scratch = buffer[.]create[(]\3 [+] 15[)]\n[^]*?__surge_cursor = pos[0-9]+ [+] [(]\3 [+] 4[)]\n[^]*?buffer[.]writestring[(]__surge_scratch, pos[0-9]+ [+] 4, \2[)]$/m,
+	);
+	assert.equal(luau.match(/[.]label$/gm).length, 1);
 });
 
 // Regression check for the read table created at its size. What it was
@@ -185,7 +199,7 @@ test("a read creates its table at its size and stores each element at its index"
 test("a shape sized exactly creates its result at that size and checks no capacity", () => {
 	// Every shape in `basic.spec` can be sized without a loop.
 	const luau = readCompiledLuau("tests/basic.spec.luau");
-	assert.match(luau, /local __surge_scratch = buffer[.]create[(]#value[.]name [+] /);
+	assert.match(luau, /local __surge_scratch = buffer[.]create[(]len[0-9]+ [+] /);
 	assert.match(luau, /local __surge_scratch = buffer[.]create[(]15[)]$/m);
 	assert.doesNotMatch(luau, /__surge_capacity|__surge_grow|__surge_finishWrite[(]/);
 	// A positive control: a recursive type is written through a helper, and
@@ -199,7 +213,10 @@ test("a shape sized exactly creates its result at that size and checks no capaci
 test("an array of unions is sized by a loop, and an array of anything else that varies is not", () => {
 	const unions = readCompiledLuau("tests/unions.spec.luau");
 	// `WithUnionArrays.scalars` is an array of a guarded union.
-	assert.match(unions, /for _, (item[0-9]+) in value[.]scalars do\n\s+size[0-9]+ [+]= [(]if \1 == false then 0 /);
+	assert.match(
+		unions,
+		/local (arr[0-9]+) = value[.]scalars\n[^]*?for _, (item[0-9]+) in \1 do\n\s+size[0-9]+ [+]= [(]if \2 == false then 0 /,
+	);
 	assert.match(unions, /\n\s+local __surge_scratch = buffer[.]create[(]size[0-9]+[)]$/m);
 	// `Grid` is a `number[][]`, whose rows vary in length: it keeps the
 	// scratch buffer, where a loop measured slower.
