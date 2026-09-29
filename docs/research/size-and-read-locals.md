@@ -86,10 +86,10 @@ No fbs or serio schema differed between the builds.
 **Runs.** Four full invocations of `mise run bench:speed` on 2026-09-29, each
 two Studio runs back to back with nine trials per cell per run: the reference
 from 17:52 to 18:01, A from 18:01 to 18:10, A and B from 18:10 to 18:19, and
-the reference again from 18:19 to 18:27. No other Roblox process ran. The CPU
-load read at the start of each was 4%, 2%, 16% and 9%. The third was read
-while a script comparing the first two runs' trials ran, before that run's
-build step.
+the reference again from 18:19 to 18:27. No Roblox process was running at the
+start of any run. The CPU load read at the start of each was 4%, 2%, 16% and
+9%. The third was read while a script comparing the first two runs' trials
+ran, before that run's build step.
 
 **Reading.** As in [exact-sizing-with-loops.md](exact-sizing-with-loops.md):
 the recorder's median, spread and noise mark, the change's surge median over
@@ -209,7 +209,7 @@ arbitrary packed `CFrame`s, which the same `deserialize` as the axis-aligned
 ones reads. The arbitrary row's value takes about twice as long to read, which
 would make the same saving about half the ratio, not nothing. The unpacked
 `CFrame` array moves the cursor twice a call, since its fifty elements are
-reserved at once (Transformer 5.18), and reads the input three hundred times;
+reserved at once (Transformer 5.18), and reads the input 301 times;
 it saved nothing measurable either. Which part of the read state's cost the
 unions pay and the strings and the arbitrary `CFrame`s do not was not probed.
 

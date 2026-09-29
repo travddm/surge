@@ -61,8 +61,8 @@ What the directives are worth on the generated code is measured in
   hand-written codec covers: a flat struct, a nested object and a `CFrame`
   array
   ([research/size-and-read-locals.md](research/size-and-read-locals.md)).
-  A shape that surge cannot size ahead of its write still pays a cost once
-  per call
+  A shape that surge cannot size ahead of its write pays a cost once per
+  call
   ([research/exact-sizing.md](research/exact-sizing.md),
   [research/exact-sizing-with-loops.md](research/exact-sizing-with-loops.md)),
   and the shapes the hand-written codec does not cover are not measured
