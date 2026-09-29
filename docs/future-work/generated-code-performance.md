@@ -37,6 +37,8 @@ code the transformer generates runs. What has been measured is under
   — the tagged union and the packed toggles against hand-written Luau.
 - [packed-bits-read-in-place.md](../research/packed-bits-read-in-place.md) —
   reading each byte of a packed region once and testing its bits in place.
+- [union-write-tested-once.md](../research/union-write-tested-once.md) —
+  writing a union by testing each variant once.
 
 This document holds what is still open.
 
@@ -53,15 +55,19 @@ closed it. The packed toggles are within the band on both halves
 ([packed-bits-read-in-place.md](../research/packed-bits-read-in-place.md)).
 On the tagged union the hand-written codec encodes faster, and its decode is
 within the band
-([hand-written-union-and-packed-bits.md](../research/hand-written-union-and-packed-bits.md));
-the item below is that gap. What the other rows pay against hand-written Luau
+([union-write-tested-once.md](../research/union-write-tested-once.md)); the
+item below is that gap. What the other rows pay against hand-written Luau
 is not measured.
 
-**The tagged union's write.** The generated write tests the tag to choose an
-index and then tests the index to choose the variant's writes, and moves the
-cursor once for each reservation, up to three times an event. The
-hand-written write tests the tag once and moves one position once an event.
-Which of the two accounts for the gap was not probed, and each is a change to
+**The tagged union's write.** Two differences from the hand-written codec
+are left. The generated write moves its cursor once for each reservation, up
+to three times an event: the index, the variant's fixed fields, and a
+string's count and bytes. The hand-written write moves one position once an
+event, so the index would join the variant's fixed fields in one
+reservation. And the size reads each element's tag once for each comparison
+in its chain, where the hand-written first pass reads it once; binding it
+needs the size to hold a statement ahead of its expression. Which of the two
+accounts for the rest of the gap was not probed, and each is a change to
 measure on its own.
 
 **What is left per call.** A shape that keeps the scratch buffer still has
