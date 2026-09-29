@@ -33,6 +33,8 @@ code the transformer generates runs. What has been measured is under
 - [size-and-read-locals.md](../research/size-and-read-locals.md) — reading a
   sized write's value through its own locals, and holding a `deserialize`'s
   read state in locals.
+- [hand-written-union-and-packed-bits.md](../research/hand-written-union-and-packed-bits.md)
+  — the tagged union and the packed toggles against hand-written Luau.
 
 This document holds what is still open.
 
@@ -45,10 +47,30 @@ that two runs of unchanged code disagree by
 a part paid once per call and a part paid per element
 ([generated-code-against-hand-written.md](../research/generated-code-against-hand-written.md)
 and its correction), and the papers listed above measured each change that
-closed it. The hand-written baseline also writes the tagged union's and the
-packed toggles' bytes, and what surge's code costs against it on those two
-rows is not yet measured. What the other rows pay against hand-written Luau
-is not measured.
+closed it. On the tagged union the hand-written codec encodes faster, and on
+the packed toggles it decodes faster; the other half of each row is within
+the band
+([hand-written-union-and-packed-bits.md](../research/hand-written-union-and-packed-bits.md)).
+The two items below are those gaps. What the other rows pay against
+hand-written Luau is not measured.
+
+**The packed region's read.** A `Packed<T>` region is read with one call to
+the package's `unpackBit` for each bit, and each call reads its byte again.
+The hand-written codec reads each byte of the region once and tests each bit
+in place, and the packed toggles' decode is where the baseline measures
+surge furthest behind it. The write side already builds each byte of the
+region inline (Runtime API 5.3 in
+[specs/runtime-api.md](../specs/runtime-api.md)). Reading each byte into a
+local once and testing its bits in the generated code is the change. It
+leaves `unpackBit` with no caller in generated code, which changes the helper
+ABI, and that is free before the first release.
+
+**The tagged union's write.** The generated write tests the tag to choose an
+index and then tests the index to choose the variant's writes, and moves the
+cursor once for each reservation, up to three times an event. The
+hand-written write tests the tag once and moves one position once an event.
+Which of the two accounts for the gap was not probed, and each is a change to
+measure on its own.
 
 **What is left per call.** A shape that keeps the scratch buffer still has
 the three candidates a shape sized exactly (Transformer 5.20 in

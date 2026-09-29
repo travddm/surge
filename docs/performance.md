@@ -60,6 +60,9 @@ What the directives are worth on the generated code is measured in
   and decode run within the speed tier's noise of it on a flat struct, a
   nested object and a `CFrame` array
   ([research/size-and-read-locals.md](research/size-and-read-locals.md)).
+  It is slower at a tagged union's encode and at a `Packed<T>` region's
+  decode
+  ([research/hand-written-union-and-packed-bits.md](research/hand-written-union-and-packed-bits.md)).
   A shape that surge cannot size ahead of its write pays a cost once per
   call
   ([research/exact-sizing.md](research/exact-sizing.md),
