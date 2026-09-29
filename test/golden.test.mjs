@@ -53,10 +53,14 @@ test("an enum index is an O(1) table lookup, not a chain of .Name comparisons", 
 	assert.match(luau, /_index\[/); // roblox-ts lowers `Map.get`/indexing on a compiled Map to a plain table index
 });
 
-test("packed booleans never call a per-bit packBit helper in the compiled output", () => {
+test("a packed region is written and read inline, with no per-bit helper", () => {
 	const luau = readCompiledLuau("tests/coverage.spec.luau");
-	// `\b` excludes `unpackBit(`, which the read side still legitimately uses.
-	assert.doesNotMatch(luau, /\bpackBit\(/);
+	assert.doesNotMatch(luau, /packBit\(/i);
+	// Each byte of the region is read once, and each bit tested against it.
+	assert.match(
+		luau,
+		/local (bits[0-9]+) = buffer[.]readu8[(]__surge_input, pos[0-9]+[)]\n[^]*?bit32[.]btest[(]\1, 2[)]/,
+	);
 });
 
 // Regression check for the read-loop item in
@@ -291,7 +295,7 @@ test("generated code imports its helpers from the package's abi module", () => {
 	assert.match(luau, /"@rbxts", "surge", "out", "abi"\)$/m);
 	// The package's own exports hold the consumer API and no helper.
 	const index = readFileSync(join(here, "..", "out", "index.d.ts"), "utf8");
-	for (const name of ["finishWrite", "grow", "pushBlob", "nextBlob", "unpackBit"]) {
+	for (const name of ["finishWrite", "grow", "pushBlob", "nextBlob"]) {
 		assert.doesNotMatch(index, new RegExp(`\\b${name}\\b`), `index.d.ts exports ${name}`);
 	}
 });
@@ -303,13 +307,13 @@ test("generated code imports its helpers from the package's abi module", () => {
 test("every compiled module of the package opens with its Luau file pragmas", () => {
 	// A hot comment is honoured anywhere ahead of the first line of code, so
 	// what this pins is that each one survives a header edit: `--!native` on
-	// the four modules with hot runtime code, and `--!optimize 2` everywhere,
+	// the three modules with hot runtime code, and `--!optimize 2` everywhere,
 	// because a published place compiles at that level and Studio does not.
 	const head = (name) =>
 		readFileSync(join(here, "..", "out", name), "utf8")
 			.split(/\r?\n/)
 			.map((line) => line.trimEnd());
-	for (const name of ["alloc", "blobs", "cframe", "pack"]) {
+	for (const name of ["alloc", "blobs", "cframe"]) {
 		const lines = head(`${name}.luau`);
 		assert.equal(lines[0], "--!native", `${name}.luau line 1`);
 		assert.equal(lines[1], "--!optimize 2", `${name}.luau line 2`);

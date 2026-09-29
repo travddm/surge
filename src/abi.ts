@@ -7,4 +7,3 @@
 export { finishWrite, grow } from "./alloc";
 export { beginReadBlobs, beginWriteBlobs, finishWriteBlobs, nextBlob, pushBlob } from "./blobs";
 export { readPackedCFrame, writePackedCFrame } from "./cframe";
-export { unpackBit } from "./pack";

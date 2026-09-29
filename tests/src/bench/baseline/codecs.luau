@@ -283,8 +283,7 @@ local function writePackedToggles(value)
 	return buf
 end
 
--- Each byte of bits is read once and tested in place, where surge's reader calls `unpackBit` in
--- the package once per bit.
+-- Each byte of bits is read once and tested in place.
 local function readPackedToggles(buf)
 	local low = buffer.readu8(buf, 0)
 	local high = buffer.readu8(buf, 1)

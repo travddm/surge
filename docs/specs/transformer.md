@@ -1,8 +1,8 @@
 # Transformer specification
 
 Status: current
-Applies to: `@rbxts/surge` at commit `68f9922`, `rbxts-transformer-surge` at
-commit `499d768` (no tagged release yet)
+Applies to: `@rbxts/surge` at commit `5b102af`, `rbxts-transformer-surge` at
+commit `c006601` (no tagged release yet)
 
 ## 1. Scope
 
@@ -343,6 +343,11 @@ its properties from that local. A property of a nested object is then one
 property read from its object's local, not a read of the whole path from the
 value `serialize` was given.
 
+**5.24** A `Packed<T>` region is read with one reservation of its bytes. Each
+of its first 32 bytes is then read into a local once, and each bit is
+`bit32.btest` of its byte and the bit's mask. A byte past the first 32 is read
+in place for each of its bits. The read calls no function of the package.
+
 ## 6. Injected imports
 
 **6.1** The transformer adds one import of `@rbxts/surge/out/abi`, the
@@ -466,6 +471,7 @@ of `rbxts-transformer-surge`, cited by `describe` block. Source paths are in
 | 5.21      | `emit`: `Emitter read tables`; `test/golden.test.mjs`: a read creates its table at its size and stores each element at its index; `tests/src/tests/collections.spec.ts`: `keepsAnAbsentTupleElementInItsPlace`                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 | 5.22      | `emit`: `Emitter exact arrays`; `transform`: `transform generated code` (an array, an exact array and a tuple's rest under `noUncheckedIndexedAccess`)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 | 5.23      | `emit`: `Emitter nested object values`; `test/golden.test.mjs`: a nested object reads its value once, not once per property                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| 5.24      | `emit`: `Emitter packed region`, `Emitter packed tag bit`; `test/golden.test.mjs`: a packed region is written and read inline, with no per-bit helper; every round trip in `tests/src/tests/packed.spec.ts`                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
 | 6.1, 6.2  | `transform`: `transform injected imports`, and in `transform (end-to-end)` the single shared import and the same-named local function; `tests/src/tests/coverage.spec.ts`: `leavesAUserDeclarationNamedAfterAnInjectedImportAlone`; `test/golden.test.mjs`: generated code imports its helpers from the package's abi module                                                                                                                                                                                                                                                                                                                                                       |
 | 6.3       | `test/golden.test.mjs`: a file directive survives the transformer's injected imports; `transform`: `transform generated code` (the three directive tests)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 | 6.4       | `transform`: `transform injected imports` (a `createDeserializer` call site)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
@@ -478,6 +484,8 @@ of `rbxts-transformer-surge`, cited by `describe` block. Source paths are in
 
 ## Changes
 
+- `5b102af` / `c006601`: adds 5.24 (a packed region's bytes are read once
+  and its bits tested inline).
 - `68f9922` / `499d768`: 5.3 has a `deserialize` that reaches no recursion
   helper declare its read state in itself; 6.1 follows it.
 - `4338a95` / `bdabc6c`: 5.20 binds ahead of the result the locals the

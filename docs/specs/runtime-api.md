@@ -1,8 +1,8 @@
 # Runtime API specification
 
 Status: current
-Applies to: `@rbxts/surge` at commit `68f9922`, `rbxts-transformer-surge` at
-commit `499d768` (no tagged release yet)
+Applies to: `@rbxts/surge` at commit `5b102af`, `rbxts-transformer-surge` at
+commit `c006601` (no tagged release yet)
 
 ## 1. Scope
 
@@ -197,7 +197,6 @@ signatures are part of the coupling in section 6.
 | `finishWrite`       | once per `serialize`, except as 5.4 and 5.9 state | `finishWrite(written, size)` returns a new buffer of exactly `size` bytes holding `written`'s first `size`.                                               |
 | `writePackedCFrame` | per `CFrame` inside `Packed<T>`                   | writes the packed form at the given offset and returns the bytes it used.                                                                                 |
 | `readPackedCFrame`  | per `CFrame` inside `Packed<T>`                   | reads the packed form at the given offset and returns the value and the bytes it used.                                                                    |
-| `unpackBit`         | per bit read inside `Packed<T>`                   | `unpackBit(buf, byteOffset, bitIndex)` returns that bit.                                                                                                  |
 | `beginWriteBlobs`   | once per `serialize`, if `T` has a blob           | starts an empty write-side blob list.                                                                                                                     |
 | `pushBlob`          | per blob field written                            | appends a value to the write-side blob list.                                                                                                              |
 | `finishWriteBlobs`  | once per `serialize`, if `T` has a blob           | returns the write-side blob list.                                                                                                                         |
@@ -212,8 +211,9 @@ the exception, in 5.5. A `serialize` sized exactly declares its own, in 5.9,
 and so does a `deserialize` of a `T` that holds no recursive type
 (Transformer 4.2 and 5.3).
 
-**5.3** The write side of a `Packed<T>` bit region calls no helper: it is
-emitted inline, one whole byte at a time.
+**5.3** Neither side of a `Packed<T>` bit region calls a helper. The write
+side is emitted inline, one whole byte at a time, and the read side reads
+each byte once and tests its bits inline (Transformer 5.24).
 
 **5.4** A `serialize` of a `T` that reserves no bytes, such as a `T` whose
 every field is a `blob`, has no scratch buffer. It calls neither `grow` nor
@@ -301,7 +301,7 @@ A test file named `*.spec.ts` is under `tests/src/tests/`. A path starting
 | 4.11                        | `checks.spec.ts`: `rejectsAnythingButABufferForAShapeWithNoBlob`, `rejectsAnythingButItsTableForAShapeWithABlob`; `test/golden.test.mjs`: a serializer with `readChecks` carries them. Source only for the order: `buildCheckedDeserialize` in `src/index.ts` of `rbxts-transformer-surge` checks before the body                                                                                                                  |
 | 5.1                         | `test/golden.test.mjs`: generated code imports its helpers from the package's abi module. Source: the calls the emitter makes under `emit/`, and the exports of `src/abi.ts`                                                                                                                                                                                                                                                       |
 | 5.2                         | `test/golden.test.mjs`: consecutive fixed-size fields share one reservation, inline, and a deserialize that reaches no recursion helper holds its input and cursor in locals                                                                                                                                                                                                                                                       |
-| 5.3                         | `test/golden.test.mjs`: packed booleans never call a per-bit `packBit` helper                                                                                                                                                                                                                                                                                                                                                      |
+| 5.3                         | `test/golden.test.mjs`: a packed region is written and read inline, with no per-bit helper                                                                                                                                                                                                                                                                                                                                         |
 | 5.4                         | Source only: `finishWriteExpression` and `writeStateDecls` in `emit/context.ts`                                                                                                                                                                                                                                                                                                                                                    |
 | 5.5                         | Source only: the module state in `src/blobs.ts`                                                                                                                                                                                                                                                                                                                                                                                    |
 | 5.6                         | Source only: `writeStateDecls` and `readStateDecls` in `emit/context.ts` declare the state once per closure where the serializer holds it, and `beginWriteStatements` and `beginReadStatements` reset it per call, or declare it where the call holds it; no test re-enters a serializer                                                                                                                                           |
@@ -312,6 +312,8 @@ A test file named `*.spec.ts` is under `tests/src/tests/`. A path starting
 
 ## Changes
 
+- `5b102af` / `c006601`: 5.3 has the read side of a bit region call no
+  helper either; 5.1 drops `unpackBit`.
 - `68f9922` / `499d768`: 5.2 has a `deserialize` of a `T` that holds no
   recursive type declare its own read state.
 - `4338a95` / `bdabc6c`: 5.9 reads once the length of a `str` or a `buffer`
