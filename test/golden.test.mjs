@@ -208,6 +208,25 @@ test("a shape sized exactly creates its result at that size and checks no capaci
 	assert.match(recursion, /__surge_finishWrite[(]__surge_scratch, __surge_cursor[)]/);
 });
 
+// Regression check for the read state held in locals. What it was measured as
+// worth is in docs/research/size-and-read-locals.md.
+test("a deserialize that reaches no recursion helper holds its input and cursor in locals", () => {
+	// No shape in `basic.spec` is recursive.
+	const luau = readCompiledLuau("tests/basic.spec.luau");
+	assert.match(
+		luau,
+		/deserialize = function[(]input[)]\n\s+local __surge_input = input\n\s+local __surge_readCursor = 0$/m,
+	);
+	assert.doesNotMatch(luau, /^\s+__surge_input = /m);
+	const checked = readCompiledLuau("tests/checks.spec.luau");
+	assert.match(checked, /^\s+local __surge_inputLength = buffer[.]len[(]__surge_input[)]$/m);
+	// A positive control: a recursive type's read helper takes no arguments and
+	// reads the closure's state.
+	const recursion = readCompiledLuau("tests/recursion.spec.luau");
+	assert.match(recursion, /^\s+local __surge_input = buffer[.]create[(]0[)]$/m);
+	assert.match(recursion, /^\s+__surge_input = input$/m);
+});
+
 // Regression check for the boundary of sizing by a loop. What it was measured
 // as worth is in docs/research/exact-sizing-with-loops.md.
 test("an array of unions is sized by a loop, and an array of anything else that varies is not", () => {

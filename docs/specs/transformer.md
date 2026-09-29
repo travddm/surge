@@ -1,8 +1,8 @@
 # Transformer specification
 
 Status: current
-Applies to: `@rbxts/surge` at commit `4338a95`, `rbxts-transformer-surge` at
-commit `bdabc6c` (no tagged release yet)
+Applies to: `@rbxts/surge` at commit `68f9922`, `rbxts-transformer-surge` at
+commit `499d768` (no tagged release yet)
 
 ## 1. Scope
 
@@ -186,7 +186,10 @@ its write and read cursors, declared in the closure it is generated into.
 The runtime package owns none of them. A factory that returns one function
 declares only that side's state, and a side that reserves no bytes declares
 none: a shape of only `blob` fields declares no state at all. A `serialize`
-sized exactly (5.20) declares its buffer and write cursor in itself instead.
+sized exactly (5.20) declares its buffer and write cursor in itself instead. A
+`deserialize` that reaches no recursion helper (5.2) declares its input
+buffer and read cursor in itself, and under `readChecks: true` the input's
+length (5.10) as well.
 
 **5.4** Every write-side reservation is emitted inline. Outside 5.20, it calls
 `grow` only when the write cursor passes the capacity, and a top-level
@@ -346,8 +349,8 @@ value `serialize` was given.
 package's helper module (Runtime API 5.1), to each file where a transformed
 call site uses an export, with every name aliased to a `__surge_`
 prefix. A user declaration that does not use the prefix cannot collide with
-or shadow an import. The closure-scoped buffer and cursors carry the same
-prefix.
+or shadow an import. The buffers, cursors and input length of 5.3 carry the
+same prefix.
 
 **6.2** The imports are named imports, which roblox-ts compiles to one local
 each.
@@ -442,7 +445,7 @@ of `rbxts-transformer-surge`, cited by `describe` block. Source paths are in
 | 4.16      | `walk`: `TypeWalker bit sets inside Packed<T>`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 | 5.1       | `emit`: `Emitter read-order for side-effecting fields`; every round trip under `tests/src/tests/`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | 5.2       | `emit`: `Emitter per-kind write/read snapshots`; `test/golden.test.mjs`: a non-recursive shape never calls a helper. Source only for the closure the helpers are declared in: `buildReplacement` in `src/index.ts`                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
-| 5.3       | `emit`: `Emitter read-side checks` (the read state); `transform`: `transform injected imports` (the scratch buffer). Source only for the state a side with no bytes omits: `writeStateDecls` and `readStateDecls` in `src/emit/context.ts`                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| 5.3       | `emit`: `Emitter read-side checks` (the read state), `Emitter read state`; `test/golden.test.mjs`: a deserialize that reaches no recursion helper holds its input and cursor in locals; `transform`: `transform injected imports` (the scratch buffer). Source only for the state a side with no bytes omits: `writeStateDecls` and `readStateDecls` in `src/emit/context.ts`                                                                                                                                                                                                                                                                                                      |
 | 5.4       | `emit`: `Emitter per-kind write/read snapshots` (the inline reservation); `transform`: `transform (end-to-end)` (the `finishWrite` import). Source only for the `buffer.create(0)` return: `finishWriteExpression` in `src/emit/context.ts`                                                                                                                                                                                                                                                                                                                                                                                                                                        |
 | 5.5       | `emit`: `Emitter shared reservations` (the 31-property bound included), and `Emitter bit sets` for a `bitSet`; `test/golden.test.mjs`: consecutive fixed-size fields share one reservation, and a nested object of fixed-size fields shares the reservation around it; `tests/src/tests/bytes.spec.ts`: `pinsANestedObjectInNameOrder`; `tests/src/tests/basic.spec.ts`: `roundTripsANestedObjectOfFixedSizeFields`. Source only for tuple elements: `allocRuns` and `fixedBytes` in `src/emit/layout.ts`                                                                                                                                                                          |
 | 5.6       | `tests/src/tests/bytes.spec.ts`: `pinsContainers` (each count ahead of its contents). Source only for the `dict` count written back: `writeDict` in `src/emit/write.ts`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
@@ -475,6 +478,8 @@ of `rbxts-transformer-surge`, cited by `describe` block. Source paths are in
 
 ## Changes
 
+- `68f9922` / `499d768`: 5.3 has a `deserialize` that reaches no recursion
+  helper declare its read state in itself; 6.1 follows it.
 - `4338a95` / `bdabc6c`: 5.20 binds ahead of the result the locals the
   write binds outside a loop or a branch, and the write reads them.
 - `d60c411` / `9bce939`: 5.20 sizes by a loop only an `array` of unions; an

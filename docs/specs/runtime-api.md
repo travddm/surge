@@ -1,8 +1,8 @@
 # Runtime API specification
 
 Status: current
-Applies to: `@rbxts/surge` at commit `4338a95`, `rbxts-transformer-surge` at
-commit `bdabc6c` (no tagged release yet)
+Applies to: `@rbxts/surge` at commit `68f9922`, `rbxts-transformer-surge` at
+commit `499d768` (no tagged release yet)
 
 ## 1. Scope
 
@@ -208,8 +208,9 @@ signatures are part of the coupling in section 6.
 serializer declares, in the closure it is emitted into, the scratch buffer,
 capacity and write cursor its `serialize` uses and the read cursor its
 `deserialize` uses, and reserves bytes inline. The blob channel's state is
-the exception, in 5.5, and a `serialize` sized exactly declares its own, in
-5.9.
+the exception, in 5.5. A `serialize` sized exactly declares its own, in 5.9,
+and so does a `deserialize` of a `T` that holds no recursive type
+(Transformer 4.2 and 5.3).
 
 **5.3** The write side of a `Packed<T>` bit region calls no helper: it is
 emitted inline, one whole byte at a time.
@@ -299,11 +300,11 @@ A test file named `*.spec.ts` is under `tests/src/tests/`. A path starting
 | 4.10                        | Source only: `enumFromIndexExpr` in `emit/read.ts`; `readPackedCFrame` in `src/cframe.ts`                                                                                                                                                                                                                                                                                                                                          |
 | 4.11                        | `checks.spec.ts`: `rejectsAnythingButABufferForAShapeWithNoBlob`, `rejectsAnythingButItsTableForAShapeWithABlob`; `test/golden.test.mjs`: a serializer with `readChecks` carries them. Source only for the order: `buildCheckedDeserialize` in `src/index.ts` of `rbxts-transformer-surge` checks before the body                                                                                                                  |
 | 5.1                         | `test/golden.test.mjs`: generated code imports its helpers from the package's abi module. Source: the calls the emitter makes under `emit/`, and the exports of `src/abi.ts`                                                                                                                                                                                                                                                       |
-| 5.2                         | `test/golden.test.mjs`: consecutive fixed-size fields share one reservation, inline                                                                                                                                                                                                                                                                                                                                                |
+| 5.2                         | `test/golden.test.mjs`: consecutive fixed-size fields share one reservation, inline, and a deserialize that reaches no recursion helper holds its input and cursor in locals                                                                                                                                                                                                                                                       |
 | 5.3                         | `test/golden.test.mjs`: packed booleans never call a per-bit `packBit` helper                                                                                                                                                                                                                                                                                                                                                      |
 | 5.4                         | Source only: `finishWriteExpression` and `writeStateDecls` in `emit/context.ts`                                                                                                                                                                                                                                                                                                                                                    |
 | 5.5                         | Source only: the module state in `src/blobs.ts`                                                                                                                                                                                                                                                                                                                                                                                    |
-| 5.6                         | Source only: `writeStateDecls` and `readStateDecls` in `emit/context.ts` declare the state once per closure, and `beginWriteStatements` and `beginReadStatements` reset it per call; no test re-enters a serializer                                                                                                                                                                                                                |
+| 5.6                         | Source only: `writeStateDecls` and `readStateDecls` in `emit/context.ts` declare the state once per closure where the serializer holds it, and `beginWriteStatements` and `beginReadStatements` reset it per call, or declare it where the call holds it; no test re-enters a serializer                                                                                                                                           |
 | 5.7                         | Source only: the emitter reads a value's properties, lengths and `for … in` iterations under `emit/`, and calls nothing else of the value's. Which metamethods may yield is Luau's: `luaD_call` and `luaD_performcally` in its `VM/src/ldo.cpp`. No test yields inside `serialize`, because Lune 0.10.5 bundles Luau 0.709                                                                                                         |
 | 5.8                         | `overlap.spec.ts`: `runsAnotherSerializerInsideAnIterator`, a call from inside an `__iter` iterator. A call while an iterator is suspended is not run, as the 5.7 row states                                                                                                                                                                                                                                                       |
 | 5.9                         | `test/golden.test.mjs`: a shape sized exactly creates its result at that size and checks no capacity; `overlap.spec.ts`: `iteratesAnArrayOfUnionsOnceForItsSizeAndOnceForItsWrite`. Source only for a second read that differs: `exactSize` in `emit/size.ts`                                                                                                                                                                      |
@@ -311,6 +312,8 @@ A test file named `*.spec.ts` is under `tests/src/tests/`. A path starting
 
 ## Changes
 
+- `68f9922` / `499d768`: 5.2 has a `deserialize` of a `T` that holds no
+  recursive type declare its own read state.
 - `4338a95` / `bdabc6c`: 5.9 reads once the length of a `str` or a `buffer`
   that the size binds to a local.
 - `d60c411` / `9bce939`: 5.9 iterates only an `array` of unions twice.
