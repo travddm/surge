@@ -58,10 +58,10 @@ What the directives are worth on the generated code is measured in
   [benchmarks/size.md](benchmarks/size.md).
 - **Against hand-written Luau** that writes the same bytes, surge's encode
   and decode run within the speed tier's noise of it on a flat struct, a
-  nested object and a `CFrame` array
-  ([research/size-and-read-locals.md](research/size-and-read-locals.md)).
-  It is slower at a tagged union's encode and at a `Packed<T>` region's
-  decode
+  nested object, a `CFrame` array and a `Packed<T>` object
+  ([research/size-and-read-locals.md](research/size-and-read-locals.md),
+  [research/packed-bits-read-in-place.md](research/packed-bits-read-in-place.md)).
+  It is slower at a tagged union's encode
   ([research/hand-written-union-and-packed-bits.md](research/hand-written-union-and-packed-bits.md)).
   A shape that surge cannot size ahead of its write pays a cost once per
   call

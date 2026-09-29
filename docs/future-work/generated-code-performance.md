@@ -35,6 +35,8 @@ code the transformer generates runs. What has been measured is under
   read state in locals.
 - [hand-written-union-and-packed-bits.md](../research/hand-written-union-and-packed-bits.md)
   — the tagged union and the packed toggles against hand-written Luau.
+- [packed-bits-read-in-place.md](../research/packed-bits-read-in-place.md) —
+  reading each byte of a packed region once and testing its bits in place.
 
 This document holds what is still open.
 
@@ -47,23 +49,13 @@ that two runs of unchanged code disagree by
 a part paid once per call and a part paid per element
 ([generated-code-against-hand-written.md](../research/generated-code-against-hand-written.md)
 and its correction), and the papers listed above measured each change that
-closed it. On the tagged union the hand-written codec encodes faster, and on
-the packed toggles it decodes faster; the other half of each row is within
-the band
-([hand-written-union-and-packed-bits.md](../research/hand-written-union-and-packed-bits.md)).
-The two items below are those gaps. What the other rows pay against
-hand-written Luau is not measured.
-
-**The packed region's read.** A `Packed<T>` region is read with one call to
-the package's `unpackBit` for each bit, and each call reads its byte again.
-The hand-written codec reads each byte of the region once and tests each bit
-in place, and the packed toggles' decode is where the baseline measures
-surge furthest behind it. The write side already builds each byte of the
-region inline (Runtime API 5.3 in
-[specs/runtime-api.md](../specs/runtime-api.md)). Reading each byte into a
-local once and testing its bits in the generated code is the change. It
-leaves `unpackBit` with no caller in generated code, which changes the helper
-ABI, and that is free before the first release.
+closed it. The packed toggles are within the band on both halves
+([packed-bits-read-in-place.md](../research/packed-bits-read-in-place.md)).
+On the tagged union the hand-written codec encodes faster, and its decode is
+within the band
+([hand-written-union-and-packed-bits.md](../research/hand-written-union-and-packed-bits.md));
+the item below is that gap. What the other rows pay against hand-written Luau
+is not measured.
 
 **The tagged union's write.** The generated write tests the tag to choose an
 index and then tests the index to choose the variant's writes, and moves the
@@ -228,8 +220,9 @@ needs a fixture before anything can measure it.
   on a cell, is [noise-in-the-speed-tier.md](../research/noise-in-the-speed-tier.md).
 - A golden check in `test/golden.test.mjs` for each change that lands. The
   read loop's, the tagged union's, the `CFrame`'s, the shared reservation's,
-  the read table's, the blob channel's, the size's locals and the read
-  state's are there already, and so are the file pragmas on both sides.
+  the read table's, the blob channel's, the size's locals, the read state's
+  and the packed region's are there already, and so are the file pragmas on
+  both sides.
 - Predict nothing from the compiled output. Whether a cost is paid per element
   or per call was the heuristic this document used to lean on, and the blob
   channel broke it: a per-call allocation was measurable, and whether a
