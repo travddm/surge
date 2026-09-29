@@ -30,42 +30,35 @@ code the transformer generates runs. What has been measured is under
 - [exact-sizing-with-loops.md](../research/exact-sizing-with-loops.md) —
   sizing a shape by a loop ahead of its result, which pays on an array of
   unions and not on an array of strings or a dictionary.
+- [size-and-read-locals.md](../research/size-and-read-locals.md) — reading a
+  sized write's value through its own locals, and holding a `deserialize`'s
+  read state in locals.
 
 This document holds what is still open.
 
 ## What
 
 **The per-call gap to hand-written Luau.** On the three rows the hand-written
-baseline covers, surge's encode was behind a Luau codec writing the same
-bytes. The gap had a part paid once per call, which was most of it on the flat
-struct and the nested object, and a part paid per element, which was most of
-it on the fifty-element `CFrame` array
+baseline covers, surge's encode and decode are within the band that two runs
+of unchanged code disagree by
+([size-and-read-locals.md](../research/size-and-read-locals.md)). The gap had
+a part paid once per call and a part paid per element
 ([generated-code-against-hand-written.md](../research/generated-code-against-hand-written.md)
-and its correction). The part per element is gone, on encode and on decode
-([per-element-encode.md](../research/per-element-encode.md),
-[sized-read-tables.md](../research/sized-read-tables.md)).
-Most of the per-call part was three tables
-([tables-around-serialize.md](../research/tables-around-serialize.md)). A
-shape with no blob field now returns the buffer alone (Runtime API 3.6 in
-[specs/runtime-api.md](../specs/runtime-api.md)), and the benchmark's
-adapters no longer copy the result into a table of their own (Benchmark
-harness 4.8 in [specs/benchmark-harness.md](../specs/benchmark-harness.md)).
-Calling `finishWrite` instead of inlining it costs nothing measurable.
+and its correction), and the papers listed above measured each change that
+closed it. What the rows the baseline does not cover pay against
+hand-written Luau is not measured; widening the baseline is step 2 of the
+[index](README.md), in [benchmark-tooling.md](benchmark-tooling.md).
 
-**What is left per call.** A shape sized exactly (Transformer 5.20 in
-[specs/transformer.md](../specs/transformer.md)) no longer has the three
-candidates the code offered: `finishWrite`'s copy, the scratch state in the
-closure, and the capacity check. That closed most of the flat struct's gap,
-and half of the nested object's
-([exact-sizing.md](../research/exact-sizing.md)). Its writes now read each
-nested object's value once, as the hand-written codec does
-([nested-object-values.md](../research/nested-object-values.md)). The nested
-object still makes six reservations, and its size reads its two strings
-through the whole path from `value` and takes their lengths, which the writes
-take again. Binding the object locals ahead of the result's creation would
-let the size read them, and was not tried. A nested object inside a run of
-Transformer 5.5 still reads its path once per property. A shape that keeps
-the scratch buffer still has all three candidates.
+**What is left per call.** A shape that keeps the scratch buffer still has
+the three candidates a shape sized exactly (Transformer 5.20 in
+[specs/transformer.md](../specs/transformer.md)) does not:
+`finishWrite`'s copy, the scratch state in the closure, and the capacity
+check. A nested object inside a run of Transformer 5.5 still reads its path
+once per property. A sized write reads an array's length twice, and what its
+size reads inside a loop or a branch, such as an optional's or a union's
+bytes, its write reads again. A `deserialize` that reaches a recursion helper
+keeps its read state in its closure, and no catalog row has a recursive type,
+so what that costs is not measured.
 
 One design the `finishWrite` probe did not reach: handing the caller a buffer
 surge owns and reuses, which removes the allocation as well as the copy. It
@@ -199,10 +192,10 @@ means, but it is still not surge's to decide for a file surge does not own.
 Every item here is measurement-driven, and the method is settled: a change is
 its own full catalog run against a reference taken in the same session, read
 as medians over many cells against the untouched libraries as controls. The
-per-call gap is the largest open item. Most of it is measured, and the three
-tables behind it are gone for a shape with no blob field. The two reopened entries
-need an argument against a current figure, not a change. The rest is small,
-or needs a fixture before anything can measure it.
+per-call gap is closed on the rows the hand-written baseline covers, and what
+is left of it is not measured. The two reopened entries need an argument
+against a current figure, not a change. The rest is small, or needs a fixture
+before anything can measure it.
 
 ## How, briefly
 
@@ -212,8 +205,8 @@ or needs a fixture before anything can measure it.
   on a cell, is [noise-in-the-speed-tier.md](../research/noise-in-the-speed-tier.md).
 - A golden check in `test/golden.test.mjs` for each change that lands. The
   read loop's, the tagged union's, the `CFrame`'s, the shared reservation's,
-  the read table's and the blob channel's are there already, and so are the
-  file pragmas on both sides.
+  the read table's, the blob channel's, the size's locals and the read
+  state's are there already, and so are the file pragmas on both sides.
 - Predict nothing from the compiled output. Whether a cost is paid per element
   or per call was the heuristic this document used to lean on, and the blob
   channel broke it: a per-call allocation was measurable, and whether a

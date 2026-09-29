@@ -57,17 +57,16 @@ What the directives are worth on the generated code is measured in
   them. The numbers are in [benchmarks/speed.md](benchmarks/speed.md) and
   [benchmarks/size.md](benchmarks/size.md).
 - **Against hand-written Luau** that writes the same bytes, surge's encode
-  pays a cost once per call and a cost per element
-  ([research/generated-code-against-hand-written.md](research/generated-code-against-hand-written.md),
-  [research/tables-around-serialize.md](research/tables-around-serialize.md)
-  for the per-call part, and
-  [research/one-reservation-per-array.md](research/one-reservation-per-array.md)
-  for an array's elements). On a shape surge sizes ahead of its write, most
-  of the per-call part is gone
+  and decode run within the speed tier's noise of it on the three shapes the
+  hand-written codec covers: a flat struct, a nested object and a `CFrame`
+  array
+  ([research/size-and-read-locals.md](research/size-and-read-locals.md)).
+  A shape that surge cannot size ahead of its write still pays a cost once
+  per call
   ([research/exact-sizing.md](research/exact-sizing.md),
   [research/exact-sizing-with-loops.md](research/exact-sizing-with-loops.md)),
-  and on the `CFrame` array so is the part per element
-  ([research/per-element-encode.md](research/per-element-encode.md)).
+  and the shapes the hand-written codec does not cover are not measured
+  against it.
 - **`Packed<T>`** saves bytes on booleans, optionals and axis-aligned
   `CFrame`s, adds a byte to an arbitrary `CFrame`, and can slow encode or
   decode

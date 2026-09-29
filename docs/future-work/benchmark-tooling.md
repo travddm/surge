@@ -61,13 +61,11 @@ to one.
 ## Why deferred
 
 The first two are step 2 of the [index](README.md), after the per-call gap.
-Widening the baseline measures nothing new until the gap the three existing
-rows already show is understood:
-surge's encode has a gap to the hand-written codec that is paid once per call
-([generated-code-against-hand-written.md](../research/generated-code-against-hand-written.md)).
-Most of it was three tables per call
-([tables-around-serialize.md](../research/tables-around-serialize.md)), and
-all three are gone for a shape with no blob field. The code-size measurement
+The gap the three existing rows showed is within the speed tier's band on
+encode and on decode
+([size-and-read-locals.md](../research/size-and-read-locals.md)), so a wider
+baseline would measure what the shapes those rows do not cover pay. The
+code-size measurement
 needs the fixtures restructured, one call per module. Tier 3 has no driver:
 nothing yet asks what a serializer costs on the wire once a networking layer
 batches it, and [networking.md](networking.md) is where that would come from.

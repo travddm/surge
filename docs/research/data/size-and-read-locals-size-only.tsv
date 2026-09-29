@@ -1,0 +1,2245 @@
+# Trials behind speed.md. Written by `mise run bench:speed`; do not edit by hand.
+# Date: 2026-09-29
+# Roblox: 0.741.19.7411056
+# Machine: 12th Gen Intel(R) Core(TM) i9-12900KF, 16 threads, win32 10.0.26200
+# Runs: 2, back to back
+# surge: 68f9922
+# rbxts-transformer-surge: bdabc6c
+# roblox-ts: 3.0.0
+# @rbxts/flamework-binary-serializer: 0.7.0
+# @rbxts/serio: 1.2.7
+# Blink: 0.18.8
+# Method: 9 trials per cell, each at least 0.2 seconds of calls after 0.1 seconds of warm-up calls, timed in chunks of 250 calls so that the yields between chunks are not in the time; within a row the libraries take turns, one trial each, and 3 idle frames separate one row from the next
+fixture	library	half	run	trial	rate
+small flat struct	surge	encode	1	1	5948069
+small flat struct	surge	encode	1	2	6222481
+small flat struct	surge	encode	1	3	6211413
+small flat struct	surge	encode	1	4	5760599
+small flat struct	surge	encode	1	5	6153507
+small flat struct	surge	encode	1	6	6094177
+small flat struct	surge	encode	1	7	6172398
+small flat struct	surge	encode	1	8	6074308
+small flat struct	surge	encode	1	9	6088351
+small flat struct	surge	encode	2	1	5994997
+small flat struct	surge	encode	2	2	6013146
+small flat struct	surge	encode	2	3	5281959
+small flat struct	surge	encode	2	4	5311847
+small flat struct	surge	encode	2	5	6083221
+small flat struct	surge	encode	2	6	6026985
+small flat struct	surge	encode	2	7	6183163
+small flat struct	surge	encode	2	8	6164639
+small flat struct	surge	encode	2	9	6013167
+small flat struct	surge	decode	1	1	5584489
+small flat struct	surge	decode	1	2	5396531
+small flat struct	surge	decode	1	3	4983520
+small flat struct	surge	decode	1	4	5523321
+small flat struct	surge	decode	1	5	5523739
+small flat struct	surge	decode	1	6	5744018
+small flat struct	surge	decode	1	7	5606317
+small flat struct	surge	decode	1	8	5633927
+small flat struct	surge	decode	1	9	5572280
+small flat struct	surge	decode	2	1	5617789
+small flat struct	surge	decode	2	2	5742768
+small flat struct	surge	decode	2	3	5602111
+small flat struct	surge	decode	2	4	5709052
+small flat struct	surge	decode	2	5	5382260
+small flat struct	surge	decode	2	6	5669481
+small flat struct	surge	decode	2	7	5489736
+small flat struct	surge	decode	2	8	5562259
+small flat struct	surge	decode	2	9	5611914
+small flat struct	fbs	encode	1	1	2475881
+small flat struct	fbs	encode	1	2	2523722
+small flat struct	fbs	encode	1	3	2464910
+small flat struct	fbs	encode	1	4	2467061
+small flat struct	fbs	encode	1	5	2521735
+small flat struct	fbs	encode	1	6	2565884
+small flat struct	fbs	encode	1	7	2586157
+small flat struct	fbs	encode	1	8	2535697
+small flat struct	fbs	encode	1	9	2577554
+small flat struct	fbs	encode	2	1	2579656
+small flat struct	fbs	encode	2	2	2615685
+small flat struct	fbs	encode	2	3	2413435
+small flat struct	fbs	encode	2	4	2335624
+small flat struct	fbs	encode	2	5	2516395
+small flat struct	fbs	encode	2	6	2523081
+small flat struct	fbs	encode	2	7	2525011
+small flat struct	fbs	encode	2	8	2555523
+small flat struct	fbs	encode	2	9	2558655
+small flat struct	fbs	decode	1	1	3463222
+small flat struct	fbs	decode	1	2	3389102
+small flat struct	fbs	decode	1	3	3069314
+small flat struct	fbs	decode	1	4	3414059
+small flat struct	fbs	decode	1	5	3389268
+small flat struct	fbs	decode	1	6	3461093
+small flat struct	fbs	decode	1	7	3454615
+small flat struct	fbs	decode	1	8	3420480
+small flat struct	fbs	decode	1	9	3487820
+small flat struct	fbs	decode	2	1	3538232
+small flat struct	fbs	decode	2	2	3452274
+small flat struct	fbs	decode	2	3	3470651
+small flat struct	fbs	decode	2	4	3405949
+small flat struct	fbs	decode	2	5	3423697
+small flat struct	fbs	decode	2	6	3383610
+small flat struct	fbs	decode	2	7	3407537
+small flat struct	fbs	decode	2	8	3443426
+small flat struct	fbs	decode	2	9	3480089
+small flat struct	serio	encode	1	1	835145
+small flat struct	serio	encode	1	2	827123
+small flat struct	serio	encode	1	3	789209
+small flat struct	serio	encode	1	4	810540
+small flat struct	serio	encode	1	5	833720
+small flat struct	serio	encode	1	6	840500
+small flat struct	serio	encode	1	7	840673
+small flat struct	serio	encode	1	8	821055
+small flat struct	serio	encode	1	9	823949
+small flat struct	serio	encode	2	1	844635
+small flat struct	serio	encode	2	2	849759
+small flat struct	serio	encode	2	3	809127
+small flat struct	serio	encode	2	4	818463
+small flat struct	serio	encode	2	5	845550
+small flat struct	serio	encode	2	6	844628
+small flat struct	serio	encode	2	7	844704
+small flat struct	serio	encode	2	8	838569
+small flat struct	serio	encode	2	9	841676
+small flat struct	serio	decode	1	1	1678005
+small flat struct	serio	decode	1	2	1550858
+small flat struct	serio	decode	1	3	1563365
+small flat struct	serio	decode	1	4	1668669
+small flat struct	serio	decode	1	5	1645817
+small flat struct	serio	decode	1	6	1652042
+small flat struct	serio	decode	1	7	1694384
+small flat struct	serio	decode	1	8	1678259
+small flat struct	serio	decode	1	9	1693348
+small flat struct	serio	decode	2	1	1668906
+small flat struct	serio	decode	2	2	1680265
+small flat struct	serio	decode	2	3	1685331
+small flat struct	serio	decode	2	4	1669346
+small flat struct	serio	decode	2	5	1656569
+small flat struct	serio	decode	2	6	1652716
+small flat struct	serio	decode	2	7	1688291
+small flat struct	serio	decode	2	8	1649776
+small flat struct	serio	decode	2	9	1656055
+small flat struct	blink	encode	1	1	2770924
+small flat struct	blink	encode	1	2	2759847
+small flat struct	blink	encode	1	3	2463434
+small flat struct	blink	encode	1	4	2665789
+small flat struct	blink	encode	1	5	2700513
+small flat struct	blink	encode	1	6	2624921
+small flat struct	blink	encode	1	7	2704366
+small flat struct	blink	encode	1	8	2767982
+small flat struct	blink	encode	1	9	2628069
+small flat struct	blink	encode	2	1	2734060
+small flat struct	blink	encode	2	2	2718588
+small flat struct	blink	encode	2	3	2441925
+small flat struct	blink	encode	2	4	2674975
+small flat struct	blink	encode	2	5	2724699
+small flat struct	blink	encode	2	6	2755535
+small flat struct	blink	encode	2	7	2708405
+small flat struct	blink	encode	2	8	2700173
+small flat struct	blink	encode	2	9	2788308
+small flat struct	blink	decode	1	1	3338378
+small flat struct	blink	decode	1	2	3044303
+small flat struct	blink	decode	1	3	3309255
+small flat struct	blink	decode	1	4	3374047
+small flat struct	blink	decode	1	5	3310962
+small flat struct	blink	decode	1	6	3387381
+small flat struct	blink	decode	1	7	3341808
+small flat struct	blink	decode	1	8	3343702
+small flat struct	blink	decode	1	9	3407040
+small flat struct	blink	decode	2	1	3392327
+small flat struct	blink	decode	2	2	3357267
+small flat struct	blink	decode	2	3	3404879
+small flat struct	blink	decode	2	4	3367435
+small flat struct	blink	decode	2	5	3258136
+small flat struct	blink	decode	2	6	3368819
+small flat struct	blink	decode	2	7	3401794
+small flat struct	blink	decode	2	8	3365764
+small flat struct	blink	decode	2	9	3429210
+small flat struct	baseline	encode	1	1	6205992
+small flat struct	baseline	encode	1	2	6208666
+small flat struct	baseline	encode	1	3	6020985
+small flat struct	baseline	encode	1	4	6070874
+small flat struct	baseline	encode	1	5	6238457
+small flat struct	baseline	encode	1	6	6273665
+small flat struct	baseline	encode	1	7	6227505
+small flat struct	baseline	encode	1	8	6145024
+small flat struct	baseline	encode	1	9	6112011
+small flat struct	baseline	encode	2	1	6450927
+small flat struct	baseline	encode	2	2	5833120
+small flat struct	baseline	encode	2	3	5552693
+small flat struct	baseline	encode	2	4	6274087
+small flat struct	baseline	encode	2	5	6327503
+small flat struct	baseline	encode	2	6	6113649
+small flat struct	baseline	encode	2	7	6145746
+small flat struct	baseline	encode	2	8	6154083
+small flat struct	baseline	encode	2	9	6273446
+small flat struct	baseline	decode	1	1	5549595
+small flat struct	baseline	decode	1	2	4882117
+small flat struct	baseline	decode	1	3	5630611
+small flat struct	baseline	decode	1	4	5486025
+small flat struct	baseline	decode	1	5	5750287
+small flat struct	baseline	decode	1	6	5826303
+small flat struct	baseline	decode	1	7	5850434
+small flat struct	baseline	decode	1	8	5798747
+small flat struct	baseline	decode	1	9	5607273
+small flat struct	baseline	decode	2	1	5612827
+small flat struct	baseline	decode	2	2	5551203
+small flat struct	baseline	decode	2	3	5528545
+small flat struct	baseline	decode	2	4	5728667
+small flat struct	baseline	decode	2	5	5037881
+small flat struct	baseline	decode	2	6	5593353
+small flat struct	baseline	decode	2	7	5533949
+small flat struct	baseline	decode	2	8	5613406
+small flat struct	baseline	decode	2	9	5762117
+deeply nested object	surge	encode	1	1	4411690
+deeply nested object	surge	encode	1	2	4481055
+deeply nested object	surge	encode	1	3	4611135
+deeply nested object	surge	encode	1	4	4498998
+deeply nested object	surge	encode	1	5	4712280
+deeply nested object	surge	encode	1	6	4604102
+deeply nested object	surge	encode	1	7	4800703
+deeply nested object	surge	encode	1	8	4368346
+deeply nested object	surge	encode	1	9	4696232
+deeply nested object	surge	encode	2	1	4679502
+deeply nested object	surge	encode	2	2	4719676
+deeply nested object	surge	encode	2	3	4769764
+deeply nested object	surge	encode	2	4	4774534
+deeply nested object	surge	encode	2	5	4879251
+deeply nested object	surge	encode	2	6	4847279
+deeply nested object	surge	encode	2	7	4742595
+deeply nested object	surge	encode	2	8	4780550
+deeply nested object	surge	encode	2	9	4353579
+deeply nested object	surge	decode	1	1	2591308
+deeply nested object	surge	decode	1	2	2494923
+deeply nested object	surge	decode	1	3	2607940
+deeply nested object	surge	decode	1	4	2595919
+deeply nested object	surge	decode	1	5	2502978
+deeply nested object	surge	decode	1	6	2606075
+deeply nested object	surge	decode	1	7	2535825
+deeply nested object	surge	decode	1	8	2541277
+deeply nested object	surge	decode	1	9	2547021
+deeply nested object	surge	decode	2	1	2531070
+deeply nested object	surge	decode	2	2	2371085
+deeply nested object	surge	decode	2	3	2496014
+deeply nested object	surge	decode	2	4	2519417
+deeply nested object	surge	decode	2	5	2636357
+deeply nested object	surge	decode	2	6	2608570
+deeply nested object	surge	decode	2	7	2609456
+deeply nested object	surge	decode	2	8	2570997
+deeply nested object	surge	decode	2	9	2560574
+deeply nested object	fbs	encode	1	1	1774312
+deeply nested object	fbs	encode	1	2	1808229
+deeply nested object	fbs	encode	1	3	1787941
+deeply nested object	fbs	encode	1	4	1802470
+deeply nested object	fbs	encode	1	5	1856417
+deeply nested object	fbs	encode	1	6	1799336
+deeply nested object	fbs	encode	1	7	1873306
+deeply nested object	fbs	encode	1	8	1837444
+deeply nested object	fbs	encode	1	9	1845768
+deeply nested object	fbs	encode	2	1	1868421
+deeply nested object	fbs	encode	2	2	1862994
+deeply nested object	fbs	encode	2	3	1865234
+deeply nested object	fbs	encode	2	4	1831746
+deeply nested object	fbs	encode	2	5	1857235
+deeply nested object	fbs	encode	2	6	1838193
+deeply nested object	fbs	encode	2	7	1873573
+deeply nested object	fbs	encode	2	8	1834530
+deeply nested object	fbs	encode	2	9	1859576
+deeply nested object	fbs	decode	1	1	1614111
+deeply nested object	fbs	decode	1	2	1627986
+deeply nested object	fbs	decode	1	3	1607157
+deeply nested object	fbs	decode	1	4	1598108
+deeply nested object	fbs	decode	1	5	1605557
+deeply nested object	fbs	decode	1	6	1596077
+deeply nested object	fbs	decode	1	7	1630712
+deeply nested object	fbs	decode	1	8	1632431
+deeply nested object	fbs	decode	1	9	1626840
+deeply nested object	fbs	decode	2	1	1596813
+deeply nested object	fbs	decode	2	2	1545481
+deeply nested object	fbs	decode	2	3	1617914
+deeply nested object	fbs	decode	2	4	1585405
+deeply nested object	fbs	decode	2	5	1606069
+deeply nested object	fbs	decode	2	6	1600837
+deeply nested object	fbs	decode	2	7	1609185
+deeply nested object	fbs	decode	2	8	1641101
+deeply nested object	fbs	decode	2	9	1618286
+deeply nested object	serio	encode	1	1	457753
+deeply nested object	serio	encode	1	2	464976
+deeply nested object	serio	encode	1	3	469677
+deeply nested object	serio	encode	1	4	476155
+deeply nested object	serio	encode	1	5	483151
+deeply nested object	serio	encode	1	6	475126
+deeply nested object	serio	encode	1	7	480293
+deeply nested object	serio	encode	1	8	486664
+deeply nested object	serio	encode	1	9	480357
+deeply nested object	serio	encode	2	1	480167
+deeply nested object	serio	encode	2	2	474453
+deeply nested object	serio	encode	2	3	478132
+deeply nested object	serio	encode	2	4	469513
+deeply nested object	serio	encode	2	5	469936
+deeply nested object	serio	encode	2	6	476013
+deeply nested object	serio	encode	2	7	472160
+deeply nested object	serio	encode	2	8	473429
+deeply nested object	serio	encode	2	9	476474
+deeply nested object	serio	decode	1	1	739809
+deeply nested object	serio	decode	1	2	727062
+deeply nested object	serio	decode	1	3	735970
+deeply nested object	serio	decode	1	4	735119
+deeply nested object	serio	decode	1	5	730965
+deeply nested object	serio	decode	1	6	743142
+deeply nested object	serio	decode	1	7	741485
+deeply nested object	serio	decode	1	8	748098
+deeply nested object	serio	decode	1	9	745180
+deeply nested object	serio	decode	2	1	735039
+deeply nested object	serio	decode	2	2	713989
+deeply nested object	serio	decode	2	3	729281
+deeply nested object	serio	decode	2	4	733815
+deeply nested object	serio	decode	2	5	743347
+deeply nested object	serio	decode	2	6	736524
+deeply nested object	serio	decode	2	7	740541
+deeply nested object	serio	decode	2	8	733716
+deeply nested object	serio	decode	2	9	739924
+deeply nested object	blink	encode	1	1	2110184
+deeply nested object	blink	encode	1	2	1853733
+deeply nested object	blink	encode	1	3	2012463
+deeply nested object	blink	encode	1	4	2109616
+deeply nested object	blink	encode	1	5	2161668
+deeply nested object	blink	encode	1	6	2161027
+deeply nested object	blink	encode	1	7	2223215
+deeply nested object	blink	encode	1	8	2203102
+deeply nested object	blink	encode	1	9	2165249
+deeply nested object	blink	encode	2	1	2246623
+deeply nested object	blink	encode	2	2	2246043
+deeply nested object	blink	encode	2	3	2221574
+deeply nested object	blink	encode	2	4	2201023
+deeply nested object	blink	encode	2	5	2228447
+deeply nested object	blink	encode	2	6	2247092
+deeply nested object	blink	encode	2	7	2204696
+deeply nested object	blink	encode	2	8	2200683
+deeply nested object	blink	encode	2	9	2219491
+deeply nested object	blink	decode	1	1	1644638
+deeply nested object	blink	decode	1	2	1599573
+deeply nested object	blink	decode	1	3	1679534
+deeply nested object	blink	decode	1	4	1649684
+deeply nested object	blink	decode	1	5	1642154
+deeply nested object	blink	decode	1	6	1610921
+deeply nested object	blink	decode	1	7	1580458
+deeply nested object	blink	decode	1	8	1604373
+deeply nested object	blink	decode	1	9	1635919
+deeply nested object	blink	decode	2	1	1549568
+deeply nested object	blink	decode	2	2	1650225
+deeply nested object	blink	decode	2	3	1631099
+deeply nested object	blink	decode	2	4	1674058
+deeply nested object	blink	decode	2	5	1662802
+deeply nested object	blink	decode	2	6	1664514
+deeply nested object	blink	decode	2	7	1693072
+deeply nested object	blink	decode	2	8	1652440
+deeply nested object	blink	decode	2	9	1679708
+deeply nested object	baseline	encode	1	1	4634527
+deeply nested object	baseline	encode	1	2	4537520
+deeply nested object	baseline	encode	1	3	4445483
+deeply nested object	baseline	encode	1	4	4449344
+deeply nested object	baseline	encode	1	5	4608536
+deeply nested object	baseline	encode	1	6	4748116
+deeply nested object	baseline	encode	1	7	4757479
+deeply nested object	baseline	encode	1	8	4698043
+deeply nested object	baseline	encode	1	9	4639098
+deeply nested object	baseline	encode	2	1	4736210
+deeply nested object	baseline	encode	2	2	4843699
+deeply nested object	baseline	encode	2	3	4702255
+deeply nested object	baseline	encode	2	4	4725553
+deeply nested object	baseline	encode	2	5	4821861
+deeply nested object	baseline	encode	2	6	4792215
+deeply nested object	baseline	encode	2	7	4669717
+deeply nested object	baseline	encode	2	8	4699944
+deeply nested object	baseline	encode	2	9	4775042
+deeply nested object	baseline	decode	1	1	2633244
+deeply nested object	baseline	decode	1	2	2793884
+deeply nested object	baseline	decode	1	3	2708541
+deeply nested object	baseline	decode	1	4	2463640
+deeply nested object	baseline	decode	1	5	2725856
+deeply nested object	baseline	decode	1	6	2693932
+deeply nested object	baseline	decode	1	7	2782451
+deeply nested object	baseline	decode	1	8	2630763
+deeply nested object	baseline	decode	1	9	2696328
+deeply nested object	baseline	decode	2	1	2425436
+deeply nested object	baseline	decode	2	2	2664908
+deeply nested object	baseline	decode	2	3	2703689
+deeply nested object	baseline	decode	2	4	2718069
+deeply nested object	baseline	decode	2	5	2737597
+deeply nested object	baseline	decode	2	6	2731504
+deeply nested object	baseline	decode	2	7	2721372
+deeply nested object	baseline	decode	2	8	2809903
+deeply nested object	baseline	decode	2	9	2715602
+wide struct	surge	encode	1	1	3030947
+wide struct	surge	encode	1	2	3144156
+wide struct	surge	encode	1	3	3091964
+wide struct	surge	encode	1	4	3120652
+wide struct	surge	encode	1	5	3139678
+wide struct	surge	encode	1	6	2979885
+wide struct	surge	encode	1	7	3087025
+wide struct	surge	encode	1	8	3025498
+wide struct	surge	encode	1	9	2717882
+wide struct	surge	encode	2	1	3089648
+wide struct	surge	encode	2	2	3146017
+wide struct	surge	encode	2	3	3122696
+wide struct	surge	encode	2	4	3109947
+wide struct	surge	encode	2	5	3067350
+wide struct	surge	encode	2	6	3113985
+wide struct	surge	encode	2	7	2999088
+wide struct	surge	encode	2	8	2966078
+wide struct	surge	encode	2	9	3002218
+wide struct	surge	decode	1	1	693624
+wide struct	surge	decode	1	2	704961
+wide struct	surge	decode	1	3	695017
+wide struct	surge	decode	1	4	692457
+wide struct	surge	decode	1	5	697592
+wide struct	surge	decode	1	6	690754
+wide struct	surge	decode	1	7	703904
+wide struct	surge	decode	1	8	665857
+wide struct	surge	decode	1	9	665507
+wide struct	surge	decode	2	1	689963
+wide struct	surge	decode	2	2	694792
+wide struct	surge	decode	2	3	694541
+wide struct	surge	decode	2	4	706184
+wide struct	surge	decode	2	5	688835
+wide struct	surge	decode	2	6	685585
+wide struct	surge	decode	2	7	694961
+wide struct	surge	decode	2	8	692175
+wide struct	surge	decode	2	9	673196
+wide struct	fbs	encode	1	1	782516
+wide struct	fbs	encode	1	2	788640
+wide struct	fbs	encode	1	3	797437
+wide struct	fbs	encode	1	4	796424
+wide struct	fbs	encode	1	5	796854
+wide struct	fbs	encode	1	6	779900
+wide struct	fbs	encode	1	7	792455
+wide struct	fbs	encode	1	8	773886
+wide struct	fbs	encode	1	9	778581
+wide struct	fbs	encode	2	1	787827
+wide struct	fbs	encode	2	2	801152
+wide struct	fbs	encode	2	3	804203
+wide struct	fbs	encode	2	4	793150
+wide struct	fbs	encode	2	5	799940
+wide struct	fbs	encode	2	6	781391
+wide struct	fbs	encode	2	7	784588
+wide struct	fbs	encode	2	8	788535
+wide struct	fbs	encode	2	9	805215
+wide struct	fbs	decode	1	1	533471
+wide struct	fbs	decode	1	2	529938
+wide struct	fbs	decode	1	3	534656
+wide struct	fbs	decode	1	4	520680
+wide struct	fbs	decode	1	5	530378
+wide struct	fbs	decode	1	6	534307
+wide struct	fbs	decode	1	7	504153
+wide struct	fbs	decode	1	8	518079
+wide struct	fbs	decode	1	9	526261
+wide struct	fbs	decode	2	1	541067
+wide struct	fbs	decode	2	2	528610
+wide struct	fbs	decode	2	3	544612
+wide struct	fbs	decode	2	4	542059
+wide struct	fbs	decode	2	5	523230
+wide struct	fbs	decode	2	6	532174
+wide struct	fbs	decode	2	7	533558
+wide struct	fbs	decode	2	8	536115
+wide struct	fbs	decode	2	9	532518
+wide struct	serio	encode	1	1	116586
+wide struct	serio	encode	1	2	119326
+wide struct	serio	encode	1	3	119858
+wide struct	serio	encode	1	4	119531
+wide struct	serio	encode	1	5	116056
+wide struct	serio	encode	1	6	115561
+wide struct	serio	encode	1	7	120334
+wide struct	serio	encode	1	8	118278
+wide struct	serio	encode	1	9	118819
+wide struct	serio	encode	2	1	121433
+wide struct	serio	encode	2	2	120247
+wide struct	serio	encode	2	3	121318
+wide struct	serio	encode	2	4	121280
+wide struct	serio	encode	2	5	119956
+wide struct	serio	encode	2	6	118822
+wide struct	serio	encode	2	7	119169
+wide struct	serio	encode	2	8	120350
+wide struct	serio	encode	2	9	122601
+wide struct	serio	decode	1	1	246090
+wide struct	serio	decode	1	2	244698
+wide struct	serio	decode	1	3	246628
+wide struct	serio	decode	1	4	250407
+wide struct	serio	decode	1	5	244175
+wide struct	serio	decode	1	6	247384
+wide struct	serio	decode	1	7	242296
+wide struct	serio	decode	1	8	245952
+wide struct	serio	decode	1	9	242827
+wide struct	serio	decode	2	1	247811
+wide struct	serio	decode	2	2	245588
+wide struct	serio	decode	2	3	244314
+wide struct	serio	decode	2	4	248656
+wide struct	serio	decode	2	5	249210
+wide struct	serio	decode	2	6	247353
+wide struct	serio	decode	2	7	243064
+wide struct	serio	decode	2	8	244237
+wide struct	serio	decode	2	9	246727
+wide struct	blink	encode	1	1	1402251
+wide struct	blink	encode	1	2	1394907
+wide struct	blink	encode	1	3	1398503
+wide struct	blink	encode	1	4	1399964
+wide struct	blink	encode	1	5	1271108
+wide struct	blink	encode	1	6	1400978
+wide struct	blink	encode	1	7	1409424
+wide struct	blink	encode	1	8	1399288
+wide struct	blink	encode	1	9	1275837
+wide struct	blink	encode	2	1	1408658
+wide struct	blink	encode	2	2	1411824
+wide struct	blink	encode	2	3	1386804
+wide struct	blink	encode	2	4	1398188
+wide struct	blink	encode	2	5	1368292
+wide struct	blink	encode	2	6	1368888
+wide struct	blink	encode	2	7	1379534
+wide struct	blink	encode	2	8	1399093
+wide struct	blink	encode	2	9	1411286
+wide struct	blink	decode	1	1	482273
+wide struct	blink	decode	1	2	484930
+wide struct	blink	decode	1	3	489601
+wide struct	blink	decode	1	4	488516
+wide struct	blink	decode	1	5	483115
+wide struct	blink	decode	1	6	485736
+wide struct	blink	decode	1	7	486525
+wide struct	blink	decode	1	8	475260
+wide struct	blink	decode	1	9	482845
+wide struct	blink	decode	2	1	493159
+wide struct	blink	decode	2	2	486240
+wide struct	blink	decode	2	3	478095
+wide struct	blink	decode	2	4	490071
+wide struct	blink	decode	2	5	490326
+wide struct	blink	decode	2	6	483354
+wide struct	blink	decode	2	7	475353
+wide struct	blink	decode	2	8	477327
+wide struct	blink	decode	2	9	487710
+large array	surge	encode	1	1	322371
+large array	surge	encode	1	2	330277
+large array	surge	encode	1	3	328343
+large array	surge	encode	1	4	327222
+large array	surge	encode	1	5	329338
+large array	surge	encode	1	6	331582
+large array	surge	encode	1	7	334554
+large array	surge	encode	1	8	332261
+large array	surge	encode	1	9	327986
+large array	surge	encode	2	1	328679
+large array	surge	encode	2	2	333503
+large array	surge	encode	2	3	328323
+large array	surge	encode	2	4	330249
+large array	surge	encode	2	5	334931
+large array	surge	encode	2	6	326820
+large array	surge	encode	2	7	334823
+large array	surge	encode	2	8	335940
+large array	surge	encode	2	9	327634
+large array	surge	decode	1	1	104416
+large array	surge	decode	1	2	106877
+large array	surge	decode	1	3	97289
+large array	surge	decode	1	4	107074
+large array	surge	decode	1	5	110244
+large array	surge	decode	1	6	105842
+large array	surge	decode	1	7	108632
+large array	surge	decode	1	8	107407
+large array	surge	decode	1	9	108749
+large array	surge	decode	2	1	108344
+large array	surge	decode	2	2	106050
+large array	surge	decode	2	3	110867
+large array	surge	decode	2	4	112474
+large array	surge	decode	2	5	112484
+large array	surge	decode	2	6	108861
+large array	surge	decode	2	7	108439
+large array	surge	decode	2	8	111079
+large array	surge	decode	2	9	108233
+large array	fbs	encode	1	1	76770
+large array	fbs	encode	1	2	78522
+large array	fbs	encode	1	3	76961
+large array	fbs	encode	1	4	77867
+large array	fbs	encode	1	5	77660
+large array	fbs	encode	1	6	78441
+large array	fbs	encode	1	7	78492
+large array	fbs	encode	1	8	78753
+large array	fbs	encode	1	9	75936
+large array	fbs	encode	2	1	76158
+large array	fbs	encode	2	2	75294
+large array	fbs	encode	2	3	75923
+large array	fbs	encode	2	4	75685
+large array	fbs	encode	2	5	75273
+large array	fbs	encode	2	6	76514
+large array	fbs	encode	2	7	75710
+large array	fbs	encode	2	8	76242
+large array	fbs	encode	2	9	74024
+large array	fbs	decode	1	1	43117
+large array	fbs	decode	1	2	43557
+large array	fbs	decode	1	3	44272
+large array	fbs	decode	1	4	43739
+large array	fbs	decode	1	5	43923
+large array	fbs	decode	1	6	43304
+large array	fbs	decode	1	7	44265
+large array	fbs	decode	1	8	44247
+large array	fbs	decode	1	9	43316
+large array	fbs	decode	2	1	44294
+large array	fbs	decode	2	2	44725
+large array	fbs	decode	2	3	44576
+large array	fbs	decode	2	4	44716
+large array	fbs	decode	2	5	44196
+large array	fbs	decode	2	6	44299
+large array	fbs	decode	2	7	44369
+large array	fbs	decode	2	8	44470
+large array	fbs	decode	2	9	43501
+large array	serio	encode	1	1	8145
+large array	serio	encode	1	2	8188
+large array	serio	encode	1	3	8136
+large array	serio	encode	1	4	8033
+large array	serio	encode	1	5	8229
+large array	serio	encode	1	6	8217
+large array	serio	encode	1	7	8149
+large array	serio	encode	1	8	8214
+large array	serio	encode	1	9	8270
+large array	serio	encode	2	1	8217
+large array	serio	encode	2	2	8197
+large array	serio	encode	2	3	8116
+large array	serio	encode	2	4	8205
+large array	serio	encode	2	5	8352
+large array	serio	encode	2	6	8254
+large array	serio	encode	2	7	8230
+large array	serio	encode	2	8	8151
+large array	serio	encode	2	9	8042
+large array	serio	decode	1	1	26637
+large array	serio	decode	1	2	25722
+large array	serio	decode	1	3	25873
+large array	serio	decode	1	4	26061
+large array	serio	decode	1	5	26459
+large array	serio	decode	1	6	25174
+large array	serio	decode	1	7	25953
+large array	serio	decode	1	8	26676
+large array	serio	decode	1	9	25354
+large array	serio	decode	2	1	24372
+large array	serio	decode	2	2	24815
+large array	serio	decode	2	3	24149
+large array	serio	decode	2	4	24774
+large array	serio	decode	2	5	24485
+large array	serio	decode	2	6	24770
+large array	serio	decode	2	7	24439
+large array	serio	decode	2	8	24515
+large array	serio	decode	2	9	23760
+large array	blink	encode	1	1	140194
+large array	blink	encode	1	2	138940
+large array	blink	encode	1	3	134447
+large array	blink	encode	1	4	137345
+large array	blink	encode	1	5	138718
+large array	blink	encode	1	6	137729
+large array	blink	encode	1	7	138631
+large array	blink	encode	1	8	136823
+large array	blink	encode	1	9	139286
+large array	blink	encode	2	1	140840
+large array	blink	encode	2	2	138701
+large array	blink	encode	2	3	139377
+large array	blink	encode	2	4	138658
+large array	blink	encode	2	5	142492
+large array	blink	encode	2	6	141764
+large array	blink	encode	2	7	139716
+large array	blink	encode	2	8	139924
+large array	blink	encode	2	9	138042
+large array	blink	decode	1	1	75997
+large array	blink	decode	1	2	71269
+large array	blink	decode	1	3	74824
+large array	blink	decode	1	4	76958
+large array	blink	decode	1	5	76588
+large array	blink	decode	1	6	76514
+large array	blink	decode	1	7	75833
+large array	blink	decode	1	8	74406
+large array	blink	decode	1	9	68690
+large array	blink	decode	2	1	76359
+large array	blink	decode	2	2	77844
+large array	blink	decode	2	3	74247
+large array	blink	decode	2	4	75150
+large array	blink	decode	2	5	77105
+large array	blink	decode	2	6	77489
+large array	blink	decode	2	7	76741
+large array	blink	decode	2	8	74520
+large array	blink	decode	2	9	75993
+large record	surge	encode	1	1	165041
+large record	surge	encode	1	2	159606
+large record	surge	encode	1	3	162777
+large record	surge	encode	1	4	162010
+large record	surge	encode	1	5	160579
+large record	surge	encode	1	6	162272
+large record	surge	encode	1	7	161853
+large record	surge	encode	1	8	155822
+large record	surge	encode	1	9	164480
+large record	surge	encode	2	1	159191
+large record	surge	encode	2	2	158121
+large record	surge	encode	2	3	162667
+large record	surge	encode	2	4	159510
+large record	surge	encode	2	5	156955
+large record	surge	encode	2	6	158988
+large record	surge	encode	2	7	161882
+large record	surge	encode	2	8	161463
+large record	surge	encode	2	9	161024
+large record	surge	decode	1	1	71868
+large record	surge	decode	1	2	74793
+large record	surge	decode	1	3	74582
+large record	surge	decode	1	4	74197
+large record	surge	decode	1	5	73575
+large record	surge	decode	1	6	72869
+large record	surge	decode	1	7	74935
+large record	surge	decode	1	8	74556
+large record	surge	decode	1	9	75178
+large record	surge	decode	2	1	75341
+large record	surge	decode	2	2	74417
+large record	surge	decode	2	3	73815
+large record	surge	decode	2	4	74818
+large record	surge	decode	2	5	74463
+large record	surge	decode	2	6	74697
+large record	surge	decode	2	7	75409
+large record	surge	decode	2	8	74963
+large record	surge	decode	2	9	74294
+large record	fbs	encode	1	1	97761
+large record	fbs	encode	1	2	95986
+large record	fbs	encode	1	3	98015
+large record	fbs	encode	1	4	96986
+large record	fbs	encode	1	5	97923
+large record	fbs	encode	1	6	97558
+large record	fbs	encode	1	7	97406
+large record	fbs	encode	1	8	99007
+large record	fbs	encode	1	9	96908
+large record	fbs	encode	2	1	97372
+large record	fbs	encode	2	2	98064
+large record	fbs	encode	2	3	98819
+large record	fbs	encode	2	4	99085
+large record	fbs	encode	2	5	101433
+large record	fbs	encode	2	6	96981
+large record	fbs	encode	2	7	98950
+large record	fbs	encode	2	8	97706
+large record	fbs	encode	2	9	98235
+large record	fbs	decode	1	1	56715
+large record	fbs	decode	1	2	54896
+large record	fbs	decode	1	3	56003
+large record	fbs	decode	1	4	55247
+large record	fbs	decode	1	5	55222
+large record	fbs	decode	1	6	54992
+large record	fbs	decode	1	7	55666
+large record	fbs	decode	1	8	56111
+large record	fbs	decode	1	9	55987
+large record	fbs	decode	2	1	56630
+large record	fbs	decode	2	2	55496
+large record	fbs	decode	2	3	55325
+large record	fbs	decode	2	4	54994
+large record	fbs	decode	2	5	56209
+large record	fbs	decode	2	6	56469
+large record	fbs	decode	2	7	55600
+large record	fbs	decode	2	8	55643
+large record	fbs	decode	2	9	56408
+large record	serio	encode	1	1	12505
+large record	serio	encode	1	2	12342
+large record	serio	encode	1	3	12242
+large record	serio	encode	1	4	12450
+large record	serio	encode	1	5	12389
+large record	serio	encode	1	6	12255
+large record	serio	encode	1	7	12574
+large record	serio	encode	1	8	12441
+large record	serio	encode	1	9	12343
+large record	serio	encode	2	1	12298
+large record	serio	encode	2	2	12267
+large record	serio	encode	2	3	12509
+large record	serio	encode	2	4	12316
+large record	serio	encode	2	5	12246
+large record	serio	encode	2	6	12243
+large record	serio	encode	2	7	12427
+large record	serio	encode	2	8	12375
+large record	serio	encode	2	9	12263
+large record	serio	decode	1	1	25833
+large record	serio	decode	1	2	26056
+large record	serio	decode	1	3	25768
+large record	serio	decode	1	4	25996
+large record	serio	decode	1	5	25862
+large record	serio	decode	1	6	26006
+large record	serio	decode	1	7	25654
+large record	serio	decode	1	8	25899
+large record	serio	decode	1	9	25180
+large record	serio	decode	2	1	25150
+large record	serio	decode	2	2	25448
+large record	serio	decode	2	3	25638
+large record	serio	decode	2	4	25347
+large record	serio	decode	2	5	25148
+large record	serio	decode	2	6	25469
+large record	serio	decode	2	7	25484
+large record	serio	decode	2	8	25605
+large record	serio	decode	2	9	25422
+large record	blink	encode	1	1	67702
+large record	blink	encode	1	2	68365
+large record	blink	encode	1	3	68488
+large record	blink	encode	1	4	67345
+large record	blink	encode	1	5	67639
+large record	blink	encode	1	6	67111
+large record	blink	encode	1	7	67150
+large record	blink	encode	1	8	66425
+large record	blink	encode	1	9	67464
+large record	blink	encode	2	1	63727
+large record	blink	encode	2	2	67425
+large record	blink	encode	2	3	68992
+large record	blink	encode	2	4	66866
+large record	blink	encode	2	5	67111
+large record	blink	encode	2	6	68687
+large record	blink	encode	2	7	67573
+large record	blink	encode	2	8	67351
+large record	blink	encode	2	9	67281
+large record	blink	decode	1	1	71769
+large record	blink	decode	1	2	71998
+large record	blink	decode	1	3	72002
+large record	blink	decode	1	4	71034
+large record	blink	decode	1	5	73101
+large record	blink	decode	1	6	72330
+large record	blink	decode	1	7	69961
+large record	blink	decode	1	8	70923
+large record	blink	decode	1	9	69333
+large record	blink	decode	2	1	72011
+large record	blink	decode	2	2	72476
+large record	blink	decode	2	3	71760
+large record	blink	decode	2	4	71868
+large record	blink	decode	2	5	71394
+large record	blink	decode	2	6	73509
+large record	blink	decode	2	7	72401
+large record	blink	decode	2	8	72053
+large record	blink	decode	2	9	72731
+string-heavy	surge	encode	1	1	325783
+string-heavy	surge	encode	1	2	326605
+string-heavy	surge	encode	1	3	331753
+string-heavy	surge	encode	1	4	317638
+string-heavy	surge	encode	1	5	329918
+string-heavy	surge	encode	1	6	329280
+string-heavy	surge	encode	1	7	323743
+string-heavy	surge	encode	1	8	308536
+string-heavy	surge	encode	1	9	317396
+string-heavy	surge	encode	2	1	326491
+string-heavy	surge	encode	2	2	332856
+string-heavy	surge	encode	2	3	323461
+string-heavy	surge	encode	2	4	288044
+string-heavy	surge	encode	2	5	325136
+string-heavy	surge	encode	2	6	328504
+string-heavy	surge	encode	2	7	331878
+string-heavy	surge	encode	2	8	323906
+string-heavy	surge	encode	2	9	320646
+string-heavy	surge	decode	1	1	221136
+string-heavy	surge	decode	1	2	217137
+string-heavy	surge	decode	1	3	216531
+string-heavy	surge	decode	1	4	223264
+string-heavy	surge	decode	1	5	223413
+string-heavy	surge	decode	1	6	216309
+string-heavy	surge	decode	1	7	215485
+string-heavy	surge	decode	1	8	217581
+string-heavy	surge	decode	1	9	217576
+string-heavy	surge	decode	2	1	216211
+string-heavy	surge	decode	2	2	215430
+string-heavy	surge	decode	2	3	216238
+string-heavy	surge	decode	2	4	218686
+string-heavy	surge	decode	2	5	223674
+string-heavy	surge	decode	2	6	223704
+string-heavy	surge	decode	2	7	223217
+string-heavy	surge	decode	2	8	219472
+string-heavy	surge	decode	2	9	222120
+string-heavy	fbs	encode	1	1	219726
+string-heavy	fbs	encode	1	2	219417
+string-heavy	fbs	encode	1	3	218330
+string-heavy	fbs	encode	1	4	215923
+string-heavy	fbs	encode	1	5	211119
+string-heavy	fbs	encode	1	6	217790
+string-heavy	fbs	encode	1	7	218639
+string-heavy	fbs	encode	1	8	218715
+string-heavy	fbs	encode	1	9	202908
+string-heavy	fbs	encode	2	1	216235
+string-heavy	fbs	encode	2	2	222342
+string-heavy	fbs	encode	2	3	218716
+string-heavy	fbs	encode	2	4	219410
+string-heavy	fbs	encode	2	5	214752
+string-heavy	fbs	encode	2	6	223381
+string-heavy	fbs	encode	2	7	219076
+string-heavy	fbs	encode	2	8	219625
+string-heavy	fbs	encode	2	9	219292
+string-heavy	fbs	decode	1	1	178285
+string-heavy	fbs	decode	1	2	172878
+string-heavy	fbs	decode	1	3	176959
+string-heavy	fbs	decode	1	4	176616
+string-heavy	fbs	decode	1	5	175565
+string-heavy	fbs	decode	1	6	175197
+string-heavy	fbs	decode	1	7	174919
+string-heavy	fbs	decode	1	8	173725
+string-heavy	fbs	decode	1	9	174660
+string-heavy	fbs	decode	2	1	170639
+string-heavy	fbs	decode	2	2	177230
+string-heavy	fbs	decode	2	3	175339
+string-heavy	fbs	decode	2	4	177380
+string-heavy	fbs	decode	2	5	178203
+string-heavy	fbs	decode	2	6	177523
+string-heavy	fbs	decode	2	7	178663
+string-heavy	fbs	decode	2	8	178451
+string-heavy	fbs	decode	2	9	178670
+string-heavy	serio	encode	1	1	32402
+string-heavy	serio	encode	1	2	32718
+string-heavy	serio	encode	1	3	32475
+string-heavy	serio	encode	1	4	31992
+string-heavy	serio	encode	1	5	32676
+string-heavy	serio	encode	1	6	32874
+string-heavy	serio	encode	1	7	32881
+string-heavy	serio	encode	1	8	32411
+string-heavy	serio	encode	1	9	32589
+string-heavy	serio	encode	2	1	32828
+string-heavy	serio	encode	2	2	32806
+string-heavy	serio	encode	2	3	32509
+string-heavy	serio	encode	2	4	32617
+string-heavy	serio	encode	2	5	32704
+string-heavy	serio	encode	2	6	33151
+string-heavy	serio	encode	2	7	32623
+string-heavy	serio	encode	2	8	32374
+string-heavy	serio	encode	2	9	32725
+string-heavy	serio	decode	1	1	60856
+string-heavy	serio	decode	1	2	60660
+string-heavy	serio	decode	1	3	61223
+string-heavy	serio	decode	1	4	60237
+string-heavy	serio	decode	1	5	61546
+string-heavy	serio	decode	1	6	60667
+string-heavy	serio	decode	1	7	59398
+string-heavy	serio	decode	1	8	60907
+string-heavy	serio	decode	1	9	60695
+string-heavy	serio	decode	2	1	61067
+string-heavy	serio	decode	2	2	60393
+string-heavy	serio	decode	2	3	62008
+string-heavy	serio	decode	2	4	60551
+string-heavy	serio	decode	2	5	60649
+string-heavy	serio	decode	2	6	62224
+string-heavy	serio	decode	2	7	61122
+string-heavy	serio	decode	2	8	60693
+string-heavy	serio	decode	2	9	61000
+string-heavy	blink	encode	1	1	129087
+string-heavy	blink	encode	1	2	127026
+string-heavy	blink	encode	1	3	127333
+string-heavy	blink	encode	1	4	126431
+string-heavy	blink	encode	1	5	122242
+string-heavy	blink	encode	1	6	129010
+string-heavy	blink	encode	1	7	125587
+string-heavy	blink	encode	1	8	128457
+string-heavy	blink	encode	1	9	126174
+string-heavy	blink	encode	2	1	129637
+string-heavy	blink	encode	2	2	127500
+string-heavy	blink	encode	2	3	123107
+string-heavy	blink	encode	2	4	128891
+string-heavy	blink	encode	2	5	126967
+string-heavy	blink	encode	2	6	124858
+string-heavy	blink	encode	2	7	131103
+string-heavy	blink	encode	2	8	127731
+string-heavy	blink	encode	2	9	126471
+string-heavy	blink	decode	1	1	225283
+string-heavy	blink	decode	1	2	227166
+string-heavy	blink	decode	1	3	232772
+string-heavy	blink	decode	1	4	229043
+string-heavy	blink	decode	1	5	225268
+string-heavy	blink	decode	1	6	227976
+string-heavy	blink	decode	1	7	226271
+string-heavy	blink	decode	1	8	225325
+string-heavy	blink	decode	1	9	227899
+string-heavy	blink	decode	2	1	222376
+string-heavy	blink	decode	2	2	228573
+string-heavy	blink	decode	2	3	234534
+string-heavy	blink	decode	2	4	234900
+string-heavy	blink	decode	2	5	231986
+string-heavy	blink	decode	2	6	234043
+string-heavy	blink	decode	2	7	232016
+string-heavy	blink	decode	2	8	234910
+string-heavy	blink	decode	2	9	233347
+enum-heavy	surge	encode	1	1	329546
+enum-heavy	surge	encode	1	2	325122
+enum-heavy	surge	encode	1	3	326842
+enum-heavy	surge	encode	1	4	334768
+enum-heavy	surge	encode	1	5	330241
+enum-heavy	surge	encode	1	6	331481
+enum-heavy	surge	encode	1	7	324640
+enum-heavy	surge	encode	1	8	334352
+enum-heavy	surge	encode	1	9	331135
+enum-heavy	surge	encode	2	1	332784
+enum-heavy	surge	encode	2	2	326964
+enum-heavy	surge	encode	2	3	321090
+enum-heavy	surge	encode	2	4	324934
+enum-heavy	surge	encode	2	5	327683
+enum-heavy	surge	encode	2	6	332015
+enum-heavy	surge	encode	2	7	321553
+enum-heavy	surge	encode	2	8	333330
+enum-heavy	surge	encode	2	9	328497
+enum-heavy	surge	decode	1	1	720892
+enum-heavy	surge	decode	1	2	690887
+enum-heavy	surge	decode	1	3	718188
+enum-heavy	surge	decode	1	4	711114
+enum-heavy	surge	decode	1	5	691870
+enum-heavy	surge	decode	1	6	684328
+enum-heavy	surge	decode	1	7	726225
+enum-heavy	surge	decode	1	8	737238
+enum-heavy	surge	decode	1	9	740362
+enum-heavy	surge	decode	2	1	755945
+enum-heavy	surge	decode	2	2	750674
+enum-heavy	surge	decode	2	3	737184
+enum-heavy	surge	decode	2	4	747911
+enum-heavy	surge	decode	2	5	762923
+enum-heavy	surge	decode	2	6	752592
+enum-heavy	surge	decode	2	7	753578
+enum-heavy	surge	decode	2	8	749688
+enum-heavy	surge	decode	2	9	752544
+enum-heavy	fbs	encode	1	1	86167
+enum-heavy	fbs	encode	1	2	86649
+enum-heavy	fbs	encode	1	3	87203
+enum-heavy	fbs	encode	1	4	86718
+enum-heavy	fbs	encode	1	5	86926
+enum-heavy	fbs	encode	1	6	86694
+enum-heavy	fbs	encode	1	7	85504
+enum-heavy	fbs	encode	1	8	87083
+enum-heavy	fbs	encode	1	9	88781
+enum-heavy	fbs	encode	2	1	85557
+enum-heavy	fbs	encode	2	2	87570
+enum-heavy	fbs	encode	2	3	85590
+enum-heavy	fbs	encode	2	4	87385
+enum-heavy	fbs	encode	2	5	87185
+enum-heavy	fbs	encode	2	6	86954
+enum-heavy	fbs	encode	2	7	86057
+enum-heavy	fbs	encode	2	8	87031
+enum-heavy	fbs	encode	2	9	85740
+enum-heavy	fbs	decode	1	1	262112
+enum-heavy	fbs	decode	1	2	268270
+enum-heavy	fbs	decode	1	3	269078
+enum-heavy	fbs	decode	1	4	268922
+enum-heavy	fbs	decode	1	5	271967
+enum-heavy	fbs	decode	1	6	272181
+enum-heavy	fbs	decode	1	7	268262
+enum-heavy	fbs	decode	1	8	266824
+enum-heavy	fbs	decode	1	9	266797
+enum-heavy	fbs	decode	2	1	274515
+enum-heavy	fbs	decode	2	2	277545
+enum-heavy	fbs	decode	2	3	276196
+enum-heavy	fbs	decode	2	4	273719
+enum-heavy	fbs	decode	2	5	276802
+enum-heavy	fbs	decode	2	6	273937
+enum-heavy	fbs	decode	2	7	274965
+enum-heavy	fbs	decode	2	8	274320
+enum-heavy	fbs	decode	2	9	276774
+enum-heavy	serio	encode	1	1	42965
+enum-heavy	serio	encode	1	2	43072
+enum-heavy	serio	encode	1	3	42680
+enum-heavy	serio	encode	1	4	43425
+enum-heavy	serio	encode	1	5	42884
+enum-heavy	serio	encode	1	6	43395
+enum-heavy	serio	encode	1	7	42712
+enum-heavy	serio	encode	1	8	42569
+enum-heavy	serio	encode	1	9	42989
+enum-heavy	serio	encode	2	1	42676
+enum-heavy	serio	encode	2	2	42321
+enum-heavy	serio	encode	2	3	42546
+enum-heavy	serio	encode	2	4	42237
+enum-heavy	serio	encode	2	5	43135
+enum-heavy	serio	encode	2	6	43016
+enum-heavy	serio	encode	2	7	42380
+enum-heavy	serio	encode	2	8	42838
+enum-heavy	serio	encode	2	9	42741
+enum-heavy	serio	decode	1	1	108495
+enum-heavy	serio	decode	1	2	107030
+enum-heavy	serio	decode	1	3	108855
+enum-heavy	serio	decode	1	4	109172
+enum-heavy	serio	decode	1	5	109794
+enum-heavy	serio	decode	1	6	111446
+enum-heavy	serio	decode	1	7	108310
+enum-heavy	serio	decode	1	8	108415
+enum-heavy	serio	decode	1	9	108338
+enum-heavy	serio	decode	2	1	110426
+enum-heavy	serio	decode	2	2	109263
+enum-heavy	serio	decode	2	3	111861
+enum-heavy	serio	decode	2	4	108779
+enum-heavy	serio	decode	2	5	108465
+enum-heavy	serio	decode	2	6	107804
+enum-heavy	serio	decode	2	7	107451
+enum-heavy	serio	decode	2	8	109724
+enum-heavy	serio	decode	2	9	108937
+tagged union	surge	encode	1	1	329979
+tagged union	surge	encode	1	2	329194
+tagged union	surge	encode	1	3	318086
+tagged union	surge	encode	1	4	308852
+tagged union	surge	encode	1	5	322958
+tagged union	surge	encode	1	6	325639
+tagged union	surge	encode	1	7	325385
+tagged union	surge	encode	1	8	327729
+tagged union	surge	encode	1	9	328633
+tagged union	surge	encode	2	1	322170
+tagged union	surge	encode	2	2	325127
+tagged union	surge	encode	2	3	328547
+tagged union	surge	encode	2	4	320801
+tagged union	surge	encode	2	5	327679
+tagged union	surge	encode	2	6	328679
+tagged union	surge	encode	2	7	319821
+tagged union	surge	encode	2	8	326807
+tagged union	surge	encode	2	9	322052
+tagged union	surge	decode	1	1	90024
+tagged union	surge	decode	1	2	92120
+tagged union	surge	decode	1	3	92390
+tagged union	surge	decode	1	4	92057
+tagged union	surge	decode	1	5	91502
+tagged union	surge	decode	1	6	91510
+tagged union	surge	decode	1	7	92251
+tagged union	surge	decode	1	8	91496
+tagged union	surge	decode	1	9	90867
+tagged union	surge	decode	2	1	90922
+tagged union	surge	decode	2	2	93384
+tagged union	surge	decode	2	3	89949
+tagged union	surge	decode	2	4	92393
+tagged union	surge	decode	2	5	89971
+tagged union	surge	decode	2	6	91507
+tagged union	surge	decode	2	7	89993
+tagged union	surge	decode	2	8	92076
+tagged union	surge	decode	2	9	93162
+tagged union	fbs	encode	1	1	91493
+tagged union	fbs	encode	1	2	92832
+tagged union	fbs	encode	1	3	92359
+tagged union	fbs	encode	1	4	89463
+tagged union	fbs	encode	1	5	93594
+tagged union	fbs	encode	1	6	91528
+tagged union	fbs	encode	1	7	91938
+tagged union	fbs	encode	1	8	91709
+tagged union	fbs	encode	1	9	91842
+tagged union	fbs	encode	2	1	91393
+tagged union	fbs	encode	2	2	89338
+tagged union	fbs	encode	2	3	87714
+tagged union	fbs	encode	2	4	91101
+tagged union	fbs	encode	2	5	93044
+tagged union	fbs	encode	2	6	90115
+tagged union	fbs	encode	2	7	88896
+tagged union	fbs	encode	2	8	88430
+tagged union	fbs	encode	2	9	90746
+tagged union	fbs	decode	1	1	46682
+tagged union	fbs	decode	1	2	46342
+tagged union	fbs	decode	1	3	47035
+tagged union	fbs	decode	1	4	46787
+tagged union	fbs	decode	1	5	46632
+tagged union	fbs	decode	1	6	46099
+tagged union	fbs	decode	1	7	46965
+tagged union	fbs	decode	1	8	47020
+tagged union	fbs	decode	1	9	46165
+tagged union	fbs	decode	2	1	45666
+tagged union	fbs	decode	2	2	46066
+tagged union	fbs	decode	2	3	45771
+tagged union	fbs	decode	2	4	46146
+tagged union	fbs	decode	2	5	46729
+tagged union	fbs	decode	2	6	46225
+tagged union	fbs	decode	2	7	46992
+tagged union	fbs	decode	2	8	45897
+tagged union	fbs	decode	2	9	46816
+tagged union	serio	encode	1	1	14025
+tagged union	serio	encode	1	2	13874
+tagged union	serio	encode	1	3	13680
+tagged union	serio	encode	1	4	13592
+tagged union	serio	encode	1	5	13908
+tagged union	serio	encode	1	6	13853
+tagged union	serio	encode	1	7	13941
+tagged union	serio	encode	1	8	13921
+tagged union	serio	encode	1	9	13843
+tagged union	serio	encode	2	1	13878
+tagged union	serio	encode	2	2	13822
+tagged union	serio	encode	2	3	13651
+tagged union	serio	encode	2	4	13698
+tagged union	serio	encode	2	5	13876
+tagged union	serio	encode	2	6	13848
+tagged union	serio	encode	2	7	13987
+tagged union	serio	encode	2	8	13744
+tagged union	serio	encode	2	9	13665
+tagged union	serio	decode	1	1	20562
+tagged union	serio	decode	1	2	20357
+tagged union	serio	decode	1	3	20181
+tagged union	serio	decode	1	4	20205
+tagged union	serio	decode	1	5	20179
+tagged union	serio	decode	1	6	20306
+tagged union	serio	decode	1	7	20268
+tagged union	serio	decode	1	8	20204
+tagged union	serio	decode	1	9	20719
+tagged union	serio	decode	2	1	20501
+tagged union	serio	decode	2	2	20805
+tagged union	serio	decode	2	3	20635
+tagged union	serio	decode	2	4	20223
+tagged union	serio	decode	2	5	20474
+tagged union	serio	decode	2	6	20855
+tagged union	serio	decode	2	7	20575
+tagged union	serio	decode	2	8	20563
+tagged union	serio	decode	2	9	20003
+tagged union	blink	encode	1	1	144381
+tagged union	blink	encode	1	2	146296
+tagged union	blink	encode	1	3	134842
+tagged union	blink	encode	1	4	143146
+tagged union	blink	encode	1	5	148278
+tagged union	blink	encode	1	6	147425
+tagged union	blink	encode	1	7	144747
+tagged union	blink	encode	1	8	142520
+tagged union	blink	encode	1	9	145509
+tagged union	blink	encode	2	1	142411
+tagged union	blink	encode	2	2	141701
+tagged union	blink	encode	2	3	153553
+tagged union	blink	encode	2	4	147963
+tagged union	blink	encode	2	5	146145
+tagged union	blink	encode	2	6	144950
+tagged union	blink	encode	2	7	148949
+tagged union	blink	encode	2	8	149021
+tagged union	blink	encode	2	9	148467
+tagged union	blink	decode	1	1	56100
+tagged union	blink	decode	1	2	55828
+tagged union	blink	decode	1	3	56272
+tagged union	blink	decode	1	4	56083
+tagged union	blink	decode	1	5	56104
+tagged union	blink	decode	1	6	57734
+tagged union	blink	decode	1	7	55616
+tagged union	blink	decode	1	8	55023
+tagged union	blink	decode	1	9	56076
+tagged union	blink	decode	2	1	56111
+tagged union	blink	decode	2	2	57006
+tagged union	blink	decode	2	3	56567
+tagged union	blink	decode	2	4	57223
+tagged union	blink	decode	2	5	56825
+tagged union	blink	decode	2	6	57514
+tagged union	blink	decode	2	7	57438
+tagged union	blink	decode	2	8	56543
+tagged union	blink	decode	2	9	57787
+guarded union	surge	encode	1	1	611461
+guarded union	surge	encode	1	2	615835
+guarded union	surge	encode	1	3	611111
+guarded union	surge	encode	1	4	587208
+guarded union	surge	encode	1	5	576857
+guarded union	surge	encode	1	6	588702
+guarded union	surge	encode	1	7	602440
+guarded union	surge	encode	1	8	604512
+guarded union	surge	encode	1	9	613510
+guarded union	surge	encode	2	1	597945
+guarded union	surge	encode	2	2	600364
+guarded union	surge	encode	2	3	612116
+guarded union	surge	encode	2	4	618420
+guarded union	surge	encode	2	5	594854
+guarded union	surge	encode	2	6	594589
+guarded union	surge	encode	2	7	586403
+guarded union	surge	encode	2	8	610145
+guarded union	surge	encode	2	9	618705
+guarded union	surge	decode	1	1	335513
+guarded union	surge	decode	1	2	338702
+guarded union	surge	decode	1	3	328966
+guarded union	surge	decode	1	4	328027
+guarded union	surge	decode	1	5	317681
+guarded union	surge	decode	1	6	320964
+guarded union	surge	decode	1	7	328603
+guarded union	surge	decode	1	8	336937
+guarded union	surge	decode	1	9	326949
+guarded union	surge	decode	2	1	336102
+guarded union	surge	decode	2	2	332034
+guarded union	surge	decode	2	3	339587
+guarded union	surge	decode	2	4	337941
+guarded union	surge	decode	2	5	336859
+guarded union	surge	decode	2	6	339758
+guarded union	surge	decode	2	7	337013
+guarded union	surge	decode	2	8	329142
+guarded union	surge	decode	2	9	336933
+guarded union	fbs	encode	1	1	76346
+guarded union	fbs	encode	1	2	75041
+guarded union	fbs	encode	1	3	75770
+guarded union	fbs	encode	1	4	74398
+guarded union	fbs	encode	1	5	73490
+guarded union	fbs	encode	1	6	74729
+guarded union	fbs	encode	1	7	74046
+guarded union	fbs	encode	1	8	74280
+guarded union	fbs	encode	1	9	74670
+guarded union	fbs	encode	2	1	75540
+guarded union	fbs	encode	2	2	73866
+guarded union	fbs	encode	2	3	75274
+guarded union	fbs	encode	2	4	75441
+guarded union	fbs	encode	2	5	75200
+guarded union	fbs	encode	2	6	73308
+guarded union	fbs	encode	2	7	74606
+guarded union	fbs	encode	2	8	76146
+guarded union	fbs	encode	2	9	76419
+guarded union	fbs	decode	1	1	158131
+guarded union	fbs	decode	1	2	157266
+guarded union	fbs	decode	1	3	158972
+guarded union	fbs	decode	1	4	157549
+guarded union	fbs	decode	1	5	151593
+guarded union	fbs	decode	1	6	158066
+guarded union	fbs	decode	1	7	157205
+guarded union	fbs	decode	1	8	158625
+guarded union	fbs	decode	1	9	158423
+guarded union	fbs	decode	2	1	162763
+guarded union	fbs	decode	2	2	163714
+guarded union	fbs	decode	2	3	159272
+guarded union	fbs	decode	2	4	163899
+guarded union	fbs	decode	2	5	162988
+guarded union	fbs	decode	2	6	163511
+guarded union	fbs	decode	2	7	161073
+guarded union	fbs	decode	2	8	161940
+guarded union	fbs	decode	2	9	161988
+guarded union	serio	encode	1	1	20726
+guarded union	serio	encode	1	2	20793
+guarded union	serio	encode	1	3	20643
+guarded union	serio	encode	1	4	20455
+guarded union	serio	encode	1	5	20576
+guarded union	serio	encode	1	6	20334
+guarded union	serio	encode	1	7	20233
+guarded union	serio	encode	1	8	20710
+guarded union	serio	encode	1	9	20260
+guarded union	serio	encode	2	1	20406
+guarded union	serio	encode	2	2	20748
+guarded union	serio	encode	2	3	20884
+guarded union	serio	encode	2	4	20296
+guarded union	serio	encode	2	5	20563
+guarded union	serio	encode	2	6	20374
+guarded union	serio	encode	2	7	20835
+guarded union	serio	encode	2	8	20969
+guarded union	serio	encode	2	9	20897
+guarded union	serio	decode	1	1	46773
+guarded union	serio	decode	1	2	48096
+guarded union	serio	decode	1	3	47348
+guarded union	serio	decode	1	4	46431
+guarded union	serio	decode	1	5	44944
+guarded union	serio	decode	1	6	47374
+guarded union	serio	decode	1	7	47418
+guarded union	serio	decode	1	8	46677
+guarded union	serio	decode	1	9	46428
+guarded union	serio	decode	2	1	46840
+guarded union	serio	decode	2	2	46952
+guarded union	serio	decode	2	3	47388
+guarded union	serio	decode	2	4	47937
+guarded union	serio	decode	2	5	47616
+guarded union	serio	decode	2	6	47728
+guarded union	serio	decode	2	7	47242
+guarded union	serio	decode	2	8	46620
+guarded union	serio	decode	2	9	46702
+toggles (unpacked)	surge	encode	1	1	4518411
+toggles (unpacked)	surge	encode	1	2	4309360
+toggles (unpacked)	surge	encode	1	3	4461251
+toggles (unpacked)	surge	encode	1	4	4464661
+toggles (unpacked)	surge	encode	1	5	4639882
+toggles (unpacked)	surge	encode	1	6	4586629
+toggles (unpacked)	surge	encode	1	7	4345935
+toggles (unpacked)	surge	encode	1	8	4494820
+toggles (unpacked)	surge	encode	1	9	4653711
+toggles (unpacked)	surge	encode	2	1	4583450
+toggles (unpacked)	surge	encode	2	2	4531082
+toggles (unpacked)	surge	encode	2	3	4462797
+toggles (unpacked)	surge	encode	2	4	4502552
+toggles (unpacked)	surge	encode	2	5	4552908
+toggles (unpacked)	surge	encode	2	6	4524039
+toggles (unpacked)	surge	encode	2	7	4579183
+toggles (unpacked)	surge	encode	2	8	4508184
+toggles (unpacked)	surge	encode	2	9	4599777
+toggles (unpacked)	surge	decode	1	1	2256469
+toggles (unpacked)	surge	decode	1	2	2524498
+toggles (unpacked)	surge	decode	1	3	2547850
+toggles (unpacked)	surge	decode	1	4	2457374
+toggles (unpacked)	surge	decode	1	5	2435836
+toggles (unpacked)	surge	decode	1	6	2501513
+toggles (unpacked)	surge	decode	1	7	2459470
+toggles (unpacked)	surge	decode	1	8	2488246
+toggles (unpacked)	surge	decode	1	9	2550009
+toggles (unpacked)	surge	decode	2	1	2686143
+toggles (unpacked)	surge	decode	2	2	2722503
+toggles (unpacked)	surge	decode	2	3	2808333
+toggles (unpacked)	surge	decode	2	4	2716513
+toggles (unpacked)	surge	decode	2	5	2738097
+toggles (unpacked)	surge	decode	2	6	2719100
+toggles (unpacked)	surge	decode	2	7	2643387
+toggles (unpacked)	surge	decode	2	8	2463230
+toggles (unpacked)	surge	decode	2	9	2711246
+toggles (unpacked)	fbs	encode	1	1	1492001
+toggles (unpacked)	fbs	encode	1	2	1498332
+toggles (unpacked)	fbs	encode	1	3	1579246
+toggles (unpacked)	fbs	encode	1	4	1557234
+toggles (unpacked)	fbs	encode	1	5	1544185
+toggles (unpacked)	fbs	encode	1	6	1549455
+toggles (unpacked)	fbs	encode	1	7	1540924
+toggles (unpacked)	fbs	encode	1	8	1491610
+toggles (unpacked)	fbs	encode	1	9	1556956
+toggles (unpacked)	fbs	encode	2	1	1576774
+toggles (unpacked)	fbs	encode	2	2	1531913
+toggles (unpacked)	fbs	encode	2	3	1555932
+toggles (unpacked)	fbs	encode	2	4	1528152
+toggles (unpacked)	fbs	encode	2	5	1547350
+toggles (unpacked)	fbs	encode	2	6	1531178
+toggles (unpacked)	fbs	encode	2	7	1539945
+toggles (unpacked)	fbs	encode	2	8	1474756
+toggles (unpacked)	fbs	encode	2	9	1533906
+toggles (unpacked)	fbs	decode	1	1	1542101
+toggles (unpacked)	fbs	decode	1	2	1581092
+toggles (unpacked)	fbs	decode	1	3	1546160
+toggles (unpacked)	fbs	decode	1	4	1592145
+toggles (unpacked)	fbs	decode	1	5	1572900
+toggles (unpacked)	fbs	decode	1	6	1578561
+toggles (unpacked)	fbs	decode	1	7	1548584
+toggles (unpacked)	fbs	decode	1	8	1570722
+toggles (unpacked)	fbs	decode	1	9	1571024
+toggles (unpacked)	fbs	decode	2	1	1536315
+toggles (unpacked)	fbs	decode	2	2	1589653
+toggles (unpacked)	fbs	decode	2	3	1619292
+toggles (unpacked)	fbs	decode	2	4	1609460
+toggles (unpacked)	fbs	decode	2	5	1584880
+toggles (unpacked)	fbs	decode	2	6	1610757
+toggles (unpacked)	fbs	decode	2	7	1504158
+toggles (unpacked)	fbs	decode	2	8	1532941
+toggles (unpacked)	fbs	decode	2	9	1619032
+toggles (unpacked)	serio	encode	1	1	415358
+toggles (unpacked)	serio	encode	1	2	418252
+toggles (unpacked)	serio	encode	1	3	418566
+toggles (unpacked)	serio	encode	1	4	420704
+toggles (unpacked)	serio	encode	1	5	421628
+toggles (unpacked)	serio	encode	1	6	419165
+toggles (unpacked)	serio	encode	1	7	428014
+toggles (unpacked)	serio	encode	1	8	414752
+toggles (unpacked)	serio	encode	1	9	429974
+toggles (unpacked)	serio	encode	2	1	413111
+toggles (unpacked)	serio	encode	2	2	421633
+toggles (unpacked)	serio	encode	2	3	420502
+toggles (unpacked)	serio	encode	2	4	418043
+toggles (unpacked)	serio	encode	2	5	418740
+toggles (unpacked)	serio	encode	2	6	417424
+toggles (unpacked)	serio	encode	2	7	418904
+toggles (unpacked)	serio	encode	2	8	427237
+toggles (unpacked)	serio	encode	2	9	416249
+toggles (unpacked)	serio	decode	1	1	644097
+toggles (unpacked)	serio	decode	1	2	662794
+toggles (unpacked)	serio	decode	1	3	653533
+toggles (unpacked)	serio	decode	1	4	662738
+toggles (unpacked)	serio	decode	1	5	662370
+toggles (unpacked)	serio	decode	1	6	647121
+toggles (unpacked)	serio	decode	1	7	663123
+toggles (unpacked)	serio	decode	1	8	657731
+toggles (unpacked)	serio	decode	1	9	662835
+toggles (unpacked)	serio	decode	2	1	655371
+toggles (unpacked)	serio	decode	2	2	653721
+toggles (unpacked)	serio	decode	2	3	658117
+toggles (unpacked)	serio	decode	2	4	661534
+toggles (unpacked)	serio	decode	2	5	660053
+toggles (unpacked)	serio	decode	2	6	653526
+toggles (unpacked)	serio	decode	2	7	634519
+toggles (unpacked)	serio	decode	2	8	659956
+toggles (unpacked)	serio	decode	2	9	662772
+toggles (unpacked)	blink	encode	1	1	1976113
+toggles (unpacked)	blink	encode	1	2	2177445
+toggles (unpacked)	blink	encode	1	3	2183717
+toggles (unpacked)	blink	encode	1	4	2241900
+toggles (unpacked)	blink	encode	1	5	2291102
+toggles (unpacked)	blink	encode	1	6	2224652
+toggles (unpacked)	blink	encode	1	7	2183189
+toggles (unpacked)	blink	encode	1	8	2251179
+toggles (unpacked)	blink	encode	1	9	2126110
+toggles (unpacked)	blink	encode	2	1	2217846
+toggles (unpacked)	blink	encode	2	2	2205612
+toggles (unpacked)	blink	encode	2	3	2199682
+toggles (unpacked)	blink	encode	2	4	2189650
+toggles (unpacked)	blink	encode	2	5	2188797
+toggles (unpacked)	blink	encode	2	6	2200779
+toggles (unpacked)	blink	encode	2	7	2264560
+toggles (unpacked)	blink	encode	2	8	2180171
+toggles (unpacked)	blink	encode	2	9	2226899
+toggles (unpacked)	blink	decode	1	1	1734364
+toggles (unpacked)	blink	decode	1	2	1774123
+toggles (unpacked)	blink	decode	1	3	1774563
+toggles (unpacked)	blink	decode	1	4	1793957
+toggles (unpacked)	blink	decode	1	5	1772337
+toggles (unpacked)	blink	decode	1	6	1746837
+toggles (unpacked)	blink	decode	1	7	1786214
+toggles (unpacked)	blink	decode	1	8	1796295
+toggles (unpacked)	blink	decode	1	9	1795213
+toggles (unpacked)	blink	decode	2	1	1815057
+toggles (unpacked)	blink	decode	2	2	1815871
+toggles (unpacked)	blink	decode	2	3	1832023
+toggles (unpacked)	blink	decode	2	4	1781116
+toggles (unpacked)	blink	decode	2	5	1857283
+toggles (unpacked)	blink	decode	2	6	1853148
+toggles (unpacked)	blink	decode	2	7	1706206
+toggles (unpacked)	blink	decode	2	8	1771125
+toggles (unpacked)	blink	decode	2	9	1806993
+toggles (packed)	surge	encode	1	1	4764971
+toggles (packed)	surge	encode	1	2	4811084
+toggles (packed)	surge	encode	1	3	4692788
+toggles (packed)	surge	encode	1	4	4856099
+toggles (packed)	surge	encode	1	5	4828668
+toggles (packed)	surge	encode	1	6	4854828
+toggles (packed)	surge	encode	1	7	4805644
+toggles (packed)	surge	encode	1	8	4395615
+toggles (packed)	surge	encode	1	9	4510909
+toggles (packed)	surge	encode	2	1	4741030
+toggles (packed)	surge	encode	2	2	4737712
+toggles (packed)	surge	encode	2	3	4735409
+toggles (packed)	surge	encode	2	4	4710581
+toggles (packed)	surge	encode	2	5	4878489
+toggles (packed)	surge	encode	2	6	4770942
+toggles (packed)	surge	encode	2	7	4838380
+toggles (packed)	surge	encode	2	8	4839707
+toggles (packed)	surge	encode	2	9	4866792
+toggles (packed)	surge	decode	1	1	1581017
+toggles (packed)	surge	decode	1	2	1575502
+toggles (packed)	surge	decode	1	3	1448453
+toggles (packed)	surge	decode	1	4	1573536
+toggles (packed)	surge	decode	1	5	1548947
+toggles (packed)	surge	decode	1	6	1558607
+toggles (packed)	surge	decode	1	7	1572294
+toggles (packed)	surge	decode	1	8	1570949
+toggles (packed)	surge	decode	1	9	1585611
+toggles (packed)	surge	decode	2	1	1587559
+toggles (packed)	surge	decode	2	2	1572733
+toggles (packed)	surge	decode	2	3	1578754
+toggles (packed)	surge	decode	2	4	1559977
+toggles (packed)	surge	decode	2	5	1563896
+toggles (packed)	surge	decode	2	6	1441410
+toggles (packed)	surge	decode	2	7	1567745
+toggles (packed)	surge	decode	2	8	1569627
+toggles (packed)	surge	decode	2	9	1560149
+toggles (packed)	fbs	encode	1	1	1357469
+toggles (packed)	fbs	encode	1	2	1375251
+toggles (packed)	fbs	encode	1	3	1338684
+toggles (packed)	fbs	encode	1	4	1409174
+toggles (packed)	fbs	encode	1	5	1389817
+toggles (packed)	fbs	encode	1	6	1385244
+toggles (packed)	fbs	encode	1	7	1335669
+toggles (packed)	fbs	encode	1	8	1327939
+toggles (packed)	fbs	encode	1	9	1348379
+toggles (packed)	fbs	encode	2	1	1382885
+toggles (packed)	fbs	encode	2	2	1367910
+toggles (packed)	fbs	encode	2	3	1345485
+toggles (packed)	fbs	encode	2	4	1331400
+toggles (packed)	fbs	encode	2	5	1377303
+toggles (packed)	fbs	encode	2	6	1374924
+toggles (packed)	fbs	encode	2	7	1389828
+toggles (packed)	fbs	encode	2	8	1373444
+toggles (packed)	fbs	encode	2	9	1354793
+toggles (packed)	fbs	decode	1	1	1287335
+toggles (packed)	fbs	decode	1	2	1271842
+toggles (packed)	fbs	decode	1	3	1275378
+toggles (packed)	fbs	decode	1	4	1275667
+toggles (packed)	fbs	decode	1	5	1261391
+toggles (packed)	fbs	decode	1	6	1286146
+toggles (packed)	fbs	decode	1	7	1291924
+toggles (packed)	fbs	decode	1	8	1262077
+toggles (packed)	fbs	decode	1	9	1276607
+toggles (packed)	fbs	decode	2	1	1247407
+toggles (packed)	fbs	decode	2	2	1226960
+toggles (packed)	fbs	decode	2	3	1246729
+toggles (packed)	fbs	decode	2	4	1245840
+toggles (packed)	fbs	decode	2	5	1241910
+toggles (packed)	fbs	decode	2	6	1270765
+toggles (packed)	fbs	decode	2	7	1264418
+toggles (packed)	fbs	decode	2	8	1243881
+toggles (packed)	fbs	decode	2	9	1239603
+toggles (packed)	serio	encode	1	1	347038
+toggles (packed)	serio	encode	1	2	343649
+toggles (packed)	serio	encode	1	3	338072
+toggles (packed)	serio	encode	1	4	343597
+toggles (packed)	serio	encode	1	5	353228
+toggles (packed)	serio	encode	1	6	349829
+toggles (packed)	serio	encode	1	7	341862
+toggles (packed)	serio	encode	1	8	342123
+toggles (packed)	serio	encode	1	9	343939
+toggles (packed)	serio	encode	2	1	347077
+toggles (packed)	serio	encode	2	2	345098
+toggles (packed)	serio	encode	2	3	348970
+toggles (packed)	serio	encode	2	4	347342
+toggles (packed)	serio	encode	2	5	353090
+toggles (packed)	serio	encode	2	6	349374
+toggles (packed)	serio	encode	2	7	347082
+toggles (packed)	serio	encode	2	8	352337
+toggles (packed)	serio	encode	2	9	350591
+toggles (packed)	serio	decode	1	1	453825
+toggles (packed)	serio	decode	1	2	450871
+toggles (packed)	serio	decode	1	3	450424
+toggles (packed)	serio	decode	1	4	444848
+toggles (packed)	serio	decode	1	5	452485
+toggles (packed)	serio	decode	1	6	449159
+toggles (packed)	serio	decode	1	7	454679
+toggles (packed)	serio	decode	1	8	455350
+toggles (packed)	serio	decode	1	9	455351
+toggles (packed)	serio	decode	2	1	450556
+toggles (packed)	serio	decode	2	2	449967
+toggles (packed)	serio	decode	2	3	447045
+toggles (packed)	serio	decode	2	4	444574
+toggles (packed)	serio	decode	2	5	445733
+toggles (packed)	serio	decode	2	6	457668
+toggles (packed)	serio	decode	2	7	444805
+toggles (packed)	serio	decode	2	8	450260
+toggles (packed)	serio	decode	2	9	453713
+CFrame array	surge	encode	1	1	268672
+CFrame array	surge	encode	1	2	275417
+CFrame array	surge	encode	1	3	275242
+CFrame array	surge	encode	1	4	275458
+CFrame array	surge	encode	1	5	280902
+CFrame array	surge	encode	1	6	277536
+CFrame array	surge	encode	1	7	275211
+CFrame array	surge	encode	1	8	268710
+CFrame array	surge	encode	1	9	282459
+CFrame array	surge	encode	2	1	278231
+CFrame array	surge	encode	2	2	277303
+CFrame array	surge	encode	2	3	278290
+CFrame array	surge	encode	2	4	274053
+CFrame array	surge	encode	2	5	276365
+CFrame array	surge	encode	2	6	281249
+CFrame array	surge	encode	2	7	279426
+CFrame array	surge	encode	2	8	276984
+CFrame array	surge	encode	2	9	279234
+CFrame array	surge	decode	1	1	144949
+CFrame array	surge	decode	1	2	144860
+CFrame array	surge	decode	1	3	146401
+CFrame array	surge	decode	1	4	143394
+CFrame array	surge	decode	1	5	144330
+CFrame array	surge	decode	1	6	142532
+CFrame array	surge	decode	1	7	142665
+CFrame array	surge	decode	1	8	139884
+CFrame array	surge	decode	1	9	141390
+CFrame array	surge	decode	2	1	140933
+CFrame array	surge	decode	2	2	142474
+CFrame array	surge	decode	2	3	140151
+CFrame array	surge	decode	2	4	139935
+CFrame array	surge	decode	2	5	139892
+CFrame array	surge	decode	2	6	142502
+CFrame array	surge	decode	2	7	143202
+CFrame array	surge	decode	2	8	143712
+CFrame array	surge	decode	2	9	142108
+CFrame array	fbs	encode	1	1	214734
+CFrame array	fbs	encode	1	2	212807
+CFrame array	fbs	encode	1	3	209566
+CFrame array	fbs	encode	1	4	216126
+CFrame array	fbs	encode	1	5	215144
+CFrame array	fbs	encode	1	6	210867
+CFrame array	fbs	encode	1	7	212045
+CFrame array	fbs	encode	1	8	206975
+CFrame array	fbs	encode	1	9	215384
+CFrame array	fbs	encode	2	1	211206
+CFrame array	fbs	encode	2	2	214915
+CFrame array	fbs	encode	2	3	212617
+CFrame array	fbs	encode	2	4	213215
+CFrame array	fbs	encode	2	5	210740
+CFrame array	fbs	encode	2	6	212872
+CFrame array	fbs	encode	2	7	214668
+CFrame array	fbs	encode	2	8	210843
+CFrame array	fbs	encode	2	9	209494
+CFrame array	fbs	decode	1	1	120414
+CFrame array	fbs	decode	1	2	123986
+CFrame array	fbs	decode	1	3	124228
+CFrame array	fbs	decode	1	4	121981
+CFrame array	fbs	decode	1	5	125119
+CFrame array	fbs	decode	1	6	124996
+CFrame array	fbs	decode	1	7	122757
+CFrame array	fbs	decode	1	8	123327
+CFrame array	fbs	decode	1	9	122677
+CFrame array	fbs	decode	2	1	122152
+CFrame array	fbs	decode	2	2	121021
+CFrame array	fbs	decode	2	3	122069
+CFrame array	fbs	decode	2	4	121151
+CFrame array	fbs	decode	2	5	120433
+CFrame array	fbs	decode	2	6	121889
+CFrame array	fbs	decode	2	7	123699
+CFrame array	fbs	decode	2	8	120841
+CFrame array	fbs	decode	2	9	120950
+CFrame array	serio	encode	1	1	17358
+CFrame array	serio	encode	1	2	17177
+CFrame array	serio	encode	1	3	17838
+CFrame array	serio	encode	1	4	18043
+CFrame array	serio	encode	1	5	17786
+CFrame array	serio	encode	1	6	17783
+CFrame array	serio	encode	1	7	17835
+CFrame array	serio	encode	1	8	17379
+CFrame array	serio	encode	1	9	17997
+CFrame array	serio	encode	2	1	17600
+CFrame array	serio	encode	2	2	17990
+CFrame array	serio	encode	2	3	17599
+CFrame array	serio	encode	2	4	17767
+CFrame array	serio	encode	2	5	17449
+CFrame array	serio	encode	2	6	17507
+CFrame array	serio	encode	2	7	17566
+CFrame array	serio	encode	2	8	17615
+CFrame array	serio	encode	2	9	17834
+CFrame array	serio	decode	1	1	32638
+CFrame array	serio	decode	1	2	32679
+CFrame array	serio	decode	1	3	32125
+CFrame array	serio	decode	1	4	32109
+CFrame array	serio	decode	1	5	32846
+CFrame array	serio	decode	1	6	32884
+CFrame array	serio	decode	1	7	32355
+CFrame array	serio	decode	1	8	32464
+CFrame array	serio	decode	1	9	32239
+CFrame array	serio	decode	2	1	33075
+CFrame array	serio	decode	2	2	32554
+CFrame array	serio	decode	2	3	32265
+CFrame array	serio	decode	2	4	32407
+CFrame array	serio	decode	2	5	32250
+CFrame array	serio	decode	2	6	32132
+CFrame array	serio	decode	2	7	32604
+CFrame array	serio	decode	2	8	32361
+CFrame array	serio	decode	2	9	32600
+CFrame array	blink	encode	1	1	228762
+CFrame array	blink	encode	1	2	233674
+CFrame array	blink	encode	1	3	229978
+CFrame array	blink	encode	1	4	235416
+CFrame array	blink	encode	1	5	237439
+CFrame array	blink	encode	1	6	238681
+CFrame array	blink	encode	1	7	234733
+CFrame array	blink	encode	1	8	223390
+CFrame array	blink	encode	1	9	237374
+CFrame array	blink	encode	2	1	242159
+CFrame array	blink	encode	2	2	237448
+CFrame array	blink	encode	2	3	240256
+CFrame array	blink	encode	2	4	239920
+CFrame array	blink	encode	2	5	239032
+CFrame array	blink	encode	2	6	235889
+CFrame array	blink	encode	2	7	238228
+CFrame array	blink	encode	2	8	235787
+CFrame array	blink	encode	2	9	237029
+CFrame array	blink	decode	1	1	107103
+CFrame array	blink	decode	1	2	108930
+CFrame array	blink	decode	1	3	105742
+CFrame array	blink	decode	1	4	111160
+CFrame array	blink	decode	1	5	108715
+CFrame array	blink	decode	1	6	109607
+CFrame array	blink	decode	1	7	109227
+CFrame array	blink	decode	1	8	108596
+CFrame array	blink	decode	1	9	107669
+CFrame array	blink	decode	2	1	107954
+CFrame array	blink	decode	2	2	108481
+CFrame array	blink	decode	2	3	108557
+CFrame array	blink	decode	2	4	107228
+CFrame array	blink	decode	2	5	107238
+CFrame array	blink	decode	2	6	108709
+CFrame array	blink	decode	2	7	110555
+CFrame array	blink	decode	2	8	106711
+CFrame array	blink	decode	2	9	106671
+CFrame array	baseline	encode	1	1	282615
+CFrame array	baseline	encode	1	2	274419
+CFrame array	baseline	encode	1	3	269569
+CFrame array	baseline	encode	1	4	278117
+CFrame array	baseline	encode	1	5	284338
+CFrame array	baseline	encode	1	6	273009
+CFrame array	baseline	encode	1	7	272995
+CFrame array	baseline	encode	1	8	286313
+CFrame array	baseline	encode	1	9	283117
+CFrame array	baseline	encode	2	1	283233
+CFrame array	baseline	encode	2	2	284371
+CFrame array	baseline	encode	2	3	283027
+CFrame array	baseline	encode	2	4	284206
+CFrame array	baseline	encode	2	5	275824
+CFrame array	baseline	encode	2	6	279760
+CFrame array	baseline	encode	2	7	280266
+CFrame array	baseline	encode	2	8	277499
+CFrame array	baseline	encode	2	9	286055
+CFrame array	baseline	decode	1	1	145750
+CFrame array	baseline	decode	1	2	144116
+CFrame array	baseline	decode	1	3	142229
+CFrame array	baseline	decode	1	4	141046
+CFrame array	baseline	decode	1	5	141414
+CFrame array	baseline	decode	1	6	144226
+CFrame array	baseline	decode	1	7	143549
+CFrame array	baseline	decode	1	8	142425
+CFrame array	baseline	decode	1	9	142089
+CFrame array	baseline	decode	2	1	139923
+CFrame array	baseline	decode	2	2	140275
+CFrame array	baseline	decode	2	3	140655
+CFrame array	baseline	decode	2	4	143589
+CFrame array	baseline	decode	2	5	139208
+CFrame array	baseline	decode	2	6	142089
+CFrame array	baseline	decode	2	7	141614
+CFrame array	baseline	decode	2	8	139966
+CFrame array	baseline	decode	2	9	140068
+CFrame array (packed, axis-aligned)	surge	encode	1	1	193081
+CFrame array (packed, axis-aligned)	surge	encode	1	2	192885
+CFrame array (packed, axis-aligned)	surge	encode	1	3	189773
+CFrame array (packed, axis-aligned)	surge	encode	1	4	194568
+CFrame array (packed, axis-aligned)	surge	encode	1	5	194514
+CFrame array (packed, axis-aligned)	surge	encode	1	6	195017
+CFrame array (packed, axis-aligned)	surge	encode	1	7	192390
+CFrame array (packed, axis-aligned)	surge	encode	1	8	191028
+CFrame array (packed, axis-aligned)	surge	encode	1	9	190883
+CFrame array (packed, axis-aligned)	surge	encode	2	1	189813
+CFrame array (packed, axis-aligned)	surge	encode	2	2	185190
+CFrame array (packed, axis-aligned)	surge	encode	2	3	190983
+CFrame array (packed, axis-aligned)	surge	encode	2	4	188830
+CFrame array (packed, axis-aligned)	surge	encode	2	5	193245
+CFrame array (packed, axis-aligned)	surge	encode	2	6	190265
+CFrame array (packed, axis-aligned)	surge	encode	2	7	188247
+CFrame array (packed, axis-aligned)	surge	encode	2	8	188266
+CFrame array (packed, axis-aligned)	surge	encode	2	9	188816
+CFrame array (packed, axis-aligned)	surge	decode	1	1	250883
+CFrame array (packed, axis-aligned)	surge	decode	1	2	252269
+CFrame array (packed, axis-aligned)	surge	decode	1	3	249445
+CFrame array (packed, axis-aligned)	surge	decode	1	4	242931
+CFrame array (packed, axis-aligned)	surge	decode	1	5	244411
+CFrame array (packed, axis-aligned)	surge	decode	1	6	242486
+CFrame array (packed, axis-aligned)	surge	decode	1	7	244624
+CFrame array (packed, axis-aligned)	surge	decode	1	8	246218
+CFrame array (packed, axis-aligned)	surge	decode	1	9	246086
+CFrame array (packed, axis-aligned)	surge	decode	2	1	241596
+CFrame array (packed, axis-aligned)	surge	decode	2	2	242187
+CFrame array (packed, axis-aligned)	surge	decode	2	3	243350
+CFrame array (packed, axis-aligned)	surge	decode	2	4	248032
+CFrame array (packed, axis-aligned)	surge	decode	2	5	241363
+CFrame array (packed, axis-aligned)	surge	decode	2	6	242807
+CFrame array (packed, axis-aligned)	surge	decode	2	7	242286
+CFrame array (packed, axis-aligned)	surge	decode	2	8	241305
+CFrame array (packed, axis-aligned)	surge	decode	2	9	243576
+CFrame array (packed, axis-aligned)	fbs	encode	1	1	32998
+CFrame array (packed, axis-aligned)	fbs	encode	1	2	33212
+CFrame array (packed, axis-aligned)	fbs	encode	1	3	33401
+CFrame array (packed, axis-aligned)	fbs	encode	1	4	33571
+CFrame array (packed, axis-aligned)	fbs	encode	1	5	32847
+CFrame array (packed, axis-aligned)	fbs	encode	1	6	32641
+CFrame array (packed, axis-aligned)	fbs	encode	1	7	32461
+CFrame array (packed, axis-aligned)	fbs	encode	1	8	32678
+CFrame array (packed, axis-aligned)	fbs	encode	1	9	32742
+CFrame array (packed, axis-aligned)	fbs	encode	2	1	33017
+CFrame array (packed, axis-aligned)	fbs	encode	2	2	32832
+CFrame array (packed, axis-aligned)	fbs	encode	2	3	32250
+CFrame array (packed, axis-aligned)	fbs	encode	2	4	32670
+CFrame array (packed, axis-aligned)	fbs	encode	2	5	32635
+CFrame array (packed, axis-aligned)	fbs	encode	2	6	32694
+CFrame array (packed, axis-aligned)	fbs	encode	2	7	32410
+CFrame array (packed, axis-aligned)	fbs	encode	2	8	32839
+CFrame array (packed, axis-aligned)	fbs	encode	2	9	33243
+CFrame array (packed, axis-aligned)	fbs	decode	1	1	113225
+CFrame array (packed, axis-aligned)	fbs	decode	1	2	112506
+CFrame array (packed, axis-aligned)	fbs	decode	1	3	112140
+CFrame array (packed, axis-aligned)	fbs	decode	1	4	109259
+CFrame array (packed, axis-aligned)	fbs	decode	1	5	112496
+CFrame array (packed, axis-aligned)	fbs	decode	1	6	112382
+CFrame array (packed, axis-aligned)	fbs	decode	1	7	111437
+CFrame array (packed, axis-aligned)	fbs	decode	1	8	109938
+CFrame array (packed, axis-aligned)	fbs	decode	1	9	111561
+CFrame array (packed, axis-aligned)	fbs	decode	2	1	110767
+CFrame array (packed, axis-aligned)	fbs	decode	2	2	112436
+CFrame array (packed, axis-aligned)	fbs	decode	2	3	112382
+CFrame array (packed, axis-aligned)	fbs	decode	2	4	112903
+CFrame array (packed, axis-aligned)	fbs	decode	2	5	111684
+CFrame array (packed, axis-aligned)	fbs	decode	2	6	112732
+CFrame array (packed, axis-aligned)	fbs	decode	2	7	112947
+CFrame array (packed, axis-aligned)	fbs	decode	2	8	111198
+CFrame array (packed, axis-aligned)	fbs	decode	2	9	112399
+CFrame array (packed, axis-aligned)	serio	encode	1	1	5566
+CFrame array (packed, axis-aligned)	serio	encode	1	2	5527
+CFrame array (packed, axis-aligned)	serio	encode	1	3	5537
+CFrame array (packed, axis-aligned)	serio	encode	1	4	5592
+CFrame array (packed, axis-aligned)	serio	encode	1	5	5615
+CFrame array (packed, axis-aligned)	serio	encode	1	6	5704
+CFrame array (packed, axis-aligned)	serio	encode	1	7	5567
+CFrame array (packed, axis-aligned)	serio	encode	1	8	5551
+CFrame array (packed, axis-aligned)	serio	encode	1	9	5640
+CFrame array (packed, axis-aligned)	serio	encode	2	1	5452
+CFrame array (packed, axis-aligned)	serio	encode	2	2	5542
+CFrame array (packed, axis-aligned)	serio	encode	2	3	5620
+CFrame array (packed, axis-aligned)	serio	encode	2	4	5445
+CFrame array (packed, axis-aligned)	serio	encode	2	5	5706
+CFrame array (packed, axis-aligned)	serio	encode	2	6	5554
+CFrame array (packed, axis-aligned)	serio	encode	2	7	5703
+CFrame array (packed, axis-aligned)	serio	encode	2	8	5652
+CFrame array (packed, axis-aligned)	serio	encode	2	9	5462
+CFrame array (packed, axis-aligned)	serio	decode	1	1	28502
+CFrame array (packed, axis-aligned)	serio	decode	1	2	27903
+CFrame array (packed, axis-aligned)	serio	decode	1	3	28517
+CFrame array (packed, axis-aligned)	serio	decode	1	4	27819
+CFrame array (packed, axis-aligned)	serio	decode	1	5	27933
+CFrame array (packed, axis-aligned)	serio	decode	1	6	28367
+CFrame array (packed, axis-aligned)	serio	decode	1	7	28363
+CFrame array (packed, axis-aligned)	serio	decode	1	8	28289
+CFrame array (packed, axis-aligned)	serio	decode	1	9	28303
+CFrame array (packed, axis-aligned)	serio	decode	2	1	28163
+CFrame array (packed, axis-aligned)	serio	decode	2	2	28423
+CFrame array (packed, axis-aligned)	serio	decode	2	3	28378
+CFrame array (packed, axis-aligned)	serio	decode	2	4	28455
+CFrame array (packed, axis-aligned)	serio	decode	2	5	28328
+CFrame array (packed, axis-aligned)	serio	decode	2	6	28045
+CFrame array (packed, axis-aligned)	serio	decode	2	7	28718
+CFrame array (packed, axis-aligned)	serio	decode	2	8	28429
+CFrame array (packed, axis-aligned)	serio	decode	2	9	28712
+CFrame array (packed, arbitrary)	surge	encode	1	1	146351
+CFrame array (packed, arbitrary)	surge	encode	1	2	145723
+CFrame array (packed, arbitrary)	surge	encode	1	3	146709
+CFrame array (packed, arbitrary)	surge	encode	1	4	145055
+CFrame array (packed, arbitrary)	surge	encode	1	5	145126
+CFrame array (packed, arbitrary)	surge	encode	1	6	143747
+CFrame array (packed, arbitrary)	surge	encode	1	7	145958
+CFrame array (packed, arbitrary)	surge	encode	1	8	144541
+CFrame array (packed, arbitrary)	surge	encode	1	9	142626
+CFrame array (packed, arbitrary)	surge	encode	2	1	144100
+CFrame array (packed, arbitrary)	surge	encode	2	2	140513
+CFrame array (packed, arbitrary)	surge	encode	2	3	145845
+CFrame array (packed, arbitrary)	surge	encode	2	4	144539
+CFrame array (packed, arbitrary)	surge	encode	2	5	146038
+CFrame array (packed, arbitrary)	surge	encode	2	6	144475
+CFrame array (packed, arbitrary)	surge	encode	2	7	146528
+CFrame array (packed, arbitrary)	surge	encode	2	8	143348
+CFrame array (packed, arbitrary)	surge	encode	2	9	145976
+CFrame array (packed, arbitrary)	surge	decode	1	1	113217
+CFrame array (packed, arbitrary)	surge	decode	1	2	117966
+CFrame array (packed, arbitrary)	surge	decode	1	3	119256
+CFrame array (packed, arbitrary)	surge	decode	1	4	116906
+CFrame array (packed, arbitrary)	surge	decode	1	5	119907
+CFrame array (packed, arbitrary)	surge	decode	1	6	115433
+CFrame array (packed, arbitrary)	surge	decode	1	7	119101
+CFrame array (packed, arbitrary)	surge	decode	1	8	117051
+CFrame array (packed, arbitrary)	surge	decode	1	9	120838
+CFrame array (packed, arbitrary)	surge	decode	2	1	118949
+CFrame array (packed, arbitrary)	surge	decode	2	2	120965
+CFrame array (packed, arbitrary)	surge	decode	2	3	119554
+CFrame array (packed, arbitrary)	surge	decode	2	4	119083
+CFrame array (packed, arbitrary)	surge	decode	2	5	119112
+CFrame array (packed, arbitrary)	surge	decode	2	6	115964
+CFrame array (packed, arbitrary)	surge	decode	2	7	118821
+CFrame array (packed, arbitrary)	surge	decode	2	8	116560
+CFrame array (packed, arbitrary)	surge	decode	2	9	119988
+CFrame array (packed, arbitrary)	fbs	encode	1	1	32469
+CFrame array (packed, arbitrary)	fbs	encode	1	2	31140
+CFrame array (packed, arbitrary)	fbs	encode	1	3	31675
+CFrame array (packed, arbitrary)	fbs	encode	1	4	32658
+CFrame array (packed, arbitrary)	fbs	encode	1	5	31842
+CFrame array (packed, arbitrary)	fbs	encode	1	6	32230
+CFrame array (packed, arbitrary)	fbs	encode	1	7	31735
+CFrame array (packed, arbitrary)	fbs	encode	1	8	31919
+CFrame array (packed, arbitrary)	fbs	encode	1	9	30979
+CFrame array (packed, arbitrary)	fbs	encode	2	1	31548
+CFrame array (packed, arbitrary)	fbs	encode	2	2	30995
+CFrame array (packed, arbitrary)	fbs	encode	2	3	31600
+CFrame array (packed, arbitrary)	fbs	encode	2	4	31948
+CFrame array (packed, arbitrary)	fbs	encode	2	5	31626
+CFrame array (packed, arbitrary)	fbs	encode	2	6	32473
+CFrame array (packed, arbitrary)	fbs	encode	2	7	32113
+CFrame array (packed, arbitrary)	fbs	encode	2	8	31601
+CFrame array (packed, arbitrary)	fbs	encode	2	9	31853
+CFrame array (packed, arbitrary)	fbs	decode	1	1	106727
+CFrame array (packed, arbitrary)	fbs	decode	1	2	112482
+CFrame array (packed, arbitrary)	fbs	decode	1	3	110838
+CFrame array (packed, arbitrary)	fbs	decode	1	4	111120
+CFrame array (packed, arbitrary)	fbs	decode	1	5	111096
+CFrame array (packed, arbitrary)	fbs	decode	1	6	110171
+CFrame array (packed, arbitrary)	fbs	decode	1	7	112989
+CFrame array (packed, arbitrary)	fbs	decode	1	8	112405
+CFrame array (packed, arbitrary)	fbs	decode	1	9	112118
+CFrame array (packed, arbitrary)	fbs	decode	2	1	111842
+CFrame array (packed, arbitrary)	fbs	decode	2	2	111088
+CFrame array (packed, arbitrary)	fbs	decode	2	3	111848
+CFrame array (packed, arbitrary)	fbs	decode	2	4	112185
+CFrame array (packed, arbitrary)	fbs	decode	2	5	111338
+CFrame array (packed, arbitrary)	fbs	decode	2	6	111046
+CFrame array (packed, arbitrary)	fbs	decode	2	7	112653
+CFrame array (packed, arbitrary)	fbs	decode	2	8	112109
+CFrame array (packed, arbitrary)	fbs	decode	2	9	110241
+CFrame array (packed, arbitrary)	serio	encode	1	1	5570
+CFrame array (packed, arbitrary)	serio	encode	1	2	5656
+CFrame array (packed, arbitrary)	serio	encode	1	3	5539
+CFrame array (packed, arbitrary)	serio	encode	1	4	5503
+CFrame array (packed, arbitrary)	serio	encode	1	5	5411
+CFrame array (packed, arbitrary)	serio	encode	1	6	5536
+CFrame array (packed, arbitrary)	serio	encode	1	7	5545
+CFrame array (packed, arbitrary)	serio	encode	1	8	5360
+CFrame array (packed, arbitrary)	serio	encode	1	9	5456
+CFrame array (packed, arbitrary)	serio	encode	2	1	5478
+CFrame array (packed, arbitrary)	serio	encode	2	2	5612
+CFrame array (packed, arbitrary)	serio	encode	2	3	5553
+CFrame array (packed, arbitrary)	serio	encode	2	4	5593
+CFrame array (packed, arbitrary)	serio	encode	2	5	5429
+CFrame array (packed, arbitrary)	serio	encode	2	6	5426
+CFrame array (packed, arbitrary)	serio	encode	2	7	5509
+CFrame array (packed, arbitrary)	serio	encode	2	8	5486
+CFrame array (packed, arbitrary)	serio	encode	2	9	5485
+CFrame array (packed, arbitrary)	serio	decode	1	1	27725
+CFrame array (packed, arbitrary)	serio	decode	1	2	28487
+CFrame array (packed, arbitrary)	serio	decode	1	3	28416
+CFrame array (packed, arbitrary)	serio	decode	1	4	28514
+CFrame array (packed, arbitrary)	serio	decode	1	5	27989
+CFrame array (packed, arbitrary)	serio	decode	1	6	28605
+CFrame array (packed, arbitrary)	serio	decode	1	7	28416
+CFrame array (packed, arbitrary)	serio	decode	1	8	28572
+CFrame array (packed, arbitrary)	serio	decode	1	9	28796
+CFrame array (packed, arbitrary)	serio	decode	2	1	28939
+CFrame array (packed, arbitrary)	serio	decode	2	2	28983
+CFrame array (packed, arbitrary)	serio	decode	2	3	28588
+CFrame array (packed, arbitrary)	serio	decode	2	4	28702
+CFrame array (packed, arbitrary)	serio	decode	2	5	28873
+CFrame array (packed, arbitrary)	serio	decode	2	6	28739
+CFrame array (packed, arbitrary)	serio	decode	2	7	28427
+CFrame array (packed, arbitrary)	serio	decode	2	8	28741
+CFrame array (packed, arbitrary)	serio	decode	2	9	28645
+Blink: Booleans	surge	encode	1	1	183394
+Blink: Booleans	surge	encode	1	2	179443
+Blink: Booleans	surge	encode	1	3	185552
+Blink: Booleans	surge	encode	1	4	187169
+Blink: Booleans	surge	encode	1	5	184701
+Blink: Booleans	surge	encode	1	6	184757
+Blink: Booleans	surge	encode	1	7	188546
+Blink: Booleans	surge	encode	1	8	184370
+Blink: Booleans	surge	encode	1	9	183382
+Blink: Booleans	surge	encode	2	1	175880
+Blink: Booleans	surge	encode	2	2	174141
+Blink: Booleans	surge	encode	2	3	176977
+Blink: Booleans	surge	encode	2	4	175635
+Blink: Booleans	surge	encode	2	5	175014
+Blink: Booleans	surge	encode	2	6	174715
+Blink: Booleans	surge	encode	2	7	176956
+Blink: Booleans	surge	encode	2	8	168613
+Blink: Booleans	surge	encode	2	9	174792
+Blink: Booleans	surge	decode	1	1	108000
+Blink: Booleans	surge	decode	1	2	106819
+Blink: Booleans	surge	decode	1	3	109659
+Blink: Booleans	surge	decode	1	4	104883
+Blink: Booleans	surge	decode	1	5	106970
+Blink: Booleans	surge	decode	1	6	104362
+Blink: Booleans	surge	decode	1	7	107332
+Blink: Booleans	surge	decode	1	8	106859
+Blink: Booleans	surge	decode	1	9	109762
+Blink: Booleans	surge	decode	2	1	109471
+Blink: Booleans	surge	decode	2	2	107316
+Blink: Booleans	surge	decode	2	3	105770
+Blink: Booleans	surge	decode	2	4	97555
+Blink: Booleans	surge	decode	2	5	101889
+Blink: Booleans	surge	decode	2	6	109145
+Blink: Booleans	surge	decode	2	7	107051
+Blink: Booleans	surge	decode	2	8	109100
+Blink: Booleans	surge	decode	2	9	108390
+Blink: Booleans	fbs	encode	1	1	54879
+Blink: Booleans	fbs	encode	1	2	56256
+Blink: Booleans	fbs	encode	1	3	56377
+Blink: Booleans	fbs	encode	1	4	55709
+Blink: Booleans	fbs	encode	1	5	56845
+Blink: Booleans	fbs	encode	1	6	55424
+Blink: Booleans	fbs	encode	1	7	55153
+Blink: Booleans	fbs	encode	1	8	55695
+Blink: Booleans	fbs	encode	1	9	55255
+Blink: Booleans	fbs	encode	2	1	54525
+Blink: Booleans	fbs	encode	2	2	53475
+Blink: Booleans	fbs	encode	2	3	54852
+Blink: Booleans	fbs	encode	2	4	55503
+Blink: Booleans	fbs	encode	2	5	55686
+Blink: Booleans	fbs	encode	2	6	54875
+Blink: Booleans	fbs	encode	2	7	54608
+Blink: Booleans	fbs	encode	2	8	54947
+Blink: Booleans	fbs	encode	2	9	54467
+Blink: Booleans	fbs	decode	1	1	42037
+Blink: Booleans	fbs	decode	1	2	41794
+Blink: Booleans	fbs	decode	1	3	40617
+Blink: Booleans	fbs	decode	1	4	40778
+Blink: Booleans	fbs	decode	1	5	41718
+Blink: Booleans	fbs	decode	1	6	41513
+Blink: Booleans	fbs	decode	1	7	40836
+Blink: Booleans	fbs	decode	1	8	41198
+Blink: Booleans	fbs	decode	1	9	41300
+Blink: Booleans	fbs	decode	2	1	40743
+Blink: Booleans	fbs	decode	2	2	41872
+Blink: Booleans	fbs	decode	2	3	39059
+Blink: Booleans	fbs	decode	2	4	39302
+Blink: Booleans	fbs	decode	2	5	41011
+Blink: Booleans	fbs	decode	2	6	41643
+Blink: Booleans	fbs	decode	2	7	41978
+Blink: Booleans	fbs	decode	2	8	41647
+Blink: Booleans	fbs	decode	2	9	41782
+Blink: Booleans	serio	encode	1	1	10453
+Blink: Booleans	serio	encode	1	2	10403
+Blink: Booleans	serio	encode	1	3	10664
+Blink: Booleans	serio	encode	1	4	10652
+Blink: Booleans	serio	encode	1	5	10625
+Blink: Booleans	serio	encode	1	6	10577
+Blink: Booleans	serio	encode	1	7	10395
+Blink: Booleans	serio	encode	1	8	10655
+Blink: Booleans	serio	encode	1	9	10358
+Blink: Booleans	serio	encode	2	1	10359
+Blink: Booleans	serio	encode	2	2	10508
+Blink: Booleans	serio	encode	2	3	10589
+Blink: Booleans	serio	encode	2	4	10516
+Blink: Booleans	serio	encode	2	5	10543
+Blink: Booleans	serio	encode	2	6	10371
+Blink: Booleans	serio	encode	2	7	10459
+Blink: Booleans	serio	encode	2	8	10474
+Blink: Booleans	serio	encode	2	9	10668
+Blink: Booleans	serio	decode	1	1	12755
+Blink: Booleans	serio	decode	1	2	12767
+Blink: Booleans	serio	decode	1	3	12742
+Blink: Booleans	serio	decode	1	4	12672
+Blink: Booleans	serio	decode	1	5	12603
+Blink: Booleans	serio	decode	1	6	12452
+Blink: Booleans	serio	decode	1	7	12782
+Blink: Booleans	serio	decode	1	8	12627
+Blink: Booleans	serio	decode	1	9	12844
+Blink: Booleans	serio	decode	2	1	12198
+Blink: Booleans	serio	decode	2	2	12142
+Blink: Booleans	serio	decode	2	3	12142
+Blink: Booleans	serio	decode	2	4	12020
+Blink: Booleans	serio	decode	2	5	12246
+Blink: Booleans	serio	decode	2	6	12268
+Blink: Booleans	serio	decode	2	7	12266
+Blink: Booleans	serio	decode	2	8	12180
+Blink: Booleans	serio	decode	2	9	12403
+Blink: Booleans	blink	encode	1	1	97323
+Blink: Booleans	blink	encode	1	2	98066
+Blink: Booleans	blink	encode	1	3	98472
+Blink: Booleans	blink	encode	1	4	99233
+Blink: Booleans	blink	encode	1	5	98089
+Blink: Booleans	blink	encode	1	6	99326
+Blink: Booleans	blink	encode	1	7	97891
+Blink: Booleans	blink	encode	1	8	97120
+Blink: Booleans	blink	encode	1	9	95774
+Blink: Booleans	blink	encode	2	1	132454
+Blink: Booleans	blink	encode	2	2	129140
+Blink: Booleans	blink	encode	2	3	129332
+Blink: Booleans	blink	encode	2	4	128740
+Blink: Booleans	blink	encode	2	5	126952
+Blink: Booleans	blink	encode	2	6	127943
+Blink: Booleans	blink	encode	2	7	128018
+Blink: Booleans	blink	encode	2	8	127163
+Blink: Booleans	blink	encode	2	9	128678
+Blink: Booleans	blink	decode	1	1	75574
+Blink: Booleans	blink	decode	1	2	74814
+Blink: Booleans	blink	decode	1	3	73740
+Blink: Booleans	blink	decode	1	4	73369
+Blink: Booleans	blink	decode	1	5	71890
+Blink: Booleans	blink	decode	1	6	75626
+Blink: Booleans	blink	decode	1	7	74351
+Blink: Booleans	blink	decode	1	8	73440
+Blink: Booleans	blink	decode	1	9	71992
+Blink: Booleans	blink	decode	2	1	75987
+Blink: Booleans	blink	decode	2	2	75925
+Blink: Booleans	blink	decode	2	3	71326
+Blink: Booleans	blink	decode	2	4	67790
+Blink: Booleans	blink	decode	2	5	73228
+Blink: Booleans	blink	decode	2	6	75315
+Blink: Booleans	blink	decode	2	7	73366
+Blink: Booleans	blink	decode	2	8	74709
+Blink: Booleans	blink	decode	2	9	72854
+Blink: Entities	surge	encode	1	1	552619
+Blink: Entities	surge	encode	1	2	548261
+Blink: Entities	surge	encode	1	3	567598
+Blink: Entities	surge	encode	1	4	559296
+Blink: Entities	surge	encode	1	5	552476
+Blink: Entities	surge	encode	1	6	539417
+Blink: Entities	surge	encode	1	7	551658
+Blink: Entities	surge	encode	1	8	551836
+Blink: Entities	surge	encode	1	9	554163
+Blink: Entities	surge	encode	2	1	559342
+Blink: Entities	surge	encode	2	2	554035
+Blink: Entities	surge	encode	2	3	559278
+Blink: Entities	surge	encode	2	4	556812
+Blink: Entities	surge	encode	2	5	555414
+Blink: Entities	surge	encode	2	6	563917
+Blink: Entities	surge	encode	2	7	559662
+Blink: Entities	surge	encode	2	8	558203
+Blink: Entities	surge	encode	2	9	562310
+Blink: Entities	surge	decode	1	1	62740
+Blink: Entities	surge	decode	1	2	62951
+Blink: Entities	surge	decode	1	3	62058
+Blink: Entities	surge	decode	1	4	63178
+Blink: Entities	surge	decode	1	5	62268
+Blink: Entities	surge	decode	1	6	64605
+Blink: Entities	surge	decode	1	7	63979
+Blink: Entities	surge	decode	1	8	62807
+Blink: Entities	surge	decode	1	9	63803
+Blink: Entities	surge	decode	2	1	61171
+Blink: Entities	surge	decode	2	2	63288
+Blink: Entities	surge	decode	2	3	64486
+Blink: Entities	surge	decode	2	4	63559
+Blink: Entities	surge	decode	2	5	66223
+Blink: Entities	surge	decode	2	6	62743
+Blink: Entities	surge	decode	2	7	63191
+Blink: Entities	surge	decode	2	8	62274
+Blink: Entities	surge	decode	2	9	64540
+Blink: Entities	fbs	encode	1	1	82206
+Blink: Entities	fbs	encode	1	2	84345
+Blink: Entities	fbs	encode	1	3	83684
+Blink: Entities	fbs	encode	1	4	82350
+Blink: Entities	fbs	encode	1	5	83978
+Blink: Entities	fbs	encode	1	6	83915
+Blink: Entities	fbs	encode	1	7	82940
+Blink: Entities	fbs	encode	1	8	83670
+Blink: Entities	fbs	encode	1	9	79906
+Blink: Entities	fbs	encode	2	1	82626
+Blink: Entities	fbs	encode	2	2	83294
+Blink: Entities	fbs	encode	2	3	84090
+Blink: Entities	fbs	encode	2	4	81662
+Blink: Entities	fbs	encode	2	5	82223
+Blink: Entities	fbs	encode	2	6	83626
+Blink: Entities	fbs	encode	2	7	83397
+Blink: Entities	fbs	encode	2	8	84696
+Blink: Entities	fbs	encode	2	9	83725
+Blink: Entities	fbs	decode	1	1	35768
+Blink: Entities	fbs	decode	1	2	35828
+Blink: Entities	fbs	decode	1	3	36624
+Blink: Entities	fbs	decode	1	4	35752
+Blink: Entities	fbs	decode	1	5	36272
+Blink: Entities	fbs	decode	1	6	35647
+Blink: Entities	fbs	decode	1	7	37048
+Blink: Entities	fbs	decode	1	8	36380
+Blink: Entities	fbs	decode	1	9	36842
+Blink: Entities	fbs	decode	2	1	36420
+Blink: Entities	fbs	decode	2	2	36271
+Blink: Entities	fbs	decode	2	3	37034
+Blink: Entities	fbs	decode	2	4	36689
+Blink: Entities	fbs	decode	2	5	36990
+Blink: Entities	fbs	decode	2	6	37191
+Blink: Entities	fbs	decode	2	7	36738
+Blink: Entities	fbs	decode	2	8	36463
+Blink: Entities	fbs	decode	2	9	36127
+Blink: Entities	serio	encode	1	1	11489
+Blink: Entities	serio	encode	1	2	11513
+Blink: Entities	serio	encode	1	3	11282
+Blink: Entities	serio	encode	1	4	11412
+Blink: Entities	serio	encode	1	5	11542
+Blink: Entities	serio	encode	1	6	11500
+Blink: Entities	serio	encode	1	7	11552
+Blink: Entities	serio	encode	1	8	11359
+Blink: Entities	serio	encode	1	9	11421
+Blink: Entities	serio	encode	2	1	11268
+Blink: Entities	serio	encode	2	2	11240
+Blink: Entities	serio	encode	2	3	11342
+Blink: Entities	serio	encode	2	4	11323
+Blink: Entities	serio	encode	2	5	11355
+Blink: Entities	serio	encode	2	6	11443
+Blink: Entities	serio	encode	2	7	11249
+Blink: Entities	serio	encode	2	8	11376
+Blink: Entities	serio	encode	2	9	11453
+Blink: Entities	serio	decode	1	1	22266
+Blink: Entities	serio	decode	1	2	22489
+Blink: Entities	serio	decode	1	3	22480
+Blink: Entities	serio	decode	1	4	22333
+Blink: Entities	serio	decode	1	5	22152
+Blink: Entities	serio	decode	1	6	22898
+Blink: Entities	serio	decode	1	7	22497
+Blink: Entities	serio	decode	1	8	22558
+Blink: Entities	serio	decode	1	9	22056
+Blink: Entities	serio	decode	2	1	22594
+Blink: Entities	serio	decode	2	2	22780
+Blink: Entities	serio	decode	2	3	22455
+Blink: Entities	serio	decode	2	4	22464
+Blink: Entities	serio	decode	2	5	22882
+Blink: Entities	serio	decode	2	6	22908
+Blink: Entities	serio	decode	2	7	22603
+Blink: Entities	serio	decode	2	8	22316
+Blink: Entities	serio	decode	2	9	22644
+Blink: Entities	blink	encode	1	1	313989
+Blink: Entities	blink	encode	1	2	308850
+Blink: Entities	blink	encode	1	3	306692
+Blink: Entities	blink	encode	1	4	312124
+Blink: Entities	blink	encode	1	5	305140
+Blink: Entities	blink	encode	1	6	312651
+Blink: Entities	blink	encode	1	7	312822
+Blink: Entities	blink	encode	1	8	309821
+Blink: Entities	blink	encode	1	9	303030
+Blink: Entities	blink	encode	2	1	315811
+Blink: Entities	blink	encode	2	2	312353
+Blink: Entities	blink	encode	2	3	316896
+Blink: Entities	blink	encode	2	4	314425
+Blink: Entities	blink	encode	2	5	309342
+Blink: Entities	blink	encode	2	6	311866
+Blink: Entities	blink	encode	2	7	313103
+Blink: Entities	blink	encode	2	8	313833
+Blink: Entities	blink	encode	2	9	308555
+Blink: Entities	blink	decode	1	1	36676
+Blink: Entities	blink	decode	1	2	36184
+Blink: Entities	blink	decode	1	3	36698
+Blink: Entities	blink	decode	1	4	37346
+Blink: Entities	blink	decode	1	5	37131
+Blink: Entities	blink	decode	1	6	36973
+Blink: Entities	blink	decode	1	7	38062
+Blink: Entities	blink	decode	1	8	37301
+Blink: Entities	blink	decode	1	9	37117
+Blink: Entities	blink	decode	2	1	37136
+Blink: Entities	blink	decode	2	2	36934
+Blink: Entities	blink	decode	2	3	37459
+Blink: Entities	blink	decode	2	4	36758
+Blink: Entities	blink	decode	2	5	37219
+Blink: Entities	blink	decode	2	6	37389
+Blink: Entities	blink	decode	2	7	37456
+Blink: Entities	blink	decode	2	8	37042
+Blink: Entities	blink	decode	2	9	37368
