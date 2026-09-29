@@ -70,8 +70,10 @@ What the directives are worth on the generated code is measured in
   and the other shapes of the benchmark catalog are not measured against
   hand-written Luau.
 - **`Packed<T>`** saves bytes on booleans, optionals and axis-aligned
-  `CFrame`s, adds a byte to an arbitrary `CFrame`, and can slow encode or
-  decode
+  `CFrame`s, and adds a byte to an arbitrary `CFrame`. Packed booleans and
+  optionals decode faster than unpacked ones
+  ([research/packed-bits-read-in-place.md](research/packed-bits-read-in-place.md)),
+  and an arbitrary `CFrame` encodes slower packed
   ([research/packed-against-unpacked.md](research/packed-against-unpacked.md)).
 
 Each benchmark result is one shape in a warm loop on one machine. Measure a

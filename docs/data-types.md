@@ -110,10 +110,15 @@ one byte more than outside `Packed<T>`, when it stands for neither. A
 errors inside `Packed<T>`, since the packed form writes its `CFrame` its own
 way.
 
-Packing saves bytes and can cost speed: a packed shape reads its bits one
-call at a time. [research/packed-against-unpacked.md](research/packed-against-unpacked.md)
-measures the trade on two shapes. Pack a shape whose size matters more than
-its encode and decode time.
+Packing saves bytes, and what it does to speed depends on what it packs.
+Booleans and optionals become bits that both sides handle inline: on the one
+shape measured, the packed form decodes faster than the unpacked one
+([research/packed-bits-read-in-place.md](research/packed-bits-read-in-place.md))
+and encodes within the noise of it
+([research/packed-against-unpacked.md](research/packed-against-unpacked.md)).
+A packed `CFrame` is written by a call into the package that classifies its
+rotation, and an arbitrary rotation is both larger and slower to encode
+packed. Pack a `CFrame` when its size matters more than its encode time.
 
 ## Combining brands
 
