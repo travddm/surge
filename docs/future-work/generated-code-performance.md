@@ -38,16 +38,17 @@ This document holds what is still open.
 
 ## What
 
-**The per-call gap to hand-written Luau.** On the three rows the hand-written
-baseline covers, surge's encode and decode are within the band that two runs
-of unchanged code disagree by
+**The per-call gap to hand-written Luau.** On the flat struct, the nested
+object and the `CFrame` array, surge's encode and decode are within the band
+that two runs of unchanged code disagree by
 ([size-and-read-locals.md](../research/size-and-read-locals.md)). The gap had
 a part paid once per call and a part paid per element
 ([generated-code-against-hand-written.md](../research/generated-code-against-hand-written.md)
 and its correction), and the papers listed above measured each change that
-closed it. What the rows the baseline does not cover pay against
-hand-written Luau is not measured; widening the baseline is step 2 of the
-[index](README.md), in [benchmark-tooling.md](benchmark-tooling.md).
+closed it. The hand-written baseline also writes the tagged union's and the
+packed toggles' bytes, and what surge's code costs against it on those two
+rows is not yet measured. What the other rows pay against hand-written Luau
+is not measured.
 
 **What is left per call.** A shape that keeps the scratch buffer still has
 the three candidates a shape sized exactly (Transformer 5.20 in
@@ -192,10 +193,10 @@ means, but it is still not surge's to decide for a file surge does not own.
 Every item here is measurement-driven, and the method is settled: a change is
 its own full catalog run against a reference taken in the same session, read
 as medians over many cells against the untouched libraries as controls. The
-per-call gap is closed on the rows the hand-written baseline covers, and what
-is left of it is not measured. The two reopened entries need an argument
-against a current figure, not a change. The rest is small, or needs a fixture
-before anything can measure it.
+per-call gap is closed on the flat struct, the nested object and the `CFrame`
+array, and what is left of it is not measured. The two reopened entries need
+an argument against a current figure, not a change. The rest is small, or
+needs a fixture before anything can measure it.
 
 ## How, briefly
 

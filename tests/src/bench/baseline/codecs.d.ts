@@ -27,3 +27,28 @@ export declare const nestedObject: BaselineCodec<{
 }>;
 
 export declare const transforms: BaselineCodec<{ list: Array<CFrame> }>;
+
+export declare const taggedUnion: BaselineCodec<{
+	events: Array<
+		| { kind: "spawn"; id: number; at: Vector3 }
+		| { kind: "damage"; id: number; amount: number }
+		| { kind: "chat"; id: number; text: string }
+		| { kind: "despawn"; id: number }
+	>;
+}>;
+
+export declare const packedToggles: BaselineCodec<{
+	a: boolean;
+	b: boolean;
+	c: boolean;
+	d: boolean;
+	e: boolean;
+	f: boolean;
+	g: boolean;
+	h: boolean;
+	i: boolean;
+	j: boolean;
+	level: number;
+	label?: string;
+	offset?: number;
+}>;

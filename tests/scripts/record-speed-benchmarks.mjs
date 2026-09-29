@@ -641,7 +641,7 @@ function write(facts) {
 		"reads across rows where a rate does not.",
 		"",
 		"`baseline` is a hand-written codec that writes surge's exact bytes on",
-		"three rows, so its ratio is what surge's generated code costs against",
+		"five rows, so its ratio is what surge's generated code costs against",
 		"hand-written Luau. Zap exposes no encoder to call and has no column.",
 		"Every column but serio runs with `--!native` and `--!optimize 2`.",
 		"",

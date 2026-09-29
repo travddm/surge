@@ -8,13 +8,6 @@ This document holds what is still open.
 
 ## What
 
-**Widen the hand-written baseline** to the shapes whose generated code is not
-a straight run of writes: the tagged union, which branches on the tag and
-builds each variant, and the packed `toggles`, whose bit region runs through a
-runtime function rather than inline code. Not the large array, since the
-`CFrame` array already prices a per-element loop (see the correction in
-[generated-code-against-hand-written.md](../research/generated-code-against-hand-written.md)).
-
 **Measure the generated Luau's size.** Each fixture module holds its shape,
 its sample value and three factory calls, so its compiled size is not any one
 library's generated code. Measuring it honestly needs each call in a module of
@@ -60,13 +53,8 @@ to one.
 
 ## Why deferred
 
-The first two are step 2 of the [index](README.md), after the per-call gap.
-The gap the three existing rows showed is within the speed tier's band on
-encode and on decode
-([size-and-read-locals.md](../research/size-and-read-locals.md)), so a wider
-baseline would measure what the shapes those rows do not cover pay. The
-code-size measurement
-needs the fixtures restructured, one call per module. Tier 3 has no driver:
+The code-size measurement is step 2 of the [index](README.md), and needs the
+fixtures restructured, one call per module. Tier 3 has no driver:
 nothing yet asks what a serializer costs on the wire once a networking layer
 batches it, and [networking.md](networking.md) is where that would come from.
 A Zap-shaped timing has no driver either, and a transcription would measure
@@ -83,21 +71,18 @@ the two cells out.
 
 ## How, briefly
 
-1. Add the tagged union and packed `toggles` to
-   `tests/src/bench/baseline/codecs.luau`, each writing surge's exact bytes,
-   which the size tier confirms.
-2. Split the fixtures so each factory call is a module of its own, and report
+1. Split the fixtures so each factory call is a module of its own, and report
    each module's compiled size beside the speed table.
-3. Find what sets the field order `rbxts-transformer-flamework` emits, by
+2. Find what sets the field order `rbxts-transformer-flamework` emits, by
    building `tests/` several times from a clean tree and comparing the fbs
    and serio schemas. Then either make the build choose one order, or have a
    golden check or the speed recorder say when a fixture's fbs or serio code
    differs from the last run's.
-4. Run the `Blink: Booleans` row alone (`mise run bench:speed:only
+3. Run the `Blink: Booleans` row alone (`mise run bench:speed:only
 booleans`) across several Studio processes, and look for what differs
    between a fast process and a slow one before changing the row or the
    recorder.
-5. Tier 3 only if wire cost with batching becomes a question the serializer
+4. Tier 3 only if wire cost with batching becomes a question the serializer
    comparison cannot answer.
-6. A Zap-shaped timing only if Zap's speed becomes a question Blink's column,
+5. A Zap-shaped timing only if Zap's speed becomes a question Blink's column,
    the other IDL compiler, cannot answer.

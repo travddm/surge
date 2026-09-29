@@ -17,7 +17,7 @@ Blink and Zap are smaller than surge only where a length prefix appears:
 they default to a u16 count where surge writes u32, and `DataType.Length`
 narrows surge's.
 
-`baseline` is a hand-written codec that writes surge's exact bytes on three
+`baseline` is a hand-written codec that writes surge's exact bytes on five
 rows; it exists for the speed table. Zap's bytes are one fired event minus
 its event-id byte.
 
@@ -30,10 +30,10 @@ its event-id byte.
 | large record                        | 2096  | 2096 (1.00×) | 2096 (1.00×) | 1694 (0.81×) | 1695 (0.81×) | —            | exact                                                                                | 200 string keys, each with a u8 value; a `Map` under fbs and serio           |
 | string-heavy                        | 2390  | 2390 (1.00×) | 2390 (1.00×) | 2184 (0.91×) | 2184 (0.91×) | —            | exact                                                                                | two short strings and 100 of up to 40 bytes, each with a u32 length prefix   |
 | enum-heavy                          | 106   | 106 (1.00×)  | 106 (1.00×)  | —            | —            | —            | exact                                                                                | 100 Enum.Material items plus two scalar enum fields, one index byte each     |
-| tagged union                        | 1274  | 1274 (1.00×) | 1274 (1.00×) | 1228 (0.96×) | 1228 (0.96×) | —            | exact                                                                                | 100 events over four variants, discriminated by a literal field              |
+| tagged union                        | 1274  | 1274 (1.00×) | 1274 (1.00×) | 1228 (0.96×) | 1228 (0.96×) | 1274 (1.00×) | exact                                                                                | 100 events over four variants, discriminated by a literal field              |
 | guarded union                       | 849   | 849 (1.00×)  | 849 (1.00×)  | —            | 783 (0.92×)  | —            | exact                                                                                | 100 values over string, number, and boolean                                  |
 | toggles (unpacked)                  | 26    | 26 (1.00×)   | 26 (1.00×)   | 24 (0.92×)   | —            | —            | exact                                                                                | ten booleans, a u8, and two optionals, one byte per flag and per presence    |
-| toggles (packed)                    | 16    | 16 (1.00×)   | 16 (1.00×)   | —            | 14 (0.88×)   | —            | exact                                                                                | the same shape in `Packed<T>`: one bit per flag and per presence             |
+| toggles (packed)                    | 16    | 16 (1.00×)   | 16 (1.00×)   | —            | 14 (0.88×)   | 16 (1.00×)   | exact                                                                                | the same shape in `Packed<T>`: one bit per flag and per presence             |
 | CFrame array                        | 1204  | 1204 (1.00×) | 904 (0.75×)  | 1202 (1.00×) | 1202 (1.00×) | 1204 (1.00×) | inexact: surge 2e-07, fbs 2e-07, serio 1e-04, blink 2e-07, zap 1e+00, baseline 2e-07 | 50 arbitrary rotations, unpacked: position plus axis-angle                   |
 | CFrame array (packed, axis-aligned) | 654   | 1179 (1.80×) | 904 (1.38×)  | —            | —            | —            | inexact: fbs 2e-07, serio 1e+00                                                      | 50 axis-aligned rotations in `Packed<T>`: header byte plus position          |
 | CFrame array (packed, arbitrary)    | 1254  | 1212 (0.97×) | 919 (0.73×)  | —            | —            | —            | inexact: surge 2e-07, fbs 2e-07, serio 1e-04                                         | 50 arbitrary rotations in `Packed<T>`: header byte, position, and axis-angle |

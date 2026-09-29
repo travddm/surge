@@ -135,8 +135,194 @@ local function readTransforms(buf)
 	return { list = list }
 end
 
+-- Variants are numbered by tag value (chat, damage, despawn, spawn) and each writes its fields by
+-- name, as surge does. The buffer is sized in a first pass over the events so that it is created
+-- once, at its size: without a buffer that grows, a shape whose size varies needs that pass. Both
+-- passes use a generic `for`, which measured faster than a numeric one over an array in surge's
+-- own code (docs/research/per-element-encode.md).
+local function writeTaggedUnion(value)
+	local events = value.events
+	local count = #events
+	-- The count, and one variant byte per event.
+	local size = 4 + count
+	for _, event in events do
+		local kind = event.kind
+		if kind == "chat" then
+			size += 8 + #event.text
+		elseif kind == "damage" then
+			size += 6
+		elseif kind == "despawn" then
+			size += 4
+		else
+			size += 16
+		end
+	end
+
+	local buf = buffer.create(size)
+	buffer.writeu32(buf, 0, count)
+	local offset = 4
+	for _, event in events do
+		local kind = event.kind
+		if kind == "chat" then
+			local text = event.text
+			local length = #text
+			buffer.writeu8(buf, offset, 0)
+			buffer.writeu32(buf, offset + 1, event.id)
+			buffer.writeu32(buf, offset + 5, length)
+			buffer.writestring(buf, offset + 9, text)
+			offset += 9 + length
+		elseif kind == "damage" then
+			buffer.writeu8(buf, offset, 1)
+			buffer.writeu16(buf, offset + 1, event.amount)
+			buffer.writeu32(buf, offset + 3, event.id)
+			offset += 7
+		elseif kind == "despawn" then
+			buffer.writeu8(buf, offset, 2)
+			buffer.writeu32(buf, offset + 1, event.id)
+			offset += 5
+		else
+			local at = event.at
+			buffer.writeu8(buf, offset, 3)
+			buffer.writef32(buf, offset + 1, at.X)
+			buffer.writef32(buf, offset + 5, at.Y)
+			buffer.writef32(buf, offset + 9, at.Z)
+			buffer.writeu32(buf, offset + 13, event.id)
+			offset += 17
+		end
+	end
+	return buf
+end
+
+local function readTaggedUnion(buf)
+	local count = buffer.readu32(buf, 0)
+	local events = table.create(count)
+
+	local offset = 4
+	for index = 1, count do
+		local variant = buffer.readu8(buf, offset)
+		if variant == 0 then
+			local length = buffer.readu32(buf, offset + 5)
+			events[index] = {
+				kind = "chat",
+				id = buffer.readu32(buf, offset + 1),
+				text = buffer.readstring(buf, offset + 9, length),
+			}
+			offset += 9 + length
+		elseif variant == 1 then
+			events[index] = {
+				kind = "damage",
+				amount = buffer.readu16(buf, offset + 1),
+				id = buffer.readu32(buf, offset + 3),
+			}
+			offset += 7
+		elseif variant == 2 then
+			events[index] = { kind = "despawn", id = buffer.readu32(buf, offset + 1) }
+			offset += 5
+		else
+			events[index] = {
+				kind = "spawn",
+				at = Vector3.new(
+					buffer.readf32(buf, offset + 1),
+					buffer.readf32(buf, offset + 5),
+					buffer.readf32(buf, offset + 9)
+				),
+				id = buffer.readu32(buf, offset + 13),
+			}
+			offset += 17
+		end
+	end
+	return { events = events }
+end
+
+-- `Packed<T>`'s bit region: the ten booleans, then the presence of `label` and of `offset`, one bit
+-- each from the low bit of the first byte. The fields that are not bits follow it by name.
+local function writePackedToggles(value)
+	local label, offsetField = value.label, value.offset
+	-- The two bytes of bits, and `level`.
+	local size = 3
+	if label ~= nil then
+		size += 4 + #label
+	end
+	if offsetField ~= nil then
+		size += 2
+	end
+
+	local buf = buffer.create(size)
+	buffer.writeu8(
+		buf,
+		0,
+		(if value.a then 1 else 0)
+			+ (if value.b then 2 else 0)
+			+ (if value.c then 4 else 0)
+			+ (if value.d then 8 else 0)
+			+ (if value.e then 16 else 0)
+			+ (if value.f then 32 else 0)
+			+ (if value.g then 64 else 0)
+			+ (if value.h then 128 else 0)
+	)
+	buffer.writeu8(
+		buf,
+		1,
+		(if value.i then 1 else 0)
+			+ (if value.j then 2 else 0)
+			+ (if label ~= nil then 4 else 0)
+			+ (if offsetField ~= nil then 8 else 0)
+	)
+
+	local offset = 2
+	if label ~= nil then
+		local length = #label
+		buffer.writeu32(buf, offset, length)
+		buffer.writestring(buf, offset + 4, label)
+		offset += 4 + length
+	end
+	buffer.writeu8(buf, offset, value.level)
+	if offsetField ~= nil then
+		buffer.writei16(buf, offset + 1, offsetField)
+	end
+	return buf
+end
+
+-- Each byte of bits is read once and tested in place, where surge's reader calls `unpackBit` in
+-- the package once per bit.
+local function readPackedToggles(buf)
+	local low = buffer.readu8(buf, 0)
+	local high = buffer.readu8(buf, 1)
+
+	local offset = 2
+	local label
+	if bit32.btest(high, 4) then
+		local length = buffer.readu32(buf, offset)
+		label = buffer.readstring(buf, offset + 4, length)
+		offset += 4 + length
+	end
+	local level = buffer.readu8(buf, offset)
+	local offsetField
+	if bit32.btest(high, 8) then
+		offsetField = buffer.readi16(buf, offset + 1)
+	end
+
+	return {
+		a = bit32.btest(low, 1),
+		b = bit32.btest(low, 2),
+		c = bit32.btest(low, 4),
+		d = bit32.btest(low, 8),
+		e = bit32.btest(low, 16),
+		f = bit32.btest(low, 32),
+		g = bit32.btest(low, 64),
+		h = bit32.btest(low, 128),
+		i = bit32.btest(high, 1),
+		j = bit32.btest(high, 2),
+		label = label,
+		level = level,
+		offset = offsetField,
+	}
+end
+
 return {
 	smallFlatStruct = { write = writeSmallFlatStruct, read = readSmallFlatStruct },
 	nestedObject = { write = writeNestedObject, read = readNestedObject },
 	transforms = { write = writeTransforms, read = readTransforms },
+	taggedUnion = { write = writeTaggedUnion, read = readTaggedUnion },
+	packedToggles = { write = writePackedToggles, read = readPackedToggles },
 }

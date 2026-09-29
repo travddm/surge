@@ -8,11 +8,13 @@ import { DataType, createCodec } from "@rbxts/surge";
 import { Rng } from "../../support";
 import type { Fixture } from "../adapter";
 import { defineEntry } from "../adapter";
+import { baselineAdapter } from "../adapters/baseline";
 import { blinkAdapter } from "../adapters/blink";
 import { fbsAdapter } from "../adapters/fbs";
 import { serioAdapter } from "../adapters/serio";
 import { surgeAdapter } from "../adapters/surge";
 import { zapAdapter } from "../adapters/zap";
+import { taggedUnion as baselineCodec } from "../baseline/codecs";
 import { TaggedUnion as blinkCodec } from "../blink/server";
 
 const COUNT = 100;
@@ -99,5 +101,6 @@ export const taggedUnion: Fixture = {
 			{ events: zapEvents },
 			zapAdapter((zap) => zap.Tagged),
 		),
+		defineEntry("baseline", { events }, baselineAdapter(baselineCodec)),
 	],
 };

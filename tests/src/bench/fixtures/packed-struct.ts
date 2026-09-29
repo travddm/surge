@@ -7,11 +7,13 @@ import { DataType, createCodec } from "@rbxts/surge";
 
 import type { Fixture } from "../adapter";
 import { defineEntry } from "../adapter";
+import { baselineAdapter } from "../adapters/baseline";
 import { blinkAdapter } from "../adapters/blink";
 import { fbsAdapter } from "../adapters/fbs";
 import { serioAdapter } from "../adapters/serio";
 import { surgeAdapter } from "../adapters/surge";
 import { zapAdapter } from "../adapters/zap";
+import { packedToggles as baselineCodec } from "../baseline/codecs";
 import { Toggles as blinkCodec } from "../blink/server";
 
 /**
@@ -115,5 +117,6 @@ export const packedStruct: Fixture = {
 			value,
 			zapAdapter((zap) => zap.Flags),
 		),
+		defineEntry("baseline", value, baselineAdapter(baselineCodec)),
 	],
 };

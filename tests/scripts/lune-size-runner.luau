@@ -101,7 +101,7 @@ paragraph(
 )
 
 paragraph(
-	"`baseline` is a hand-written codec that writes surge's exact bytes on three",
+	"`baseline` is a hand-written codec that writes surge's exact bytes on five",
 	"rows; it exists for the speed table. Zap's bytes are one fired event minus",
 	"its event-id byte."
 )
