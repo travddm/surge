@@ -1,8 +1,8 @@
 # Transformer specification
 
 Status: current
-Applies to: `@rbxts/surge` at commit `5b102af`, `rbxts-transformer-surge` at
-commit `c006601` (no tagged release yet)
+Applies to: `@rbxts/surge` at commit `7ffea67`, `rbxts-transformer-surge` at
+commit `6fb2441` (no tagged release yet)
 
 ## 1. Scope
 
@@ -348,6 +348,13 @@ of its first 32 bytes is then read into a local once, and each bit is
 `bit32.btest` of its byte and the bit's mask. A byte past the first 32 is read
 in place for each of its bits. The read calls no function of the package.
 
+**5.25** A union's write tests its variants once, in their order: a
+`taggedUnion` reads its tag into a local once and compares it with each
+variant's tag value, and a `guardedUnion` evaluates each variant's guard. The
+branch a test selects writes the variant's index, unless the enclosing
+object's packed region holds the tag, and then the variant. The last variant
+is written when no test passes, as the size of 5.20 takes it.
+
 ## 6. Injected imports
 
 **6.1** The transformer adds one import of `@rbxts/surge/out/abi`, the
@@ -472,6 +479,7 @@ of `rbxts-transformer-surge`, cited by `describe` block. Source paths are in
 | 5.22      | `emit`: `Emitter exact arrays`; `transform`: `transform generated code` (an array, an exact array and a tuple's rest under `noUncheckedIndexedAccess`)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 | 5.23      | `emit`: `Emitter nested object values`; `test/golden.test.mjs`: a nested object reads its value once, not once per property                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
 | 5.24      | `emit`: `Emitter packed region`, `Emitter packed tag bit`; `test/golden.test.mjs`: a packed region is written and read inline, with no per-bit helper; every round trip in `tests/src/tests/packed.spec.ts`                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| 5.25      | `emit`: `Emitter union writes`, `Emitter packed tag bit`; `test/golden.test.mjs`: a union is sized by the variant its write picks, with the write's own tests; every round trip in `tests/src/tests/unions.spec.ts` and `tests/src/tests/bytes.spec.ts`                                                                                                                                                                                                                                                                                                                                                                                                                            |
 | 6.1, 6.2  | `transform`: `transform injected imports`, and in `transform (end-to-end)` the single shared import and the same-named local function; `tests/src/tests/coverage.spec.ts`: `leavesAUserDeclarationNamedAfterAnInjectedImportAlone`; `test/golden.test.mjs`: generated code imports its helpers from the package's abi module                                                                                                                                                                                                                                                                                                                                                       |
 | 6.3       | `test/golden.test.mjs`: a file directive survives the transformer's injected imports; `transform`: `transform generated code` (the three directive tests)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 | 6.4       | `transform`: `transform injected imports` (a `createDeserializer` call site)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
@@ -484,6 +492,8 @@ of `rbxts-transformer-surge`, cited by `describe` block. Source paths are in
 
 ## Changes
 
+- `7ffea67` / `6fb2441`: adds 5.25 (a union's write tests its variants
+  once).
 - `5b102af` / `c006601`: adds 5.24 (a packed region's bytes are read once
   and its bits tested inline).
 - `68f9922` / `499d768`: 5.3 has a `deserialize` that reaches no recursion

@@ -159,7 +159,13 @@ test("a union is sized by the variant its write picks, with the write's own test
 		luau,
 		/local (arr[0-9]+) = value[.]readings\n[^]*?local (size[0-9]+) = 8\n\s+for _, (item[0-9]+) in \1 do\n\s+\2 [+]= [(]if \3[.]kind == "level" then 1 else #\3[.]text [+] 4[)] [+] 1\n\s+end$/m,
 	);
-	assert.match(luau, /local idx[0-9]+ = if item[0-9]+[.]kind == "level" then 0 else 1$/m);
+	// The write reads the tag once and tests it once, and the branch it takes
+	// writes the variant's index.
+	assert.match(
+		luau,
+		/local (tag[0-9]+) = item[0-9]+[.]kind\n\s+if \1 == "level" then\n\s+local (pos[0-9]+) = __surge_cursor\n\s+__surge_cursor = \2 [+] 1\n\s+buffer[.]writeu8[(]__surge_scratch, \2, 0[)]$/m,
+	);
+	assert.doesNotMatch(luau, /local idx[0-9]+ = if /);
 });
 
 // Regression check for a nested object's value read once. What it was measured
