@@ -126,8 +126,9 @@ whatever it is worth.
 object shares one reservation, and a nested object whose properties all have
 a fixed size joins the run around it (Transformer 5.5). An array of fixed-size
 elements reserves all of them at once (Transformer 5.18), and a `str` or a
-`buffer` its count and its bytes (Transformer 5.19). Nothing else shares a
-reservation. The places below reserve more often than the bytes require.
+`buffer` its count and its bytes (Transformer 5.19), and a union variant's
+index the fixed-size bytes that start the variant (Transformer 5.25). Nothing
+else shares a reservation. The places below reserve more often than the bytes require.
 Merging reservations changes no byte, because reservation order is byte order
 either way. On a shape sized exactly, a reservation checks no capacity, so
 what merging still saves there is a move of the cursor.

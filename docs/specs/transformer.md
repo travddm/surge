@@ -1,8 +1,8 @@
 # Transformer specification
 
 Status: current
-Applies to: `@rbxts/surge` at commit `7ffea67`, `rbxts-transformer-surge` at
-commit `6fb2441` (no tagged release yet)
+Applies to: `@rbxts/surge` at commit `73f6143`, `rbxts-transformer-surge` at
+commit `62d4909` (no tagged release yet)
 
 ## 1. Scope
 
@@ -352,8 +352,11 @@ in place for each of its bits. The read calls no function of the package.
 `taggedUnion` reads its tag into a local once and compares it with each
 variant's tag value, and a `guardedUnion` evaluates each variant's guard. The
 branch a test selects writes the variant's index, unless the enclosing
-object's packed region holds the tag, and then the variant. The last variant
-is written when no test passes, as the size of 5.20 takes it.
+object's packed region holds the tag, and then the variant. The index shares
+the reservation of the fixed-size properties that start a `taggedUnion`'s
+variant, or of a `guardedUnion`'s variant of a fixed size, when the run of 5.5
+holds them within its bound, and reserves on its own otherwise. The last
+variant is written when no test passes, as the size of 5.20 takes it.
 
 ## 6. Injected imports
 
@@ -492,6 +495,8 @@ of `rbxts-transformer-surge`, cited by `describe` block. Source paths are in
 
 ## Changes
 
+- `73f6143` / `62d4909`: 5.25 has a variant's index share the reservation
+  of the fixed-size bytes that start the variant.
 - `7ffea67` / `6fb2441`: adds 5.25 (a union's write tests its variants
   once).
 - `5b102af` / `c006601`: adds 5.24 (a packed region's bytes are read once

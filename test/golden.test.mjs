@@ -90,8 +90,10 @@ test("a tagged-union read builds the variant literal with its tag, not a copy of
 test("an unpacked CFrame reserves its 24 bytes once, not 12 bytes twice", () => {
 	const luau = readCompiledLuau("tests/coverage.spec.luau");
 	// A reservation is inline now: the cursor advances by 24 in one step,
-	// where two would advance by 12 twice.
-	assert.match(luau, /__surge_cursor = pos[0-9]+ [+] 24$/m);
+	// where two would advance by 12 twice. On the write side the `CFrame`
+	// variant of `PlacementOrLabel` shares the reservation with its index, so
+	// the step is 25.
+	assert.match(luau, /__surge_cursor = pos[0-9]+ [+] 25$/m);
 	assert.match(luau, /__surge_readCursor = pos[0-9]+ [+] 24$/m);
 	// The rotation vector's last component, written into the same reservation
 	// the position was: an offset of 20 exists only when the two halves share
@@ -160,10 +162,10 @@ test("a union is sized by the variant its write picks, with the write's own test
 		/local (arr[0-9]+) = value[.]readings\n[^]*?local (size[0-9]+) = 8\n\s+for _, (item[0-9]+) in \1 do\n\s+\2 [+]= [(]if \3[.]kind == "level" then 1 else #\3[.]text [+] 4[)] [+] 1\n\s+end$/m,
 	);
 	// The write reads the tag once and tests it once, and the branch it takes
-	// writes the variant's index.
+	// writes the variant's index in one reservation with the `u8` after it.
 	assert.match(
 		luau,
-		/local (tag[0-9]+) = item[0-9]+[.]kind\n\s+if \1 == "level" then\n\s+local (pos[0-9]+) = __surge_cursor\n\s+__surge_cursor = \2 [+] 1\n\s+buffer[.]writeu8[(]__surge_scratch, \2, 0[)]$/m,
+		/local (tag[0-9]+) = item[0-9]+[.]kind\n\s+if \1 == "level" then\n\s+local (pos[0-9]+) = __surge_cursor\n\s+__surge_cursor = \2 [+] 2\n\s+buffer[.]writeu8[(]__surge_scratch, \2, 0[)]$/m,
 	);
 	assert.doesNotMatch(luau, /local idx[0-9]+ = if /);
 });
