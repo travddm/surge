@@ -1,8 +1,8 @@
 # Wire format specification
 
 Status: current
-Applies to: `@rbxts/surge` at commit `b7b0746`, `rbxts-transformer-surge` at
-commit `7422117` (no tagged release yet)
+Applies to: `@rbxts/surge` at commit `1cca9c2`, `rbxts-transformer-surge` at
+commit `a3baf44` (no tagged release yet)
 
 ## 1. Scope
 
@@ -162,8 +162,9 @@ the first in name order is the tag.
 
 **5.7** `guardedUnion` is an index, at the index width, into its variants, then
 the chosen variant's bytes. Variants are ordered by `Field` kind name in name
-order. Two `literalConst` variants are ordered by canonical literal order, and
-two `datatype` variants by the datatype's name in name order.
+order. Two `literalConst` variants are ordered by canonical literal order,
+two `datatype` variants by the datatype's name in name order, and two `enum`
+variants by the enum's name in name order.
 
 **5.8** `recursiveRef` writes exactly what the type it refers to writes.
 
@@ -349,7 +350,7 @@ in `@rbxts/surge`.
 | 4.17               | `checks.spec.ts`: `rejectsANumberItsRangeDoesNotAdmit`                                                                                                                                                                                                                                                                                             |
 | 5.4                | A `Record`: `bytes.spec.ts`: `pinsContainers`. A `Set`: source only, `writeDict` in `emit/write.ts` writes the key alone, and `readDict` in `emit/read.ts` sets it to `true`; `collections.spec.ts`: `roundTripsDictionaries` round-trips one                                                                                                      |
 | 5.6                | `bytes.spec.ts`: `pinsATaggedUnion`; the choice of tag: `walk.test.ts`, `TypeWalker wire-format determinism`                                                                                                                                                                                                                                       |
-| 5.7                | `bytes.spec.ts`: `pinsAGuardedUnion`; the `literalConst` and `datatype` order: `walk.test.ts`, `TypeWalker wire-format determinism` and `TypeWalker classification with fixture packages`. The `u16` index: source only, `writeGuardedUnion` in `emit/write.ts`                                                                                    |
+| 5.7                | `bytes.spec.ts`: `pinsAGuardedUnion`, `pinsAnEnumNextToAnotherType`, `pinsItemsOfTwoEnums`; the `literalConst` and `datatype` order: `walk.test.ts`, `TypeWalker wire-format determinism` and `TypeWalker classification with fixture packages`. The `u16` index: source only, `writeGuardedUnion` in `emit/write.ts`                              |
 | 5.8                | Source only: `ensureHelper` in `emit/index.ts` builds the helper from the write functions an inlined field uses; `recursion.spec.ts` round-trips recursive shapes                                                                                                                                                                                  |
 | 6.2                | `bytes.spec.ts`: `pinsBoundedContainers`, `pinsDefaultedLengthAsUnbranded`                                                                                                                                                                                                                                                                         |
 | 6.3                | `bytes.spec.ts`: `pinsExactLengthContainers`. Truncation and a shorter `str` or `buffer`: source only, `writeStr`, `writeBuffer`, `writeArray` and `writeTuple` in `emit/write.ts` write exactly `L`                                                                                                                                               |
@@ -374,6 +375,7 @@ in `@rbxts/surge`.
 
 ## Changes
 
+- `1cca9c2` / `a3baf44`: 5.7 orders two `enum` variants by the enum's name.
 - `b7b0746` / `7422117`: 6.7 and 9.1 read blobs back from the input's
   `blobs`, since `deserialize` takes no separate `inputBlobs`.
 - `86f729b` / `c8481d3`: adds 4.16 and 4.17 (`DataType.Range<T, Min, Max>`),

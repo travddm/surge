@@ -84,7 +84,7 @@ of these, and the call is left as it was:
 - a type that depends on a type parameter, such as `T` in a call inside a
   generic function. Call the factory where the type is concrete;
 - a type with both declared properties and an index signature;
-- `EnumItem` with no specific enum, and a union of items from two enums;
+- `EnumItem` with no specific enum;
 - a tuple whose rest element is not last;
 - a union the generated code cannot tell apart at run time, listed below;
 - a misused `DataType` brand, such as `Length` on a type that has no count.
@@ -95,8 +95,8 @@ of these, and the call is left as it was:
 differ in a way Luau can see:
 
 - literal values, such as `1 | 2 | "auto"`, compare by value;
-- `string`, `number`, `boolean`, `buffer`, each Roblox type, and one enum's
-  items each have their own type tag;
+- `string`, `number`, `boolean`, `buffer`, each Roblox type, and each enum's
+  items have their own type tag;
 - at most one member may be a table: an object, array, tuple, map or set.
   Two objects need a shared literal tag property, which makes the union a
   tagged union instead;

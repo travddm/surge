@@ -100,6 +100,7 @@ const shapeSerializer = createCodec<Shape>();
 type StringOrNumber = string | number;
 const guardedSerializer = createCodec<StringOrNumber>();
 const orderOrTextSerializer = createCodec<Enum.SortOrder | string>();
+const orderOrRigSerializer = createCodec<Enum.SortOrder | Enum.HumanoidRigType | string>();
 
 interface Datatypes {
 	tint: Color3;
@@ -278,6 +279,20 @@ class BytesTest {
 		const text = orderOrTextSerializer.serialize("hi");
 		Assert.equal("01" + "02000000" + "6869", hex(text));
 		Assert.equal("hi", orderOrTextSerializer.deserialize(text));
+	}
+
+	@Fact
+	public pinsItemsOfTwoEnums(): void {
+		// Variants in `Field` kind order, and two enums by name: HumanoidRigType, SortOrder, str.
+		const rig = orderOrRigSerializer.serialize(Enum.HumanoidRigType.R6);
+		// Variant 0 | index 1 of R15, R6
+		Assert.equal("00" + "01", hex(rig));
+		Assert.equal(Enum.HumanoidRigType.R6, orderOrRigSerializer.deserialize(rig));
+		const order = orderOrRigSerializer.serialize(Enum.SortOrder.Custom);
+		// Variant 1 | index 0 of Custom, LayoutOrder, Name
+		Assert.equal("01" + "00", hex(order));
+		Assert.equal(Enum.SortOrder.Custom, orderOrRigSerializer.deserialize(order));
+		Assert.equal("02" + "02000000" + "6869", hex(orderOrRigSerializer.serialize("hi")));
 	}
 
 	@Fact

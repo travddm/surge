@@ -1,8 +1,8 @@
 # Transformer specification
 
 Status: current
-Applies to: `@rbxts/surge` at commit `b223086`, `rbxts-transformer-surge` at
-commit `e8c9cff` (no tagged release yet)
+Applies to: `@rbxts/surge` at commit `1cca9c2`, `rbxts-transformer-surge` at
+commit `a3baf44` (no tagged release yet)
 
 ## 1. Scope
 
@@ -117,8 +117,10 @@ constituent is opaque. A literal value is guarded by `===`, a primitive by its
 `typeIs` tag, a Roblox datatype by its own type name, the items of one enum
 by `"EnumItem"`, and a table-shaped or recursive constituent by `"table"`. The
 items of one enum in a union are one `enum` constituent, whether the union
-names the enum or some of its items. A union whose constituents are all
-opaque is a `blob` (4.1).
+names the enum or some of its items. Where a union holds more than one enum,
+each is also guarded by its `EnumType`, as
+`typeIs(value, "EnumItem") && value.EnumType === Enum.<name>`. A union whose
+constituents are all opaque is a `blob` (4.1).
 
 **4.5** Each generic instantiation is walked on its own: `Box<number>` and
 `Box<string>` are two types, whatever declaration they share.
@@ -399,7 +401,6 @@ is the string `" surge"`, with a leading space, so roblox-ts prints it as
   constructor type;
 - a type with both declared properties and an index signature;
 - a bare `EnumItem`, with no specific enum;
-- a union of items from two enums;
 - a tuple whose rest element is not last;
 - a union the write side cannot guard (4.4): an opaque constituent next to
   one that is not opaque, a constituent of a kind no guard covers, two or more
@@ -497,6 +498,8 @@ of `rbxts-transformer-surge`, cited by `describe` block. Source paths are in
 
 ## Changes
 
+- `1cca9c2` / `a3baf44`: 4.4 guards each of several enums in a union by its
+  `EnumType`; 7.2 no longer lists a union of items from two enums.
 - `b223086` / `e8c9cff`: 4.4 takes the items of one enum in a union as one
   `enum` constituent, so an enum may stand next to another type.
 - `73f6143` / `62d4909`: 5.25 has a variant's index share the reservation
