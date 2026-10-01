@@ -1,8 +1,8 @@
 # Transformer specification
 
 Status: current
-Applies to: `@rbxts/surge` at commit `73f6143`, `rbxts-transformer-surge` at
-commit `62d4909` (no tagged release yet)
+Applies to: `@rbxts/surge` at commit `b223086`, `rbxts-transformer-surge` at
+commit `e8c9cff` (no tagged release yet)
 
 ## 1. Scope
 
@@ -114,9 +114,11 @@ its inner type, which resolves the next.
 constituent apart at run time: at most one constituent is table-shaped, no two
 constituents other than literal values share a runtime type, and no
 constituent is opaque. A literal value is guarded by `===`, a primitive by its
-`typeIs` tag, a Roblox datatype by its own type name, a single enum item by
-`"EnumItem"`, and a table-shaped or recursive constituent by `"table"`. A
-union whose constituents are all opaque is a `blob` (4.1).
+`typeIs` tag, a Roblox datatype by its own type name, the items of one enum
+by `"EnumItem"`, and a table-shaped or recursive constituent by `"table"`. The
+items of one enum in a union are one `enum` constituent, whether the union
+names the enum or some of its items. A union whose constituents are all
+opaque is a `blob` (4.1).
 
 **4.5** Each generic instantiation is walked on its own: `Box<number>` and
 `Box<string>` are two types, whatever declaration they share.
@@ -445,7 +447,7 @@ of `rbxts-transformer-surge`, cited by `describe` block. Source paths are in
 | 4.1       | `walk`: `TypeWalker classification`, `TypeWalker classification with fixture packages`, `TypeWalker blob classification`, `TypeWalker tuples`, `TypeWalker union guards`, `TypeWalker wire-format determinism`, and the brand blocks under 4.3                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 | 4.2       | `walk`: `TypeWalker recursion through unions`, `TypeWalker union guards` (a recursive object type); `test/golden.test.mjs`: the recursion-helper checks; `walk`: `TypeWalker recursion through arrays and tuples`                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | 4.3       | `detect`: `getDataTypeBrand / getSurgeBrand`; `walk`: `TypeWalker Packed<T>`, `TypeWalker Length<T, L>`, `TypeWalker Vector<X, Y, Z> and Transform<X, Y, Z>`, `TypeWalker Range<T, Min, Max>`, `TypeWalker Quantized<T>`                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
-| 4.4       | `walk`: `TypeWalker union guards`, `TypeWalker wire-format determinism` (two literal values of one runtime type), `TypeWalker classification with fixture packages` (a union of `Instance` subclasses is a `blob`); `emit`: `Emitter union guards`                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| 4.4       | `walk`: `TypeWalker union guards`, `TypeWalker wire-format determinism` (two literal values of one runtime type), `TypeWalker classification with fixture packages` (a union of `Instance` subclasses is a `blob`, and an enum next to another type is one `enum` variant); `tests/src/tests/bytes.spec.ts`: `pinsAnEnumNextToAnotherType`; `emit`: `Emitter union guards`                                                                                                                                                                                                                                                                                                         |
 | 4.5       | `walk`: `TypeWalker generic instantiation identity`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
 | 4.6       | `walk`: `TypeWalker classification` (a finite key union walks as a fixed-property object)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 | 4.7       | `transform`: `transform generated code` (a dictionary keyed by each kind); `tests/src/tests/collections.spec.ts`: `roundTripsDictionariesKeyedByWhatARecordCannotType`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
@@ -495,6 +497,8 @@ of `rbxts-transformer-surge`, cited by `describe` block. Source paths are in
 
 ## Changes
 
+- `b223086` / `e8c9cff`: 4.4 takes the items of one enum in a union as one
+  `enum` constituent, so an enum may stand next to another type.
 - `73f6143` / `62d4909`: 5.25 has a variant's index share the reservation
   of the fixed-size bytes that start the variant.
 - `7ffea67` / `6fb2441`: adds 5.25 (a union's write tests its variants

@@ -99,6 +99,7 @@ const shapeSerializer = createCodec<Shape>();
 
 type StringOrNumber = string | number;
 const guardedSerializer = createCodec<StringOrNumber>();
+const orderOrTextSerializer = createCodec<Enum.SortOrder | string>();
 
 interface Datatypes {
 	tint: Color3;
@@ -265,6 +266,18 @@ class BytesTest {
 		// Variants in `Field` kind order: num, str.
 		Assert.equal("00" + "0000000000004540", hex(guardedSerializer.serialize(42)));
 		Assert.equal("01" + "02000000" + "6869", hex(guardedSerializer.serialize("hi")));
+	}
+
+	@Fact
+	public pinsAnEnumNextToAnotherType(): void {
+		// Variants in `Field` kind order: enum, str. The enum is one variant, whatever item it holds.
+		const item = orderOrTextSerializer.serialize(Enum.SortOrder.Name);
+		// Variant 0 | index 2 of Custom, LayoutOrder, Name
+		Assert.equal("00" + "02", hex(item));
+		Assert.equal(Enum.SortOrder.Name, orderOrTextSerializer.deserialize(item));
+		const text = orderOrTextSerializer.serialize("hi");
+		Assert.equal("01" + "02000000" + "6869", hex(text));
+		Assert.equal("hi", orderOrTextSerializer.deserialize(text));
 	}
 
 	@Fact
