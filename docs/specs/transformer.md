@@ -1,8 +1,8 @@
 # Transformer specification
 
 Status: current
-Applies to: `@rbxts/surge` at commit `1cca9c2`, `rbxts-transformer-surge` at
-commit `a3baf44` (no tagged release yet)
+Applies to: `@rbxts/surge` at commit `fb2fe0b`, `rbxts-transformer-surge` at
+commit `68b528a` (no tagged release yet)
 
 ## 1. Scope
 
@@ -111,15 +111,17 @@ composition of brands, the walk resolves the outermost brand and then walks
 its inner type, which resolves the next.
 
 **4.4** A union is a `guardedUnion` only if the write side can tell every
-constituent apart at run time: at most one constituent is table-shaped, no two
-constituents other than literal values share a runtime type, and no
-constituent is opaque. A literal value is guarded by `===`, a primitive by its
+constituent that is not opaque apart at run time: at most one constituent is
+table-shaped, and no two constituents other than literal values share a
+runtime type. A literal value is guarded by `===`, a primitive by its
 `typeIs` tag, a Roblox datatype by its own type name, the items of one enum
 by `"EnumItem"`, and a table-shaped or recursive constituent by `"table"`. The
 items of one enum in a union are one `enum` constituent, whether the union
 names the enum or some of its items. Where a union holds more than one enum,
 each is also guarded by its `EnumType`, as
-`typeIs(value, "EnumItem") && value.EnumType === Enum.<name>`. A union whose
+`typeIs(value, "EnumItem") && value.EnumType === Enum.<name>`. The opaque
+constituents of a union are one `blob` variant, which has no guard and is the
+last variant, so the write takes it when no guard passes (5.25). A union whose
 constituents are all opaque is a `blob` (4.1).
 
 **4.5** Each generic instantiation is walked on its own: `Box<number>` and
@@ -402,10 +404,9 @@ is the string `" surge"`, with a leading space, so roblox-ts prints it as
 - a type with both declared properties and an index signature;
 - a bare `EnumItem`, with no specific enum;
 - a tuple whose rest element is not last;
-- a union the write side cannot guard (4.4): an opaque constituent next to
-  one that is not opaque, a constituent of a kind no guard covers, two or more
-  table-shaped constituents with no discriminant, or two or more constituents
-  other than literal values with the same runtime type;
+- a union the write side cannot guard (4.4): a constituent of a kind no guard
+  covers, two or more table-shaped constituents with no discriminant, or two
+  or more constituents other than literal values with the same runtime type;
 - a `Length<T, L>` whose `T` writes no count, a `bitSet` included, whose `L`
   is not `u8`, `u16`, `u24`, `u32` or a whole number that is not negative,
   whose `T` is a tuple with no rest element, or whose exact form is applied to
@@ -498,6 +499,8 @@ of `rbxts-transformer-surge`, cited by `describe` block. Source paths are in
 
 ## Changes
 
+- `fb2fe0b` / `68b528a`: 4.4 admits opaque constituents to a `guardedUnion`
+  as one last `blob` variant; 7.2 no longer lists them.
 - `1cca9c2` / `a3baf44`: 4.4 guards each of several enums in a union by its
   `EnumType`; 7.2 no longer lists a union of items from two enums.
 - `b223086` / `e8c9cff`: 4.4 takes the items of one enum in a union as one

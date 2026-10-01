@@ -18,6 +18,10 @@ interface WithBlobs {
 }
 const blobsSerializer = createCodec<WithBlobs>();
 
+// An opaque value next to a type the buffer holds: the string is written, and
+// anything else goes to `blobs`.
+const targetSerializer = createCodec<Instance | Vector2int16 | string>();
+
 // An `unknown` that is `undefined` used to push no blob, so every later blob
 // was read one position early (Wire format 9.3 in docs/specs/wire-format.md).
 interface WithAbsentUnknowns {
@@ -140,6 +144,29 @@ class RobloxTest {
 		Assert.equal(part, result.part);
 		Assert.equal(part, result.maybePart);
 		Assert.equal(3, result.count);
+	}
+
+	@Fact
+	public writesAnOpaqueUnionMemberAsTheLastVariantAndABlob(): void {
+		// Variants: str, then the one opaque variant.
+		const text = targetSerializer.serialize("hi");
+		Assert.equal(1 + 4 + 2, buffer.len(text.buffer));
+		Assert.equal(0, buffer.readu8(text.buffer, 0));
+		Assert.equal(0, text.blobs.size());
+		Assert.equal("hi", targetSerializer.deserialize(text));
+
+		const part = new Instance("Part");
+		const instance = targetSerializer.serialize(part);
+		Assert.equal(1, buffer.len(instance.buffer));
+		Assert.equal(1, buffer.readu8(instance.buffer, 0));
+		Assert.equal(1, instance.blobs.size());
+		// By identity: a blob is passed through, not copied.
+		Assert.equal(part, targetSerializer.deserialize(instance));
+
+		const point = new Vector2int16(3, -4);
+		const opaque = targetSerializer.serialize(point);
+		Assert.equal(1, buffer.readu8(opaque.buffer, 0));
+		Assert.equal(point, targetSerializer.deserialize(opaque));
 	}
 
 	@Fact

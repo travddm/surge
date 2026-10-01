@@ -100,8 +100,8 @@ differ in a way Luau can see:
 - at most one member may be a table: an object, array, tuple, map or set.
   Two objects need a shared literal tag property, which makes the union a
   tagged union instead;
-- no member may be passed through in `blobs` next to one that is not. Type
-  the whole property as `unknown` to pass it all through.
+- a member passed through in `blobs`, such as an `Instance`, may stand next
+  to the others: a value that matches none of them is passed through.
 
 The rules, with the diagnostic each one reports, are
 [specs/transformer.md](specs/transformer.md) 4.4 and 7.2.
