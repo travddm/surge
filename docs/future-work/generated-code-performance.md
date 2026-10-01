@@ -39,6 +39,8 @@ code the transformer generates runs. What has been measured is under
   reading each byte of a packed region once and testing its bits in place.
 - [union-write-tested-once.md](../research/union-write-tested-once.md) —
   writing a union by testing each variant once.
+- [variant-index-reservation.md](../research/variant-index-reservation.md) —
+  reserving a variant's index with its fields, which measured as no change.
 
 This document holds what is still open.
 
@@ -59,16 +61,14 @@ within the band
 item below is that gap. What the other rows pay against hand-written Luau
 is not measured.
 
-**The tagged union's write.** Two differences from the hand-written codec
-are left. The generated write moves its cursor once for each reservation, up
-to three times an event: the index, the variant's fixed fields, and a
-string's count and bytes. The hand-written write moves one position once an
-event, so the index would join the variant's fixed fields in one
-reservation. And the size reads each element's tag once for each comparison
-in its chain, where the hand-written first pass reads it once; binding it
-needs the size to hold a statement ahead of its expression. Which of the two
-accounts for the rest of the gap was not probed, and each is a change to
-measure on its own.
+**The tagged union's write.** One known difference from the hand-written
+codec is left: the size reads each element's tag once for each comparison in
+its chain, where the hand-written first pass reads it once. Binding it needs
+the size to hold a statement ahead of its expression. The other difference,
+a reservation for the variant's index apart from its fields, is gone and
+measured as no change
+([variant-index-reservation.md](../research/variant-index-reservation.md)),
+so the cursor's moves are not where the gap is.
 
 **What is left per call.** A shape that keeps the scratch buffer still has
 the three candidates a shape sized exactly (Transformer 5.20 in
