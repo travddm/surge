@@ -1,9 +1,8 @@
 //!native
 //!optimize 2
-import { DataType as Fbs, createBinarySerializer as createFbsSerializer } from "@rbxts/flamework-binary-serializer";
-import createSerioSerializer from "@rbxts/serio";
+import type { DataType as Fbs } from "@rbxts/flamework-binary-serializer";
 import type * as Serio from "@rbxts/serio";
-import { DataType, createCodec } from "@rbxts/surge";
+import type { DataType } from "@rbxts/surge";
 
 import type { Fixture } from "../adapter";
 import { defineEntry } from "../adapter";
@@ -15,68 +14,13 @@ import { surgeAdapter } from "../adapters/surge";
 import { zapAdapter } from "../adapters/zap";
 import { packedToggles as baselineCodec } from "../baseline/codecs";
 import { Toggles as blinkCodec } from "../blink/server";
-
-/**
- * The same shape twice, so the two rows differ only in `Packed<T>`: ten
- * booleans and two optionals are twelve bytes apart from each other unpacked,
- * and twelve bits packed. All three libraries have a `Packed<T>`; surge puts
- * its bits in a region per object, fbs and serio in one stream at the head of
- * the buffer.
- */
-interface Toggles {
-	a: boolean;
-	b: boolean;
-	c: boolean;
-	d: boolean;
-	e: boolean;
-	f: boolean;
-	g: boolean;
-	h: boolean;
-	i: boolean;
-	j: boolean;
-	level: DataType.u8;
-	label?: string;
-	offset?: DataType.i16;
-}
-
-interface FbsToggles {
-	a: boolean;
-	b: boolean;
-	c: boolean;
-	d: boolean;
-	e: boolean;
-	f: boolean;
-	g: boolean;
-	h: boolean;
-	i: boolean;
-	j: boolean;
-	level: Fbs.u8;
-	label?: string;
-	offset?: Fbs.i16;
-}
-
-interface SerioToggles {
-	a: boolean;
-	b: boolean;
-	c: boolean;
-	d: boolean;
-	e: boolean;
-	f: boolean;
-	g: boolean;
-	h: boolean;
-	i: boolean;
-	j: boolean;
-	level: Serio.u8;
-	label?: string;
-	offset?: Serio.i16;
-}
-
-const unpackedSerializer = createCodec<Toggles>();
-const packedSerializer = createCodec<DataType.Packed<Toggles>>();
-const fbsUnpackedSerializer = createFbsSerializer<FbsToggles>();
-const fbsPackedSerializer = createFbsSerializer<Fbs.Packed<FbsToggles>>();
-const serioUnpackedSerializer = createSerioSerializer<SerioToggles>();
-const serioPackedSerializer = createSerioSerializer<Serio.Packed<SerioToggles>>();
+import { fbsPackedSerializer } from "../codecs/packed-struct/fbs-packed";
+import { fbsUnpackedSerializer } from "../codecs/packed-struct/fbs-unpacked";
+import { serioPackedSerializer } from "../codecs/packed-struct/serio-packed";
+import { serioUnpackedSerializer } from "../codecs/packed-struct/serio-unpacked";
+import type { FbsToggles, SerioToggles, Toggles } from "../codecs/packed-struct/shapes";
+import { packedSerializer } from "../codecs/packed-struct/surge-packed";
+import { unpackedSerializer } from "../codecs/packed-struct/surge-unpacked";
 
 const value = {
 	a: true,

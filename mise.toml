@@ -68,6 +68,10 @@ run = "npm run bench:size"
 description = "Reinstall and recompile tests/, then measure only the fixtures the given patterns select and print the table instead of rewriting docs/benchmarks/size.md -- for reading one change without a full run; a pattern is one word, matched against the fixture name with case and everything that is not a letter or a digit ignored, so `large-array` picks one row and `cframe` picks three"
 run = "npm run bench:size:only -- {{arg(name='fixture', var=true)}}"
 
+[tasks."bench:code"]
+description = "Reinstall and recompile tests/, compile each codec module of the benchmark to Luau bytecode under Lune, and rewrite docs/benchmarks/code-size.md (the code-size tier, see docs/specs/benchmark-harness.md); not part of ci -- a size change is read, not gated pass/fail"
+run = "npm run bench:code"
+
 [tasks."bench:speed"]
 description = "Reinstall and recompile tests/, run the speed suite twice back to back in a real Roblox Studio process via run-in-roblox (about ten minutes), and rewrite docs/benchmarks/speed.md and speed-trials.tsv (the speed tier, see docs/specs/benchmark-harness.md); not part of ci -- a timing is read, not gated pass/fail, and it needs Roblox Studio installed"
 run = "npm run bench:speed"

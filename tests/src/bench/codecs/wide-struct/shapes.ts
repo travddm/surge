@@ -1,0 +1,168 @@
+import type { DataType as Fbs } from "@rbxts/flamework-binary-serializer";
+import type * as Serio from "@rbxts/serio";
+import type { DataType } from "@rbxts/surge";
+
+/**
+ * 50 fixed-size fields: 100 of the 120 locals at which the emitter starts
+ * wrapping an object's fields in blocks (Transformer 5.8 in
+ * docs/specs/transformer.md), so this row is the widest struct that still compiles
+ * to one straight run of writes.
+ */
+export interface WideStruct {
+	f1: DataType.f32;
+	f2: DataType.f32;
+	f3: DataType.f32;
+	f4: DataType.f32;
+	f5: DataType.f32;
+	f6: DataType.f32;
+	f7: DataType.f32;
+	f8: DataType.f32;
+	f9: DataType.f32;
+	f10: DataType.f32;
+	f11: DataType.f32;
+	f12: DataType.f32;
+	f13: DataType.f32;
+	f14: DataType.f32;
+	f15: DataType.f32;
+	f16: DataType.f32;
+	f17: DataType.f32;
+	f18: DataType.f32;
+	f19: DataType.f32;
+	f20: DataType.f32;
+	f21: DataType.f32;
+	f22: DataType.f32;
+	f23: DataType.f32;
+	f24: DataType.f32;
+	f25: DataType.f32;
+	f26: DataType.f32;
+	f27: DataType.f32;
+	f28: DataType.f32;
+	f29: DataType.f32;
+	f30: DataType.f32;
+	f31: DataType.f32;
+	f32: DataType.f32;
+	f33: DataType.f32;
+	f34: DataType.f32;
+	f35: DataType.f32;
+	f36: DataType.f32;
+	f37: DataType.f32;
+	f38: DataType.f32;
+	f39: DataType.f32;
+	f40: DataType.f32;
+	f41: DataType.f32;
+	f42: DataType.f32;
+	f43: DataType.f32;
+	f44: DataType.f32;
+	f45: DataType.f32;
+	f46: DataType.f32;
+	f47: DataType.f32;
+	f48: DataType.f32;
+	f49: DataType.f32;
+	f50: DataType.f32;
+}
+
+export interface FbsWideStruct {
+	f1: Fbs.f32;
+	f2: Fbs.f32;
+	f3: Fbs.f32;
+	f4: Fbs.f32;
+	f5: Fbs.f32;
+	f6: Fbs.f32;
+	f7: Fbs.f32;
+	f8: Fbs.f32;
+	f9: Fbs.f32;
+	f10: Fbs.f32;
+	f11: Fbs.f32;
+	f12: Fbs.f32;
+	f13: Fbs.f32;
+	f14: Fbs.f32;
+	f15: Fbs.f32;
+	f16: Fbs.f32;
+	f17: Fbs.f32;
+	f18: Fbs.f32;
+	f19: Fbs.f32;
+	f20: Fbs.f32;
+	f21: Fbs.f32;
+	f22: Fbs.f32;
+	f23: Fbs.f32;
+	f24: Fbs.f32;
+	f25: Fbs.f32;
+	f26: Fbs.f32;
+	f27: Fbs.f32;
+	f28: Fbs.f32;
+	f29: Fbs.f32;
+	f30: Fbs.f32;
+	f31: Fbs.f32;
+	f32: Fbs.f32;
+	f33: Fbs.f32;
+	f34: Fbs.f32;
+	f35: Fbs.f32;
+	f36: Fbs.f32;
+	f37: Fbs.f32;
+	f38: Fbs.f32;
+	f39: Fbs.f32;
+	f40: Fbs.f32;
+	f41: Fbs.f32;
+	f42: Fbs.f32;
+	f43: Fbs.f32;
+	f44: Fbs.f32;
+	f45: Fbs.f32;
+	f46: Fbs.f32;
+	f47: Fbs.f32;
+	f48: Fbs.f32;
+	f49: Fbs.f32;
+	f50: Fbs.f32;
+}
+
+export interface SerioWideStruct {
+	f1: Serio.f32;
+	f2: Serio.f32;
+	f3: Serio.f32;
+	f4: Serio.f32;
+	f5: Serio.f32;
+	f6: Serio.f32;
+	f7: Serio.f32;
+	f8: Serio.f32;
+	f9: Serio.f32;
+	f10: Serio.f32;
+	f11: Serio.f32;
+	f12: Serio.f32;
+	f13: Serio.f32;
+	f14: Serio.f32;
+	f15: Serio.f32;
+	f16: Serio.f32;
+	f17: Serio.f32;
+	f18: Serio.f32;
+	f19: Serio.f32;
+	f20: Serio.f32;
+	f21: Serio.f32;
+	f22: Serio.f32;
+	f23: Serio.f32;
+	f24: Serio.f32;
+	f25: Serio.f32;
+	f26: Serio.f32;
+	f27: Serio.f32;
+	f28: Serio.f32;
+	f29: Serio.f32;
+	f30: Serio.f32;
+	f31: Serio.f32;
+	f32: Serio.f32;
+	f33: Serio.f32;
+	f34: Serio.f32;
+	f35: Serio.f32;
+	f36: Serio.f32;
+	f37: Serio.f32;
+	f38: Serio.f32;
+	f39: Serio.f32;
+	f40: Serio.f32;
+	f41: Serio.f32;
+	f42: Serio.f32;
+	f43: Serio.f32;
+	f44: Serio.f32;
+	f45: Serio.f32;
+	f46: Serio.f32;
+	f47: Serio.f32;
+	f48: Serio.f32;
+	f49: Serio.f32;
+	f50: Serio.f32;
+}

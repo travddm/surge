@@ -112,6 +112,11 @@ under [research/](research/README.md).
   [benchmarks/speed.md](benchmarks/speed.md) and its trials. It needs Studio
   installed and takes about ten minutes. `mise run bench:speed:render`
   rewrites `speed.md` from the trials without a run.
+- `mise run bench:code` compiles each codec module of the catalog to Luau
+  bytecode under Lune and rewrites
+  [benchmarks/code-size.md](benchmarks/code-size.md). The table changes when
+  the code a library generates for a shape does, so run it after a change to
+  what the transformer emits.
 - `mise run bench:size:only large-array` and `mise run bench:speed:only cframe`
   measure only the rows their patterns select, and write nothing. A pattern
   is one word, because a mise task argument does not keep its quoting on

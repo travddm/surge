@@ -1,10 +1,5 @@
 //!native
 //!optimize 2
-import { DataType as Fbs, createBinarySerializer as createFbsSerializer } from "@rbxts/flamework-binary-serializer";
-import createSerioSerializer from "@rbxts/serio";
-import type * as Serio from "@rbxts/serio";
-import { DataType, createCodec } from "@rbxts/surge";
-
 import { Rng } from "../../support";
 import type { Fixture } from "../adapter";
 import { defineEntry } from "../adapter";
@@ -14,31 +9,12 @@ import { serioAdapter } from "../adapters/serio";
 import { surgeAdapter } from "../adapters/surge";
 import { zapAdapter } from "../adapters/zap";
 import { LargeRecord as blinkCodec } from "../blink/server";
+import { fbsSerializer } from "../codecs/large-record/fbs";
+import { serioSerializer } from "../codecs/large-record/serio";
+import type { FbsLargeRecord, LargeRecord, SerioLargeRecord } from "../codecs/large-record/shapes";
+import { serializer } from "../codecs/large-record/surge";
 
 const COUNT = 200;
-
-interface LargeRecord {
-	entries: Record<string, DataType.u8>;
-}
-
-/**
- * fbs and serio read an object's fields from the property list their
- * Flamework macro sees, which an index signature does not provide: both
- * reach a string-keyed table only as a `Map`. The two shapes therefore
- * differ, and the row compares surge's index signature against their map --
- * the same 200 pairs either way, so the byte counts stay comparable.
- */
-interface FbsLargeRecord {
-	entries: Map<string, Fbs.u8>;
-}
-
-interface SerioLargeRecord {
-	entries: Map<string, Serio.u8>;
-}
-
-const serializer = createCodec<LargeRecord>();
-const fbsSerializer = createFbsSerializer<FbsLargeRecord>();
-const serioSerializer = createSerioSerializer<SerioLargeRecord>();
 
 const rng = new Rng(9311);
 const entries: Record<string, number> = {};

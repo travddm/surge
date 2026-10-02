@@ -1,9 +1,8 @@
 //!native
 //!optimize 2
-import { DataType as Fbs, createBinarySerializer as createFbsSerializer } from "@rbxts/flamework-binary-serializer";
-import createSerioSerializer from "@rbxts/serio";
+import type { DataType as Fbs } from "@rbxts/flamework-binary-serializer";
 import type * as Serio from "@rbxts/serio";
-import { DataType, createCodec } from "@rbxts/surge";
+import type { DataType } from "@rbxts/surge";
 
 import { Rng } from "../../support";
 import type { Fixture } from "../adapter";
@@ -16,32 +15,15 @@ import { surgeAdapter } from "../adapters/surge";
 import { zapAdapter } from "../adapters/zap";
 import { transforms as baselineCodec } from "../baseline/codecs";
 import { Transforms as blinkCodec } from "../blink/server";
+import { fbsSerializer } from "../codecs/cframes/fbs";
+import { fbsPackedSerializer } from "../codecs/cframes/fbs-packed";
+import { serioSerializer } from "../codecs/cframes/serio";
+import { serioPackedSerializer } from "../codecs/cframes/serio-packed";
+import type { Transforms } from "../codecs/cframes/shapes";
+import { serializer } from "../codecs/cframes/surge";
+import { packedSerializer } from "../codecs/cframes/surge-packed";
 
 const COUNT = 50;
-
-/**
- * No width brands, so the unpacked shape is the same for all three; only the
- * `Packed<T>` wrapper comes from each library's own namespace. serio stores a
- * rotation quantized to about 0.05 radians per component, so its round trip
- * is inexact by design on every row here -- see the coverage matrix in
- * docs/research/type-coverage-across-libraries.md.
- *
- * Neither packed row has a Zap cell: it has no packed mode, and its
- * `AlignedCFrame`, which would answer the axis-aligned one, looks a rotation
- * up by exact equality in a table built from `CFrame.Angles`, the same table
- * fbs and serio miss on these rotations, and Zap asserts on a miss instead of
- * falling back to a general form.
- */
-interface Transforms {
-	list: CFrame[];
-}
-
-const serializer = createCodec<Transforms>();
-const packedSerializer = createCodec<DataType.Packed<Transforms>>();
-const fbsSerializer = createFbsSerializer<Transforms>();
-const fbsPackedSerializer = createFbsSerializer<Fbs.Packed<Transforms>>();
-const serioSerializer = createSerioSerializer<Transforms>();
-const serioPackedSerializer = createSerioSerializer<Serio.Packed<Transforms>>();
 
 const rng = new Rng(5419);
 

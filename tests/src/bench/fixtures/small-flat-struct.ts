@@ -1,10 +1,5 @@
 //!native
 //!optimize 2
-import { DataType as Fbs, createBinarySerializer as createFbsSerializer } from "@rbxts/flamework-binary-serializer";
-import createSerioSerializer from "@rbxts/serio";
-import type * as Serio from "@rbxts/serio";
-import { DataType, createCodec } from "@rbxts/surge";
-
 import type { Fixture } from "../adapter";
 import { defineEntry } from "../adapter";
 import { baselineAdapter } from "../adapters/baseline";
@@ -15,40 +10,10 @@ import { surgeAdapter } from "../adapters/surge";
 import { zapAdapter } from "../adapters/zap";
 import { smallFlatStruct as baselineCodec } from "../baseline/codecs";
 import { SmallFlatStruct as blinkCodec } from "../blink/server";
-
-/**
- * Widths are explicit so a size delta reflects a format decision, not a
- * library's default. Each library brands its widths with its own type
- * aliases, which is why the shape is declared once per library over one
- * shared sample value.
- */
-interface SmallFlatStruct {
-	id: DataType.u32;
-	x: DataType.f32;
-	y: DataType.f32;
-	z: DataType.f32;
-	active: boolean;
-}
-
-interface FbsSmallFlatStruct {
-	id: Fbs.u32;
-	x: Fbs.f32;
-	y: Fbs.f32;
-	z: Fbs.f32;
-	active: boolean;
-}
-
-interface SerioSmallFlatStruct {
-	id: Serio.u32;
-	x: Serio.f32;
-	y: Serio.f32;
-	z: Serio.f32;
-	active: boolean;
-}
-
-const serializer = createCodec<SmallFlatStruct>();
-const fbsSerializer = createFbsSerializer<FbsSmallFlatStruct>();
-const serioSerializer = createSerioSerializer<SerioSmallFlatStruct>();
+import { fbsSerializer } from "../codecs/small-flat-struct/fbs";
+import { serioSerializer } from "../codecs/small-flat-struct/serio";
+import type { FbsSmallFlatStruct, SerioSmallFlatStruct, SmallFlatStruct } from "../codecs/small-flat-struct/shapes";
+import { serializer } from "../codecs/small-flat-struct/surge";
 
 const value = { id: 4_000_000, x: 1.5, y: -2.25, z: 0.125, active: true };
 

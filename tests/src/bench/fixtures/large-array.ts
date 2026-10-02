@@ -1,10 +1,5 @@
 //!native
 //!optimize 2
-import { DataType as Fbs, createBinarySerializer as createFbsSerializer } from "@rbxts/flamework-binary-serializer";
-import createSerioSerializer from "@rbxts/serio";
-import type * as Serio from "@rbxts/serio";
-import { DataType, createCodec } from "@rbxts/surge";
-
 import { Rng } from "../../support";
 import type { Fixture } from "../adapter";
 import { defineEntry } from "../adapter";
@@ -14,25 +9,12 @@ import { serioAdapter } from "../adapters/serio";
 import { surgeAdapter } from "../adapters/surge";
 import { zapAdapter } from "../adapters/zap";
 import { LargeArray as blinkCodec } from "../blink/server";
+import { fbsSerializer } from "../codecs/large-array/fbs";
+import { serioSerializer } from "../codecs/large-array/serio";
+import type { FbsLargeArray, LargeArray, SerioLargeArray } from "../codecs/large-array/shapes";
+import { serializer } from "../codecs/large-array/surge";
 
 const COUNT = 1000;
-
-interface LargeArray {
-	values: DataType.u16[];
-}
-
-interface FbsLargeArray {
-	values: Fbs.u16[];
-}
-
-/** serio's plain array is a `List` with a u32 length prefix, the width the other two also take. */
-interface SerioLargeArray {
-	values: Serio.u16[];
-}
-
-const serializer = createCodec<LargeArray>();
-const fbsSerializer = createFbsSerializer<FbsLargeArray>();
-const serioSerializer = createSerioSerializer<SerioLargeArray>();
 
 const rng = new Rng(4127);
 const values = new Array<number>();

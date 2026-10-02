@@ -1,9 +1,6 @@
 //!native
 //!optimize 2
-import { DataType as Fbs, createBinarySerializer as createFbsSerializer } from "@rbxts/flamework-binary-serializer";
-import createSerioSerializer from "@rbxts/serio";
-import type * as Serio from "@rbxts/serio";
-import { DataType, createCodec } from "@rbxts/surge";
+import type { DataType } from "@rbxts/surge";
 
 import { Rng } from "../../support";
 import type { Fixture } from "../adapter";
@@ -16,42 +13,12 @@ import { surgeAdapter } from "../adapters/surge";
 import { zapAdapter } from "../adapters/zap";
 import { taggedUnion as baselineCodec } from "../baseline/codecs";
 import { TaggedUnion as blinkCodec } from "../blink/server";
+import { fbsSerializer } from "../codecs/tagged-union/fbs";
+import { serioSerializer } from "../codecs/tagged-union/serio";
+import type { Event, FbsTaggedUnion, SerioTaggedUnion, TaggedUnion } from "../codecs/tagged-union/shapes";
+import { serializer } from "../codecs/tagged-union/surge";
 
 const COUNT = 100;
-
-type Event =
-	| { kind: "spawn"; id: DataType.u32; at: Vector3 }
-	| { kind: "damage"; id: DataType.u32; amount: DataType.u16 }
-	| { kind: "chat"; id: DataType.u32; text: string }
-	| { kind: "despawn"; id: DataType.u32 };
-
-interface TaggedUnion {
-	events: Event[];
-}
-
-type FbsEvent =
-	| { kind: "spawn"; id: Fbs.u32; at: Vector3 }
-	| { kind: "damage"; id: Fbs.u32; amount: Fbs.u16 }
-	| { kind: "chat"; id: Fbs.u32; text: string }
-	| { kind: "despawn"; id: Fbs.u32 };
-
-interface FbsTaggedUnion {
-	events: FbsEvent[];
-}
-
-type SerioEvent =
-	| { kind: "spawn"; id: Serio.u32; at: Vector3 }
-	| { kind: "damage"; id: Serio.u32; amount: Serio.u16 }
-	| { kind: "chat"; id: Serio.u32; text: string }
-	| { kind: "despawn"; id: Serio.u32 };
-
-interface SerioTaggedUnion {
-	events: SerioEvent[];
-}
-
-const serializer = createCodec<TaggedUnion>();
-const fbsSerializer = createFbsSerializer<FbsTaggedUnion>();
-const serioSerializer = createSerioSerializer<SerioTaggedUnion>();
 
 const rng = new Rng(8081);
 const events = new Array<Event>();

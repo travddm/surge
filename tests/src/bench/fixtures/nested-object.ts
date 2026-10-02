@@ -1,10 +1,5 @@
 //!native
 //!optimize 2
-import { DataType as Fbs, createBinarySerializer as createFbsSerializer } from "@rbxts/flamework-binary-serializer";
-import createSerioSerializer from "@rbxts/serio";
-import type * as Serio from "@rbxts/serio";
-import { DataType, createCodec } from "@rbxts/surge";
-
 import type { Fixture } from "../adapter";
 import { defineEntry } from "../adapter";
 import { baselineAdapter } from "../adapters/baseline";
@@ -15,58 +10,10 @@ import { surgeAdapter } from "../adapters/surge";
 import { zapAdapter } from "../adapters/zap";
 import { nestedObject as baselineCodec } from "../baseline/codecs";
 import { NestedObject as blinkCodec } from "../blink/server";
-
-interface Leaf {
-	name: string;
-	weight: DataType.f32;
-}
-
-interface Third {
-	leaf: Leaf;
-	flag: boolean;
-}
-
-interface Second {
-	inner: Third;
-	count: DataType.u16;
-}
-
-interface First {
-	inner: Second;
-	label: string;
-}
-
-/** Five levels of objects: what nesting costs when no level repeats. */
-interface NestedObject {
-	root: First;
-	version: DataType.u8;
-}
-
-interface FbsNestedObject {
-	root: {
-		inner: {
-			inner: { leaf: { name: string; weight: Fbs.f32 }; flag: boolean };
-			count: Fbs.u16;
-		};
-		label: string;
-	};
-	version: Fbs.u8;
-}
-
-interface SerioNestedObject {
-	root: {
-		inner: {
-			inner: { leaf: { name: string; weight: Serio.f32 }; flag: boolean };
-			count: Serio.u16;
-		};
-		label: string;
-	};
-	version: Serio.u8;
-}
-
-const serializer = createCodec<NestedObject>();
-const fbsSerializer = createFbsSerializer<FbsNestedObject>();
-const serioSerializer = createSerioSerializer<SerioNestedObject>();
+import { fbsSerializer } from "../codecs/nested-object/fbs";
+import { serioSerializer } from "../codecs/nested-object/serio";
+import type { FbsNestedObject, NestedObject, SerioNestedObject } from "../codecs/nested-object/shapes";
+import { serializer } from "../codecs/nested-object/surge";
 
 const value = {
 	root: {

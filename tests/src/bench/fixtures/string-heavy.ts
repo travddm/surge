@@ -1,9 +1,5 @@
 //!native
 //!optimize 2
-import { createBinarySerializer as createFbsSerializer } from "@rbxts/flamework-binary-serializer";
-import createSerioSerializer from "@rbxts/serio";
-import { createCodec } from "@rbxts/surge";
-
 import { Rng } from "../../support";
 import type { Fixture } from "../adapter";
 import { defineEntry } from "../adapter";
@@ -13,22 +9,12 @@ import { serioAdapter } from "../adapters/serio";
 import { surgeAdapter } from "../adapters/surge";
 import { zapAdapter } from "../adapters/zap";
 import { StringHeavy as blinkCodec } from "../blink/server";
+import { fbsSerializer } from "../codecs/string-heavy/fbs";
+import { serioSerializer } from "../codecs/string-heavy/serio";
+import type { StringHeavy } from "../codecs/string-heavy/shapes";
+import { serializer } from "../codecs/string-heavy/surge";
 
 const COUNT = 100;
-
-/**
- * No width brands anywhere, so the three libraries declare the same shape:
- * a plain `string` is a u32 length prefix plus its bytes in all of them.
- */
-interface StringHeavy {
-	title: string;
-	author: string;
-	lines: string[];
-}
-
-const serializer = createCodec<StringHeavy>();
-const fbsSerializer = createFbsSerializer<StringHeavy>();
-const serioSerializer = createSerioSerializer<StringHeavy>();
 
 const rng = new Rng(2207);
 const lines = new Array<string>();

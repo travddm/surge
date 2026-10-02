@@ -2,17 +2,11 @@
 
 Part of the [surge](../architecture.md) design. The benchmark harness is built
 and specified in [specs/benchmark-harness.md](../specs/benchmark-harness.md):
-its catalog, the columns it compares and how each is driven, and both tiers'
-protocols. What it has measured is under [docs/research/](../research/README.md).
+its catalog, the columns it compares and how each is driven, and each tier's
+protocol. What it has measured is under [docs/research/](../research/README.md).
 This document holds what is still open.
 
 ## What
-
-**Measure the generated Luau's size.** Each fixture module holds its shape,
-its sample value and three factory calls, so its compiled size is not any one
-library's generated code. Measuring it honestly needs each call in a module of
-its own per fixture and library, and it belongs beside the speed tier, where
-code size against speed is the question.
 
 **A stable fbs and serio column.** Two builds of unchanged source can compile
 an fbs or serio fixture differently. On 2026-09-26, two builds of
@@ -53,8 +47,7 @@ to one.
 
 ## Why deferred
 
-The code-size measurement is step 2 of the [index](README.md), and needs the
-fixtures restructured, one call per module. Tier 3 has no driver:
+Tier 3 has no driver:
 nothing yet asks what a serializer costs on the wire once a networking layer
 batches it, and [networking.md](networking.md) is where that would come from.
 A Zap-shaped timing has no driver either, and a transcription would measure
@@ -71,18 +64,16 @@ the two cells out.
 
 ## How, briefly
 
-1. Split the fixtures so each factory call is a module of its own, and report
-   each module's compiled size beside the speed table.
-2. Find what sets the field order `rbxts-transformer-flamework` emits, by
+1. Find what sets the field order `rbxts-transformer-flamework` emits, by
    building `tests/` several times from a clean tree and comparing the fbs
    and serio schemas. Then either make the build choose one order, or have a
    golden check or the speed recorder say when a fixture's fbs or serio code
    differs from the last run's.
-3. Run the `Blink: Booleans` row alone (`mise run bench:speed:only
+2. Run the `Blink: Booleans` row alone (`mise run bench:speed:only
 booleans`) across several Studio processes, and look for what differs
    between a fast process and a slow one before changing the row or the
    recorder.
-4. Tier 3 only if wire cost with batching becomes a question the serializer
+3. Tier 3 only if wire cost with batching becomes a question the serializer
    comparison cannot answer.
-5. A Zap-shaped timing only if Zap's speed becomes a question Blink's column,
+4. A Zap-shaped timing only if Zap's speed becomes a question Blink's column,
    the other IDL compiler, cannot answer.

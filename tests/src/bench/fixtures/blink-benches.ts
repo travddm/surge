@@ -1,10 +1,5 @@
 //!native
 //!optimize 2
-import { DataType as Fbs, createBinarySerializer as createFbsSerializer } from "@rbxts/flamework-binary-serializer";
-import createSerioSerializer from "@rbxts/serio";
-import type * as Serio from "@rbxts/serio";
-import { DataType, createCodec } from "@rbxts/surge";
-
 import { Rng } from "../../support";
 import type { Fixture } from "../adapter";
 import { defineEntry } from "../adapter";
@@ -14,47 +9,16 @@ import { serioAdapter } from "../adapters/serio";
 import { surgeAdapter } from "../adapters/surge";
 import { zapAdapter } from "../adapters/zap";
 import { Booleans as blinkBooleansCodec, Entities as blinkEntitiesCodec } from "../blink/server";
+import { fbsBooleansSerializer } from "../codecs/blink-benches/fbs-booleans";
+import { fbsEntitiesSerializer } from "../codecs/blink-benches/fbs-entities";
+import { serioBooleansSerializer } from "../codecs/blink-benches/serio-booleans";
+import { serioEntitiesSerializer } from "../codecs/blink-benches/serio-entities";
+import type { Booleans, Entities, Entity, FbsEntities, SerioEntities } from "../codecs/blink-benches/shapes";
+import { booleansSerializer } from "../codecs/blink-benches/surge-booleans";
+import { entitiesSerializer } from "../codecs/blink-benches/surge-entities";
 
 const BOOLEAN_COUNT = 1000;
 const ENTITY_COUNT = 100;
-
-/**
- * Blink's two published benchmark shapes, so a result here can be compared
- * against its own table. Their `.blink` twins in ../definitions/catalog.blink
- * are transcribed from Blink's own benchmark definitions, at the commit pinned
- * in docs/research/type-coverage-across-libraries.md.
- */
-interface Booleans {
-	values: boolean[];
-}
-
-interface Entity {
-	a: DataType.u8;
-	b: DataType.u8;
-	c: DataType.u8;
-	d: DataType.u8;
-	e: DataType.u8;
-	f: DataType.u8;
-}
-
-interface Entities {
-	entities: Entity[];
-}
-
-interface FbsEntities {
-	entities: Array<{ a: Fbs.u8; b: Fbs.u8; c: Fbs.u8; d: Fbs.u8; e: Fbs.u8; f: Fbs.u8 }>;
-}
-
-interface SerioEntities {
-	entities: Array<{ a: Serio.u8; b: Serio.u8; c: Serio.u8; d: Serio.u8; e: Serio.u8; f: Serio.u8 }>;
-}
-
-const booleansSerializer = createCodec<Booleans>();
-const entitiesSerializer = createCodec<Entities>();
-const fbsBooleansSerializer = createFbsSerializer<Booleans>();
-const fbsEntitiesSerializer = createFbsSerializer<FbsEntities>();
-const serioBooleansSerializer = createSerioSerializer<Booleans>();
-const serioEntitiesSerializer = createSerioSerializer<SerioEntities>();
 
 const rng = new Rng(1721);
 
