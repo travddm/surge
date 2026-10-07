@@ -45,6 +45,8 @@ code the transformer generates runs. What has been measured is under
   union's size reading its tag once.
 - [native-on-the-package.md](../research/native-on-the-package.md) — what
   `--!native` is worth on the package's own modules.
+- [datatype-values.md](../research/datatype-values.md) — reading a
+  datatype's value once, which measured as no change and was withdrawn.
 
 This document holds what is still open.
 
@@ -61,19 +63,17 @@ closed it. The packed toggles are within the band on both halves
 ([packed-bits-read-in-place.md](../research/packed-bits-read-in-place.md)).
 On the tagged union the hand-written codec encodes faster, and its decode is
 within the band
-([size-reads-tag-once.md](../research/size-reads-tag-once.md)); the item
-below is that gap. What the other rows pay against hand-written Luau
+([datatype-values.md](../research/datatype-values.md)); the item below is
+that gap. What the other rows pay against hand-written Luau
 is not measured.
 
-**The tagged union's write.** What is left of the gap is not attributed
-([size-reads-tag-once.md](../research/size-reads-tag-once.md)). One known
-difference from the hand-written codec reads a table: a `spawn` event's write
-reads `item.at` once for each of the three components of its `Vector3`, where
-the hand-written codec reads it into a local once. Reading a datatype's value
-once, the way Transformer 5.23 reads a nested object's, would remove it. It
-reaches no other catalog row, so the tagged union's encode is where it would
-be measured. The other known differences are arithmetic on locals and cursor
-moves, and cursor moves measured as no change
+**The tagged union's write.** What is left of the gap is not attributed.
+The last known difference that read a table, a `spawn` event's `item.at` read
+once for each component, measured as no change when read once, and that
+change was withdrawn for the locals it added
+([datatype-values.md](../research/datatype-values.md)). The known
+differences left are arithmetic on locals and cursor moves, and cursor moves
+measured as no change
 ([variant-index-reservation.md](../research/variant-index-reservation.md)).
 
 **What is left per call.** A shape that keeps the scratch buffer still has
@@ -200,8 +200,8 @@ Every item here is measurement-driven, and the method is settled: a change is
 its own full catalog run against a reference taken in the same session, read
 as medians over many cells against the untouched libraries as controls. The
 per-call gap is closed on the flat struct, the nested object, the `CFrame`
-array and the packed toggles. On the tagged union, one known difference is
-left that a change could close, and the rest of that gap is not attributed.
+array and the packed toggles. On the tagged union, what is left of the gap
+is not attributed.
 Everything else is small, or needs a fixture before anything can measure it.
 
 ## How, briefly

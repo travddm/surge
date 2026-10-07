@@ -1,8 +1,8 @@
 # Transformer specification
 
 Status: current
-Applies to: `@rbxts/surge` at commit `1cea966`, `rbxts-transformer-surge` at
-commit `4a7a289` (no tagged release yet)
+Applies to: `@rbxts/surge` at commit `b307a8d`, `rbxts-transformer-surge` at
+commit `a8eb521` (no tagged release yet)
 
 ## 1. Scope
 
@@ -505,6 +505,8 @@ of `rbxts-transformer-surge`, cited by `describe` block. Source paths are in
 
 ## Changes
 
+- `b307a8d` / `a8eb521`: no statement changes. 5.26 (a datatype's value
+  read once), added at `f16bdc3` / `8d1c05d`, is withdrawn.
 - `1cea966` / `4a7a289`: 5.20 states that a size past its 32 locals reads
   a tag for each comparison; the 5.25 row names the checks of the write
   reading the size's tag.

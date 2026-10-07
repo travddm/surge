@@ -62,7 +62,7 @@ What the directives are worth on the generated code is measured in
   ([research/size-and-read-locals.md](research/size-and-read-locals.md),
   [research/packed-bits-read-in-place.md](research/packed-bits-read-in-place.md)).
   It is slower at a tagged union's encode
-  ([research/size-reads-tag-once.md](research/size-reads-tag-once.md)).
+  ([research/datatype-values.md](research/datatype-values.md)).
   A shape that surge cannot size ahead of its write pays a cost once per
   call
   ([research/exact-sizing.md](research/exact-sizing.md),
