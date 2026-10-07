@@ -1,6 +1,6 @@
 //!optimize 2
 import { Assert, Fact, InlineData, Theory } from "@rbxts/runit";
-import { createCodec } from "@rbxts/surge";
+import { DataType, createCodec } from "@rbxts/surge";
 
 import { Rng, difference } from "../support";
 
@@ -19,6 +19,14 @@ interface WithBuffers {
 	list: buffer[];
 }
 const buffersSerializer = createCodec<WithBuffers>();
+
+// Each element's size varies with its strings, so the array is sized by a loop
+// over its elements ahead of the result (Transformer 5.20 in
+// docs/specs/transformer.md).
+interface WithNamedEntries {
+	entries: Array<{ name: string; score: DataType.u32; title?: string }>;
+}
+const namedEntriesSerializer = createCodec<WithNamedEntries>();
 
 const FUZZ_ITERATIONS = 100;
 
@@ -63,6 +71,29 @@ class StringsTest {
 		Assert.equal(undefined, difference(value, result));
 		// A copy, not a view of the payload or the original.
 		Assert.notEqual(value.rawOrText, result.rawOrText);
+	}
+
+	@Fact
+	public roundTripsAnArrayOfObjectsThatHoldAString(): void {
+		const rng = new Rng(16);
+		for (const _ of $range(1, FUZZ_ITERATIONS)) {
+			const entries = new Array<WithNamedEntries["entries"][number]>();
+			let bytes = 4;
+			for (const __ of $range(1, rng.int(0, 5))) {
+				const entry = {
+					name: rng.str(),
+					score: rng.int(0, 4_294_967_295),
+					title: rng.bool() ? rng.str() : undefined,
+				};
+				entries.push(entry);
+				// The name's length and bytes, the score, the title's presence byte, and its length and bytes.
+				bytes += 4 + entry.name.size() + 4 + 1 + (entry.title === undefined ? 0 : 4 + entry.title.size());
+			}
+			const value: WithNamedEntries = { entries };
+			const buf = namedEntriesSerializer.serialize(value);
+			Assert.equal(bytes, buffer.len(buf));
+			Assert.equal(undefined, difference(value, namedEntriesSerializer.deserialize(buf)));
+		}
 	}
 
 	@Fact

@@ -260,8 +260,9 @@ test("a deserialize that reaches no recursion helper holds its input and cursor 
 });
 
 // Regression check for the boundary of sizing by a loop. What it was measured
-// as worth is in docs/research/exact-sizing-with-loops.md.
-test("an array of unions is sized by a loop, and an array of anything else that varies is not", () => {
+// as worth is in docs/research/exact-sizing-with-loops.md, and on an array of
+// objects in docs/research/object-array-loop-sizing.md.
+test("an array of unions or of objects is sized by a loop, and an array of anything else that varies is not", () => {
 	const unions = readCompiledLuau("tests/unions.spec.luau");
 	// `WithUnionArrays.scalars` is an array of a guarded union.
 	assert.match(
@@ -269,6 +270,12 @@ test("an array of unions is sized by a loop, and an array of anything else that 
 		/local (arr[0-9]+) = value[.]scalars\n[^]*?for _, (item[0-9]+) in \1 do\n\s+size[0-9]+ [+]= [(]if \2 == false then 0 /,
 	);
 	assert.match(unions, /\n\s+local __surge_scratch = buffer[.]create[(]size[0-9]+[)]$/m);
+	// `WithNamedEntries.entries` is an array of objects that hold a string.
+	const strings = readCompiledLuau("tests/strings.spec.luau");
+	assert.match(
+		strings,
+		/local namedEntriesSerializer = [(]function[(][)]\n[^]*?for _, (item[0-9]+) in arr[0-9]+ do\n\s+size[0-9]+ [+]= #\1[.]name [+] /,
+	);
 	// `Grid` is a `number[][]`, whose rows vary in length: it keeps the
 	// scratch buffer, where a loop measured slower.
 	const collections = readCompiledLuau("tests/collections.spec.luau");

@@ -6,15 +6,15 @@ import { difference, hex } from "../support";
 
 // Runtime API 5.7 and 5.8 in docs/specs/runtime-api.md: a serializer runs code
 // it did not generate only through a metamethod of a table it is given, and a
-// call of a different serializer may run inside it. Neither type here has a
-// blob field, so 5.5 does not apply.
+// call of a different serializer may run inside it.
 //
 // The other path 5.7 names, an `__iter` iterator that yields while another
 // thread serializes, is not run here: Luau lets that iterator yield from
 // release 0.736, and Lune 0.10.5 bundles Luau 0.709, where the yield raises.
 //
 // Runtime API 5.9: a `serialize` sized ahead of its write iterates an array
-// of unions twice, once for the size and once for the write.
+// of unions, or of objects whose size varies, twice, once for the size and
+// once for the write.
 
 interface Readings {
 	values: number[];
@@ -29,9 +29,14 @@ interface Mixed {
 	values: Array<string | number>;
 }
 
+interface Labels {
+	values: Label[];
+}
+
 const readings = createCodec<Readings>();
 const label = createCodec<Label>();
 const mixed = createCodec<Mixed>();
+const labels = createCodec<Labels>();
 
 const VALUES: ReadonlyArray<number> = [1, 2.5, -3];
 const LABEL: Label = { name: "inner", id: 7 };
@@ -62,7 +67,7 @@ function iteratingWith(items: ReadonlyArray<number>, during: () => void): number
 }
 
 /** A copy of `items` whose `__iter` calls `during` each time an iteration starts. */
-function countingIterations(items: ReadonlyArray<string | number>, during: () => void): Array<string | number> {
+function countingIterations<T>(items: ReadonlyArray<T>, during: () => void): Array<T> {
 	const copy = [...items];
 	const metatable = {
 		__iter: () => {
@@ -72,7 +77,7 @@ function countingIterations(items: ReadonlyArray<string | number>, during: () =>
 		},
 	};
 	// `LuaMetatable` in `@rbxts/types` does not declare `__iter`.
-	return setmetatable(copy, metatable as unknown as LuaMetatable<Array<string | number>>);
+	return setmetatable(copy, metatable as unknown as LuaMetatable<Array<T>>);
 }
 
 class OverlapTest {
@@ -84,6 +89,16 @@ class OverlapTest {
 
 		Assert.equal(2, iterations);
 		Assert.equal(undefined, difference({ values: [...items] }, mixed.deserialize(written)));
+	}
+
+	@Fact
+	public iteratesAnArrayOfObjectsOnceForItsSizeAndOnceForItsWrite(): void {
+		const items: ReadonlyArray<Label> = [LABEL, { name: "", id: 0 }];
+		let iterations = 0;
+		const written = labels.serialize({ values: countingIterations(items, () => iterations++) });
+
+		Assert.equal(2, iterations);
+		Assert.equal(undefined, difference({ values: [...items] }, labels.deserialize(written)));
 	}
 
 	@Fact

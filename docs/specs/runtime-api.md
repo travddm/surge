@@ -1,8 +1,8 @@
 # Runtime API specification
 
 Status: current
-Applies to: `@rbxts/surge` at commit `54cd356`, `rbxts-transformer-surge` at
-commit `9056ffd` (no tagged release yet)
+Applies to: `@rbxts/surge` at commit `685401a`, `rbxts-transformer-surge` at
+commit `8727491` (no tagged release yet)
 
 ## 1. Scope
 
@@ -248,7 +248,8 @@ It reads each length, count and presence it sizes the result from twice, once
 to size the result and once to write it, except the length of a `str` or a
 `buffer` that the size binds to a local (Transformer 5.20), which it reads
 once. It makes each union's tests, a tag's comparisons or a guarded union's
-guards, twice. It iterates each `array` of unions twice, so an `__iter`
+guards, twice. It iterates each `array` of unions or of objects whose size
+varies twice, so an `__iter`
 metamethod's iterator runs twice in one call. A value whose metamethods answer
 the second read or iteration differently gets a result of the wrong size: a
 longer answer raises, and a shorter one leaves bytes at the end that
@@ -303,11 +304,13 @@ A test file named `*.spec.ts` is under `tests/src/tests/`. A path starting
 | 5.6                         | Source only: `writeStateDecls` and `readStateDecls` in `emit/context.ts` declare the state once per closure where the serializer holds it, and `beginWriteStatements` and `beginReadStatements` reset it per call, or declare it where the call holds it; no test re-enters a serializer                                                                                                                                           |
 | 5.7                         | Source only: the emitter reads a value's properties, lengths and `for … in` iterations under `emit/`, and calls nothing else of the value's. Which metamethods may yield is Luau's: `luaD_call` and `luaD_performcally` in its `VM/src/ldo.cpp`. No test yields inside `serialize`, because Lune 0.10.5 bundles Luau 0.709                                                                                                         |
 | 5.8                         | `overlap.spec.ts`: `runsAnotherSerializerInsideAnIterator`, a call from inside an `__iter` iterator. A call while an iterator is suspended is not run, as the 5.7 row states                                                                                                                                                                                                                                                       |
-| 5.9                         | `test/golden.test.mjs`: a shape sized exactly creates its result at that size and checks no capacity, and a size binds the locals its write reads, ahead of the result; `overlap.spec.ts`: `iteratesAnArrayOfUnionsOnceForItsSizeAndOnceForItsWrite`. Source only for a second read that differs: `exactSize` in `emit/size.ts`                                                                                                    |
+| 5.9                         | `test/golden.test.mjs`: a shape sized exactly creates its result at that size and checks no capacity, and a size binds the locals its write reads, ahead of the result; `overlap.spec.ts`: `iteratesAnArrayOfUnionsOnceForItsSizeAndOnceForItsWrite` and `iteratesAnArrayOfObjectsOnceForItsSizeAndOnceForItsWrite`. Source only for a second read that differs: `exactSize` in `emit/size.ts`                                     |
 | 6.1–6.2                     | Source only: no version field is read or written by either package                                                                                                                                                                                                                                                                                                                                                                 |
 
 ## Changes
 
+- `685401a` / `8727491`: 5.9 names an `array` of objects among those a sized
+  `serialize` iterates twice.
 - `54cd356` / `9056ffd`: no statement changes. The 4.7 row names where
   `nextBlob` is now.
 - `c298e3b` / `9cbe5e5`: 5.1 drops the five blob exports, 5.5 gives the blob channel's state
