@@ -100,7 +100,19 @@ strings and over a dictionary measured slower than the scratch buffer, so
 those keep it ([exact-sizing-with-loops.md](../research/exact-sizing-with-loops.md)),
 and so do an array of any other element whose size varies, which was not
 measured either way: an array of objects that hold a string, and an array of
-arrays. Why the loop pays on unions and not on strings was not probed. A
+arrays. Why the loop pays on unions and not on strings was not probed. An
+array of objects that hold a blob is not sized either, though each element
+writes the same bytes: a blob reserves none, and `fixedBytes` admits no blob,
+since a fixed-size field may share a run and a blob's push or read would then
+be emitted inside it. So the object has no fixed size, and the array sizes
+only an element that has one or a union. The instance references keep the
+scratch buffer for this, with a capacity check at each element and
+`finishWrite`'s copy, where the hand-written codec creates its buffer once at
+its size. That is the difference left on that row's encode that
+[blob-channel-inline.md](../research/blob-channel-inline.md) names, and it
+was not tried. Measuring
+such an element as the union's is measured, and taking its count times its
+bytes when they do not depend on the value, would size it. A
 sequence and a packed `CFrame` are not sized, and neither is anything that
 holds one. A sequence could be sized from its keypoint count, which reads its
 `Keypoints` property a second time, and what that read costs is not
@@ -203,8 +215,9 @@ its own full catalog run against a reference taken in the same session, read
 as medians over many cells against the untouched libraries as controls. The
 per-call gap is closed on the flat struct, the nested object, the `CFrame`
 array and the packed toggles. On the tagged union, what is left of the gap
-is not attributed.
-Everything else is small, or needs a fixture before anything can measure it.
+is not attributed. The array of objects that hold a blob has a row to measure
+it on, the instance references. Everything else is small, or needs a fixture
+before anything can measure it.
 
 ## How, briefly
 
