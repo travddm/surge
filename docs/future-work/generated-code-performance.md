@@ -69,6 +69,8 @@ code the transformer generates runs. What has been measured is under
 - [tagged-union-closed.md](../research/tagged-union-closed.md) — a size loop's
   constant bytes added once, and a datatype's value read once, which closed
   it.
+- [tuple-reservations.md](../research/tuple-reservations.md) — a tuple's
+  fixed-size elements in one reservation, and a tuple of them fixed-size.
 
 This document holds what is still open.
 
@@ -84,7 +86,8 @@ and its correction), and the papers listed above measured each change that
 closed it. The packed toggles are within the band on both halves
 ([packed-bits-read-in-place.md](../research/packed-bits-read-in-place.md)).
 Both halves are within the band on the tagged union
-([tagged-union-closed.md](../research/tagged-union-closed.md)), the
+([tagged-union-closed.md](../research/tagged-union-closed.md)), the tuples
+([tuple-reservations.md](../research/tuple-reservations.md)), the
 leaderboard
 ([object-array-loop-sizing.md](../research/object-array-loop-sizing.md)), the
 tree ([recursion-write-cursor.md](../research/recursion-write-cursor.md)) and
@@ -130,7 +133,9 @@ second time for each `CFrame`.
 
 **Fewer reservations.** A run of consecutive fixed-size properties of one
 object shares one reservation, and a nested object whose properties all have
-a fixed size joins the run around it (Transformer 5.5). An array of fixed-size
+a fixed size joins the run around it, and so do a tuple's consecutive
+fixed-size elements, and a tuple of only those (Transformer 5.5). An array of
+fixed-size
 elements reserves all of them at once (Transformer 5.18), and a `str` or a
 `buffer` its count and its bytes (Transformer 5.19), and a union variant's
 index the fixed-size bytes that start the variant (Transformer 5.25). Nothing
@@ -147,12 +152,11 @@ what merging still saves there is a move of the cursor.
   reserve apart. A run that crossed the boundary would stay open across the
   emission of more than one object, and would still have to end where a block
   of Transformer 5.8 does.
-- **Tuple elements.** Coalesce a tuple's consecutive fixed-size elements into
-  one reservation, the way an object's fields already are, and reserve its
-  rest elements at once, the way an array's are. The mechanism is
-  `fixedBytes`, `allocRuns`, `withAllocRun` and `reserveElements`, unchanged;
-  what is missing is a benchmark fixture that serializes a tuple, without
-  which nothing measures it.
+- **A tuple's rest.** A tuple's fixed-size rest elements still reserve one at
+  a time, where an array's reserve all at once (Transformer 5.18), with
+  `reserveElements`. Sharing the fixed elements' reservation paid
+  ([tuple-reservations.md](../research/tuple-reservations.md)), but the
+  tuples row has no rest, and no catalog row has a tuple with one.
 
 **Smaller items.** A `serialize` sized exactly still moves its cursor past
 its last reservation, where nothing reads it again, and a shape whose
@@ -222,7 +226,7 @@ its own full catalog run against a reference taken in the same session, read
 as medians over many cells against the untouched libraries as controls. The
 per-call gap is closed on the flat struct, the nested object, the `CFrame`
 array, the packed toggles, the leaderboard, the tree and the instance
-references, and the tagged union.
+references, the tagged union and the tuples.
 Everything else is small, or needs a fixture before anything can measure it.
 
 ## How, briefly
@@ -236,8 +240,8 @@ Everything else is small, or needs a fixture before anything can measure it.
   the read table's, the blob channel's, the size's locals, the read state's,
   the packed region's, the size's tag, the blob array's count, the loop's
   boundary, the recursion helper's cursor, the blob list's length and the
-  blob's counted index and the datatype's value read once are there already,
-  and so are the file pragmas on both sides.
+  blob's counted index, the datatype's value read once and the tuple's shared
+  reservation are there already, and so are the file pragmas on both sides.
 - Predict nothing from the compiled output. Whether a cost is paid per element
   or per call was the heuristic this document used to lean on, and the blob
   channel broke it: a per-call allocation was measurable, and whether a
