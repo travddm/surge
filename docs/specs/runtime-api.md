@@ -1,7 +1,7 @@
 # Runtime API specification
 
 Status: current
-Applies to: `@rbxts/surge` at commit `693f5ce`, `rbxts-transformer-surge` at
+Applies to: `@rbxts/surge` at commit `11b4a64`, `rbxts-transformer-surge` at
 commit `680cff4` (no tagged release yet)
 
 ## 1. Scope
@@ -220,8 +220,9 @@ the index of its next blob. A `serialize` creates a new list each call, and
 blobs are appended and read inline. A serializer whose `T` holds no recursive
 type declares this state in `serialize` and `deserialize` themselves, so it
 belongs to a call (Transformer 5.9). Such a `serialize` creates its list at
-the most blobs its value appends, for which it reads the length of each
-`array` that holds a blob one more time. A value whose `__len`
+the most blobs its value appends, where Transformer 5.9 counts them, for
+which it reads the length of each `array` that holds a blob one more time.
+Otherwise it creates the list empty. A value whose `__len`
 metamethod answers that read differently changes only the length the list is
 created at, unless `table.create` does not accept the answer, which raises.
 
@@ -251,7 +252,8 @@ alone.
 It reads each length, count and presence it sizes the result from twice, once
 to size the result and once to write it, except the length of a `str` or a
 `buffer` that the size binds to a local (Transformer 5.20), which it reads
-once. It makes each union's tests, a tag's comparisons or a guarded union's
+once, and the length of an `array` that holds a blob, which it reads a third
+time for its blob list (5.5). It makes each union's tests, a tag's comparisons or a guarded union's
 guards, twice. It iterates each `array` of unions or of objects whose size
 varies twice, so an `__iter`
 metamethod's iterator runs twice in one call. A value whose metamethods answer
@@ -313,6 +315,9 @@ A test file named `*.spec.ts` is under `tests/src/tests/`. A path starting
 
 ## Changes
 
+- `11b4a64` / `680cff4`: 5.5 creates the list at its count only where
+  Transformer 5.9 counts it, and 5.9 names the third read of an `array` that
+  holds a blob.
 - `693f5ce` / `680cff4`: 5.5 creates a serializer's blob list at the most blobs
   its value appends.
 - `685401a` / `8727491`: 5.9 names an `array` of objects among those a sized
