@@ -12,8 +12,8 @@ index a count of the blobs stored so far gives, after a test that it is not
 `nil`, so the list still has no hole. On the row of 50 `Instance`
 references, encode is 1.078× as measured and 1.076× adjusted, 0.082 µs less
 a call, and decode, whose code did not change, did not move. surge's encode
-of the row is now within the band of the hand-written codec, 0.97× as fast as
-it. The change is kept.
+of the row is now within the band of the hand-written codec, which runs 0.97×
+as fast as surge. The change is kept.
 
 ## Background
 

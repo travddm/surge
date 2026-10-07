@@ -49,6 +49,14 @@ interface WithBlobArray {
 }
 const blobArraySerializer = createCodec<WithBlobArray>();
 
+// A recursive type keeps its blob list and that list's count in the closure,
+// which each call resets (Transformer 5.9 in docs/specs/transformer.md).
+interface PartTree {
+	part: Instance;
+	children: PartTree[];
+}
+const partTreeSerializer = createCodec<PartTree>();
+
 interface WithDatatypes {
 	position: Vector3;
 	offset: Vector2;
@@ -202,6 +210,30 @@ class RobloxTest {
 		const { buffer, blobs } = blobsSerializer.serialize(value);
 		Assert.equal(2, blobs.size());
 		Assert.undefined(blobsSerializer.deserialize({ buffer, blobs }).maybePart);
+	}
+
+	@Fact
+	public roundTripsARecursiveTypeThatHoldsABlobOnEachCall(): void {
+		const root = new Instance("Part");
+		const first = new Instance("Folder");
+		const second = new Instance("Part");
+		const value: PartTree = {
+			part: root,
+			children: [
+				{ part: first, children: [] },
+				{ part: second, children: [] },
+			],
+		};
+		// Twice, so a count left over from the first call would misplace the
+		// second call's blobs.
+		for (const _ of $range(1, 2)) {
+			const { buffer: buf, blobs } = partTreeSerializer.serialize(value);
+			Assert.equal(3, blobs.size());
+			const result = partTreeSerializer.deserialize({ buffer: buf, blobs });
+			Assert.equal(root, result.part);
+			Assert.equal(first, result.children[0].part);
+			Assert.equal(second, result.children[1].part);
+		}
 	}
 
 	@Fact
