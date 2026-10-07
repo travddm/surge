@@ -1,7 +1,7 @@
 # Transformer specification
 
 Status: current
-Applies to: `@rbxts/surge` at commit `900658d`, `rbxts-transformer-surge` at
+Applies to: `@rbxts/surge` at commit `1cea966`, `rbxts-transformer-surge` at
 commit `4a7a289` (no tagged release yet)
 
 ## 1. Scope
@@ -318,9 +318,11 @@ adds its index and the size of the variant its write picks, chosen by the
 write's own tests in the write's order: a tag's comparisons or a guarded
 union's guards. A size that compares a `taggedUnion`'s tag more than once
 reads it into a local once: one of the locals below outside a loop or a
-branch, and a local declared ahead of the comparisons inside one. An `array`
-of any other element whose size varies, and a `dict`, keep the scratch
-buffer: a loop measured slower than it on an array of strings and on a `dict`
+branch, and a local declared ahead of the comparisons inside one. Outside a
+loop or a branch and past the 32 locals below, it reads the tag for each
+comparison. An `array` of any other element whose size varies, and a `dict`,
+keep the scratch buffer: a loop measured slower than it on an array of
+strings and on a `dict`
 ([research/exact-sizing-with-loops.md](../research/exact-sizing-with-loops.md)).
 Ahead of the result, the size binds to locals what the write binds outside a
 loop or a branch: an object's value (5.23), an `array`'s or a tuple's value,
@@ -490,7 +492,7 @@ of `rbxts-transformer-surge`, cited by `describe` block. Source paths are in
 | 5.22      | `emit`: `Emitter exact arrays`; `transform`: `transform generated code` (an array, an exact array and a tuple's rest under `noUncheckedIndexedAccess`)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 | 5.23      | `emit`: `Emitter nested object values`; `test/golden.test.mjs`: a nested object reads its value once, not once per property                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 | 5.24      | `emit`: `Emitter packed region`, `Emitter packed tag bit`; `test/golden.test.mjs`: a packed region is written and read inline, with no per-bit helper; every round trip in `tests/src/tests/packed.spec.ts`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
-| 5.25      | `emit`: `Emitter union writes`, `Emitter packed tag bit`; `test/golden.test.mjs`: a union is sized by the variant its write picks, with the write's own tests; every round trip in `tests/src/tests/unions.spec.ts` and `tests/src/tests/bytes.spec.ts`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| 5.25      | `emit`: `Emitter union writes`, `Emitter packed tag bit`, `Emitter exact sizing` (the write reads the tag the size bound); `test/golden.test.mjs`: a union is sized by the variant its write picks, with the write's own tests, and a size that compares a tag more than once reads it once; every round trip in `tests/src/tests/unions.spec.ts` and `tests/src/tests/bytes.spec.ts`                                                                                                                                                                                                                                                                                                                                                           |
 | 6.1, 6.2  | `transform`: `transform injected imports`, and in `transform (end-to-end)` the single shared import and the same-named local function; `tests/src/tests/coverage.spec.ts`: `leavesAUserDeclarationNamedAfterAnInjectedImportAlone`; `test/golden.test.mjs`: generated code imports its helpers from the package's abi module                                                                                                                                                                                                                                                                                                                                                                                                                    |
 | 6.3       | `test/golden.test.mjs`: a file directive survives the transformer's injected imports; `transform`: `transform generated code` (the three directive tests)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 | 6.4       | `transform`: `transform injected imports` (a `createDeserializer` call site)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
@@ -503,6 +505,9 @@ of `rbxts-transformer-surge`, cited by `describe` block. Source paths are in
 
 ## Changes
 
+- `1cea966` / `4a7a289`: 5.20 states that a size past its 32 locals reads
+  a tag for each comparison; the 5.25 row names the checks of the write
+  reading the size's tag.
 - `900658d` / `4a7a289`: 5.20 reads a `taggedUnion`'s tag once where its
   size compares it more than once, and 5.25 has the write read the size's
   local.
