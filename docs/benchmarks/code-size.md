@@ -27,7 +27,7 @@ level 1; another compiler version can give another count.
 | packed-struct (unpacked) | 3179  | 1356 (0.43×) | 1349 (0.42×) |
 | small-flat-struct        | 1130  | 836 (0.74×)  | 798 (0.71×)  |
 | string-heavy             | 2103  | 755 (0.36×)  | 825 (0.39×)  |
-| tagged-union             | 2741  | 1399 (0.51×) | 1494 (0.55×) |
+| tagged-union             | 2726  | 1399 (0.51×) | 1494 (0.55×) |
 | wide-struct              | 6845  | 3363 (0.49×) | 3328 (0.49×) |
 
 The hand-written baseline, Blink and Zap each hold every row they cover in

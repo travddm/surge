@@ -199,6 +199,23 @@ test("a nested object reads its value once, not once per property", () => {
 	assert.doesNotMatch(luau, /value[.]settings[.]audio[.]/);
 });
 
+// Regression check for a datatype's value read once. What it was measured as
+// worth is in docs/research/datatype-values.md.
+test("a datatype reads its value once, not once per component, inside a run", () => {
+	const luau = readCompiledLuau("tests/bytes.spec.luau");
+	// `Datatypes` is a `Color3`, a `Vector2` and a `Vector3` in one reservation.
+	assert.match(
+		luau,
+		/__surge_cursor = (pos[0-9]+) [+] 23\n\s+local (vec[0-9]+) = value[.]offset\n\s+buffer[.]writef32[(]__surge_scratch, \1, \2[.]X[)]$/m,
+	);
+	assert.match(
+		luau,
+		/local (vec[0-9]+) = value[.]position\n\s+buffer[.]writef32[(]__surge_scratch, pos[0-9]+, \1[.]X[)]$/m,
+	);
+	assert.match(luau, /local (color[0-9]+) = value[.]tint\n\s+buffer[.]writeu8[(][^\n]*\1[.]R /m);
+	assert.doesNotMatch(luau, /value[.](offset|position|tint)[.][XYZRGB]\b/);
+});
+
 // Regression check for a size read through the locals its write binds. What it
 // was measured as worth is in docs/research/size-and-read-locals.md.
 test("a size binds the locals its write reads, ahead of the result", () => {
