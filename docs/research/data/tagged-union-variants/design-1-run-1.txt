@@ -1,0 +1,13 @@
+BENCH_ENV: engine=0.741.19.7411056
+BENCH_ENV: method=9 trials per cell, each at least 0.2 seconds of calls after 0.1 seconds of warm-up calls, timed in chunks of 250 calls so that the yields between chunks are not in the time; within a row the libraries take turns, one trial each, and 3 idle frames separate one row from the next
+BENCH_ROW: tagged union | surge | encode | 355319 354534 363401 344818 359469 360797 363334 356836 358005
+BENCH_ROW: tagged union | fbs | encode | 385363 387563 374849 376997 380274 380194 378414 385507 384010
+BENCH_ROW: tagged union | serio | encode | 361815 360423 341102 354488 362039 363175 363063 356748 359902
+BENCH_ROW: tagged union | blink | encode | 141969 144849 128677 138522 143254 141878 144514 139191 139207
+BENCH_ROW: tagged union | baseline | encode | 385554 390341 373012 388632 391952 388460 384727 388069 383184
+BENCH_ROW: tagged union | surge | decode | 100832 103607 102346 97960 104427 98945 100183 101180 93503
+BENCH_ROW: tagged union | fbs | decode | 100886 99969 103370 99401 96924 99758 102229 103681 98678
+BENCH_ROW: tagged union | serio | decode | 102218 103660 101212 101808 103803 100738 101795 99440 95180
+BENCH_ROW: tagged union | blink | decode | 58162 56909 56090 57473 57169 57721 58222 58551 53438
+BENCH_ROW: tagged union | baseline | decode | 99199 100593 101758 99242 98609 100533 99686 88738 82275
+BENCH_RESULT: PASSED

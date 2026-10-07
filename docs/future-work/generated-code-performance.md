@@ -63,6 +63,9 @@ code the transformer generates runs. What has been measured is under
   created at the most blobs a value appends.
 - [blob-store-by-index.md](../research/blob-store-by-index.md) — each blob
   stored at a counted index rather than with `table.insert`.
+- [tagged-union-attribution.md](../research/tagged-union-attribution.md) —
+  where the tagged union's gap to the hand-written codec goes, measured within
+  one process.
 
 This document holds what is still open.
 
@@ -79,8 +82,8 @@ closed it. The packed toggles are within the band on both halves
 ([packed-bits-read-in-place.md](../research/packed-bits-read-in-place.md)).
 On the tagged union the hand-written codec encodes faster, and its decode is
 within the band
-([datatype-values.md](../research/datatype-values.md)); the item below is
-that gap. On the leaderboard, both halves are within the band
+([tagged-union-attribution.md](../research/tagged-union-attribution.md)); the
+item below is that gap. On the leaderboard, both halves are within the band
 ([object-array-loop-sizing.md](../research/object-array-loop-sizing.md)),
 and on the tree
 ([recursion-write-cursor.md](../research/recursion-write-cursor.md)) and the
@@ -88,14 +91,17 @@ instance references
 ([blob-store-by-index.md](../research/blob-store-by-index.md)) as well. What
 the other rows pay against hand-written Luau is not measured.
 
-**The tagged union's write.** What is left of the gap is not attributed.
-The last known difference that read a table, a `spawn` event's `item.at` read
-once for each component, measured as no change when read once, and that
-change was withdrawn for the locals it added
-([datatype-values.md](../research/datatype-values.md)). The known
-differences left are arithmetic on locals and cursor moves, and cursor moves
-measured as no change
-([variant-index-reservation.md](../research/variant-index-reservation.md)).
+**The tagged union's write.** Two differences account for the gap
+([tagged-union-attribution.md](../research/tagged-union-attribution.md)): a
+`spawn` event's `item.at` read once for each component, and the size loop's
+form, which adds each event's variant byte to an if-expression where adding
+the variant bytes once ahead of the loop ran as fast as the hand-written
+codec. Closing it needs a datatype's value read once, with the local that
+takes counted where a run's locals are counted, since reading it once without
+that was withdrawn for passing Luau's 200 locals
+([datatype-values.md](../research/datatype-values.md)); and a loop element's
+constant bytes added once ahead of the size loop. Each is about 2%, which a
+pair of invocations cannot read alone, so the two are measured together.
 
 **What is left per call.** A shape that keeps the scratch buffer still has
 the three candidates a shape sized exactly (Transformer 5.20 in
@@ -227,7 +233,7 @@ its own full catalog run against a reference taken in the same session, read
 as medians over many cells against the untouched libraries as controls. The
 per-call gap is closed on the flat struct, the nested object, the `CFrame`
 array, the packed toggles, the leaderboard, the tree and the instance
-references. On the tagged union, what is left of the gap is not attributed.
+references. On the tagged union, it is attributed and not yet closed.
 Everything else is small, or needs a fixture before anything can measure it.
 
 ## How, briefly
