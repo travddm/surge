@@ -59,6 +59,8 @@ code the transformer generates runs. What has been measured is under
 - [recursion-write-cursor.md](../research/recursion-write-cursor.md) — a
   recursion helper's write cursor passed as an argument, and what the read
   state in the closure costs on a tree.
+- [blob-list-length.md](../research/blob-list-length.md) — the blob list
+  created at the most blobs a value appends.
 
 This document holds what is still open.
 
@@ -78,7 +80,7 @@ within the band
 ([datatype-values.md](../research/datatype-values.md)); the item below is
 that gap. On the instance references, too, the hand-written codec encodes
 faster, and their decode is within the band
-([blob-array-sizing.md](../research/blob-array-sizing.md)); the item after it
+([blob-list-length.md](../research/blob-list-length.md)); the item after it
 is that gap. On the leaderboard, both halves are within the band
 ([object-array-loop-sizing.md](../research/object-array-loop-sizing.md)),
 and on the tree as well
@@ -94,15 +96,18 @@ differences left are arithmetic on locals and cursor moves, and cursor moves
 measured as no change
 ([variant-index-reservation.md](../research/variant-index-reservation.md)).
 
-**The instance references' write.** What is left of the gap is not
-attributed either. Two differences are known: each element moves the cursor
-for its bytes, where the hand-written codec writes at an offset it computes
-from the index, and each element appends its blob with `table.insert` to a
-list created empty, where the hand-written codec creates its list at the count
-and stores each blob at its index. `table.insert` is what appends nothing for
-an absent blob (Wire format 6.7 in
-[specs/wire-format.md](../specs/wire-format.md)), so a list created at its
-count fits only an element whose blob cannot be absent.
+**The instance references' write.** Creating the blob list at its length
+closed two thirds of what was left of the gap
+([blob-list-length.md](../research/blob-list-length.md)). Two differences
+remain. Each element moves the cursor for its bytes, where the hand-written
+codec writes at an offset it computes from the index, and cursor moves
+measured as no change elsewhere
+([variant-index-reservation.md](../research/variant-index-reservation.md)).
+Each element appends its blob with `table.insert`, where the hand-written
+codec stores it at its index; `table.insert` is what appends nothing for an
+absent blob (Wire format 6.7 in
+[specs/wire-format.md](../specs/wire-format.md)), so a store at an index fits
+only a blob that cannot be absent.
 
 **What is left per call.** A shape that keeps the scratch buffer still has
 the three candidates a shape sized exactly (Transformer 5.20 in
@@ -248,7 +253,8 @@ Everything else is small, or needs a fixture before anything can measure it.
   read loop's, the tagged union's, the `CFrame`'s, the shared reservation's,
   the read table's, the blob channel's, the size's locals, the read state's,
   the packed region's, the size's tag, the blob array's count, the loop's
-  boundary and the recursion helper's cursor are there already, and so are
+  boundary, the recursion helper's cursor and the blob list's length are
+  there already, and so are
   the file pragmas on both sides.
 - Predict nothing from the compiled output. Whether a cost is paid per element
   or per call was the heuristic this document used to lean on, and the blob
