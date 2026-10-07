@@ -38,6 +38,6 @@ one module, so they have no cell above:
 
 | Column   | Module                                 | Bytes  |
 | -------- | -------------------------------------- | ------ |
-| baseline | `tests/src/bench/baseline/codecs.luau` | 11091  |
+| baseline | `tests/src/bench/baseline/codecs.luau` | 11531  |
 | blink    | `tests/src/bench/blink/server.luau`    | 93486  |
 | zap      | `tests/src/bench/zap/server.luau`      | 160161 |

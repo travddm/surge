@@ -363,30 +363,40 @@ local function readLeaderboard(buf)
 	return { entries = entries }
 end
 
--- One pass to count the nodes, so the buffer is created once at its size: every node is a
--- u32 child count and a u16 id.
-local function countTreeNodes(node)
-	local count = 1
-	for _, child in node.children do
-		count += countTreeNodes(child)
-	end
-	return count
+-- A tree's size is not known without walking it, so it is written in one walk into a buffer
+-- kept between calls, and copied out at its length, rather than walked once to count the nodes
+-- and again to write them. Every node is a u32 child count and a u16 id.
+local treeScratch = buffer.create(64)
+local treeCapacity = 64
+
+local function growTree(needed)
+	local grown = buffer.create(math.max(needed, treeCapacity * 2))
+	buffer.copy(grown, 0, treeScratch)
+	treeScratch = grown
+	treeCapacity = buffer.len(grown)
 end
 
-local function writeTreeNode(buf, offset, node)
+local function writeTreeNode(offset, node)
 	local children = node.children
-	buffer.writeu32(buf, offset, #children)
+	if offset + 4 > treeCapacity then
+		growTree(offset + 4)
+	end
+	buffer.writeu32(treeScratch, offset, #children)
 	offset += 4
 	for _, child in children do
-		offset = writeTreeNode(buf, offset, child)
+		offset = writeTreeNode(offset, child)
 	end
-	buffer.writeu16(buf, offset, node.id)
+	if offset + 2 > treeCapacity then
+		growTree(offset + 2)
+	end
+	buffer.writeu16(treeScratch, offset, node.id)
 	return offset + 2
 end
 
 local function writeTree(value)
-	local buf = buffer.create(6 * countTreeNodes(value))
-	writeTreeNode(buf, 0, value)
+	local length = writeTreeNode(0, value)
+	local buf = buffer.create(length)
+	buffer.copy(buf, 0, treeScratch, 0, length)
 	return buf
 end
 
