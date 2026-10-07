@@ -35,6 +35,15 @@ interface WithTuples {
 }
 const tuplesSerializer = createCodec<WithTuples>();
 
+// A tuple of fixed-size elements shares the reservation around it, and an
+// array of them reserves every element once (Transformer 5.5 and 5.18).
+interface WithFixedTuples {
+	id: DataType.u32;
+	pair: [DataType.u8, DataType.u16];
+	points: Array<[DataType.u16, DataType.f32]>;
+}
+const fixedTuplesSerializer = createCodec<WithFixedTuples>();
+
 interface WithNestedOptionals {
 	point?: Point;
 	list?: number[];
@@ -143,6 +152,20 @@ class CollectionsTest {
 		const value: WithTuples = { rest: ["head"], optionalTail: [7], nested: [{ x: 0, y: 0 }, [false, []]] };
 		const buffer = tuplesSerializer.serialize(value);
 		Assert.equal(undefined, difference(value, tuplesSerializer.deserialize(buffer)));
+	}
+
+	@Fact
+	public roundTripsTuplesOfFixedSizeElementsInARunAndInAnArray(): void {
+		const rng = new Rng(17);
+		const points = new Array<[number, number]>();
+		for (const _ of $range(1, 20)) {
+			points.push([rng.int(0, 65535), rng.f32()]);
+		}
+		const value: WithFixedTuples = { id: 4_000_000_000, pair: [255, 65535], points };
+		const buf = fixedTuplesSerializer.serialize(value);
+		// `id` and `pair` in one reservation, then the count and six bytes a point.
+		Assert.equal(4 + 3 + 4 + 20 * 6, buffer.len(buf));
+		Assert.equal(undefined, difference(value, fixedTuplesSerializer.deserialize(buf)));
 	}
 
 	@Fact
