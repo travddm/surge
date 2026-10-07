@@ -31,7 +31,7 @@ level 1; another compiler version can give another count.
 | string-heavy             | 2103  | 755 (0.36×)  | 825 (0.39×)  |
 | tagged-union             | 2726  | 1399 (0.51×) | 1494 (0.55×) |
 | tree                     | 1721  | —            | —            |
-| tuples                   | 1064  | 751 (0.71×)  | 751 (0.71×)  |
+| tuples                   | 1091  | 751 (0.69×)  | 751 (0.69×)  |
 | wide-struct              | 6845  | 3363 (0.49×) | 3328 (0.49×) |
 
 The hand-written baseline, Blink and Zap each hold every row they cover in

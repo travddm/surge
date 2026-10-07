@@ -200,6 +200,23 @@ test("a size that compares a tag more than once reads it once", () => {
 	);
 });
 
+// Regression check for a tuple's fixed-size elements sharing a reservation.
+// What it was measured as worth is in docs/research/tuple-reservations.md.
+test("a tuple of fixed-size elements shares the reservation around it, and is read into one table", () => {
+	const luau = readCompiledLuau("tests/collections.spec.luau");
+	// `WithFixedTuples.pair` joins `id` in one reservation of seven bytes.
+	assert.match(
+		luau,
+		/__surge_cursor = (pos[0-9]+) [+] 7\n\s+buffer[.]writeu32[(]__surge_scratch, \1, value[.]id[)]\n\s+local (pos[0-9]+) = \1 [+] 4\n\s+buffer[.]writeu8[(]__surge_scratch, \2, value[.]pair\[1\][)]$/m,
+	);
+	// `WithFixedTuples.points` reserves every element once, and reads each into
+	// one table constructor.
+	assert.match(
+		luau,
+		/__surge_readCursor = pos[0-9]+ [+] (count[0-9]+) [*] 6\n[^]*?for i[0-9]+ = 1, \1 do\n[^]*?result[0-9]+\[i[0-9]+\] = \{ buffer[.]readu16[(]/,
+	);
+});
+
 // Regression check for a datatype's value read once. What it was measured as
 // worth is in docs/research/tagged-union-closed.md.
 test("a datatype reads its value once, not once per component, inside a run", () => {

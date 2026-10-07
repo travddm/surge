@@ -1,8 +1,8 @@
 # Transformer specification
 
 Status: current
-Applies to: `@rbxts/surge` at commit `8de2795`, `rbxts-transformer-surge` at
-commit `a566bd2` (no tagged release yet)
+Applies to: `@rbxts/surge` at commit `f0a321f`, `rbxts-transformer-surge` at
+commit `72a4887` (no tagged release yet)
 
 ## 1. Scope
 
@@ -217,17 +217,20 @@ shape reserves none, such as a shape of only `blob` fields, returns
 **5.5** A run of consecutive fixed-size properties of one object shares one
 reservation. A fixed-size property is a `num`, `vector2`, `vector3`,
 `color3`, `datatype`, `enum`, `literal`, `literalConst` or `bitSet`, a `bool`
-outside the packed region, a `cframe` outside a packed subtree, or an `object`
+outside the packed region, a `cframe` outside a packed subtree, an `object`
 that has no packed region, is not emitted as a recursion helper (5.2), and has
-only fixed-size properties. Such an object's properties take their bytes from
-the run. A run ends before its properties would declare more than 31 locals
+only fixed-size properties, or a tuple with no rest whose elements are all
+fixed-size. Such an object's properties, and such a tuple's elements, take
+their bytes from the run; the tuple binds nothing there, and is read into one
+table constructor. A run ends before its properties would declare more than 31 locals
 in the Luau roblox-ts compiles, counted on the side, and under the check
 option, that declares more. A property declares one; a `cframe` five, and a
 quantized one six; an `enum`, a `literal`, a `num` with a range, a `vector2`,
 a `vector3`, a `color3`, and a `datatype` of more than one component two
 (5.26); and a `bitSet` two, and one more for each of its bytes. A nested object declares
-what its properties declare, at any depth. A tuple's fixed elements do not
-share a reservation.
+what its properties declare, at any depth, and a tuple what its elements
+declare. A tuple's consecutive fixed-size elements share a reservation, as an
+object's properties do.
 
 **5.6** A `dict`'s count is reserved before its entries, the entries are
 counted as they are written, and the count is written back once known. Every
@@ -381,7 +384,8 @@ and the size's loops visit each element, and the write visits it again.
 
 **5.21** A read of an `array`, a tuple, or a sequence's keypoints creates its
 table with `new Array(size)`, which roblox-ts compiles to `table.create(size)`,
-and stores each element at its index. The size is the count an `array` reads
+and stores each element at its index, except a tuple inside a run of 5.5,
+which is one table constructor. The size is the count an `array` reads
 back or the count of its exact form, the keypoint count a sequence reads back,
 and the number of fixed elements for a tuple, whose rest elements are stored
 past them. An
@@ -524,7 +528,7 @@ of `rbxts-transformer-surge`, cited by `describe` block. Source paths are in
 | 5.2       | `emit`: `Emitter per-kind write/read snapshots`; `test/golden.test.mjs`: a non-recursive shape never calls a helper. Source only for the closure the helpers are declared in: `buildReplacement` in `src/index.ts`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 | 5.3       | `emit`: `Emitter read-side checks` (the read state), `Emitter read state`; `test/golden.test.mjs`: a deserialize that reaches no recursion helper holds its input and cursor in locals, a recursion helper's write takes the write cursor and returns it; `transform`: `transform injected imports` (the scratch buffer). Source only for the state a side with no bytes omits: `writeStateDecls` and `readStateDecls` in `src/emit/context.ts`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 | 5.4       | `emit`: `Emitter per-kind write/read snapshots` (the inline reservation); `transform`: `transform (end-to-end)` (the `finishWrite` import). Source only for the `buffer.create(0)` return: `finishWriteExpression` in `src/emit/context.ts`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
-| 5.5       | `emit`: `Emitter shared reservations`, `Emitter local-register ceiling` (the bound on a run's locals, and each kind's count against what the emitter declares), and `Emitter bit sets` for a `bitSet`; `tests/src/tests/coverage.spec.ts`: `roundTripsRunsOfCFramesNextToBoundStrings`; `test/golden.test.mjs`: consecutive fixed-size fields share one reservation, and a nested object of fixed-size fields shares the reservation around it; `tests/src/tests/bytes.spec.ts`: `pinsANestedObjectInNameOrder`; `tests/src/tests/basic.spec.ts`: `roundTripsANestedObjectOfFixedSizeFields`. Source only for tuple elements: `allocRuns` and `fixedBytes` in `src/emit/layout.ts`                                                                                                                                                                                                                                                                                                                                                                                          |
+| 5.5       | `emit`: `Emitter shared reservations`, `Emitter local-register ceiling` (the bound on a run's locals, and each kind's count against what the emitter declares), and `Emitter bit sets` for a `bitSet`; `tests/src/tests/coverage.spec.ts`: `roundTripsRunsOfCFramesNextToBoundStrings`; `test/golden.test.mjs`: consecutive fixed-size fields share one reservation, and a nested object of fixed-size fields shares the reservation around it; `tests/src/tests/bytes.spec.ts`: `pinsANestedObjectInNameOrder`; `tests/src/tests/basic.spec.ts`: `roundTripsANestedObjectOfFixedSizeFields`; tuples: `emit`: `Emitter element reservations` (a tuple's fixed-size elements share a reservation), `test/golden.test.mjs`: a tuple of fixed-size elements shares the reservation around it, and is read into one table, `tests/src/tests/collections.spec.ts`: `roundTripsTuplesOfFixedSizeElementsInARunAndInAnArray`                                                                                                                                                       |
 | 5.6       | `tests/src/tests/bytes.spec.ts`: `pinsContainers` (each count ahead of its contents). Source only for the `dict` count written back: `writeDict` in `src/emit/write.ts`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 | 5.7       | `test/golden.test.mjs`: a count-driven read is a numeric for loop                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
 | 5.8       | `emit`: `Emitter local-register ceiling`; `transform`: `transform generated code` (runs through nested objects, past the local budget); `tests/src/tests/coverage.spec.ts`: `roundTripsAnObjectWiderThanTheLocalRegisterLimit`, `roundTripsNestedObjectsWiderThanTheLocalRegisterLimit`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
@@ -558,6 +562,9 @@ of `rbxts-transformer-surge`, cited by `describe` block. Source paths are in
 
 ## Changes
 
+- `f0a321f` / `72a4887`: 5.5 shares reservations among a tuple's fixed-size
+  elements and makes a tuple of only fixed-size elements fixed-size, and 5.21
+  reads such a tuple inside a run into one table constructor.
 - `8de2795` / `a566bd2`: 5.20 adds the bytes every element writes once, ahead
   of the size loop. 5.26 reads a datatype's value once again, without the
   `cframe` it read before, and 5.5 counts the local that takes.
