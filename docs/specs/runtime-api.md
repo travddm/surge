@@ -1,8 +1,8 @@
 # Runtime API specification
 
 Status: current
-Applies to: `@rbxts/surge` at commit `c298e3b`, `rbxts-transformer-surge` at
-commit `9cbe5e5` (no tagged release yet)
+Applies to: `@rbxts/surge` at commit `54cd356`, `rbxts-transformer-surge` at
+commit `9056ffd` (no tagged release yet)
 
 ## 1. Scope
 
@@ -290,7 +290,7 @@ A test file named `*.spec.ts` is under `tests/src/tests/`. A path starting
 | 4.3 (minimum size, lengths) | Source only: `minBytes` in `emit/layout.ts`; `readStr`, `readBuffer` and `readSequence` in `emit/read.ts` check no count                                                                                                                                                                                                                                                                                                           |
 | 4.5                         | With checks: `checks.spec.ts`: `rejectsAReadPastTheEndOfTheBlobs`. Without: source only, `nextBlob` in `rbxts-transformer-surge` `src/emit/context.ts`, which emits the check whatever `readChecks` is                                                                                                                                                                                                                             |
 | 4.6                         | Source only: `nextBlob` in `rbxts-transformer-surge` `src/emit/context.ts`                                                                                                                                                                                                                                                                                                                                                         |
-| 4.7                         | `checks.spec.ts`: `acceptsWhatSerializeWrote`; a `DataType.Range`: `rbxts-transformer-surge` `test/emit.test.ts`, `Emitter write-side checks`. Source only for what checks do not examine: the emitter compares no value but the two indexes of 4.9, and `nextBlob` in `src/blobs.ts` returns the element of the input's `blobs` as it is                                                                                          |
+| 4.7                         | `checks.spec.ts`: `acceptsWhatSerializeWrote`; a `DataType.Range`: `rbxts-transformer-surge` `test/emit.test.ts`, `Emitter write-side checks`. Source only for what checks do not examine: the emitter compares no value but the two indexes of 4.9, and `nextBlob` in `rbxts-transformer-surge` `src/emit/context.ts` reads the element of the input's `blobs` as it is                                                           |
 | 4.8                         | Source only: the generated `deserialize` prologue, with `beginReadBlobsStatements` in `rbxts-transformer-surge` `src/emit/context.ts`; no test raises and then deserializes again                                                                                                                                                                                                                                                  |
 | 4.9                         | `checks.spec.ts`: `rejectsAnEnumIndexPastItsItems`, `rejectsAPackedRotationCodeThatNamesNoRotation`                                                                                                                                                                                                                                                                                                                                |
 | 4.10                        | Source only: `enumFromIndexExpr` in `emit/read.ts`; `readPackedCFrame` in `src/cframe.ts`                                                                                                                                                                                                                                                                                                                                          |
@@ -308,6 +308,8 @@ A test file named `*.spec.ts` is under `tests/src/tests/`. A path starting
 
 ## Changes
 
+- `54cd356` / `9056ffd`: no statement changes. The 4.7 row names where
+  `nextBlob` is now.
 - `c298e3b` / `9cbe5e5`: 5.1 drops the five blob exports, 5.5 gives the blob channel's state
   to the serializer, inline, and 5.2, 5.7 and 5.8 no longer except it.
 - `5b102af` / `c006601`: 5.3 has the read side of a bit region call no

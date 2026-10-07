@@ -21,8 +21,8 @@ the faster design is in
 ## Two packages, two repositories
 
 - **`@rbxts/surge`** (this repository) is the runtime package the generated
-  code calls: the scratch-buffer helpers, the packed `CFrame` codec, the blob
-  channel, and the `DataType` brands. roblox-ts compiles it to Luau.
+  code calls: the scratch-buffer helpers, the packed `CFrame` codec, and the
+  `DataType` brands. roblox-ts compiles it to Luau.
   [specs/runtime-api.md](specs/runtime-api.md) specifies it.
 - **`rbxts-transformer-surge`**
   ([its repository](https://github.com/travddm/rbxts-transformer-surge)) is
