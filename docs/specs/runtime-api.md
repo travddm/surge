@@ -1,8 +1,8 @@
 # Runtime API specification
 
 Status: current
-Applies to: `@rbxts/surge` at commit `685401a`, `rbxts-transformer-surge` at
-commit `8727491` (no tagged release yet)
+Applies to: `@rbxts/surge` at commit `693f5ce`, `rbxts-transformer-surge` at
+commit `680cff4` (no tagged release yet)
 
 ## 1. Scope
 
@@ -219,7 +219,11 @@ the list a `serialize` returns, and the list a `deserialize` was given and
 the index of its next blob. A `serialize` creates a new list each call, and
 blobs are appended and read inline. A serializer whose `T` holds no recursive
 type declares this state in `serialize` and `deserialize` themselves, so it
-belongs to a call (Transformer 5.9).
+belongs to a call (Transformer 5.9). Such a `serialize` creates its list at
+the most blobs its value appends, for which it reads the length of each
+`array` that holds a blob one more time. A value whose `__len`
+metamethod answers that read differently changes only the length the list is
+created at, unless `table.create` does not accept the answer, which raises.
 
 **5.6** The state of 5.2 belongs to a serializer, not to a call. A `serialize`
 must not start while a `serialize` of the same serializer is running, and a
@@ -300,7 +304,7 @@ A test file named `*.spec.ts` is under `tests/src/tests/`. A path starting
 | 5.2                         | `test/golden.test.mjs`: consecutive fixed-size fields share one reservation, inline, and a deserialize that reaches no recursion helper holds its input and cursor in locals                                                                                                                                                                                                                                                       |
 | 5.3                         | `test/golden.test.mjs`: a packed region is written and read inline, with no per-bit helper                                                                                                                                                                                                                                                                                                                                         |
 | 5.4                         | Source only: `finishWriteExpression` and `writeStateDecls` in `emit/context.ts`                                                                                                                                                                                                                                                                                                                                                    |
-| 5.5                         | `test/golden.test.mjs`: a blob is appended and read inline, with no call into the package; `rbxts-transformer-surge` `test/transform.test.ts`: a shape with a blob field, and a blob reachable only through a recursion helper                                                                                                                                                                                                     |
+| 5.5                         | `test/golden.test.mjs`: a blob is appended and read inline, with no call into the package, and a blob list is created at the most blobs its value appends; `rbxts-transformer-surge` `test/transform.test.ts`: a shape with a blob field, and a blob reachable only through a recursion helper                                                                                                                                     |
 | 5.6                         | Source only: `writeStateDecls` and `readStateDecls` in `emit/context.ts` declare the state once per closure where the serializer holds it, and `beginWriteStatements` and `beginReadStatements` reset it per call, or declare it where the call holds it; no test re-enters a serializer                                                                                                                                           |
 | 5.7                         | Source only: the emitter reads a value's properties, lengths and `for … in` iterations under `emit/`, and calls nothing else of the value's. Which metamethods may yield is Luau's: `luaD_call` and `luaD_performcally` in its `VM/src/ldo.cpp`. No test yields inside `serialize`, because Lune 0.10.5 bundles Luau 0.709                                                                                                         |
 | 5.8                         | `overlap.spec.ts`: `runsAnotherSerializerInsideAnIterator`, a call from inside an `__iter` iterator. A call while an iterator is suspended is not run, as the 5.7 row states                                                                                                                                                                                                                                                       |
@@ -309,6 +313,8 @@ A test file named `*.spec.ts` is under `tests/src/tests/`. A path starting
 
 ## Changes
 
+- `693f5ce` / `680cff4`: 5.5 creates a serializer's blob list at the most blobs
+  its value appends.
 - `685401a` / `8727491`: 5.9 names an `array` of objects among those a sized
   `serialize` iterates twice.
 - `54cd356` / `9056ffd`: no statement changes. The 4.7 row names where

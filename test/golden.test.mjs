@@ -330,6 +330,20 @@ test("a blob is appended and read inline, with no call into the package", () => 
 	assert.doesNotMatch(luau, /__surge_(beginWriteBlobs|pushBlob|finishWriteBlobs|beginReadBlobs|nextBlob)/);
 });
 
+// Regression check for the blob list created at its length. What it was
+// measured as worth is in docs/research/blob-list-length.md.
+test("a blob list is created at the most blobs its value appends", () => {
+	const luau = readCompiledLuau("tests/roblox.spec.luau");
+	// `WithBlobArray.entries` holds one Instance in each element.
+	assert.match(
+		luau,
+		/local blobArraySerializer = [(]function[(][)]\n[^]*?local __surge_writeBlobs = table[.]create[(]#arr[0-9]+[)]$/m,
+	);
+	// `WithAbsentUnknowns` has three optional blobs and an array of them, each
+	// counted as present.
+	assert.match(luau, /local __surge_writeBlobs = table[.]create[(]#arr[0-9]+ [+] 3[)]$/m);
+});
+
 // What the tables around a result cost is in docs/research/tables-around-serialize.md.
 test("a shape with no blob field returns the buffer alone", () => {
 	// `Basic` has no blob field, so `Serialized<Basic>` is `buffer`, and no
