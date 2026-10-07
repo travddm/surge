@@ -325,7 +325,13 @@ test("a shape with no blob field pays nothing for the blob side channel", () => 
 // state. What it was measured as worth is in docs/research/blob-channel-inline.md.
 test("a blob is appended and read inline, with no call into the package", () => {
 	const luau = readCompiledLuau("tests/roblox.spec.luau");
-	assert.match(luau, /table\.insert\(__surge_writeBlobs, /);
+	// A blob is stored at a counted index, unless it is nil, rather than with
+	// `table.insert`, as docs/research/blob-store-by-index.md measured.
+	assert.match(
+		luau,
+		/if (blob[0-9]+) ~= nil then\n\s+__surge_writeBlobs\[__surge_writeBlobCount \+ 1\] = \1\n\s+__surge_writeBlobCount \+= 1$/m,
+	);
+	assert.doesNotMatch(luau, /table\.insert\(__surge_writeBlobs, /);
 	assert.match(luau, /local blob[0-9]+ = __surge_readBlobs\[__surge_readBlobIndex \+ 1\]$/m);
 	assert.doesNotMatch(luau, /__surge_(beginWriteBlobs|pushBlob|finishWriteBlobs|beginReadBlobs|nextBlob)/);
 });

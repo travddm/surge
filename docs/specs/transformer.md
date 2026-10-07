@@ -1,8 +1,8 @@
 # Transformer specification
 
 Status: current
-Applies to: `@rbxts/surge` at commit `693f5ce`, `rbxts-transformer-surge` at
-commit `680cff4` (no tagged release yet)
+Applies to: `@rbxts/surge` at commit `324c701`, `rbxts-transformer-surge` at
+commit `e6325ac` (no tagged release yet)
 
 ## 1. Scope
 
@@ -246,11 +246,14 @@ are not handled: a module past its instruction limit runs the functions past
 it interpreted, and Studio names each one
 ([research/native-code-limits.md](../research/native-code-limits.md)).
 
-**5.9** A blob is appended to the list `serialize` returns with `push`,
-which compiles to `table.insert`, and read from the list `deserialize` was
-given at an index, after the two checks of Runtime API 4.5 and 4.6. Both are
-emitted inline, and call nothing of the package. The list, and the read side's
-index, are declared only where the body writes or reads a blob, including
+**5.9** A blob is stored in the list `serialize` returns at the index a
+count of the blobs stored so far gives, and the count moves past it. A blob
+that is `nil` is neither stored nor counted, so the list has no hole; an
+optional's presence test is that test for the blob it holds. A blob is read
+from the list `deserialize` was given at an index, after the two checks of
+Runtime API 4.5 and 4.6. Both are emitted inline, and call nothing of the
+package. The list and its count, and the read side's list and index, are
+declared only where the body writes or reads a blob, including
 from inside a recursion helper: in `serialize` and `deserialize` themselves
 where the shape reaches no recursion helper (5.2), and in the closure
 otherwise, where each call resets them. Where the shape reaches no recursion
@@ -258,8 +261,8 @@ helper, `serialize` creates the list with `new Array(length)`, which compiles
 to `table.create(length)`, at the most blobs its value appends: one for each
 `blob`, each optional that holds one counted as present, and an `array`'s
 count times its element's, read through the locals the size bound (5.20).
-Where that count would need a loop, or a union, a tuple or a `dict` holds a
-blob, it creates the list empty.
+Where that length would need a loop, or a union, a tuple or a `dict` holds
+a blob, it creates the list empty.
 
 **5.10** Read-side checks are emitted only at a call site that sets
 `readChecks: true`: one `buffer.len` per `deserialize`, a bound after every
@@ -545,6 +548,8 @@ of `rbxts-transformer-surge`, cited by `describe` block. Source paths are in
 
 ## Changes
 
+- `324c701` / `e6325ac`: 5.9 stores a blob at a counted index, where it
+  appended it with `table.insert`.
 - `693f5ce` / `680cff4`: 5.9 creates the blob list at the most blobs a value
   appends.
 - `ee30e4a` / `062199a`: 5.3 passes a recursion helper's write function the

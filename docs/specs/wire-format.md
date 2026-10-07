@@ -1,8 +1,8 @@
 # Wire format specification
 
 Status: current
-Applies to: `@rbxts/surge` at commit `a99101d`, `rbxts-transformer-surge` at
-commit `6bf86ea` (no tagged release yet)
+Applies to: `@rbxts/surge` at commit `324c701`, `rbxts-transformer-surge` at
+commit `e6325ac` (no tagged release yet)
 
 ## 1. Scope
 
@@ -362,7 +362,7 @@ in `@rbxts/surge`.
 | 6.4                | `walk.test.ts`, `TypeWalker Length<T, L>`                                                                                                                                                                                                                                                                                                                                                                               |
 | 6.5                | `bytes.spec.ts`: `pinsBoundedContainers`                                                                                                                                                                                                                                                                                                                                                                                |
 | 6.6                | An `optional`: `collections.spec.ts`: `padsAShortExactArrayOfOptionalsInsteadOfRaising`. A `literal`: source only, `literalIndexExpr` in `emit/write.ts` maps `nil` to the last index                                                                                                                                                                                                                                   |
-| 6.7                | Source only: `writeBool`, `literalIndexExpr` and `writeGuardedUnion` in `emit/write.ts`; `pushBlob` in `rbxts-transformer-surge` `src/emit/context.ts` appends with `table.insert`, which appends nothing for `nil`. With `writeChecks`: `checks.spec.ts`: `rejectsAnExactLengthValueOfAnyOtherLength`                                                                                                                  |
+| 6.7                | Source only: `writeBool`, `literalIndexExpr` and `writeGuardedUnion` in `emit/write.ts`; `pushBlob` in `rbxts-transformer-surge` `src/emit/context.ts` stores a blob only when it is not `nil`. With `writeChecks`: `checks.spec.ts`: `rejectsAnExactLengthValueOfAnyOtherLength`                                                                                                                                       |
 | 6.8                | `checks.spec.ts`: `wrapsACountPastItsWidthWithoutWriteChecks`, `rejectsACountPastItsWidth`                                                                                                                                                                                                                                                                                                                              |
 | 7.1, 7.2           | `bytes.spec.ts`: `pinsPerComponentWidths`, `pinsThatDefaultedComponentWidthsMoveNoBytes`                                                                                                                                                                                                                                                                                                                                |
 | 7.3                | Source only: `writeNumberAt` in `emit/context.ts` passes the component unconverted to Luau's `buffer` writes and `bit32`                                                                                                                                                                                                                                                                                                |
@@ -380,6 +380,8 @@ in `@rbxts/surge`.
 
 ## Changes
 
+- `324c701` / `e6325ac`: no statement changes. The 6.7 row names how `pushBlob`
+  leaves out a `nil` blob.
 - `a99101d` / `6bf86ea`: 4.12 and 4.14 write one enum item as a
   `literalConst`, in no bytes, and 5.7 orders an enum item after the literals.
 - `fb2fe0b` / `68b528a`: 5.7 puts a `blob` variant last; 6.7 follows it.
