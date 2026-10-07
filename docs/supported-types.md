@@ -61,7 +61,9 @@ from the array it is given:
 - `Instance` and its subclasses;
 - every other Roblox type with no row above, such as `Vector2int16`,
   `Region3` or `TweenInfo`;
-- `{}`, `object` and `defined`, whose values have no properties to walk;
+- `{}`, an empty interface, `object` and `defined`. TypeScript admits any
+  value but `undefined` into them, a number or a string included, so surge
+  passes the value through as it is;
 - `unknown` and `any`, which also write 1 presence byte, so that an
   `undefined` value keeps later blobs in their place;
 - a union whose members are all of these.

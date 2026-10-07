@@ -1,7 +1,7 @@
 # Transformer specification
 
 Status: current
-Applies to: `@rbxts/surge` at commit `9eac6b9`, `rbxts-transformer-surge` at
+Applies to: `@rbxts/surge` at commit `8b73a80`, `rbxts-transformer-surge` at
 commit `024d7a4` (no tagged release yet)
 
 ## 1. Scope
@@ -97,6 +97,10 @@ declarations (4.10).
 | an interface or object type with declared properties                                                                                             | `object`                                                       |
 | `Record<string, V>`, `Record<number, V>`, an index-signature type                                                                                | `dict` with a key and a value                                  |
 | a type with no properties and no index signature: `{}`, `object` or `defined`                                                                    | `blob`                                                         |
+
+A type with no properties is a `blob` and not zero bytes: TypeScript admits
+any value but `undefined` into it, a number or a string included, and zero
+bytes would read that value back as an empty table.
 
 **4.2** An object type, a union, an array or a tuple that reappears on its own
 walk path is a `recursiveRef` to its first occurrence.
@@ -513,6 +517,8 @@ of `rbxts-transformer-surge`, cited by `describe` block. Source paths are in
 
 ## Changes
 
+- `8b73a80` / `024d7a4`: 4.1 states why a type with no properties is a
+  `blob`.
 - `9eac6b9` / `024d7a4`: 5.8 names native code generation's limits, which
   it does not handle, in place of the instruction-count limit of a function.
 - `ab62da5` / `024d7a4`: 5.20 sums a size of more than 32 terms in parts.
