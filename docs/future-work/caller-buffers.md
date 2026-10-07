@@ -38,10 +38,6 @@ The work is three additions:
 
 ## Why deferred
 
-It waits on another unit of work. Its blob handling needs the blob channel's
-state out of the package, which [blob-channel-state.md](blob-channel-state.md)
-describes.
-
 It adds to the consumer API, which is `Codec<T>` today (Runtime API 3.1), so
 it lands before the first release in [ci-and-release.md](ci-and-release.md).
 The shape of the addition is undecided, and deciding it is the first step. It
@@ -84,9 +80,9 @@ does not wait for `surge-net`, its first caller, which stays deferred
 - **Blobs.** Values batched into one buffer need one `blobs` array, in order,
   for the whole batch. The write side appends to an array the caller passes.
   The read side starts at a blob index the caller passes, and returns the
-  index after the value. This needs the blob channel's state out of the
-  package first, which [blob-channel-state.md](blob-channel-state.md)
-  describes.
+  index after the value. The blob channel's state is the serializer's
+  (Runtime API 5.5 in [specs/runtime-api.md](../specs/runtime-api.md)), so the
+  list and the index can come from the caller.
 - **A constant size.** `fixedBytes` in the transformer's `emit/layout.ts`
   gives the size of each kind that has a constant one, including an `object`
   whose properties all have one. It leaves out an object with a packed

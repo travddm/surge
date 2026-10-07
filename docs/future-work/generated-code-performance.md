@@ -47,6 +47,8 @@ code the transformer generates runs. What has been measured is under
   `--!native` is worth on the package's own modules.
 - [datatype-values.md](../research/datatype-values.md) — reading a
   datatype's value once, which measured as no change and was withdrawn.
+- [blob-channel-inline.md](../research/blob-channel-inline.md) — appending
+  and reading blobs inline, in the serializer's own state.
 
 This document holds what is still open.
 
