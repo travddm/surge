@@ -318,10 +318,37 @@ local function readPackedToggles(buf)
 	}
 end
 
+-- Each entry's u16 in order after the count, and its Instance in the blob list at the same
+-- index: surge's order, since `health` sorts before `model` and an Instance writes no bytes.
+local function writeInstanceRefs(value)
+	local entries = value.entries
+	local count = #entries
+	local buf = buffer.create(4 + 2 * count)
+	local blobs = table.create(count)
+	buffer.writeu32(buf, 0, count)
+	for index, entry in entries do
+		buffer.writeu16(buf, 2 + 2 * index, entry.health)
+		blobs[index] = entry.model
+	end
+	return { buffer = buf, blobs = blobs }
+end
+
+local function readInstanceRefs(payload)
+	local buf = payload.buffer
+	local blobs = payload.blobs
+	local count = buffer.readu32(buf, 0)
+	local entries = table.create(count)
+	for index = 1, count do
+		entries[index] = { health = buffer.readu16(buf, 2 + 2 * index), model = blobs[index] }
+	end
+	return { entries = entries }
+end
+
 return {
 	smallFlatStruct = { write = writeSmallFlatStruct, read = readSmallFlatStruct },
 	nestedObject = { write = writeNestedObject, read = readNestedObject },
 	transforms = { write = writeTransforms, read = readTransforms },
 	taggedUnion = { write = writeTaggedUnion, read = readTaggedUnion },
 	packedToggles = { write = writePackedToggles, read = readPackedToggles },
+	instanceRefs = { write = writeInstanceRefs, read = readInstanceRefs },
 }

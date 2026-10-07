@@ -4,6 +4,7 @@ import { blinkBooleans, blinkEntities } from "./fixtures/blink-benches";
 import { cframeArray, cframeArrayPackedAligned, cframeArrayPackedArbitrary } from "./fixtures/cframes";
 import { enumHeavy } from "./fixtures/enum-heavy";
 import { guardedUnion } from "./fixtures/guarded-union";
+import { instanceRefs } from "./fixtures/instance-refs";
 import { largeArray } from "./fixtures/large-array";
 import { largeRecord } from "./fixtures/large-record";
 import { nestedObject } from "./fixtures/nested-object";
@@ -30,6 +31,7 @@ export const CATALOG: ReadonlyArray<Fixture> = [
 	enumHeavy,
 	taggedUnion,
 	guardedUnion,
+	instanceRefs,
 	unpackedStruct,
 	packedStruct,
 	cframeArray,

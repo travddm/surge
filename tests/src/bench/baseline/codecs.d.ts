@@ -10,6 +10,18 @@ export interface BaselineCodec<T> {
 	read: (buf: buffer) => T;
 }
 
+/** What a codec passes for a shape with values a buffer cannot hold: the bytes, and those values beside them, as surge does. */
+export interface WithBlobs {
+	buffer: buffer;
+	blobs: Array<defined>;
+}
+
+/** A baseline codec for a shape with values a buffer cannot hold. */
+export interface BaselineBlobCodec<T> {
+	write: (value: T) => WithBlobs;
+	read: (payload: WithBlobs) => T;
+}
+
 export declare const smallFlatStruct: BaselineCodec<{
 	id: number;
 	x: number;
@@ -52,3 +64,5 @@ export declare const packedToggles: BaselineCodec<{
 	label?: string;
 	offset?: number;
 }>;
+
+export declare const instanceRefs: BaselineBlobCodec<{ entries: Array<{ model: Instance; health: number }> }>;
