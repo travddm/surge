@@ -1,0 +1,89 @@
+PROBE_BEGIN flat_1000
+PROBE_END flat_1000 ok
+PROBE_BEGIN flat_2000
+PROBE_END flat_2000 ok
+PROBE_BEGIN flat_250
+PROBE_END flat_250 ok
+PROBE_BEGIN flat_500
+PROBE_END flat_500 ok
+PROBE_BEGIN mixed_100
+PROBE_END mixed_100 ok
+PROBE_BEGIN mixed_200
+PROBE_END mixed_200 ok
+PROBE_BEGIN mixed_400
+PROBE_END mixed_400 ok
+PROBE_BEGIN mixed_800
+ServerStorage.tests.probe.mixed_800:39: Out of registers when trying to allocate 1 registers: exceeded limit 255
+PROBE_END mixed_800 Requested module experienced an error while loading
+PROBE_BEGIN module_10
+PROBE_END module_10 ok
+PROBE_BEGIN module_20
+Native code generation of script =ServerStorage.tests.probe.module_20 failed:  
+Native code generation failed to compile some of the module functions:
+Function 'deserialize' at line 18740 exceeded total module instruction limit
+Function 'serialize' at line 19233 exceeded total module instruction limit
+Function 'deserialize' at line 19871 exceeded total module instruction limit
+Function 'serialize' at line 20364 exceeded total module instruction limit
+Function 'deserialize' at line 21002 exceeded total module instruction limit
+Function 'serialize' at line 21495 exceeded total module instruction limit
+Function 'deserialize' at line 22133 exceeded total module instruction limit
+.  Script will be interpreted.
+PROBE_END module_20 ok
+PROBE_BEGIN module_40
+Native code generation of script =ServerStorage.tests.probe.module_40 failed:  
+Native code generation failed to compile some of the module functions:
+Function 'deserialize' at line 18740 exceeded total module instruction limit
+Function 'serialize' at line 19233 exceeded total module instruction limit
+Function 'deserialize' at line 19871 exceeded total module instruction limit
+Function 'serialize' at line 20364 exceeded total module instruction limit
+Function 'deserialize' at line 21002 exceeded total module instruction limit
+Function 'serialize' at line 21495 exceeded total module instruction limit
+Function 'deserialize' at line 22133 exceeded total module instruction limit
+Function 'serialize' at line 22626 exceeded total module instruction limit
+Function 'deserialize' at line 23264 exceeded total module instruction limit
+Function 'serialize' at line 23757 exceeded total module instruction limit
+Function 'deserialize' at line 24395 exceeded total module instruction limit
+Function 'serialize' at line 24888 exceeded total module instruction limit
+Function 'deserialize' at line 25526 exceeded total module instruction limit
+Function 'serialize' at line 26019 exceeded total module instruction limit
+Function 'deserialize' at line 26657 exceeded total module instruction limit
+Function 'serialize' at line 27150 exceeded total module instruction limit
+Function 'deserialize' at line 27788 exceeded total module instruction limit
+Function 'serialize' at line 28281 exceeded total module instruction limit
+Function 'deserialize' at line 28919 exceeded total module instruction limit
+Function 'serialize' at line 29412 exceeded total module instruction limit
+Function 'deserialize' at line 30050 exceeded total module instruction limit
+Function 'serialize' at line 30543 exceeded total module instruction limit
+Function 'deserialize' at line 31181 exceeded total module instruction limit
+Function 'serialize' at line 31674 exceeded total module instruction limit
+Function 'deserialize' at line 32312 exceeded total module instruction limit
+Function 'serialize' at line 32805 exceeded total module instruction limit
+Function 'deserialize' at line 33443 exceeded total module instruction limit
+Function 'serialize' at line 33936 exceeded total module instruction limit
+Function 'deserialize' at line 34574 exceeded total module instruction limit
+Function 'serialize' at line 35067 exceeded total module instruction limit
+Function 'deserialize' at line 35705 exceeded total module instruction limit
+Function 'serialize' at line 36198 exceeded total module instruction limit
+Function 'deserialize' at line 36836 exceeded total module instruction limit
+Function 'serialize' at line 37329 exceeded total module instruction limit
+Function 'deserialize' at line 37967 exceeded total module instruction limit
+Function 'serialize' at line 38460 exceeded total module instruction limit
+Function 'deserialize' at line 39098 exceeded total module instruction limit
+Function 'serialize' at line 39591 exceeded total module instruction limit
+Function 'deserialize' at line 40229 exceeded total module instruction limit
+Function 'serialize' at line 40722 exceeded total module instruction limit
+Function 'deserialize' at line 41360 exceeded total module instruction limit
+Function 'serialize' at line 41853 exceeded total module instruction limit
+Function 'deserialize' at line 42491 exceeded total module instruction limit
+Function 'serialize' at line 42984 exceeded total module instruction limit
+Function 'deserialize' at line 43622 exceeded total module instruction limit
+Function 'serialize' at line 44115 exceeded total module instruction limit
+Function 'deserialize' at line 44753 exceeded total module instruction limit
+.  Script will be interpreted.
+PROBE_END module_40 ok
+PROBE_BEGIN union_16
+PROBE_END union_16 ok
+PROBE_BEGIN union_64
+PROBE_END union_64 ok
+PROBE_DUMP_BEGIN
+PROBE_DUMP_END dumpcodesize can only be called from CommandBar

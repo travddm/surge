@@ -50,6 +50,24 @@ not write.
 What the directives are worth on the generated code is measured in
 [research/file-directives-on-generated-code.md](research/file-directives-on-generated-code.md).
 
+## Large modules
+
+Native code generation compiles a module up to a limit on its total size.
+Each function past the limit runs interpreted, and the rest of the module
+stays native. Every serializer in a module counts toward that limit, on both
+sides, so a module of many serializers of large types can pass it. Studio's
+Output then names each function it left interpreted:
+
+```text
+Native code generation failed to compile some of the module functions:
+Function 'deserialize' at line 18740 exceeded total module instruction limit
+```
+
+Move serializers into a second module marked the same way until the message
+is gone. How many properties a module holds before it reaches the limit is
+measured in
+[research/native-code-limits.md](research/native-code-limits.md).
+
 ## What to expect
 
 - **Against flamework-binary-serializer**, surge encodes and decodes faster on

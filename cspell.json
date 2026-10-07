@@ -111,6 +111,7 @@
 	],
 	"flagWords": [],
 	"ignoreRegExpList": ["/`[0-9a-f]{7}`/g"],
+	"ignoreWords": ["flatmodule"],
 	"maxNumberOfProblems": 1000,
 	"useGitignore": true,
 	"ignorePaths": [

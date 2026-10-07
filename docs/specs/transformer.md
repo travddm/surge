@@ -1,7 +1,7 @@
 # Transformer specification
 
 Status: current
-Applies to: `@rbxts/surge` at commit `ab62da5`, `rbxts-transformer-surge` at
+Applies to: `@rbxts/surge` at commit `9eac6b9`, `rbxts-transformer-surge` at
 commit `024d7a4` (no tagged release yet)
 
 ## 1. Scope
@@ -231,8 +231,10 @@ function. Past 120, it wraps an object's properties, or a tuple's fixed
 elements, in blocks. A block ends before the next property or element would
 take it past 32 locals, and one that counts more than 32 on its own gets a
 block to itself. Such an object is built on the read side by assignment
-rather than with one table constructor. The instruction-count limit of a Luau
-function is not handled.
+rather than with one table constructor. The limits of native code generation
+are not handled: a module past its instruction limit runs the functions past
+it interpreted, and Studio names each one
+([research/native-code-limits.md](../research/native-code-limits.md)).
 
 **5.9** The blob channel's entry points, `beginWriteBlobs`,
 `finishWriteBlobs` and `beginReadBlobs`, are emitted only where the body
@@ -511,6 +513,8 @@ of `rbxts-transformer-surge`, cited by `describe` block. Source paths are in
 
 ## Changes
 
+- `9eac6b9` / `024d7a4`: 5.8 names native code generation's limits, which
+  it does not handle, in place of the instruction-count limit of a function.
 - `ab62da5` / `024d7a4`: 5.20 sums a size of more than 32 terms in parts.
 - `a6c8d12` / `afefffd`: 5.5 and 5.18 bound a run by the locals its
   properties declare, not by their number.

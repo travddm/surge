@@ -1,0 +1,6 @@
+flat_4000 exit=0 seconds=29
+union_256 exit=0 seconds=54
+module_80 exit=0 seconds=38
+mixed_1600 exit=0 seconds=60
+flat_8000 exit=0 seconds=88
+union_1024 exit=124 seconds=601

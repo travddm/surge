@@ -1,0 +1,99 @@
+PROBE_BEGIN flatmodule_20
+PROBE_END flatmodule_20 ok
+PROBE_BEGIN flatmodule_40
+PROBE_END flatmodule_40 ok
+PROBE_BEGIN module_10
+PROBE_END module_10 ok
+PROBE_BEGIN module_12
+PROBE_END module_12 ok
+PROBE_BEGIN module_14
+PROBE_END module_14 ok
+PROBE_BEGIN module_16
+PROBE_END module_16 ok
+PROBE_BEGIN module_18
+Native code generation of script =ServerStorage.tests.probe.module_18 failed:  
+Native code generation failed to compile some of the module functions:
+Function 'deserialize' at line 18740 exceeded total module instruction limit
+Function 'serialize' at line 19233 exceeded total module instruction limit
+Function 'deserialize' at line 19871 exceeded total module instruction limit
+.  Script will be interpreted.
+PROBE_END module_18 ok
+PROBE_BEGIN module_20
+Native code generation of script =ServerStorage.tests.probe.module_20 failed:  
+Native code generation failed to compile some of the module functions:
+Function 'deserialize' at line 18740 exceeded total module instruction limit
+Function 'serialize' at line 19233 exceeded total module instruction limit
+Function 'deserialize' at line 19871 exceeded total module instruction limit
+Function 'serialize' at line 20364 exceeded total module instruction limit
+Function 'deserialize' at line 21002 exceeded total module instruction limit
+Function 'serialize' at line 21495 exceeded total module instruction limit
+Function 'deserialize' at line 22133 exceeded total module instruction limit
+.  Script will be interpreted.
+PROBE_END module_20 ok
+PROBE_BEGIN module_40
+Native code generation of script =ServerStorage.tests.probe.module_40 failed:  
+Native code generation failed to compile some of the module functions:
+Function 'deserialize' at line 18740 exceeded total module instruction limit
+Function 'serialize' at line 19233 exceeded total module instruction limit
+Function 'deserialize' at line 19871 exceeded total module instruction limit
+Function 'serialize' at line 20364 exceeded total module instruction limit
+Function 'deserialize' at line 21002 exceeded total module instruction limit
+Function 'serialize' at line 21495 exceeded total module instruction limit
+Function 'deserialize' at line 22133 exceeded total module instruction limit
+Function 'serialize' at line 22626 exceeded total module instruction limit
+Function 'deserialize' at line 23264 exceeded total module instruction limit
+Function 'serialize' at line 23757 exceeded total module instruction limit
+Function 'deserialize' at line 24395 exceeded total module instruction limit
+Function 'serialize' at line 24888 exceeded total module instruction limit
+Function 'deserialize' at line 25526 exceeded total module instruction limit
+Function 'serialize' at line 26019 exceeded total module instruction limit
+Function 'deserialize' at line 26657 exceeded total module instruction limit
+Function 'serialize' at line 27150 exceeded total module instruction limit
+Function 'deserialize' at line 27788 exceeded total module instruction limit
+Function 'serialize' at line 28281 exceeded total module instruction limit
+Function 'deserialize' at line 28919 exceeded total module instruction limit
+Function 'serialize' at line 29412 exceeded total module instruction limit
+Function 'deserialize' at line 30050 exceeded total module instruction limit
+Function 'serialize' at line 30543 exceeded total module instruction limit
+Function 'deserialize' at line 31181 exceeded total module instruction limit
+Function 'serialize' at line 31674 exceeded total module instruction limit
+Function 'deserialize' at line 32312 exceeded total module instruction limit
+Function 'serialize' at line 32805 exceeded total module instruction limit
+Function 'deserialize' at line 33443 exceeded total module instruction limit
+Function 'serialize' at line 33936 exceeded total module instruction limit
+Function 'deserialize' at line 34574 exceeded total module instruction limit
+Function 'serialize' at line 35067 exceeded total module instruction limit
+Function 'deserialize' at line 35705 exceeded total module instruction limit
+Function 'serialize' at line 36198 exceeded total module instruction limit
+Function 'deserialize' at line 36836 exceeded total module instruction limit
+Function 'serialize' at line 37329 exceeded total module instruction limit
+Function 'deserialize' at line 37967 exceeded total module instruction limit
+Function 'serialize' at line 38460 exceeded total module instruction limit
+Function 'deserialize' at line 39098 exceeded total module instruction limit
+Function 'serialize' at line 39591 exceeded total module instruction limit
+Function 'deserialize' at line 40229 exceeded total module instruction limit
+Function 'serialize' at line 40722 exceeded total module instruction limit
+Function 'deserialize' at line 41360 exceeded total module instruction limit
+Function 'serialize' at line 41853 exceeded total module instruction limit
+Function 'deserialize' at line 42491 exceeded total module instruction limit
+Function 'serialize' at line 42984 exceeded total module instruction limit
+Function 'deserialize' at line 43622 exceeded total module instruction limit
+Function 'serialize' at line 44115 exceeded total module instruction limit
+Function 'deserialize' at line 44753 exceeded total module instruction limit
+.  Script will be interpreted.
+PROBE_END module_40 ok
+PROBE_TIME module_10 codec0 encode=3.035us decode=6.445us
+PROBE_TIME module_10 codec9 encode=3.379us decode=6.782us
+PROBE_TIME module_12 codec0 encode=3.287us decode=6.249us
+PROBE_TIME module_12 codec11 encode=3.226us decode=6.118us
+PROBE_TIME module_14 codec0 encode=3.315us decode=6.147us
+PROBE_TIME module_14 codec13 encode=3.490us decode=5.556us
+PROBE_TIME module_16 codec0 encode=3.578us decode=5.885us
+PROBE_TIME module_16 codec15 encode=3.285us decode=5.844us
+PROBE_TIME module_18 codec0 encode=3.231us decode=5.257us
+PROBE_TIME module_18 codec17 encode=3.789us decode=7.099us
+PROBE_TIME module_20 codec0 encode=3.158us decode=5.535us
+PROBE_TIME module_20 codec19 encode=3.777us decode=7.084us
+PROBE_TIME module_40 codec0 encode=2.795us decode=5.832us
+PROBE_TIME module_40 codec39 encode=3.731us decode=7.032us
+PROBE_DONE
