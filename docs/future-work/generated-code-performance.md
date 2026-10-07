@@ -231,8 +231,8 @@ Everything else is small, or needs a fixture before anything can measure it.
 - A golden check in `test/golden.test.mjs` for each change that lands. The
   read loop's, the tagged union's, the `CFrame`'s, the shared reservation's,
   the read table's, the blob channel's, the size's locals, the read state's,
-  the packed region's and the size's tag are there already, and so are the
-  file pragmas on both sides.
+  the packed region's, the size's tag and the blob array's count are there
+  already, and so are the file pragmas on both sides.
 - Predict nothing from the compiled output. Whether a cost is paid per element
   or per call was the heuristic this document used to lean on, and the blob
   channel broke it: a per-call allocation was measurable, and whether a
