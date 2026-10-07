@@ -282,15 +282,24 @@ test("an array of unions is sized by a loop, and an array of anything else that 
 // docs/research/per-call-overhead.md.
 test("a shape with no blob field pays nothing for the blob side channel", () => {
 	const luau = readCompiledLuau("tests/basic.spec.luau");
-	// `Basic` has no Instance, `unknown` or `any` field, so none of the three
-	// per-call blob entry points is emitted -- `beginWriteBlobs` allocates a
-	// table on every serialize.
-	for (const name of ["beginWriteBlobs", "finishWriteBlobs", "beginReadBlobs"]) {
-		assert.ok(!luau.includes(`__surge_${name}(`), `${name} should not be emitted for a blob-free shape`);
+	// `Basic` has no Instance, `unknown` or `any` field, so neither side
+	// declares the blob channel's state -- the write side's list is a table
+	// created on every serialize.
+	for (const name of ["__surge_writeBlobs", "__surge_readBlobs"]) {
+		assert.ok(!luau.includes(name), `${name} should not be emitted for a blob-free shape`);
 	}
 	// A positive control: the shapes that do have one still carry it.
 	const withBlobs = readCompiledLuau("tests/roblox.spec.luau");
-	assert.match(withBlobs, /__surge_beginWriteBlobs\(/);
+	assert.match(withBlobs, /local __surge_writeBlobs = \{\}$/m);
+});
+
+// Regression check for the blob channel inline, in the serializer's own
+// state. What it was measured as worth is in docs/research/blob-channel-inline.md.
+test("a blob is appended and read inline, with no call into the package", () => {
+	const luau = readCompiledLuau("tests/roblox.spec.luau");
+	assert.match(luau, /table\.insert\(__surge_writeBlobs, /);
+	assert.match(luau, /local blob[0-9]+ = __surge_readBlobs\[__surge_readBlobIndex \+ 1\]$/m);
+	assert.doesNotMatch(luau, /__surge_(beginWriteBlobs|pushBlob|finishWriteBlobs|beginReadBlobs|nextBlob)/);
 });
 
 // What the tables around a result cost is in docs/research/tables-around-serialize.md.
@@ -303,7 +312,7 @@ test("a shape with no blob field returns the buffer alone", () => {
 	assert.doesNotMatch(luau, /buffer = __surge_scratch/);
 	// A positive control: a shape with a blob field still returns its array.
 	const withBlobs = readCompiledLuau("tests/roblox.spec.luau");
-	assert.match(withBlobs, /blobs = __surge_finishWriteBlobs\(\),/);
+	assert.match(withBlobs, /blobs = __surge_writeBlobs,/);
 });
 
 test("deserialize takes what serialize returned, as one argument", () => {
@@ -314,7 +323,7 @@ test("deserialize takes what serialize returned, as one argument", () => {
 	// A shape with a blob field takes the table, and reads both of its fields.
 	const withBlobs = readCompiledLuau("tests/roblox.spec.luau");
 	assert.match(withBlobs, /__surge_input = input\.buffer$/m);
-	assert.match(withBlobs, /__surge_beginReadBlobs\(input\.blobs\)$/m);
+	assert.match(withBlobs, /local __surge_readBlobs = input\.blobs$/m);
 });
 
 test("generated code imports its helpers from the package's abi module", () => {
@@ -323,7 +332,7 @@ test("generated code imports its helpers from the package's abi module", () => {
 	assert.match(luau, /"@rbxts", "surge", "out", "abi"\)$/m);
 	// The package's own exports hold the consumer API and no helper.
 	const index = readFileSync(join(here, "..", "out", "index.d.ts"), "utf8");
-	for (const name of ["finishWrite", "grow", "pushBlob", "nextBlob"]) {
+	for (const name of ["finishWrite", "grow", "writePackedCFrame", "readPackedCFrame"]) {
 		assert.doesNotMatch(index, new RegExp(`\\b${name}\\b`), `index.d.ts exports ${name}`);
 	}
 });
@@ -335,13 +344,13 @@ test("generated code imports its helpers from the package's abi module", () => {
 test("every compiled module of the package opens with its Luau file pragmas", () => {
 	// A hot comment is honoured anywhere ahead of the first line of code, so
 	// what this pins is that each one survives a header edit: `--!native` on
-	// the three modules with hot runtime code, and `--!optimize 2` everywhere,
+	// the two modules with hot runtime code, and `--!optimize 2` everywhere,
 	// because a published place compiles at that level and Studio does not.
 	const head = (name) =>
 		readFileSync(join(here, "..", "out", name), "utf8")
 			.split(/\r?\n/)
 			.map((line) => line.trimEnd());
-	for (const name of ["alloc", "blobs", "cframe"]) {
+	for (const name of ["alloc", "cframe"]) {
 		const lines = head(`${name}.luau`);
 		assert.equal(lines[0], "--!native", `${name}.luau line 1`);
 		assert.equal(lines[1], "--!optimize 2", `${name}.luau line 2`);
@@ -378,7 +387,12 @@ test("a serializer without `readChecks` carries no read-side check at all", () =
 	// every suite that did not ask for it -- not merely branch-not-taken.
 	for (const path of ["tests/basic.spec.luau", "tests/collections.spec.luau", "tests/roblox.spec.luau"]) {
 		const luau = readCompiledLuau(path);
-		assert.doesNotMatch(luau, /@rbxts\/surge: deserialize/, `${path} has a check`);
+		// The two errors of the blob channel are raised with or without checks
+		// (Runtime API 4.5 and 4.6), so they are not checks.
+		const checks = (luau.match(/@rbxts\/surge: deserialize[^"]*/g) ?? []).filter(
+			(message) => !message.endsWith("blobs array"),
+		);
+		assert.deepEqual(checks, [], `${path} has a check`);
 		assert.doesNotMatch(luau, /__surge_inputLength/, `${path} reads the input length`);
 	}
 });

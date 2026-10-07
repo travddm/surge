@@ -5,5 +5,4 @@
 // No //!optimize 2 here, for the reason index.ts gives: this module only
 // re-exports.
 export { finishWrite, grow } from "./alloc";
-export { beginReadBlobs, beginWriteBlobs, finishWriteBlobs, nextBlob, pushBlob } from "./blobs";
 export { readPackedCFrame, writePackedCFrame } from "./cframe";

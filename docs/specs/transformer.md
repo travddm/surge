@@ -1,8 +1,8 @@
 # Transformer specification
 
 Status: current
-Applies to: `@rbxts/surge` at commit `a99101d`, `rbxts-transformer-surge` at
-commit `6bf86ea` (no tagged release yet)
+Applies to: `@rbxts/surge` at commit `c298e3b`, `rbxts-transformer-surge` at
+commit `9cbe5e5` (no tagged release yet)
 
 ## 1. Scope
 
@@ -243,9 +243,14 @@ are not handled: a module past its instruction limit runs the functions past
 it interpreted, and Studio names each one
 ([research/native-code-limits.md](../research/native-code-limits.md)).
 
-**5.9** The blob channel's entry points, `beginWriteBlobs`,
-`finishWriteBlobs` and `beginReadBlobs`, are emitted only where the body
-reaches `pushBlob` or `nextBlob`, including from inside a recursion helper.
+**5.9** A blob is appended to the list `serialize` returns with `push`,
+which compiles to `table.insert`, and read from the list `deserialize` was
+given at an index, after the two checks of Runtime API 4.5 and 4.6. Both are
+emitted inline, and call nothing of the package. The list, and the read side's
+index, are declared only where the body writes or reads a blob, including
+from inside a recursion helper: in `serialize` and `deserialize` themselves
+where the shape reaches no recursion helper (5.2), and in the closure
+otherwise, where each call resets them.
 
 **5.10** Read-side checks are emitted only at a call site that sets
 `readChecks: true`: one `buffer.len` per `deserialize`, a bound after every
@@ -290,9 +295,10 @@ as its one parameter, the `Serialized<T>` `@rbxts/surge` declares for the
 call site (Runtime API 3.6): the buffer alone where that is `buffer`, and
 otherwise a table of `buffer` and `blobs`. It is read from the type of
 `serialize`'s result, or, at a `createDeserializer` call site, of the
-parameter of `deserialize`'s first call signature. `serialize`'s `blobs` is the blob channel's list
-if the body reaches `pushBlob`, and a new empty array if it does not.
-`deserialize` reads `blobs` only if the body reaches `nextBlob`, and names
+parameter of `deserialize`'s first call signature. `serialize`'s `blobs` is
+the blob channel's list if the body writes a blob, and a new empty array if
+it does not. `deserialize` reads `blobs` only if the body reads a blob, and
+names
 its parameter `_input` if it reads neither bytes nor `blobs`. Under
 `readChecks: true`, `deserialize`'s parameter is `unknown` instead (5.17).
 
@@ -444,7 +450,7 @@ A union with a constituent that reports one of these reports that diagnostic
 alone, and none of its own for the union.
 
 **7.3** The entry point reports a diagnostic for a call site that breaks 3.2
-or 3.3, and for one whose body reaches `pushBlob` or `nextBlob` where the
+or 3.3, and for one whose body writes or reads a blob where the
 `Serialized<T>` `@rbxts/surge` declares is `buffer` (5.16).
 
 **7.4** A walk diagnostic points at the declaration of the property whose
@@ -520,6 +526,8 @@ of `rbxts-transformer-surge`, cited by `describe` block. Source paths are in
 
 ## Changes
 
+- `c298e3b` / `9cbe5e5`: 5.9 appends and reads a blob inline, in the serializer's own state, and
+  5.16 and 7.3 name no package function.
 - `a99101d` / `6bf86ea`: 4.1 and 4.4 walk one enum item to a `literalConst`
   of that item, and 4.16 keeps such a key out of a `bitSet`.
 - `8b73a80` / `024d7a4`: 4.1 states why a type with no properties is a

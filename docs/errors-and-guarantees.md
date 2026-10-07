@@ -108,16 +108,11 @@ not start while the same serializer's `serialize` is running, whatever its
 type: the second call can reset the cursor the first one uses, and the first
 then returns wrong bytes without an error. The same holds for `deserialize`.
 
-The `blobs` array is built and read through state the package shares between
-all serializers. A `serialize` of a type with a blob field must therefore not
-start while any other such `serialize` is running, and the same holds for
-`deserialize`.
-
-Two different serializers may otherwise overlap: one may run inside a call of
-the other, and each returns what it returns when it runs alone.
+Two different serializers may overlap: one may run inside a call of the
+other, and each returns what it returns when it runs alone.
 
 A serializer runs code it did not generate only through the metamethods of a
-table it is given, so both rules matter only for a value with a metatable:
+table it is given, so the rule matters only for a value with a metatable:
 when one of its metamethods serializes, or when the iterator its `__iter`
 metamethod returns yields and another thread serializes before it resumes.
 

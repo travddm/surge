@@ -1,8 +1,8 @@
 # Runtime API specification
 
 Status: current
-Applies to: `@rbxts/surge` at commit `5b102af`, `rbxts-transformer-surge` at
-commit `c006601` (no tagged release yet)
+Applies to: `@rbxts/surge` at commit `c298e3b`, `rbxts-transformer-surge` at
+commit `9cbe5e5` (no tagged release yet)
 
 ## 1. Scope
 
@@ -197,17 +197,12 @@ signatures are part of the coupling in section 6.
 | `finishWrite`       | once per `serialize`, except as 5.4 and 5.9 state | `finishWrite(written, size)` returns a new buffer of exactly `size` bytes holding `written`'s first `size`.                                               |
 | `writePackedCFrame` | per `CFrame` inside `Packed<T>`                   | writes the packed form at the given offset and returns the bytes it used.                                                                                 |
 | `readPackedCFrame`  | per `CFrame` inside `Packed<T>`                   | reads the packed form at the given offset and returns the value and the bytes it used.                                                                    |
-| `beginWriteBlobs`   | once per `serialize`, if `T` has a blob           | starts an empty write-side blob list.                                                                                                                     |
-| `pushBlob`          | per blob field written                            | appends a value to the write-side blob list.                                                                                                              |
-| `finishWriteBlobs`  | once per `serialize`, if `T` has a blob           | returns the write-side blob list.                                                                                                                         |
-| `beginReadBlobs`    | once per `deserialize`, if `T` has a blob         | sets the read-side blob list to `input.blobs` and its index to the first element.                                                                         |
-| `nextBlob`          | per blob field read                               | returns the next read-side blob, or raises per 4.5 and 4.6.                                                                                               |
 
 **5.2** The package owns no scratch buffer and no byte cursor. Each generated
 serializer declares, in the closure it is emitted into, the scratch buffer,
 capacity and write cursor its `serialize` uses and the read cursor its
-`deserialize` uses, and reserves bytes inline. The blob channel's state is
-the exception, in 5.5. A `serialize` sized exactly declares its own, in 5.9,
+`deserialize` uses, and reserves bytes inline, and the blob channel's state
+of 5.5. A `serialize` sized exactly declares its own, in 5.9,
 and so does a `deserialize` of a `T` that holds no recursive type
 (Transformer 4.2 and 5.3).
 
@@ -219,11 +214,12 @@ each byte once and tests its bits inline (Transformer 5.24).
 every field is a `blob`, has no scratch buffer. It calls neither `grow` nor
 `finishWrite`, and its `buffer` is `buffer.create(0)`.
 
-**5.5** The blob channel's write list, read list and read index are module
-state in this package, shared by every serializer. A `serialize` of a `T`
-that has a blob field must not start while another such `serialize` is
-running. A `deserialize` of a `T` that has a blob field must not start while
-another such `deserialize` is running. 5.7 states what can start one.
+**5.5** The blob channel's state belongs to the serializer, as 5.2 states:
+the list a `serialize` returns, and the list a `deserialize` was given and
+the index of its next blob. A `serialize` creates a new list each call, and
+blobs are appended and read inline. A serializer whose `T` holds no recursive
+type declares this state in `serialize` and `deserialize` themselves, so it
+belongs to a call (Transformer 5.9).
 
 **5.6** The state of 5.2 belongs to a serializer, not to a call. A `serialize`
 must not start while a `serialize` of the same serializer is running, and a
@@ -235,15 +231,15 @@ rest of its value from the other call's input.
 
 **5.7** A serializer runs code that it did not generate only through the
 metamethods of a table it is given. Only a metamethod can therefore start a
-call that 5.5 or 5.6 forbids: by calling a serializer itself, or, in the case
+call that 5.6 forbids: by calling a serializer itself, or, in the case
 of the iterator function that an `__iter` metamethod returns, by yielding
 while another thread calls one. Luau lets that iterator yield from release
 0.736, and from release 0.722 behind a flag; in an earlier release, the yield
 raises. `__index` and `__len` cannot yield.
 
 **5.8** A call of one serializer may start while a call of a different
-serializer is running, unless 5.5 forbids it. Each call then returns what it
-returns when it runs alone.
+serializer is running. Each call then returns what it returns when it runs
+alone.
 
 **5.9** A `serialize` of a `T` that the transformer sizes exactly (Transformer
 5.20) creates its result at that size and writes into it. It calls neither
@@ -292,10 +288,10 @@ A test file named `*.spec.ts` is under `tests/src/tests/`. A path starting
 | 4.2–4.4                     | `checks.spec.ts`: `rejectsATruncatedPayload`, `rejectsATruncatedPackedCFrame`, `rejectsACountTheInputCannotHold`, `rejectsACountOfElementsThatReadNoBytes`                                                                                                                                                                                                                                                                         |
 | 4.3 (no over-rejection)     | `checks.spec.ts`: `acceptsWhatSerializeWrote`, `acceptsEveryKindThatReadsACount`, `acceptsEmptyContainers`                                                                                                                                                                                                                                                                                                                         |
 | 4.3 (minimum size, lengths) | Source only: `minBytes` in `emit/layout.ts`; `readStr`, `readBuffer` and `readSequence` in `emit/read.ts` check no count                                                                                                                                                                                                                                                                                                           |
-| 4.5                         | With checks: `checks.spec.ts`: `rejectsAReadPastTheEndOfTheBlobs`. Without: source only, `nextBlob` in `src/blobs.ts`, which `readChecks` does not change                                                                                                                                                                                                                                                                          |
-| 4.6                         | Source only: `nextBlob` in `src/blobs.ts`                                                                                                                                                                                                                                                                                                                                                                                          |
+| 4.5                         | With checks: `checks.spec.ts`: `rejectsAReadPastTheEndOfTheBlobs`. Without: source only, `nextBlob` in `rbxts-transformer-surge` `src/emit/context.ts`, which emits the check whatever `readChecks` is                                                                                                                                                                                                                             |
+| 4.6                         | Source only: `nextBlob` in `rbxts-transformer-surge` `src/emit/context.ts`                                                                                                                                                                                                                                                                                                                                                         |
 | 4.7                         | `checks.spec.ts`: `acceptsWhatSerializeWrote`; a `DataType.Range`: `rbxts-transformer-surge` `test/emit.test.ts`, `Emitter write-side checks`. Source only for what checks do not examine: the emitter compares no value but the two indexes of 4.9, and `nextBlob` in `src/blobs.ts` returns the element of the input's `blobs` as it is                                                                                          |
-| 4.8                         | Source only: the generated `deserialize` prologue and `beginReadBlobs`; no test raises and then deserializes again                                                                                                                                                                                                                                                                                                                 |
+| 4.8                         | Source only: the generated `deserialize` prologue, with `beginReadBlobsStatements` in `rbxts-transformer-surge` `src/emit/context.ts`; no test raises and then deserializes again                                                                                                                                                                                                                                                  |
 | 4.9                         | `checks.spec.ts`: `rejectsAnEnumIndexPastItsItems`, `rejectsAPackedRotationCodeThatNamesNoRotation`                                                                                                                                                                                                                                                                                                                                |
 | 4.10                        | Source only: `enumFromIndexExpr` in `emit/read.ts`; `readPackedCFrame` in `src/cframe.ts`                                                                                                                                                                                                                                                                                                                                          |
 | 4.11                        | `checks.spec.ts`: `rejectsAnythingButABufferForAShapeWithNoBlob`, `rejectsAnythingButItsTableForAShapeWithABlob`; `test/golden.test.mjs`: a serializer with `readChecks` carries them. Source only for the order: `buildCheckedDeserialize` in `src/index.ts` of `rbxts-transformer-surge` checks before the body                                                                                                                  |
@@ -303,7 +299,7 @@ A test file named `*.spec.ts` is under `tests/src/tests/`. A path starting
 | 5.2                         | `test/golden.test.mjs`: consecutive fixed-size fields share one reservation, inline, and a deserialize that reaches no recursion helper holds its input and cursor in locals                                                                                                                                                                                                                                                       |
 | 5.3                         | `test/golden.test.mjs`: a packed region is written and read inline, with no per-bit helper                                                                                                                                                                                                                                                                                                                                         |
 | 5.4                         | Source only: `finishWriteExpression` and `writeStateDecls` in `emit/context.ts`                                                                                                                                                                                                                                                                                                                                                    |
-| 5.5                         | Source only: the module state in `src/blobs.ts`                                                                                                                                                                                                                                                                                                                                                                                    |
+| 5.5                         | `test/golden.test.mjs`: a blob is appended and read inline, with no call into the package; `rbxts-transformer-surge` `test/transform.test.ts`: a shape with a blob field, and a blob reachable only through a recursion helper                                                                                                                                                                                                     |
 | 5.6                         | Source only: `writeStateDecls` and `readStateDecls` in `emit/context.ts` declare the state once per closure where the serializer holds it, and `beginWriteStatements` and `beginReadStatements` reset it per call, or declare it where the call holds it; no test re-enters a serializer                                                                                                                                           |
 | 5.7                         | Source only: the emitter reads a value's properties, lengths and `for … in` iterations under `emit/`, and calls nothing else of the value's. Which metamethods may yield is Luau's: `luaD_call` and `luaD_performcally` in its `VM/src/ldo.cpp`. No test yields inside `serialize`, because Lune 0.10.5 bundles Luau 0.709                                                                                                         |
 | 5.8                         | `overlap.spec.ts`: `runsAnotherSerializerInsideAnIterator`, a call from inside an `__iter` iterator. A call while an iterator is suspended is not run, as the 5.7 row states                                                                                                                                                                                                                                                       |
@@ -312,6 +308,8 @@ A test file named `*.spec.ts` is under `tests/src/tests/`. A path starting
 
 ## Changes
 
+- `c298e3b` / `9cbe5e5`: 5.1 drops the five blob exports, 5.5 gives the blob channel's state
+  to the serializer, inline, and 5.2, 5.7 and 5.8 no longer except it.
 - `5b102af` / `c006601`: 5.3 has the read side of a bit region call no
   helper either; 5.1 drops `unpackBit`.
 - `68f9922` / `499d768`: 5.2 has a `deserialize` of a `T` that holds no
