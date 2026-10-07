@@ -51,6 +51,8 @@ code the transformer generates runs. What has been measured is under
   and reading blobs inline, in the serializer's own state.
 - [blob-array-sizing.md](../research/blob-array-sizing.md) — sizing an array
   of objects that hold a blob by its count.
+- [object-array-loop-sizing.md](../research/object-array-loop-sizing.md) —
+  sizing an array of objects that hold a string by a loop over them.
 
 This document holds what is still open.
 
@@ -71,8 +73,10 @@ within the band
 that gap. On the instance references, too, the hand-written codec encodes
 faster, and their decode is within the band
 ([blob-array-sizing.md](../research/blob-array-sizing.md)); the item after it
-is that gap. What the other rows pay against hand-written Luau is not
-measured.
+is that gap. On the leaderboard, surge's encode is within the band and its
+decode ahead
+([object-array-loop-sizing.md](../research/object-array-loop-sizing.md)).
+What the other rows pay against hand-written Luau is not measured.
 
 **The tagged union's write.** What is left of the gap is not attributed.
 The last known difference that read a table, a `spawn` event's `item.at` read
@@ -109,13 +113,16 @@ surge owns and reuses, which removes the allocation as well as the copy. It
 would have to be an opt-in API, since a reused buffer is dead the moment
 anything calls `serialize()` again, and what it is worth is unmeasured.
 
-**Kinds exact sizing leaves out.** An array of unions is sized by a loop
-ahead of the result (Transformer 5.20). The same loop over an array of
-strings and over a dictionary measured slower than the scratch buffer, so
-those keep it ([exact-sizing-with-loops.md](../research/exact-sizing-with-loops.md)),
-and so do an array of any other element whose size varies, which was not
-measured either way: an array of objects that hold a string, and an array of
-arrays. Why the loop pays on unions and not on strings was not probed. A
+**Kinds exact sizing leaves out.** An array of unions, and an array of
+objects whose size varies, are sized by a loop ahead of the result
+(Transformer 5.20); the loop paid on both
+([exact-sizing-with-loops.md](../research/exact-sizing-with-loops.md) and
+[object-array-loop-sizing.md](../research/object-array-loop-sizing.md)). The
+same loop over an array of strings and over a dictionary measured slower than
+the scratch buffer, so those keep it, and so
+does an array of arrays, which was not measured either way. Why the loop pays
+on unions and objects and not on strings was not probed. The array of strings
+was measured before later changes to the size and the write, and not since. A
 sequence and a packed `CFrame` are not sized, and neither is anything that
 holds one. A sequence could be sized from its keypoint count, which reads its
 `Keypoints` property a second time, and what that read costs is not
