@@ -17,9 +17,9 @@ level with surge on both halves. The change is kept.
 
 ## Background
 
-[generated-code-performance.md](../future-work/generated-code-performance.md)
-listed this as a reservation merge, which on a shape sized exactly saves only
-cursor moves, and cursor moves had measured as no change
+Sharing a reservation among a tuple's elements was expected to pay little: on
+a shape sized exactly, a merged reservation saves only a cursor move, and
+cursor moves had measured as no change
 ([variant-index-reservation.md](variant-index-reservation.md)). The catalog had
 no row with a tuple, so the change came with one, the tuples row (Benchmark
 harness 3.1 in [specs/benchmark-harness.md](../specs/benchmark-harness.md)):
