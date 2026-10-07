@@ -31,9 +31,6 @@ time:
   serializer today.
 - [transformer-unit-test-coverage.md](transformer-unit-test-coverage.md): a
   test of the package-name cache in `detect.ts`, which needs `fs` mocking.
-- [locals-in-a-run.md](locals-in-a-run.md): a shape with many `CFrame`
-  properties can declare more than Luau's 200 locals and fail to compile,
-  because a shared reservation counts each property as one local.
 - A stable fbs and serio column, in
   [benchmark-tooling.md](benchmark-tooling.md): two builds of unchanged
   source can list a fixture's fields in two orders in those libraries'

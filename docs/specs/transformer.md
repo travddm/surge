@@ -1,8 +1,8 @@
 # Transformer specification
 
 Status: current
-Applies to: `@rbxts/surge` at commit `b307a8d`, `rbxts-transformer-surge` at
-commit `a8eb521` (no tagged release yet)
+Applies to: `@rbxts/surge` at commit `a6c8d12`, `rbxts-transformer-surge` at
+commit `afefffd` (no tagged release yet)
 
 ## 1. Scope
 
@@ -210,9 +210,13 @@ reservation. A fixed-size property is a `num`, `vector2`, `vector3`,
 outside the packed region, a `cframe` outside a packed subtree, or an `object`
 that has no packed region, is not emitted as a recursion helper (5.2), and has
 only fixed-size properties. Such an object's properties take their bytes from
-the run. A run ends before it would hold more than 31 properties, and counts
-each property of a nested object, at any depth, instead of the object. A
-tuple's fixed elements do not share a reservation.
+the run. A run ends before its properties would declare more than 31 locals
+in the Luau roblox-ts compiles, counted on the side, and under the check
+option, that declares more. A property declares one; a `cframe` five, and a
+quantized one six; an `enum`, a `literal`, and a `num` with a range two; and a
+`bitSet` two, and one more for each of its bytes. A nested object declares
+what its properties declare, at any depth. A tuple's fixed elements do not
+share a reservation.
 
 **5.6** A `dict`'s count is reserved before its entries, the entries are
 counted as they are written, and the count is written back once known. Every
@@ -292,7 +296,7 @@ two locals, for its `buffer` and its `blobs`, ahead of the body, which count
 toward 5.8.
 
 **5.18** An `array` whose element is fixed-size (5.5), reserves at least one
-byte, and counts no more than 31 properties by the rule of 5.5 reserves all of
+byte, and declares no more than 31 locals by the rule of 5.5 reserves all of
 its elements at once, after its count and before its loop, and each element
 takes its bytes from that reservation in turn. Under `readChecks: true`, that
 reservation's bound (5.10) replaces one per element. A tuple's rest element
@@ -472,7 +476,7 @@ of `rbxts-transformer-surge`, cited by `describe` block. Source paths are in
 | 5.2       | `emit`: `Emitter per-kind write/read snapshots`; `test/golden.test.mjs`: a non-recursive shape never calls a helper. Source only for the closure the helpers are declared in: `buildReplacement` in `src/index.ts`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | 5.3       | `emit`: `Emitter read-side checks` (the read state), `Emitter read state`; `test/golden.test.mjs`: a deserialize that reaches no recursion helper holds its input and cursor in locals; `transform`: `transform injected imports` (the scratch buffer). Source only for the state a side with no bytes omits: `writeStateDecls` and `readStateDecls` in `src/emit/context.ts`                                                                                                                                                                                                                                                                                                                                                                   |
 | 5.4       | `emit`: `Emitter per-kind write/read snapshots` (the inline reservation); `transform`: `transform (end-to-end)` (the `finishWrite` import). Source only for the `buffer.create(0)` return: `finishWriteExpression` in `src/emit/context.ts`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
-| 5.5       | `emit`: `Emitter shared reservations` (the 31-property bound included), and `Emitter bit sets` for a `bitSet`; `test/golden.test.mjs`: consecutive fixed-size fields share one reservation, and a nested object of fixed-size fields shares the reservation around it; `tests/src/tests/bytes.spec.ts`: `pinsANestedObjectInNameOrder`; `tests/src/tests/basic.spec.ts`: `roundTripsANestedObjectOfFixedSizeFields`. Source only for tuple elements: `allocRuns` and `fixedBytes` in `src/emit/layout.ts`                                                                                                                                                                                                                                       |
+| 5.5       | `emit`: `Emitter shared reservations`, `Emitter local-register ceiling` (the bound on a run's locals, and each kind's count against what the emitter declares), and `Emitter bit sets` for a `bitSet`; `tests/src/tests/coverage.spec.ts`: `roundTripsRunsOfCFramesNextToBoundStrings`; `test/golden.test.mjs`: consecutive fixed-size fields share one reservation, and a nested object of fixed-size fields shares the reservation around it; `tests/src/tests/bytes.spec.ts`: `pinsANestedObjectInNameOrder`; `tests/src/tests/basic.spec.ts`: `roundTripsANestedObjectOfFixedSizeFields`. Source only for tuple elements: `allocRuns` and `fixedBytes` in `src/emit/layout.ts`                                                              |
 | 5.6       | `tests/src/tests/bytes.spec.ts`: `pinsContainers` (each count ahead of its contents). Source only for the `dict` count written back: `writeDict` in `src/emit/write.ts`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
 | 5.7       | `test/golden.test.mjs`: a count-driven read is a numeric for loop                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 | 5.8       | `emit`: `Emitter local-register ceiling`; `transform`: `transform generated code` (runs through nested objects, past the local budget); `tests/src/tests/coverage.spec.ts`: `roundTripsAnObjectWiderThanTheLocalRegisterLimit`, `roundTripsNestedObjectsWiderThanTheLocalRegisterLimit`                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
@@ -505,6 +509,8 @@ of `rbxts-transformer-surge`, cited by `describe` block. Source paths are in
 
 ## Changes
 
+- `a6c8d12` / `afefffd`: 5.5 and 5.18 bound a run by the locals its
+  properties declare, not by their number.
 - `b307a8d` / `a8eb521`: no statement changes. 5.26 (a datatype's value
   read once), added at `f16bdc3` / `8d1c05d`, is withdrawn.
 - `1cea966` / `4a7a289`: 5.20 states that a size past its 32 locals reads

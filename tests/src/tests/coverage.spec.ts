@@ -113,7 +113,7 @@ type Digit = "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9";
 type Wide = { [K in `f${"0" | "1"}${Digit}${Digit}`]: number };
 const WIDE_FIELD_COUNT = 200;
 const wideSerializer = createCodec<Wide>();
-// Transformer 5.18: an element with more fields than a run holds is not
+// Transformer 5.18: an element that declares more locals than a run holds is not
 // reserved with the rest of the array, so its own fields can still be
 // emitted in blocks.
 const wideListSerializer = createCodec<{ rows: Wide[] }>();
@@ -127,6 +127,23 @@ interface Cell {
 type WideCells = { [K in `c${Digit}${Digit}`]: Cell };
 const CELL_COUNT = 100;
 const wideCellsSerializer = createCodec<WideCells>();
+
+// Transformer 5.5: a run counts the locals each property declares, five for a
+// CFrame and six for a quantized one. Counted as one each, 31 CFrames next to
+// the 32 locals sixteen strings bind ahead of a sized result (5.20) took
+// `serialize` past Luau's 200 locals.
+type Labels = { [K in `s${"0" | "1"}${"0" | "1" | "2" | "3" | "4" | "5" | "6" | "7"}`]: string };
+type FrameKey = `c${"0" | "1" | "2"}${Digit}` | "c30";
+type Frames = { [K in FrameKey]: CFrame };
+type QuantizedFrames = { [K in FrameKey]: DataType.Quantized<CFrame> };
+interface LabelledQuantizedFrames extends Labels, QuantizedFrames {}
+const labelledQuantizedFramesSerializer = createCodec<LabelledQuantizedFrames>();
+interface LabelledFrameSets {
+	meta: Labels;
+	frames: Frames;
+	more: Frames;
+}
+const labelledFrameSetsSerializer = createCodec<LabelledFrameSets>();
 
 // walker-emitter-robustness: a user declaration named after an injected
 // `@rbxts/surge` import used to collide with it.
@@ -381,6 +398,31 @@ class CoverageTest {
 			Assert.equal(i + 0.5, cell.x);
 			Assert.equal(i, cell.at.y);
 		}
+	}
+
+	@Fact
+	public roundTripsRunsOfCFramesNextToBoundStrings(): void {
+		// No object spread: a golden check of this file rules out the copy it
+		// lowers to.
+		const labels = {} as Record<string, string>;
+		const both = {} as Record<string, string | CFrame>;
+		for (const tens of $range(0, 1)) {
+			for (const ones of $range(0, 7)) {
+				labels[`s${tens}${ones}`] = `label ${tens}${ones}`;
+				both[`s${tens}${ones}`] = `label ${tens}${ones}`;
+			}
+		}
+		const frames = {} as Record<string, CFrame>;
+		for (const i of $range(0, 30)) {
+			frames[string.format("c%02d", i)] = new CFrame(i, i + 1, i + 2);
+			both[string.format("c%02d", i)] = new CFrame(i, i + 1, i + 2);
+		}
+		const quantized = both as unknown as LabelledQuantizedFrames;
+		const quantizedBuf = labelledQuantizedFramesSerializer.serialize(quantized);
+		Assert.equal(undefined, difference(quantized, labelledQuantizedFramesSerializer.deserialize(quantizedBuf)));
+		const sets: LabelledFrameSets = { meta: labels as Labels, frames: frames as Frames, more: frames as Frames };
+		const setsBuf = labelledFrameSetsSerializer.serialize(sets);
+		Assert.equal(undefined, difference(sets, labelledFrameSetsSerializer.deserialize(setsBuf)));
 	}
 
 	@Fact

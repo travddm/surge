@@ -94,9 +94,9 @@ interface StringsThenCFrames {
 ```
 
 Its `serialize` failed to compile with "Out of local registers", and with
-rbxts-transformer-surge `4a7a289` it compiles. Shapes past the limit before
-this change are in
-[future-work/locals-in-a-run.md](../future-work/locals-in-a-run.md).
+rbxts-transformer-surge `4a7a289` it compiles. Other shapes were past the
+limit without this change, and from rbxts-transformer-surge `afefffd` a run is
+bounded by the locals its properties declare (Transformer 5.5).
 
 ## Discussion
 
