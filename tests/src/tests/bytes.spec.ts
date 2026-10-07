@@ -101,6 +101,13 @@ type StringOrNumber = string | number;
 const guardedSerializer = createCodec<StringOrNumber>();
 const orderOrTextSerializer = createCodec<Enum.SortOrder | string>();
 const orderOrRigSerializer = createCodec<Enum.SortOrder | Enum.HumanoidRigType | string>();
+// One enum item as a type has one value, so it writes no bytes.
+interface OneItem {
+	rig: Enum.HumanoidRigType.R15;
+	count: DataType.u8;
+}
+const oneItemSerializer = createCodec<OneItem>();
+const itemOrTextSerializer = createCodec<Enum.SortOrder.Name | string>();
 
 interface Datatypes {
 	tint: Color3;
@@ -279,6 +286,19 @@ class BytesTest {
 		const text = orderOrTextSerializer.serialize("hi");
 		Assert.equal("01" + "02000000" + "6869", hex(text));
 		Assert.equal("hi", orderOrTextSerializer.deserialize(text));
+	}
+
+	@Fact
+	public pinsAnEnumItemAsNoBytes(): void {
+		const buffer = oneItemSerializer.serialize({ rig: Enum.HumanoidRigType.R15, count: 7 });
+		// count: u8 7. The item itself is not written.
+		Assert.equal("07", hex(buffer));
+		Assert.equal(Enum.HumanoidRigType.R15, oneItemSerializer.deserialize(buffer).rig);
+		// Variants in `Field` kind order: the item, a `literalConst`, then str.
+		const item = itemOrTextSerializer.serialize(Enum.SortOrder.Name);
+		Assert.equal("00", hex(item));
+		Assert.equal(Enum.SortOrder.Name, itemOrTextSerializer.deserialize(item));
+		Assert.equal("01" + "02000000" + "6869", hex(itemOrTextSerializer.serialize("hi")));
 	}
 
 	@Fact

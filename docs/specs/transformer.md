@@ -1,8 +1,8 @@
 # Transformer specification
 
 Status: current
-Applies to: `@rbxts/surge` at commit `8b73a80`, `rbxts-transformer-surge` at
-commit `024d7a4` (no tagged release yet)
+Applies to: `@rbxts/surge` at commit `a99101d`, `rbxts-transformer-surge` at
+commit `6bf86ea` (no tagged release yet)
 
 ## 1. Scope
 
@@ -59,44 +59,45 @@ declaration in `@rbxts/types`, and a user type with the same name falls
 through to a later row. The `Map` and `Set` rows match only the built-in
 declarations (4.10).
 
-| TypeScript type                                                                                                                                  | `Field` kind                                                   |
-| ------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------- |
-| a type that depends on a type parameter, such as `T`, `keyof T` or `T["a"]`                                                                      | a diagnostic (4.9)                                             |
-| `DataType.Packed<T>`                                                                                                                             | `T`'s kind, with `T` walked as a packed subtree                |
-| `DataType.Length<T, L>`                                                                                                                          | `T`'s kind, with the count `L` sets                            |
-| `DataType.Vector<X, Y, Z>`, `DataType.Transform<X, Y, Z>`                                                                                        | `vector3` with component widths, `cframe` with position widths |
-| `DataType.Range<T, Min, Max>`                                                                                                                    | `num` with a range (4.14)                                      |
-| `DataType.Quantized<T>`                                                                                                                          | `cframe` with a quantized rotation (4.15)                      |
-| a `DataType` width brand: `f32`, `f64`, `u8`, `u16`, `u24`, `u32`, `i8`, `i16`, `i24`, `i32`                                                     | `num(width)`                                                   |
-| `boolean`                                                                                                                                        | `bool`                                                         |
-| `boolean \| undefined`, including an optional `boolean` property                                                                                 | `optional(bool)`                                               |
-| a union of literal values, which may include `undefined`, including an optional property whose type is one literal value                         | `literal`                                                      |
-| one item of an enum, `Enum.X.Y`, or a union of items of one enum, which may include `undefined`                                                  | `enum`, or `optional(enum)` with `undefined`                   |
-| `T \| undefined` with one `T`, including an optional property                                                                                    | `optional` of `T`'s kind                                       |
-| a union of object types sharing one property whose type is a different literal value in each, where no constituent is a tuple or an array (4.12) | `taggedUnion`                                                  |
-| a union whose constituents are all opaque                                                                                                        | `blob`                                                         |
-| any other union, subject to 4.4                                                                                                                  | `guardedUnion`                                                 |
-| `unknown`, `any`                                                                                                                                 | `optional(blob)`                                               |
-| `undefined`, `void`                                                                                                                              | `literalConst` of `undefined` (4.8)                            |
-| `never`                                                                                                                                          | a diagnostic (4.8)                                             |
-| one literal value, such as `"a"`, `1` or `true`, in any position                                                                                 | `literalConst`                                                 |
-| `string`                                                                                                                                         | `str`                                                          |
-| `number`                                                                                                                                         | `num(f64)`                                                     |
-| `buffer`                                                                                                                                         | `buffer`                                                       |
-| `Vector2`, `Vector3`, `CFrame`, `Color3`                                                                                                         | `vector2`, `vector3`, `cframe`, `color3`                       |
-| `ColorSequence`, `NumberSequence`                                                                                                                | `colorSequence`, `numberSequence`                              |
-| `Vector3int16`, `UDim`, `UDim2`, `BrickColor`, `NumberRange`, `Rect`, `DateTime`                                                                 | `datatype`                                                     |
-| `Instance` and its subclasses, and every other `@rbxts/types` type with a `_nominal_` brand property, such as `Vector2int16`                     | `blob`                                                         |
-| a template literal type, `symbol`, `bigint`, `null`, a function or constructor type                                                              | a diagnostic (7.2)                                             |
-| `T[]`, `ReadonlyArray<T>`                                                                                                                        | `array`                                                        |
-| a tuple whose rest element, if it has one, is last                                                                                               | `tuple`                                                        |
-| `Map<K, V>`, `ReadonlyMap<K, V>`                                                                                                                 | `dict` with a key and a value                                  |
-| `Set<V>`, `ReadonlySet<V>` in a packed subtree, with `V` walking to a `literal` or `literalConst` that is not `undefined` (4.16)                 | `bitSet`                                                       |
-| `Set<V>`, `ReadonlySet<V>`                                                                                                                       | `dict` with a key only                                         |
-| a type with both declared properties and an index signature                                                                                      | a diagnostic (7.2)                                             |
-| an interface or object type with declared properties                                                                                             | `object`                                                       |
-| `Record<string, V>`, `Record<number, V>`, an index-signature type                                                                                | `dict` with a key and a value                                  |
-| a type with no properties and no index signature: `{}`, `object` or `defined`                                                                    | `blob`                                                         |
+| TypeScript type                                                                                                                                  | `Field` kind                                                      |
+| ------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------- |
+| a type that depends on a type parameter, such as `T`, `keyof T` or `T["a"]`                                                                      | a diagnostic (4.9)                                                |
+| `DataType.Packed<T>`                                                                                                                             | `T`'s kind, with `T` walked as a packed subtree                   |
+| `DataType.Length<T, L>`                                                                                                                          | `T`'s kind, with the count `L` sets                               |
+| `DataType.Vector<X, Y, Z>`, `DataType.Transform<X, Y, Z>`                                                                                        | `vector3` with component widths, `cframe` with position widths    |
+| `DataType.Range<T, Min, Max>`                                                                                                                    | `num` with a range (4.14)                                         |
+| `DataType.Quantized<T>`                                                                                                                          | `cframe` with a quantized rotation (4.15)                         |
+| a `DataType` width brand: `f32`, `f64`, `u8`, `u16`, `u24`, `u32`, `i8`, `i16`, `i24`, `i32`                                                     | `num(width)`                                                      |
+| `boolean`                                                                                                                                        | `bool`                                                            |
+| `boolean \| undefined`, including an optional `boolean` property                                                                                 | `optional(bool)`                                                  |
+| a union of literal values, which may include `undefined`, including an optional property whose type is one literal value                         | `literal`                                                         |
+| one item of an enum, `Enum.X.Y`, which may include `undefined`                                                                                   | `literalConst` of that item, or `optional` of it with `undefined` |
+| a whole enum, or a union of two or more items of one enum, which may include `undefined`                                                         | `enum`, or `optional(enum)` with `undefined`                      |
+| `T \| undefined` with one `T`, including an optional property                                                                                    | `optional` of `T`'s kind                                          |
+| a union of object types sharing one property whose type is a different literal value in each, where no constituent is a tuple or an array (4.12) | `taggedUnion`                                                     |
+| a union whose constituents are all opaque                                                                                                        | `blob`                                                            |
+| any other union, subject to 4.4                                                                                                                  | `guardedUnion`                                                    |
+| `unknown`, `any`                                                                                                                                 | `optional(blob)`                                                  |
+| `undefined`, `void`                                                                                                                              | `literalConst` of `undefined` (4.8)                               |
+| `never`                                                                                                                                          | a diagnostic (4.8)                                                |
+| one literal value, such as `"a"`, `1` or `true`, in any position                                                                                 | `literalConst`                                                    |
+| `string`                                                                                                                                         | `str`                                                             |
+| `number`                                                                                                                                         | `num(f64)`                                                        |
+| `buffer`                                                                                                                                         | `buffer`                                                          |
+| `Vector2`, `Vector3`, `CFrame`, `Color3`                                                                                                         | `vector2`, `vector3`, `cframe`, `color3`                          |
+| `ColorSequence`, `NumberSequence`                                                                                                                | `colorSequence`, `numberSequence`                                 |
+| `Vector3int16`, `UDim`, `UDim2`, `BrickColor`, `NumberRange`, `Rect`, `DateTime`                                                                 | `datatype`                                                        |
+| `Instance` and its subclasses, and every other `@rbxts/types` type with a `_nominal_` brand property, such as `Vector2int16`                     | `blob`                                                            |
+| a template literal type, `symbol`, `bigint`, `null`, a function or constructor type                                                              | a diagnostic (7.2)                                                |
+| `T[]`, `ReadonlyArray<T>`                                                                                                                        | `array`                                                           |
+| a tuple whose rest element, if it has one, is last                                                                                               | `tuple`                                                           |
+| `Map<K, V>`, `ReadonlyMap<K, V>`                                                                                                                 | `dict` with a key and a value                                     |
+| `Set<V>`, `ReadonlySet<V>` in a packed subtree, with `V` walking to a `literal` or `literalConst` that is not `undefined` (4.16)                 | `bitSet`                                                          |
+| `Set<V>`, `ReadonlySet<V>`                                                                                                                       | `dict` with a key only                                            |
+| a type with both declared properties and an index signature                                                                                      | a diagnostic (7.2)                                                |
+| an interface or object type with declared properties                                                                                             | `object`                                                          |
+| `Record<string, V>`, `Record<number, V>`, an index-signature type                                                                                | `dict` with a key and a value                                     |
+| a type with no properties and no index signature: `{}`, `object` or `defined`                                                                    | `blob`                                                            |
 
 A type with no properties is a `blob` and not zero bytes: TypeScript admits
 any value but `undefined` into it, a number or a string included, and zero
@@ -117,11 +118,13 @@ its inner type, which resolves the next.
 **4.4** A union is a `guardedUnion` only if the write side can tell every
 constituent that is not opaque apart at run time: at most one constituent is
 table-shaped, and no two constituents other than literal values share a
-runtime type. A literal value is guarded by `===`, a primitive by its
+runtime type. A literal value and one enum item are guarded by `===`, a
+primitive by its
 `typeIs` tag, a Roblox datatype by its own type name, the items of one enum
 by `"EnumItem"`, and a table-shaped or recursive constituent by `"table"`. The
 items of one enum in a union are one `enum` constituent, whether the union
-names the enum or some of its items. Where a union holds more than one enum,
+names the enum or some of its items, and one item alone is a `literalConst`
+of that item. Where a union holds more than one enum,
 each is also guarded by its `EnumType`, as
 `typeIs(value, "EnumItem") && value.EnumType === Enum.<name>`. The opaque
 constituents of a union are one `blob` variant, which has no guard and is the
@@ -173,8 +176,8 @@ outside a packed subtree, and quantizes that `cframe`'s rotation (Wire format
 7.4). `T` may be a `DataType.Transform<X, Y, Z>`.
 
 **4.16** In a packed subtree, a `Set` or `ReadonlySet` whose key walks to a
-`literal` without `undefined`, or to a `literalConst` other than `undefined`,
-is a `bitSet` of those values (Wire format 8.8). Any other `Set`, and every
+`literal` without `undefined`, or to a `literalConst` other than `undefined`
+or an enum item, is a `bitSet` of those values (Wire format 8.8). Any other `Set`, and every
 `Set` outside a packed subtree, is a `dict`. `Set<boolean>` is a `dict`,
 because `boolean` walks to `bool`; `Set<true>` is a `bitSet`.
 
@@ -517,6 +520,8 @@ of `rbxts-transformer-surge`, cited by `describe` block. Source paths are in
 
 ## Changes
 
+- `a99101d` / `6bf86ea`: 4.1 and 4.4 walk one enum item to a `literalConst`
+  of that item, and 4.16 keeps such a key out of a `bitSet`.
 - `8b73a80` / `024d7a4`: 4.1 states why a type with no properties is a
   `blob`.
 - `9eac6b9` / `024d7a4`: 5.8 names native code generation's limits, which
