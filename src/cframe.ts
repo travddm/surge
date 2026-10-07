@@ -1,8 +1,8 @@
 //!native
 //!optimize 2
-// Native code generation, and an optimization level pinned rather than inherited; neither is
-// worth anything here on its own. See the package pragma entry in
-// docs/future-work/generated-code-performance.md.
+// Native code generation, and an optimization level pinned rather than inherited. The generated
+// code calls `writePackedCFrame` and `readPackedCFrame` once for each packed `CFrame`, and what
+// native code is worth on them is in docs/research/native-on-the-package.md.
 // The `CFrame` encoding inside a `DataType.Packed<T>` subtree (Wire format 8.6
 // and 8.7 in docs/specs/wire-format.md). One header byte, then only the parts the
 // header does not already give:

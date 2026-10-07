@@ -41,6 +41,10 @@ code the transformer generates runs. What has been measured is under
   writing a union by testing each variant once.
 - [variant-index-reservation.md](../research/variant-index-reservation.md) —
   reserving a variant's index with its fields, which measured as no change.
+- [size-reads-tag-once.md](../research/size-reads-tag-once.md) — a tagged
+  union's size reading its tag once.
+- [native-on-the-package.md](../research/native-on-the-package.md) — what
+  `--!native` is worth on the package's own modules.
 
 This document holds what is still open.
 
@@ -57,18 +61,20 @@ closed it. The packed toggles are within the band on both halves
 ([packed-bits-read-in-place.md](../research/packed-bits-read-in-place.md)).
 On the tagged union the hand-written codec encodes faster, and its decode is
 within the band
-([union-write-tested-once.md](../research/union-write-tested-once.md)); the
-item below is that gap. What the other rows pay against hand-written Luau
+([size-reads-tag-once.md](../research/size-reads-tag-once.md)); the item
+below is that gap. What the other rows pay against hand-written Luau
 is not measured.
 
-**The tagged union's write.** One known difference from the hand-written
-codec is left: the size reads each element's tag once for each comparison in
-its chain, where the hand-written first pass reads it once. Binding it needs
-the size to hold a statement ahead of its expression. The other difference,
-a reservation for the variant's index apart from its fields, is gone and
-measured as no change
-([variant-index-reservation.md](../research/variant-index-reservation.md)),
-so the cursor's moves are not where the gap is.
+**The tagged union's write.** What is left of the gap is not attributed
+([size-reads-tag-once.md](../research/size-reads-tag-once.md)). One known
+difference from the hand-written codec reads a table: a `spawn` event's write
+reads `item.at` once for each of the three components of its `Vector3`, where
+the hand-written codec reads it into a local once. Reading a datatype's value
+once, the way Transformer 5.23 reads a nested object's, would remove it. It
+reaches no other catalog row, so the tagged union's encode is where it would
+be measured. The other known differences are arithmetic on locals and cursor
+moves, and cursor moves measured as no change
+([variant-index-reservation.md](../research/variant-index-reservation.md)).
 
 **What is left per call.** A shape that keeps the scratch buffer still has
 the three candidates a shape sized exactly (Transformer 5.20 in
@@ -98,29 +104,8 @@ holds one. A sequence could be sized from its keypoint count, which reads its
 `Keypoints` property a second time, and what that read costs is not
 measured. A packed `CFrame`'s size is in the header its runtime function
 chooses, so sizing one needs a function of the package that computes the
-header without writing it.
-
-**Reopened: the package pragma.** The package's hot modules carry
-`--!native`, and this was recorded as worth nothing, because marking only the
-package moved almost no work into the native region. A loop benchmark of a
-helper standing in for the old `alloc()` predicted a gain once the caller is
-native as well, and set the entry aside because surge's generated work did
-not sit inside the native region. It now largely does, and what native is
-worth on the generated code
-([file-directives-on-generated-code.md](../research/file-directives-on-generated-code.md))
-is most of the way to that prediction, so the entry needs re-arguing against
-the current figure. The loop's timings are not a result: they were taken
-before the speed suite yielded, and no data file was kept.
-
-**Reopened: the read loop.** Count-driven reads (`array`, `tuple` rest,
-`dict`, sequences) are emitted as `for (const i of $range(1, count))`, which
-roblox-ts lowers to a numeric `for`, instead of a C-style loop it lowers to a
-`while` with a `_shouldIncrement` flag; `test/golden.test.mjs` pins that no
-compiled file has the flag. It measured as no change on the decode rows quiet
-enough to read, on a scoped pair taken before the suite yielded and with the
-fixtures compiled interpreted. Neither condition holds now, and it was not
-measured again. The change stays for what the emitted code says,
-whatever it is worth.
+header without writing it, and the write would then compute the header a
+second time for each `CFrame`.
 
 **Fewer reservations.** A run of consecutive fixed-size properties of one
 object shares one reservation, and a nested object whose properties all have
@@ -214,10 +199,10 @@ means, but it is still not surge's to decide for a file surge does not own.
 Every item here is measurement-driven, and the method is settled: a change is
 its own full catalog run against a reference taken in the same session, read
 as medians over many cells against the untouched libraries as controls. The
-per-call gap is closed on the flat struct, the nested object and the `CFrame`
-array, and what is left of it is not measured. The two reopened entries need
-an argument against a current figure, not a change. The rest is small, or
-needs a fixture before anything can measure it.
+per-call gap is closed on the flat struct, the nested object, the `CFrame`
+array and the packed toggles. On the tagged union, one known difference is
+left that a change could close, and the rest of that gap is not attributed.
+Everything else is small, or needs a fixture before anything can measure it.
 
 ## How, briefly
 
@@ -227,9 +212,9 @@ needs a fixture before anything can measure it.
   on a cell, is [noise-in-the-speed-tier.md](../research/noise-in-the-speed-tier.md).
 - A golden check in `test/golden.test.mjs` for each change that lands. The
   read loop's, the tagged union's, the `CFrame`'s, the shared reservation's,
-  the read table's, the blob channel's, the size's locals, the read state's
-  and the packed region's are there already, and so are the file pragmas on
-  both sides.
+  the read table's, the blob channel's, the size's locals, the read state's,
+  the packed region's and the size's tag are there already, and so are the
+  file pragmas on both sides.
 - Predict nothing from the compiled output. Whether a cost is paid per element
   or per call was the heuristic this document used to lean on, and the blob
   channel broke it: a per-call allocation was measurable, and whether a

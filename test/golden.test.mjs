@@ -63,8 +63,8 @@ test("a packed region is written and read inline, with no per-bit helper", () =>
 	);
 });
 
-// Regression check for the read-loop item in
-// docs/future-work/generated-code-performance.md.
+// Regression check for the read loop of Transformer 5.7 in
+// docs/specs/transformer.md.
 test("a count-driven read is a numeric for loop, not a _shouldIncrement flag loop", () => {
 	const luau = readCompiledLuau("tests/coverage.spec.luau");
 	// The positive control: without it, the check below would also pass on a
@@ -328,8 +328,8 @@ test("generated code imports its helpers from the package's abi module", () => {
 	}
 });
 
-// Regression checks for the file directives: the package pragma entry in
-// docs/future-work/generated-code-performance.md, and Transformer 6.3 in
+// Regression checks for the file directives: docs/research/native-on-the-package.md
+// for the package, and Transformer 6.3 in
 // docs/specs/transformer.md. These two read @rbxts/surge's own compiled output
 // and the transformed tests place, not one or the other.
 test("every compiled module of the package opens with its Luau file pragmas", () => {

@@ -1,12 +1,12 @@
 //!native
 //!optimize 2
 // Two Luau file pragmas. Both are honoured anywhere ahead of the first line of code, not only on
-// line 1. Neither is worth anything on this module: both functions below run once per
-// `serialize()` at most, and the per-field work they used to do is four instructions in the
-// caller's own generated file now. `optimize 2` is the level a published place compiles at, where
-// Studio compiles at 1, so it is what makes a profile taken in Studio a profile of what runs live,
-// and every module this repository compiles carries it. See the package pragma entry in
-// docs/future-work/generated-code-performance.md.
+// line 1. Native code is worth nothing the speed tier can read on this module
+// (docs/research/native-on-the-package.md): both functions below run once per `serialize()` at
+// most, and the per-field work they used to do is four instructions in the caller's own generated
+// file now. `optimize 2` is the level a published place compiles at, where Studio compiles at 1,
+// so it is what makes a profile taken in Studio a profile of what runs live, and every module this
+// repository compiles carries it.
 // This module owns no cursor and no buffer. A generated serializer declares
 // its own scratch buffer, capacity and write cursor in the closure it is
 // emitted into, so that reserving bytes is a compare and two moves inline

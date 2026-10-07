@@ -1,8 +1,8 @@
 //!native
 //!optimize 2
-// Native code generation, and an optimization level pinned rather than inherited; neither is
-// worth anything here on its own. See the package pragma entry in
-// docs/future-work/generated-code-performance.md.
+// Native code generation, and an optimization level pinned rather than inherited. No benchmark
+// row reaches this module, so what native code is worth here is not measured
+// (docs/research/native-on-the-package.md).
 // The blob/passthrough side-channel (section 9 of
 // docs/specs/wire-format.md). Values pushed here are never written into the
 // buffer; both sides must agree on push/read order, which is the generated
