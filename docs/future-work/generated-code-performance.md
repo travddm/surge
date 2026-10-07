@@ -49,6 +49,8 @@ code the transformer generates runs. What has been measured is under
   datatype's value once, which measured as no change and was withdrawn.
 - [blob-channel-inline.md](../research/blob-channel-inline.md) — appending
   and reading blobs inline, in the serializer's own state.
+- [blob-array-sizing.md](../research/blob-array-sizing.md) — sizing an array
+  of objects that hold a blob by its count.
 
 This document holds what is still open.
 
@@ -66,8 +68,11 @@ closed it. The packed toggles are within the band on both halves
 On the tagged union the hand-written codec encodes faster, and its decode is
 within the band
 ([datatype-values.md](../research/datatype-values.md)); the item below is
-that gap. What the other rows pay against hand-written Luau
-is not measured.
+that gap. On the instance references, too, the hand-written codec encodes
+faster, and their decode is within the band
+([blob-array-sizing.md](../research/blob-array-sizing.md)); the item after it
+is that gap. What the other rows pay against hand-written Luau is not
+measured.
 
 **The tagged union's write.** What is left of the gap is not attributed.
 The last known difference that read a table, a `spawn` event's `item.at` read
@@ -77,6 +82,16 @@ change was withdrawn for the locals it added
 differences left are arithmetic on locals and cursor moves, and cursor moves
 measured as no change
 ([variant-index-reservation.md](../research/variant-index-reservation.md)).
+
+**The instance references' write.** What is left of the gap is not
+attributed either. Two differences are known: each element moves the cursor
+for its bytes, where the hand-written codec writes at an offset it computes
+from the index, and each element appends its blob with `table.insert` to a
+list created empty, where the hand-written codec creates its list at the count
+and stores each blob at its index. `table.insert` is what appends nothing for
+an absent blob (Wire format 6.7 in
+[specs/wire-format.md](../specs/wire-format.md)), so a list created at its
+count fits only an element whose blob cannot be absent.
 
 **What is left per call.** A shape that keeps the scratch buffer still has
 the three candidates a shape sized exactly (Transformer 5.20 in
@@ -100,19 +115,7 @@ strings and over a dictionary measured slower than the scratch buffer, so
 those keep it ([exact-sizing-with-loops.md](../research/exact-sizing-with-loops.md)),
 and so do an array of any other element whose size varies, which was not
 measured either way: an array of objects that hold a string, and an array of
-arrays. Why the loop pays on unions and not on strings was not probed. An
-array of objects that hold a blob is not sized either, though each element
-writes the same bytes: a blob reserves none, and `fixedBytes` admits no blob,
-since a fixed-size field may share a run and a blob's push or read would then
-be emitted inside it. So the object has no fixed size, and the array sizes
-only an element that has one or a union. The instance references keep the
-scratch buffer for this, with a capacity check at each element and
-`finishWrite`'s copy, where the hand-written codec creates its buffer once at
-its size. That is the difference left on that row's encode that
-[blob-channel-inline.md](../research/blob-channel-inline.md) names, and it
-was not tried. Measuring
-such an element as the union's is measured, and taking its count times its
-bytes when they do not depend on the value, would size it. A
+arrays. Why the loop pays on unions and not on strings was not probed. A
 sequence and a packed `CFrame` are not sized, and neither is anything that
 holds one. A sequence could be sized from its keypoint count, which reads its
 `Keypoints` property a second time, and what that read costs is not
@@ -215,9 +218,9 @@ its own full catalog run against a reference taken in the same session, read
 as medians over many cells against the untouched libraries as controls. The
 per-call gap is closed on the flat struct, the nested object, the `CFrame`
 array and the packed toggles. On the tagged union, what is left of the gap
-is not attributed. The array of objects that hold a blob has a row to measure
-it on, the instance references. Everything else is small, or needs a fixture
-before anything can measure it.
+is not attributed, and neither is what is left of it on the instance
+references.
+Everything else is small, or needs a fixture before anything can measure it.
 
 ## How, briefly
 
