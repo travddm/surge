@@ -56,6 +56,9 @@ code the transformer generates runs. What has been measured is under
 - [string-and-dict-loops-again.md](../research/string-and-dict-loops-again.md)
   — the loop over an array of strings and over a dict, measured again and not
   kept.
+- [recursion-write-cursor.md](../research/recursion-write-cursor.md) — a
+  recursion helper's write cursor passed as an argument, and what the read
+  state in the closure costs on a tree.
 
 This document holds what is still open.
 
@@ -77,8 +80,10 @@ that gap. On the instance references, too, the hand-written codec encodes
 faster, and their decode is within the band
 ([blob-array-sizing.md](../research/blob-array-sizing.md)); the item after it
 is that gap. On the leaderboard, both halves are within the band
-([object-array-loop-sizing.md](../research/object-array-loop-sizing.md)).
-What the other rows pay against hand-written Luau is not measured.
+([object-array-loop-sizing.md](../research/object-array-loop-sizing.md)),
+and on the tree as well
+([recursion-write-cursor.md](../research/recursion-write-cursor.md)). What the
+other rows pay against hand-written Luau is not measured.
 
 **The tagged union's write.** What is left of the gap is not attributed.
 The last known difference that read a table, a `spawn` event's `item.at` read
@@ -106,9 +111,7 @@ the three candidates a shape sized exactly (Transformer 5.20 in
 check. A nested object inside a run of Transformer 5.5 still reads its path
 once per property. A sized write reads an array's length twice, and what its
 size reads inside a loop or a branch, such as an optional's or a union's
-bytes, its write reads again. A `deserialize` that reaches a recursion helper
-keeps its read state in its closure, and no catalog row has a recursive type,
-so what that costs is not measured.
+bytes, its write reads again.
 
 One design the `finishWrite` probe did not reach: handing the caller a buffer
 surge owns and reuses, which removes the allocation as well as the copy. It
@@ -126,6 +129,9 @@ twice, and over a dictionary, then as no change
 so those keep it, and so does an array of arrays, which was not measured either
 way. Why the loop pays on unions and objects and not on strings was not
 probed; the number of reservations an element makes does not account for it. A
+recursive type is not sized, and a walk that counts it ahead of the write cost
+more than the scratch buffer on the tree
+([recursion-write-cursor.md](../research/recursion-write-cursor.md)). A
 sequence and a packed `CFrame` are not sized, and neither is anything that
 holds one. A sequence could be sized from its keypoint count, which reads its
 `Keypoints` property a second time, and what that read costs is not
@@ -241,8 +247,9 @@ Everything else is small, or needs a fixture before anything can measure it.
 - A golden check in `test/golden.test.mjs` for each change that lands. The
   read loop's, the tagged union's, the `CFrame`'s, the shared reservation's,
   the read table's, the blob channel's, the size's locals, the read state's,
-  the packed region's, the size's tag, the blob array's count and the loop's
-  boundary are there already, and so are the file pragmas on both sides.
+  the packed region's, the size's tag, the blob array's count, the loop's
+  boundary and the recursion helper's cursor are there already, and so are
+  the file pragmas on both sides.
 - Predict nothing from the compiled output. Whether a cost is paid per element
   or per call was the heuristic this document used to lean on, and the blob
   channel broke it: a per-call allocation was measurable, and whether a
