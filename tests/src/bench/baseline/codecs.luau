@@ -320,6 +320,49 @@ end
 
 -- Each entry's u16 in order after the count, and its Instance in the blob list at the same
 -- index: surge's order, since `health` sorts before `model` and an Instance writes no bytes.
+local function writeLeaderboard(value)
+	local entries = value.entries
+	local count = #entries
+	-- The count, and each entry's name length, score and user id.
+	local size = 4 + 16 * count
+	for _, entry in entries do
+		size += #entry.name
+	end
+
+	local buf = buffer.create(size)
+	buffer.writeu32(buf, 0, count)
+	local offset = 4
+	for _, entry in entries do
+		local name = entry.name
+		local length = #name
+		buffer.writeu32(buf, offset, length)
+		buffer.writestring(buf, offset + 4, name)
+		offset += 4 + length
+		buffer.writeu32(buf, offset, entry.score)
+		buffer.writef64(buf, offset + 4, entry.userId)
+		offset += 12
+	end
+	return buf
+end
+
+local function readLeaderboard(buf)
+	local count = buffer.readu32(buf, 0)
+	local entries = table.create(count)
+	local offset = 4
+	for index = 1, count do
+		local length = buffer.readu32(buf, offset)
+		local name = buffer.readstring(buf, offset + 4, length)
+		offset += 4 + length
+		entries[index] = {
+			name = name,
+			score = buffer.readu32(buf, offset),
+			userId = buffer.readf64(buf, offset + 4),
+		}
+		offset += 12
+	end
+	return { entries = entries }
+end
+
 local function writeInstanceRefs(value)
 	local entries = value.entries
 	local count = #entries
@@ -350,5 +393,6 @@ return {
 	transforms = { write = writeTransforms, read = readTransforms },
 	taggedUnion = { write = writeTaggedUnion, read = readTaggedUnion },
 	packedToggles = { write = writePackedToggles, read = readPackedToggles },
+	leaderboard = { write = writeLeaderboard, read = readLeaderboard },
 	instanceRefs = { write = writeInstanceRefs, read = readInstanceRefs },
 }

@@ -70,15 +70,99 @@ return function(remote_instance, player, incoming_buff, incoming_inst)
 	local len = buffer.len(incoming_buff)
 
 	local types = {}
-	function types.read_Entity()
+	function types.read_Second()
+		local value;
+		local bool_1 = buffer.readu8(incoming_buff, read(1))
+		value = {  }
+		value["inner"] = {  }
+		value["inner"]["leaf"] = {  }
+		local len_1 = buffer.readu16(incoming_buff, read(2))
+		value["inner"]["leaf"]["name"] = buffer.readstring(incoming_buff, read(len_1), len_1)
+		value["inner"]["leaf"]["weight"] = buffer.readf32(incoming_buff, read(4))
+		value["inner"]["flag"] = bit32.btest(bool_1, 0b0000000000000001)
+		value["count"] = buffer.readu16(incoming_buff, read(2))
+		return value
+	end
+	function types.read_GuardedUnion()
 		local value;
 		value = {  }
-		value["a"] = buffer.readu8(incoming_buff, read(1))
-		value["b"] = buffer.readu8(incoming_buff, read(1))
-		value["c"] = buffer.readu8(incoming_buff, read(1))
-		value["d"] = buffer.readu8(incoming_buff, read(1))
-		value["e"] = buffer.readu8(incoming_buff, read(1))
-		value["f"] = buffer.readu8(incoming_buff, read(1))
+		local len_1 = buffer.readu16(incoming_buff, read(2))
+		value["values"] = table.create(len_1)
+		for i_1 = 1, len_1 do
+			local bool_1 = buffer.readu8(incoming_buff, read(1))
+			local val_1
+			if bit32.btest(bool_1, 0b0000000000000001) then
+				local len_2 = buffer.readu16(incoming_buff, read(2))
+				val_1 = buffer.readstring(incoming_buff, read(len_2), len_2)
+			elseif bit32.btest(bool_1, 0b0000000000000010) then
+				val_1 = buffer.readf64(incoming_buff, read(8))
+			elseif bit32.btest(bool_1, 0b0000000000000100) then
+				val_1 = bit32.btest(bool_1, 0b0000000000001000)
+			end
+			value["values"][i_1] = val_1
+		end
+		return value
+	end
+	function types.read_LeaderboardEntry()
+		local value;
+		value = {  }
+		local len_1 = buffer.readu16(incoming_buff, read(2))
+		value["name"] = buffer.readstring(incoming_buff, read(len_1), len_1)
+		value["score"] = buffer.readu32(incoming_buff, read(4))
+		value["userId"] = buffer.readf64(incoming_buff, read(8))
+		return value
+	end
+	function types.read_First()
+		local value;
+		local bool_1 = buffer.readu8(incoming_buff, read(1))
+		value = {  }
+		value["inner"] = {  }
+		value["inner"]["inner"] = {  }
+		value["inner"]["inner"]["leaf"] = {  }
+		local len_1 = buffer.readu16(incoming_buff, read(2))
+		value["inner"]["inner"]["leaf"]["name"] = buffer.readstring(incoming_buff, read(len_1), len_1)
+		value["inner"]["inner"]["leaf"]["weight"] = buffer.readf32(incoming_buff, read(4))
+		value["inner"]["inner"]["flag"] = bit32.btest(bool_1, 0b0000000000000001)
+		value["inner"]["count"] = buffer.readu16(incoming_buff, read(2))
+		local len_2 = buffer.readu16(incoming_buff, read(2))
+		value["label"] = buffer.readstring(incoming_buff, read(len_2), len_2)
+		return value
+	end
+	function types.read_TaggedUnion()
+		local value;
+		value = {  }
+		local len_1 = buffer.readu16(incoming_buff, read(2))
+		value["events"] = table.create(len_1)
+		for i_1 = 1, len_1 do
+			local bool_1 = buffer.readu8(incoming_buff, read(1))
+			local val_1
+			if bit32.btest(bool_1, 0b0000000000000001) then
+				val_1 = { ["kind"] = "spawn" }
+				val_1["id"] = buffer.readu32(incoming_buff, read(4))
+				val_1["at"] = vector.create(buffer.readf32(incoming_buff, read(4)), buffer.readf32(incoming_buff, read(4)), buffer.readf32(incoming_buff, read(4)))
+			elseif bit32.btest(bool_1, 0b0000000000000010) then
+				val_1 = { ["kind"] = "damage" }
+				val_1["id"] = buffer.readu32(incoming_buff, read(4))
+				val_1["amount"] = buffer.readu16(incoming_buff, read(2))
+			elseif bit32.btest(bool_1, 0b0000000000000100) then
+				val_1 = { ["kind"] = "chat" }
+				val_1["id"] = buffer.readu32(incoming_buff, read(4))
+				local len_2 = buffer.readu16(incoming_buff, read(2))
+				val_1["text"] = buffer.readstring(incoming_buff, read(len_2), len_2)
+			elseif bit32.btest(bool_1, 0b0000000000001000) then
+				val_1 = { ["kind"] = "despawn" }
+				val_1["id"] = buffer.readu32(incoming_buff, read(4))
+			end
+			value["events"][i_1] = val_1
+		end
+		return value
+	end
+	function types.read_Leaf()
+		local value;
+		value = {  }
+		local len_1 = buffer.readu16(incoming_buff, read(2))
+		value["name"] = buffer.readstring(incoming_buff, read(len_1), len_1)
+		value["weight"] = buffer.readf32(incoming_buff, read(4))
 		return value
 	end
 	function types.read_SmallFlatStruct()
@@ -114,34 +198,95 @@ return function(remote_instance, player, incoming_buff, incoming_inst)
 		end
 		return value
 	end
-	function types.read_NestedObject()
-		local value;
-		local bool_1 = buffer.readu8(incoming_buff, read(1))
-		value = {  }
-		value["root"] = {  }
-		value["root"]["inner"] = {  }
-		value["root"]["inner"]["inner"] = {  }
-		value["root"]["inner"]["inner"]["leaf"] = {  }
-		local len_1 = buffer.readu16(incoming_buff, read(2))
-		value["root"]["inner"]["inner"]["leaf"]["name"] = buffer.readstring(incoming_buff, read(len_1), len_1)
-		value["root"]["inner"]["inner"]["leaf"]["weight"] = buffer.readf32(incoming_buff, read(4))
-		value["root"]["inner"]["inner"]["flag"] = bit32.btest(bool_1, 0b0000000000000001)
-		value["root"]["inner"]["count"] = buffer.readu16(incoming_buff, read(2))
-		local len_2 = buffer.readu16(incoming_buff, read(2))
-		value["root"]["label"] = buffer.readstring(incoming_buff, read(len_2), len_2)
-		value["version"] = buffer.readu8(incoming_buff, read(1))
-		return value
-	end
-	function types.read_LargeArray()
+	function types.read_Leaderboard()
 		local value;
 		value = {  }
 		local len_1 = buffer.readu16(incoming_buff, read(2))
-		value["values"] = table.create(len_1)
+		value["entries"] = table.create(len_1)
 		for i_1 = 1, len_1 do
 			local val_1
-			val_1 = buffer.readu16(incoming_buff, read(2))
-			value["values"][i_1] = val_1
+			val_1 = {  }
+			local len_2 = buffer.readu16(incoming_buff, read(2))
+			val_1["name"] = buffer.readstring(incoming_buff, read(len_2), len_2)
+			val_1["score"] = buffer.readu32(incoming_buff, read(4))
+			val_1["userId"] = buffer.readf64(incoming_buff, read(8))
+			value["entries"][i_1] = val_1
 		end
+		return value
+	end
+	function types.read_StringHeavy()
+		local value;
+		value = {  }
+		local len_1 = buffer.readu16(incoming_buff, read(2))
+		value["title"] = buffer.readstring(incoming_buff, read(len_1), len_1)
+		local len_2 = buffer.readu16(incoming_buff, read(2))
+		value["author"] = buffer.readstring(incoming_buff, read(len_2), len_2)
+		local len_3 = buffer.readu16(incoming_buff, read(2))
+		value["lines"] = table.create(len_3)
+		for i_1 = 1, len_3 do
+			local val_1
+			local len_4 = buffer.readu16(incoming_buff, read(2))
+			val_1 = buffer.readstring(incoming_buff, read(len_4), len_4)
+			value["lines"][i_1] = val_1
+		end
+		return value
+	end
+	function types.read_Toggles()
+		local value;
+		local bool_1 = buffer.readu16(incoming_buff, read(2))
+		value = {  }
+		value["a"] = bit32.btest(bool_1, 0b0000000000000001)
+		value["b"] = bit32.btest(bool_1, 0b0000000000000010)
+		value["c"] = bit32.btest(bool_1, 0b0000000000000100)
+		value["d"] = bit32.btest(bool_1, 0b0000000000001000)
+		value["e"] = bit32.btest(bool_1, 0b0000000000010000)
+		value["f"] = bit32.btest(bool_1, 0b0000000000100000)
+		value["g"] = bit32.btest(bool_1, 0b0000000001000000)
+		value["h"] = bit32.btest(bool_1, 0b0000000010000000)
+		value["i"] = bit32.btest(bool_1, 0b0000000100000000)
+		value["j"] = bit32.btest(bool_1, 0b0000001000000000)
+		value["level"] = buffer.readu8(incoming_buff, read(1))
+		if bit32.btest(bool_1, 0b0000010000000000) then
+			local len_1 = buffer.readu16(incoming_buff, read(2))
+			value["label"] = buffer.readstring(incoming_buff, read(len_1), len_1)
+		else
+			value["label"] = nil
+		end
+		if bit32.btest(bool_1, 0b0000100000000000) then
+			value["offset"] = buffer.readi16(incoming_buff, read(2))
+		else
+			value["offset"] = nil
+		end
+		return value
+	end
+	function types.read_Transforms()
+		local value;
+		value = {  }
+		local len_1 = buffer.readu16(incoming_buff, read(2))
+		value["list"] = table.create(len_1)
+		for i_1 = 1, len_1 do
+			local val_1
+			local pos_1 = Vector3.new(buffer.readf32(incoming_buff, read(4)), buffer.readf32(incoming_buff, read(4)), buffer.readf32(incoming_buff, read(4)))
+			local axisangle_1 = Vector3.new(buffer.readf32(incoming_buff, read(4)), buffer.readf32(incoming_buff, read(4)), buffer.readf32(incoming_buff, read(4)))
+			local angle_1 = axisangle_1.Magnitude
+			if angle_1 ~= 0 then
+				val_1 = CFrame.fromAxisAngle(axisangle_1, angle_1) + pos_1
+			else
+				val_1 = CFrame.new(pos_1)
+			end
+			value["list"][i_1] = val_1
+		end
+		return value
+	end
+	function types.read_Entity()
+		local value;
+		value = {  }
+		value["a"] = buffer.readu8(incoming_buff, read(1))
+		value["b"] = buffer.readu8(incoming_buff, read(1))
+		value["c"] = buffer.readu8(incoming_buff, read(1))
+		value["d"] = buffer.readu8(incoming_buff, read(1))
+		value["e"] = buffer.readu8(incoming_buff, read(1))
+		value["f"] = buffer.readu8(incoming_buff, read(1))
 		return value
 	end
 	function types.read_WideStruct()
@@ -199,70 +344,6 @@ return function(remote_instance, player, incoming_buff, incoming_inst)
 		value["f50"] = buffer.readf32(incoming_buff, read(4))
 		return value
 	end
-	function types.read_GuardedUnion()
-		local value;
-		value = {  }
-		local len_1 = buffer.readu16(incoming_buff, read(2))
-		value["values"] = table.create(len_1)
-		for i_1 = 1, len_1 do
-			local bool_1 = buffer.readu8(incoming_buff, read(1))
-			local val_1
-			if bit32.btest(bool_1, 0b0000000000000001) then
-				local len_2 = buffer.readu16(incoming_buff, read(2))
-				val_1 = buffer.readstring(incoming_buff, read(len_2), len_2)
-			elseif bit32.btest(bool_1, 0b0000000000000010) then
-				val_1 = buffer.readf64(incoming_buff, read(8))
-			elseif bit32.btest(bool_1, 0b0000000000000100) then
-				val_1 = bit32.btest(bool_1, 0b0000000000001000)
-			end
-			value["values"][i_1] = val_1
-		end
-		return value
-	end
-	function types.read_Second()
-		local value;
-		local bool_1 = buffer.readu8(incoming_buff, read(1))
-		value = {  }
-		value["inner"] = {  }
-		value["inner"]["leaf"] = {  }
-		local len_1 = buffer.readu16(incoming_buff, read(2))
-		value["inner"]["leaf"]["name"] = buffer.readstring(incoming_buff, read(len_1), len_1)
-		value["inner"]["leaf"]["weight"] = buffer.readf32(incoming_buff, read(4))
-		value["inner"]["flag"] = bit32.btest(bool_1, 0b0000000000000001)
-		value["count"] = buffer.readu16(incoming_buff, read(2))
-		return value
-	end
-	function types.read_Third()
-		local value;
-		local bool_1 = buffer.readu8(incoming_buff, read(1))
-		value = {  }
-		value["leaf"] = {  }
-		local len_1 = buffer.readu16(incoming_buff, read(2))
-		value["leaf"]["name"] = buffer.readstring(incoming_buff, read(len_1), len_1)
-		value["leaf"]["weight"] = buffer.readf32(incoming_buff, read(4))
-		value["flag"] = bit32.btest(bool_1, 0b0000000000000001)
-		return value
-	end
-	function types.read_Entities()
-		local value;
-		value = {  }
-		local len_1 = buffer.readu16(incoming_buff, read(2))
-		assert(len_1 >= 0, "value is less than 0!")
-		assert(len_1 <= 1000, "value is more than 1000!")
-		value["entities"] = table.create(len_1)
-		for i_1 = 1, len_1 do
-			local val_1
-			val_1 = {  }
-			val_1["a"] = buffer.readu8(incoming_buff, read(1))
-			val_1["b"] = buffer.readu8(incoming_buff, read(1))
-			val_1["c"] = buffer.readu8(incoming_buff, read(1))
-			val_1["d"] = buffer.readu8(incoming_buff, read(1))
-			val_1["e"] = buffer.readu8(incoming_buff, read(1))
-			val_1["f"] = buffer.readu8(incoming_buff, read(1))
-			value["entities"][i_1] = val_1
-		end
-		return value
-	end
 	function types.read_Value()
 		local value;
 		local bool_1 = buffer.readu8(incoming_buff, read(1))
@@ -276,69 +357,15 @@ return function(remote_instance, player, incoming_buff, incoming_inst)
 		end
 		return value
 	end
-	function types.read_TaggedUnion()
+	function types.read_Third()
 		local value;
+		local bool_1 = buffer.readu8(incoming_buff, read(1))
 		value = {  }
+		value["leaf"] = {  }
 		local len_1 = buffer.readu16(incoming_buff, read(2))
-		value["events"] = table.create(len_1)
-		for i_1 = 1, len_1 do
-			local bool_1 = buffer.readu8(incoming_buff, read(1))
-			local val_1
-			if bit32.btest(bool_1, 0b0000000000000001) then
-				val_1 = { ["kind"] = "spawn" }
-				val_1["id"] = buffer.readu32(incoming_buff, read(4))
-				val_1["at"] = vector.create(buffer.readf32(incoming_buff, read(4)), buffer.readf32(incoming_buff, read(4)), buffer.readf32(incoming_buff, read(4)))
-			elseif bit32.btest(bool_1, 0b0000000000000010) then
-				val_1 = { ["kind"] = "damage" }
-				val_1["id"] = buffer.readu32(incoming_buff, read(4))
-				val_1["amount"] = buffer.readu16(incoming_buff, read(2))
-			elseif bit32.btest(bool_1, 0b0000000000000100) then
-				val_1 = { ["kind"] = "chat" }
-				val_1["id"] = buffer.readu32(incoming_buff, read(4))
-				local len_2 = buffer.readu16(incoming_buff, read(2))
-				val_1["text"] = buffer.readstring(incoming_buff, read(len_2), len_2)
-			elseif bit32.btest(bool_1, 0b0000000000001000) then
-				val_1 = { ["kind"] = "despawn" }
-				val_1["id"] = buffer.readu32(incoming_buff, read(4))
-			end
-			value["events"][i_1] = val_1
-		end
-		return value
-	end
-	function types.read_Toggles()
-		local value;
-		local bool_1 = buffer.readu16(incoming_buff, read(2))
-		value = {  }
-		value["a"] = bit32.btest(bool_1, 0b0000000000000001)
-		value["b"] = bit32.btest(bool_1, 0b0000000000000010)
-		value["c"] = bit32.btest(bool_1, 0b0000000000000100)
-		value["d"] = bit32.btest(bool_1, 0b0000000000001000)
-		value["e"] = bit32.btest(bool_1, 0b0000000000010000)
-		value["f"] = bit32.btest(bool_1, 0b0000000000100000)
-		value["g"] = bit32.btest(bool_1, 0b0000000001000000)
-		value["h"] = bit32.btest(bool_1, 0b0000000010000000)
-		value["i"] = bit32.btest(bool_1, 0b0000000100000000)
-		value["j"] = bit32.btest(bool_1, 0b0000001000000000)
-		value["level"] = buffer.readu8(incoming_buff, read(1))
-		if bit32.btest(bool_1, 0b0000010000000000) then
-			local len_1 = buffer.readu16(incoming_buff, read(2))
-			value["label"] = buffer.readstring(incoming_buff, read(len_1), len_1)
-		else
-			value["label"] = nil
-		end
-		if bit32.btest(bool_1, 0b0000100000000000) then
-			value["offset"] = buffer.readi16(incoming_buff, read(2))
-		else
-			value["offset"] = nil
-		end
-		return value
-	end
-	function types.read_Leaf()
-		local value;
-		value = {  }
-		local len_1 = buffer.readu16(incoming_buff, read(2))
-		value["name"] = buffer.readstring(incoming_buff, read(len_1), len_1)
-		value["weight"] = buffer.readf32(incoming_buff, read(4))
+		value["leaf"]["name"] = buffer.readstring(incoming_buff, read(len_1), len_1)
+		value["leaf"]["weight"] = buffer.readf32(incoming_buff, read(4))
+		value["flag"] = bit32.btest(bool_1, 0b0000000000000001)
 		return value
 	end
 	function types.read_LargeRecord()
@@ -373,56 +400,54 @@ return function(remote_instance, player, incoming_buff, incoming_inst)
 		end
 		return value
 	end
-	function types.read_First()
+	function types.read_Entities()
+		local value;
+		value = {  }
+		local len_1 = buffer.readu16(incoming_buff, read(2))
+		assert(len_1 >= 0, "value is less than 0!")
+		assert(len_1 <= 1000, "value is more than 1000!")
+		value["entities"] = table.create(len_1)
+		for i_1 = 1, len_1 do
+			local val_1
+			val_1 = {  }
+			val_1["a"] = buffer.readu8(incoming_buff, read(1))
+			val_1["b"] = buffer.readu8(incoming_buff, read(1))
+			val_1["c"] = buffer.readu8(incoming_buff, read(1))
+			val_1["d"] = buffer.readu8(incoming_buff, read(1))
+			val_1["e"] = buffer.readu8(incoming_buff, read(1))
+			val_1["f"] = buffer.readu8(incoming_buff, read(1))
+			value["entities"][i_1] = val_1
+		end
+		return value
+	end
+	function types.read_LargeArray()
+		local value;
+		value = {  }
+		local len_1 = buffer.readu16(incoming_buff, read(2))
+		value["values"] = table.create(len_1)
+		for i_1 = 1, len_1 do
+			local val_1
+			val_1 = buffer.readu16(incoming_buff, read(2))
+			value["values"][i_1] = val_1
+		end
+		return value
+	end
+	function types.read_NestedObject()
 		local value;
 		local bool_1 = buffer.readu8(incoming_buff, read(1))
 		value = {  }
-		value["inner"] = {  }
-		value["inner"]["inner"] = {  }
-		value["inner"]["inner"]["leaf"] = {  }
+		value["root"] = {  }
+		value["root"]["inner"] = {  }
+		value["root"]["inner"]["inner"] = {  }
+		value["root"]["inner"]["inner"]["leaf"] = {  }
 		local len_1 = buffer.readu16(incoming_buff, read(2))
-		value["inner"]["inner"]["leaf"]["name"] = buffer.readstring(incoming_buff, read(len_1), len_1)
-		value["inner"]["inner"]["leaf"]["weight"] = buffer.readf32(incoming_buff, read(4))
-		value["inner"]["inner"]["flag"] = bit32.btest(bool_1, 0b0000000000000001)
-		value["inner"]["count"] = buffer.readu16(incoming_buff, read(2))
+		value["root"]["inner"]["inner"]["leaf"]["name"] = buffer.readstring(incoming_buff, read(len_1), len_1)
+		value["root"]["inner"]["inner"]["leaf"]["weight"] = buffer.readf32(incoming_buff, read(4))
+		value["root"]["inner"]["inner"]["flag"] = bit32.btest(bool_1, 0b0000000000000001)
+		value["root"]["inner"]["count"] = buffer.readu16(incoming_buff, read(2))
 		local len_2 = buffer.readu16(incoming_buff, read(2))
-		value["label"] = buffer.readstring(incoming_buff, read(len_2), len_2)
-		return value
-	end
-	function types.read_Transforms()
-		local value;
-		value = {  }
-		local len_1 = buffer.readu16(incoming_buff, read(2))
-		value["list"] = table.create(len_1)
-		for i_1 = 1, len_1 do
-			local val_1
-			local pos_1 = Vector3.new(buffer.readf32(incoming_buff, read(4)), buffer.readf32(incoming_buff, read(4)), buffer.readf32(incoming_buff, read(4)))
-			local axisangle_1 = Vector3.new(buffer.readf32(incoming_buff, read(4)), buffer.readf32(incoming_buff, read(4)), buffer.readf32(incoming_buff, read(4)))
-			local angle_1 = axisangle_1.Magnitude
-			if angle_1 ~= 0 then
-				val_1 = CFrame.fromAxisAngle(axisangle_1, angle_1) + pos_1
-			else
-				val_1 = CFrame.new(pos_1)
-			end
-			value["list"][i_1] = val_1
-		end
-		return value
-	end
-	function types.read_StringHeavy()
-		local value;
-		value = {  }
-		local len_1 = buffer.readu16(incoming_buff, read(2))
-		value["title"] = buffer.readstring(incoming_buff, read(len_1), len_1)
-		local len_2 = buffer.readu16(incoming_buff, read(2))
-		value["author"] = buffer.readstring(incoming_buff, read(len_2), len_2)
-		local len_3 = buffer.readu16(incoming_buff, read(2))
-		value["lines"] = table.create(len_3)
-		for i_1 = 1, len_3 do
-			local val_1
-			local len_4 = buffer.readu16(incoming_buff, read(2))
-			val_1 = buffer.readstring(incoming_buff, read(len_4), len_4)
-			value["lines"][i_1] = val_1
-		end
+		value["root"]["label"] = buffer.readstring(incoming_buff, read(len_2), len_2)
+		value["version"] = buffer.readu8(incoming_buff, read(1))
 		return value
 	end
 
@@ -433,7 +458,7 @@ return function(remote_instance, player, incoming_buff, incoming_inst)
 			error("Unknown event id")
 		elseif not isServer and remote_instance == reliable then
 			local id = buffer.readu8(incoming_buff, read(1))
-			if id == 10 then -- Wide
+			if id == 11 then -- Wide
 				local value
 				value = {  }
 				value["f1"] = buffer.readf32(incoming_buff, read(4))
@@ -490,7 +515,7 @@ return function(remote_instance, player, incoming_buff, incoming_inst)
 					Name = "Wide",
 					Arguments = { value }
 				})
-			elseif id == 5 then -- Tagged
+			elseif id == 6 then -- Tagged
 				local value
 				value = {  }
 				local len_1 = buffer.readu16(incoming_buff, read(2))
@@ -553,6 +578,24 @@ return function(remote_instance, player, incoming_buff, incoming_inst)
 					Name = "SmallFlat",
 					Arguments = { value }
 				})
+			elseif id == 5 then -- Scores
+				local value
+				value = {  }
+				local len_7 = buffer.readu16(incoming_buff, read(2))
+				value["entries"] = table.create(len_7)
+				for i_3 = 1, len_7 do
+					local val_3
+					val_3 = {  }
+					local len_8 = buffer.readu16(incoming_buff, read(2))
+					val_3["name"] = buffer.readstring(incoming_buff, read(len_8), len_8)
+					val_3["score"] = buffer.readu32(incoming_buff, read(4))
+					val_3["userId"] = buffer.readf64(incoming_buff, read(8))
+					value["entries"][i_3] = val_3
+				end
+				table.insert(events, {
+					Name = "Scores",
+					Arguments = { value }
+				})
 			elseif id == 3 then -- Record
 				local value
 				local bool_3 = buffer.readu8(incoming_buff, read(1))
@@ -561,11 +604,11 @@ return function(remote_instance, player, incoming_buff, incoming_inst)
 				if not bit32.btest(bool_3, 0b0000000000000001) then
 					for _ = 1, buffer.readu16(incoming_buff, read(2)) + 1 do
 						local key_1
-						local val_3
-						local len_7 = buffer.readu16(incoming_buff, read(2))
-						key_1 = buffer.readstring(incoming_buff, read(len_7), len_7)
-						val_3 = buffer.readu8(incoming_buff, read(1))
-						value["entries"][key_1] = val_3
+						local val_4
+						local len_9 = buffer.readu16(incoming_buff, read(2))
+						key_1 = buffer.readstring(incoming_buff, read(len_9), len_9)
+						val_4 = buffer.readu8(incoming_buff, read(1))
+						value["entries"][key_1] = val_4
 					end
 				end
 				table.insert(events, {
@@ -580,13 +623,13 @@ return function(remote_instance, player, incoming_buff, incoming_inst)
 				value["root"]["inner"] = {  }
 				value["root"]["inner"]["inner"] = {  }
 				value["root"]["inner"]["inner"]["leaf"] = {  }
-				local len_8 = buffer.readu16(incoming_buff, read(2))
-				value["root"]["inner"]["inner"]["leaf"]["name"] = buffer.readstring(incoming_buff, read(len_8), len_8)
+				local len_10 = buffer.readu16(incoming_buff, read(2))
+				value["root"]["inner"]["inner"]["leaf"]["name"] = buffer.readstring(incoming_buff, read(len_10), len_10)
 				value["root"]["inner"]["inner"]["leaf"]["weight"] = buffer.readf32(incoming_buff, read(4))
 				value["root"]["inner"]["inner"]["flag"] = bit32.btest(bool_4, 0b0000000000000001)
 				value["root"]["inner"]["count"] = buffer.readu16(incoming_buff, read(2))
-				local len_9 = buffer.readu16(incoming_buff, read(2))
-				value["root"]["label"] = buffer.readstring(incoming_buff, read(len_9), len_9)
+				local len_11 = buffer.readu16(incoming_buff, read(2))
+				value["root"]["label"] = buffer.readstring(incoming_buff, read(len_11), len_11)
 				value["version"] = buffer.readu8(incoming_buff, read(1))
 				table.insert(events, {
 					Name = "Nested",
@@ -595,61 +638,61 @@ return function(remote_instance, player, incoming_buff, incoming_inst)
 			elseif id == 2 then -- Large
 				local value
 				value = {  }
-				local len_10 = buffer.readu16(incoming_buff, read(2))
-				value["values"] = table.create(len_10)
-				for i_3 = 1, len_10 do
-					local val_4
-					val_4 = buffer.readu16(incoming_buff, read(2))
-					value["values"][i_3] = val_4
+				local len_12 = buffer.readu16(incoming_buff, read(2))
+				value["values"] = table.create(len_12)
+				for i_4 = 1, len_12 do
+					local val_5
+					val_5 = buffer.readu16(incoming_buff, read(2))
+					value["values"][i_4] = val_5
 				end
 				table.insert(events, {
 					Name = "Large",
 					Arguments = { value }
 				})
-			elseif id == 11 then -- Guarded
+			elseif id == 12 then -- Guarded
 				local value
 				value = {  }
-				local len_11 = buffer.readu16(incoming_buff, read(2))
-				value["values"] = table.create(len_11)
-				for i_4 = 1, len_11 do
+				local len_13 = buffer.readu16(incoming_buff, read(2))
+				value["values"] = table.create(len_13)
+				for i_5 = 1, len_13 do
 					local bool_5 = buffer.readu8(incoming_buff, read(1))
-					local val_5
+					local val_6
 					if bit32.btest(bool_5, 0b0000000000000001) then
-						local len_12 = buffer.readu16(incoming_buff, read(2))
-						val_5 = buffer.readstring(incoming_buff, read(len_12), len_12)
+						local len_14 = buffer.readu16(incoming_buff, read(2))
+						val_6 = buffer.readstring(incoming_buff, read(len_14), len_14)
 					elseif bit32.btest(bool_5, 0b0000000000000010) then
-						val_5 = buffer.readf64(incoming_buff, read(8))
+						val_6 = buffer.readf64(incoming_buff, read(8))
 					elseif bit32.btest(bool_5, 0b0000000000000100) then
-						val_5 = bit32.btest(bool_5, 0b0000000000001000)
+						val_6 = bit32.btest(bool_5, 0b0000000000001000)
 					end
-					value["values"][i_4] = val_5
+					value["values"][i_5] = val_6
 				end
 				table.insert(events, {
 					Name = "Guarded",
 					Arguments = { value }
 				})
-			elseif id == 7 then -- Frames
+			elseif id == 8 then -- Frames
 				local value
 				value = {  }
-				local len_13 = buffer.readu16(incoming_buff, read(2))
-				value["list"] = table.create(len_13)
-				for i_5 = 1, len_13 do
-					local val_6
+				local len_15 = buffer.readu16(incoming_buff, read(2))
+				value["list"] = table.create(len_15)
+				for i_6 = 1, len_15 do
+					local val_7
 					local pos_1 = Vector3.new(buffer.readf32(incoming_buff, read(4)), buffer.readf32(incoming_buff, read(4)), buffer.readf32(incoming_buff, read(4)))
 					local axisangle_1 = Vector3.new(buffer.readf32(incoming_buff, read(4)), buffer.readf32(incoming_buff, read(4)), buffer.readf32(incoming_buff, read(4)))
 					local angle_1 = axisangle_1.Magnitude
 					if angle_1 ~= 0 then
-						val_6 = CFrame.fromAxisAngle(axisangle_1, angle_1) + pos_1
+						val_7 = CFrame.fromAxisAngle(axisangle_1, angle_1) + pos_1
 					else
-						val_6 = CFrame.new(pos_1)
+						val_7 = CFrame.new(pos_1)
 					end
-					value["list"][i_5] = val_6
+					value["list"][i_6] = val_7
 				end
 				table.insert(events, {
 					Name = "Frames",
 					Arguments = { value }
 				})
-			elseif id == 6 then -- Flags
+			elseif id == 7 then -- Flags
 				local value
 				local bool_6 = buffer.readu16(incoming_buff, read(2))
 				value = {  }
@@ -665,8 +708,8 @@ return function(remote_instance, player, incoming_buff, incoming_inst)
 				value["j"] = bit32.btest(bool_6, 0b0000001000000000)
 				value["level"] = buffer.readu8(incoming_buff, read(1))
 				if bit32.btest(bool_6, 0b0000010000000000) then
-					local len_14 = buffer.readu16(incoming_buff, read(2))
-					value["label"] = buffer.readstring(incoming_buff, read(len_14), len_14)
+					local len_16 = buffer.readu16(incoming_buff, read(2))
+					value["label"] = buffer.readstring(incoming_buff, read(len_16), len_16)
 				else
 					value["label"] = nil
 				end
@@ -679,40 +722,40 @@ return function(remote_instance, player, incoming_buff, incoming_inst)
 					Name = "Flags",
 					Arguments = { value }
 				})
-			elseif id == 9 then -- Ents
+			elseif id == 10 then -- Ents
 				local value
 				value = {  }
-				local len_15 = buffer.readu16(incoming_buff, read(2))
-				assert(len_15 >= 0, "value is less than 0!")
-				assert(len_15 <= 1000, "value is more than 1000!")
-				value["entities"] = table.create(len_15)
-				for i_6 = 1, len_15 do
-					local val_7
-					val_7 = {  }
-					val_7["a"] = buffer.readu8(incoming_buff, read(1))
-					val_7["b"] = buffer.readu8(incoming_buff, read(1))
-					val_7["c"] = buffer.readu8(incoming_buff, read(1))
-					val_7["d"] = buffer.readu8(incoming_buff, read(1))
-					val_7["e"] = buffer.readu8(incoming_buff, read(1))
-					val_7["f"] = buffer.readu8(incoming_buff, read(1))
-					value["entities"][i_6] = val_7
+				local len_17 = buffer.readu16(incoming_buff, read(2))
+				assert(len_17 >= 0, "value is less than 0!")
+				assert(len_17 <= 1000, "value is more than 1000!")
+				value["entities"] = table.create(len_17)
+				for i_7 = 1, len_17 do
+					local val_8
+					val_8 = {  }
+					val_8["a"] = buffer.readu8(incoming_buff, read(1))
+					val_8["b"] = buffer.readu8(incoming_buff, read(1))
+					val_8["c"] = buffer.readu8(incoming_buff, read(1))
+					val_8["d"] = buffer.readu8(incoming_buff, read(1))
+					val_8["e"] = buffer.readu8(incoming_buff, read(1))
+					val_8["f"] = buffer.readu8(incoming_buff, read(1))
+					value["entities"][i_7] = val_8
 				end
 				table.insert(events, {
 					Name = "Ents",
 					Arguments = { value }
 				})
-			elseif id == 8 then -- Bools
+			elseif id == 9 then -- Bools
 				local value
 				value = {  }
-				local len_16 = buffer.readu16(incoming_buff, read(2))
-				assert(len_16 >= 0, "value is less than 0!")
-				assert(len_16 <= 1000, "value is more than 1000!")
-				value["values"] = table.create(len_16)
-				for i_7 = 1, len_16 do
+				local len_18 = buffer.readu16(incoming_buff, read(2))
+				assert(len_18 >= 0, "value is less than 0!")
+				assert(len_18 <= 1000, "value is more than 1000!")
+				value["values"] = table.create(len_18)
+				for i_8 = 1, len_18 do
 					local bool_7 = buffer.readu8(incoming_buff, read(1))
-					local val_8
-					val_8 = bit32.btest(bool_7, 0b0000000000000001)
-					value["values"][i_7] = val_8
+					local val_9
+					val_9 = bit32.btest(bool_7, 0b0000000000000001)
+					value["values"][i_8] = val_9
 				end
 				table.insert(events, {
 					Name = "Bools",

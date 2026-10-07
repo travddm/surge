@@ -7,6 +7,7 @@ import { guardedUnion } from "./fixtures/guarded-union";
 import { instanceRefs } from "./fixtures/instance-refs";
 import { largeArray } from "./fixtures/large-array";
 import { largeRecord } from "./fixtures/large-record";
+import { leaderboard } from "./fixtures/leaderboard";
 import { nestedObject } from "./fixtures/nested-object";
 import { packedStruct, unpackedStruct } from "./fixtures/packed-struct";
 import { smallFlatStruct } from "./fixtures/small-flat-struct";
@@ -28,6 +29,7 @@ export const CATALOG: ReadonlyArray<Fixture> = [
 	largeArray,
 	largeRecord,
 	stringHeavy,
+	leaderboard,
 	enumHeavy,
 	taggedUnion,
 	guardedUnion,

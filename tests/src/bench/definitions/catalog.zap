@@ -96,6 +96,23 @@ event Strings = {
 	data: StringHeavy,
 }
 
+type LeaderboardEntry = struct {
+	name: string.binary,
+	score: u32,
+	userId: f64,
+}
+
+type Leaderboard = struct {
+	entries: LeaderboardEntry[],
+}
+
+event Scores = {
+	from: Server,
+	type: Reliable,
+	call: SingleSync,
+	data: Leaderboard,
+}
+
 type Event = enum "kind" {
 	spawn {
 		id: u32,

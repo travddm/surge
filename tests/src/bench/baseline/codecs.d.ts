@@ -65,4 +65,8 @@ export declare const packedToggles: BaselineCodec<{
 	offset?: number;
 }>;
 
+export declare const leaderboard: BaselineCodec<{
+	entries: Array<{ name: string; score: number; userId: number }>;
+}>;
+
 export declare const instanceRefs: BaselineBlobCodec<{ entries: Array<{ model: Instance; health: number }> }>;

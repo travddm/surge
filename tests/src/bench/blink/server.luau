@@ -172,6 +172,8 @@ export type LargeArray = { values: { number } }
 export type Entries = {[string]: number}
 export type LargeRecord = { entries: {[string]: number} }
 export type StringHeavy = { title: string, author: string, lines: { string } }
+export type LeaderboardEntry = { name: string, score: number, userId: number }
+export type Leaderboard = { entries: { { name: string, score: number, userId: number } } }
 export type Event = { kind: "spawn", id: number, at: Vector3 } | { kind: "damage", id: number, amount: number } | { kind: "chat", id: number, text: string } | { kind: "despawn", id: number }
 export type TaggedUnion = { events: { { kind: "spawn", id: number, at: Vector3 } | { kind: "damage", id: number, amount: number } | { kind: "chat", id: number, text: string } | { kind: "despawn", id: number } } }
 export type Toggles = { a: boolean, b: boolean, c: boolean, d: boolean, e: boolean, f: boolean, g: boolean, h: boolean, i: boolean, j: boolean, level: number, label: string?, offset: number? }
@@ -591,6 +593,86 @@ if not RunService:IsRunning() then
 				buffer.writeu16(SendBuffer, OPERATION_OFFSET_0, Length)
 				Allocate(Length)
 				buffer.writestring(SendBuffer, SendOffset, Item_1, Length)
+			end
+			-- END ARRAY
+			-- Buffer restore
+			local Result = buffer.create(SendCursor)
+			buffer.copy(Result, 0, SendBuffer, 0, SendCursor)
+			Load(Previous)
+			return Result
+		end
+	},
+	Leaderboard = {
+		Read = function(Buffer: buffer): (Leaderboard)
+			-- Buffer overwrite
+			local PreviousCursor = RecieveCursor
+			local PreviousBuffer = RecieveBuffer
+			local PreviousInstanceCursor = RecieveInstanceCursor
+			RecieveCursor = 0
+			RecieveBuffer = Buffer
+			-- Read BLOCK: 2 bytes
+			local BLOCK_START = Read(2)
+			-- Buffer read
+			local Value = {} :: any
+			-- START ARRAY
+			local Length = buffer.readu16(RecieveBuffer, BLOCK_START + 0)
+			if Length < 0 then error(`Expected "Length" to be larger than 0, got {Length} instead.`) end
+			if Length > 65535 then error(`Expected "Length" to be smaller than 65535, got {Length} instead.`) end
+			Value.entries = table.create(Length)
+				-- Read BLOCK: 14 bytes
+			local ARRAY_START_1 = Read(14 * Length)
+			for Index = 1, Length do
+				local Item_1 = {} :: any
+				-- Read 2
+				local OPERATION_OFFSET_0 = ARRAY_START_1
+				ARRAY_START_1 += 2
+				Length = buffer.readu16(RecieveBuffer, OPERATION_OFFSET_0)
+				Item_1.name = buffer.readstring(RecieveBuffer, Read(Length), Length)
+				-- Read 4
+				local OPERATION_OFFSET_1 = ARRAY_START_1
+				ARRAY_START_1 += 4
+				Item_1.score = buffer.readu32(RecieveBuffer, OPERATION_OFFSET_1)
+				-- Read 8
+				local OPERATION_OFFSET_2 = ARRAY_START_1
+				ARRAY_START_1 += 8
+				Item_1.userId = buffer.readf64(RecieveBuffer, OPERATION_OFFSET_2)
+				table.insert(Value.entries, Item_1)
+			end
+			-- END ARRAY
+			-- Buffer restore
+			RecieveCursor = PreviousCursor
+			RecieveBuffer = PreviousBuffer
+			RecieveInstanceCursor = PreviousInstanceCursor
+			return Value
+		end,
+		Write = function(Value: Leaderboard): (buffer)
+			-- Buffer overwrite
+			local Previous = Save()
+			Load()
+			-- Allocate BLOCK: 2 bytes
+			local BLOCK_START = Allocate(2)
+			-- Buffer write
+			-- START ARRAY
+			buffer.writeu16(SendBuffer, BLOCK_START + 0, #Value.entries)
+				-- Allocate BLOCK: 14 bytes
+			local ARRAY_START_1 = Allocate(14 * #Value.entries)
+			for Index = 1, #Value.entries do
+				local Item_1 = Value.entries[Index]
+				local Length = #Item_1.name
+				-- Allocate 2
+				local OPERATION_OFFSET_0 = ARRAY_START_1
+				ARRAY_START_1 += 2
+				buffer.writeu16(SendBuffer, OPERATION_OFFSET_0, Length)
+				Allocate(Length)
+				buffer.writestring(SendBuffer, SendOffset, Item_1.name, Length)
+				-- Allocate 4
+				local OPERATION_OFFSET_1 = ARRAY_START_1
+				ARRAY_START_1 += 4
+				buffer.writeu32(SendBuffer, OPERATION_OFFSET_1, Item_1.score)
+				-- Allocate 8
+				local OPERATION_OFFSET_2 = ARRAY_START_1
+				ARRAY_START_1 += 8
+				buffer.writef64(SendBuffer, OPERATION_OFFSET_2, Item_1.userId)
 			end
 			-- END ARRAY
 			-- Buffer restore
@@ -1561,6 +1643,86 @@ local Returns = table.freeze({
 				buffer.writeu16(SendBuffer, OPERATION_OFFSET_0, Length)
 				Allocate(Length)
 				buffer.writestring(SendBuffer, SendOffset, Item_1, Length)
+			end
+			-- END ARRAY
+			-- Buffer restore
+			local Result = buffer.create(SendCursor)
+			buffer.copy(Result, 0, SendBuffer, 0, SendCursor)
+			Load(Previous)
+			return Result
+		end
+	},
+	Leaderboard = {
+		Read = function(Buffer: buffer): (Leaderboard)
+			-- Buffer overwrite
+			local PreviousCursor = RecieveCursor
+			local PreviousBuffer = RecieveBuffer
+			local PreviousInstanceCursor = RecieveInstanceCursor
+			RecieveCursor = 0
+			RecieveBuffer = Buffer
+			-- Read BLOCK: 2 bytes
+			local BLOCK_START = Read(2)
+			-- Buffer read
+			local Value = {} :: any
+			-- START ARRAY
+			local Length = buffer.readu16(RecieveBuffer, BLOCK_START + 0)
+			if Length < 0 then error(`Expected "Length" to be larger than 0, got {Length} instead.`) end
+			if Length > 65535 then error(`Expected "Length" to be smaller than 65535, got {Length} instead.`) end
+			Value.entries = table.create(Length)
+				-- Read BLOCK: 14 bytes
+			local ARRAY_START_1 = Read(14 * Length)
+			for Index = 1, Length do
+				local Item_1 = {} :: any
+				-- Read 2
+				local OPERATION_OFFSET_0 = ARRAY_START_1
+				ARRAY_START_1 += 2
+				Length = buffer.readu16(RecieveBuffer, OPERATION_OFFSET_0)
+				Item_1.name = buffer.readstring(RecieveBuffer, Read(Length), Length)
+				-- Read 4
+				local OPERATION_OFFSET_1 = ARRAY_START_1
+				ARRAY_START_1 += 4
+				Item_1.score = buffer.readu32(RecieveBuffer, OPERATION_OFFSET_1)
+				-- Read 8
+				local OPERATION_OFFSET_2 = ARRAY_START_1
+				ARRAY_START_1 += 8
+				Item_1.userId = buffer.readf64(RecieveBuffer, OPERATION_OFFSET_2)
+				table.insert(Value.entries, Item_1)
+			end
+			-- END ARRAY
+			-- Buffer restore
+			RecieveCursor = PreviousCursor
+			RecieveBuffer = PreviousBuffer
+			RecieveInstanceCursor = PreviousInstanceCursor
+			return Value
+		end,
+		Write = function(Value: Leaderboard): (buffer)
+			-- Buffer overwrite
+			local Previous = Save()
+			Load()
+			-- Allocate BLOCK: 2 bytes
+			local BLOCK_START = Allocate(2)
+			-- Buffer write
+			-- START ARRAY
+			buffer.writeu16(SendBuffer, BLOCK_START + 0, #Value.entries)
+				-- Allocate BLOCK: 14 bytes
+			local ARRAY_START_1 = Allocate(14 * #Value.entries)
+			for Index = 1, #Value.entries do
+				local Item_1 = Value.entries[Index]
+				local Length = #Item_1.name
+				-- Allocate 2
+				local OPERATION_OFFSET_0 = ARRAY_START_1
+				ARRAY_START_1 += 2
+				buffer.writeu16(SendBuffer, OPERATION_OFFSET_0, Length)
+				Allocate(Length)
+				buffer.writestring(SendBuffer, SendOffset, Item_1.name, Length)
+				-- Allocate 4
+				local OPERATION_OFFSET_1 = ARRAY_START_1
+				ARRAY_START_1 += 4
+				buffer.writeu32(SendBuffer, OPERATION_OFFSET_1, Item_1.score)
+				-- Allocate 8
+				local OPERATION_OFFSET_2 = ARRAY_START_1
+				ARRAY_START_1 += 8
+				buffer.writef64(SendBuffer, OPERATION_OFFSET_2, Item_1.userId)
 			end
 			-- END ARRAY
 			-- Buffer restore

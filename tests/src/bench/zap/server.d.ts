@@ -98,6 +98,8 @@ export declare const Record: ZapEvent<{ entries: Record<string, number> }>;
 
 export declare const Strings: ZapEvent<{ title: string; author: string; lines: Array<string> }>;
 
+export declare const Scores: ZapEvent<{ entries: Array<{ name: string; score: number; userId: number }> }>;
+
 export declare const Tagged: ZapEvent<{
 	events: Array<
 		| { kind: "spawn"; id: number; at: vector }

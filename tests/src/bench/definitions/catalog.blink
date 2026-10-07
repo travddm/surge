@@ -116,6 +116,16 @@ export struct StringHeavy {
     lines: string[],
 }
 
+struct LeaderboardEntry {
+    name: string,
+    score: u32,
+    userId: f64,
+}
+
+export struct Leaderboard {
+    entries: LeaderboardEntry[],
+}
+
 enum Event = "kind" {
     spawn {
         id: u32,
