@@ -41,6 +41,15 @@ interface WithUnionArrays {
 }
 const unionArraysSerializer = createCodec<WithUnionArrays>();
 
+// Three variants, so the size compares each tag twice and reads it once
+// (Transformer 5.20), in a loop and out of one.
+type Signal = { kind: "on" } | { kind: "level"; level: DataType.u8 } | { kind: "text"; text: string };
+interface WithSignals {
+	signals: Signal[];
+	last: Signal;
+}
+const signalsSerializer = createCodec<WithSignals>();
+
 const FUZZ_ITERATIONS = 100;
 
 function randomScalar(rng: Rng): Scalar {
@@ -49,6 +58,14 @@ function randomScalar(rng: Rng): Scalar {
 		return rng.str();
 	}
 	return choice === 1 ? rng.f64() : rng.bool();
+}
+
+function randomSignal(rng: Rng): Signal {
+	const choice = rng.int(0, 2);
+	if (choice === 0) {
+		return { kind: "on" };
+	}
+	return choice === 1 ? { kind: "level", level: rng.int(0, 255) } : { kind: "text", text: rng.str() };
 }
 
 function randomCommand(rng: Rng, depth: number): Command {
@@ -137,6 +154,14 @@ class UnionsTest {
 			const arrays: WithUnionArrays = { readings, scalars };
 			const writtenArrays = unionArraysSerializer.serialize(arrays);
 			Assert.equal(undefined, difference(arrays, unionArraysSerializer.deserialize(writtenArrays)));
+
+			const signals = new Array<Signal>();
+			for (const __ of $range(1, rng.int(0, 5))) {
+				signals.push(randomSignal(rng));
+			}
+			const withSignals: WithSignals = { signals, last: randomSignal(rng) };
+			const writtenSignals = signalsSerializer.serialize(withSignals);
+			Assert.equal(undefined, difference(withSignals, signalsSerializer.deserialize(writtenSignals)));
 
 			const command = randomCommand(rng, 3);
 			const writtenCommand = commandSerializer.serialize(command);

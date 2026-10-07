@@ -170,6 +170,26 @@ test("a union is sized by the variant its write picks, with the write's own test
 	assert.doesNotMatch(luau, /local idx[0-9]+ = if /);
 });
 
+// Regression check for a tag read once by a size. What it was measured as worth
+// is in docs/research/size-reads-tag-once.md.
+test("a size that compares a tag more than once reads it once", () => {
+	const luau = readCompiledLuau("tests/unions.spec.luau");
+	// `WithSignals.last` is a union of three variants outside a loop. The size
+	// binds its tag ahead of the result, and the write tests that local.
+	assert.match(
+		luau,
+		/local (tag[0-9]+) = value[.]last[.]kind\n[^]*?local (size[0-9]+) = [(]if \1 == "level" then 1 elseif \1 == "on" then 0 else /,
+	);
+	assert.match(luau, /local __surge_cursor = 0\n\s+if tag[0-9]+ == "level" then$/m);
+	assert.equal(luau.match(/value[.]last[.]kind/g).length, 1);
+	// `WithSignals.signals` is an array of it: the size's loop reads each tag
+	// into a local of its own.
+	assert.match(
+		luau,
+		/for _, (item[0-9]+) in arr[0-9]+ do\n\s+local (tag[0-9]+) = \1[.]kind\n\s+size[0-9]+ [+]= [(]if \2 == "level" then 1 elseif \2 == "on" then 0 else #\1[.]text [+] 4[)] [+] 1\n\s+end$/m,
+	);
+});
+
 // Regression check for a nested object's value read once. What it was measured
 // as worth is in docs/research/nested-object-values.md.
 test("a nested object reads its value once, not once per property", () => {
