@@ -42,6 +42,13 @@ interface WithNothing {
 }
 const nothingSerializer = createCodec<WithNothing>();
 
+// Each element writes two bytes whatever it holds, so the array is sized by
+// its count (Transformer 5.20 in docs/specs/transformer.md).
+interface WithBlobArray {
+	entries: Array<{ model: Instance; health: DataType.u16 }>;
+}
+const blobArraySerializer = createCodec<WithBlobArray>();
+
 interface WithDatatypes {
 	position: Vector3;
 	offset: Vector2;
@@ -195,6 +202,27 @@ class RobloxTest {
 		const { buffer, blobs } = blobsSerializer.serialize(value);
 		Assert.equal(2, blobs.size());
 		Assert.undefined(blobsSerializer.deserialize({ buffer, blobs }).maybePart);
+	}
+
+	@Fact
+	public roundTripsAnArrayOfObjectsThatHoldABlob(): void {
+		const part = new Instance("Part");
+		const folder = new Instance("Folder");
+		const value: WithBlobArray = {
+			entries: [
+				{ model: part, health: 1 },
+				{ model: folder, health: 65535 },
+			],
+		};
+		const { buffer: buf, blobs } = blobArraySerializer.serialize(value);
+		// The u32 count and each element's u16.
+		Assert.equal(4 + 2 + 2, buffer.len(buf));
+		Assert.equal(2, blobs.size());
+		const result = blobArraySerializer.deserialize({ buffer: buf, blobs });
+		Assert.equal(part, result.entries[0].model);
+		Assert.equal(folder, result.entries[1].model);
+		Assert.equal(1, result.entries[0].health);
+		Assert.equal(65535, result.entries[1].health);
 	}
 
 	@Fact

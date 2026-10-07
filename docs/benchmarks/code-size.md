@@ -20,7 +20,7 @@ level 1; another compiler version can give another count.
 | cframes (packed)         | 1456  | 677 (0.46×)  | 746 (0.51×)  |
 | enum-heavy               | 3254  | 800 (0.25×)  | 795 (0.24×)  |
 | guarded-union            | 1640  | 1115 (0.68×) | 1135 (0.69×) |
-| instance-refs            | 1888  | 781 (0.41×)  | 776 (0.41×)  |
+| instance-refs            | 1240  | 781 (0.63×)  | 776 (0.63×)  |
 | large-array              | 817   | 636 (0.78×)  | 631 (0.77×)  |
 | large-record             | 1725  | 668 (0.39×)  | 689 (0.40×)  |
 | nested-object            | 1700  | 1229 (0.72×) | 1247 (0.73×) |

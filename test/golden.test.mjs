@@ -278,6 +278,18 @@ test("an array of unions is sized by a loop, and an array of anything else that 
 	);
 });
 
+// Regression check for sizing an array by its count where each element writes
+// the same bytes but has no fixed size. What it was measured as worth is in
+// docs/research/blob-array-sizing.md.
+test("an array of objects that hold a blob is sized by its count", () => {
+	const luau = readCompiledLuau("tests/roblox.spec.luau");
+	// `WithBlobArray.entries` holds an Instance and a u16 in each element.
+	assert.match(
+		luau,
+		/local blobArraySerializer = [(]function[(][)]\n[^]*?local (arr[0-9]+) = value[.]entries\n\s+local __surge_scratch = buffer[.]create[(]#\1 [*] 2 [+] 4[)]$/m,
+	);
+});
+
 // Regression check for the conditional blob side channel. What it is worth is in
 // docs/research/per-call-overhead.md.
 test("a shape with no blob field pays nothing for the blob side channel", () => {
