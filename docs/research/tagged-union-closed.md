@@ -120,8 +120,15 @@ did not move either way.
 
 Adding a size loop's constant bytes once and reading a datatype's value once
 are worth 1.020× to 1.035× on the tagged union's encode together, and leave
-the hand-written codec 1.02× ahead on it, where it was 1.06×. Every row with a
-hand-written codec is now within the band of it on both halves.
+the hand-written codec 1.02× ahead on it, where it was 1.06×. With it, each of
+the eight rows with a hand-written codec is within the band of it on both
+halves: the flat struct, the nested object and the `CFrame` array
+([size-and-read-locals.md](size-and-read-locals.md)), the packed toggles
+([packed-bits-read-in-place.md](packed-bits-read-in-place.md)), the
+leaderboard ([object-array-loop-sizing.md](object-array-loop-sizing.md)), the
+tree ([recursion-write-cursor.md](recursion-write-cursor.md)), the instance
+references ([blob-store-by-index.md](blob-store-by-index.md)) and the tagged
+union.
 
 ## Data
 
