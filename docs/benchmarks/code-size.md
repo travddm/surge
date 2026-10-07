@@ -23,13 +23,13 @@ level 1; another compiler version can give another count.
 | instance-refs            | 1249  | 781 (0.63×)  | 776 (0.62×)  |
 | large-array              | 817   | 636 (0.78×)  | 631 (0.77×)  |
 | large-record             | 1725  | 668 (0.39×)  | 689 (0.40×)  |
-| leaderboard              | 1256  | 846 (0.67×)  | 860 (0.68×)  |
+| leaderboard              | 1261  | 846 (0.67×)  | 860 (0.68×)  |
 | nested-object            | 1700  | 1229 (0.72×) | 1247 (0.73×) |
 | packed-struct (packed)   | 2414  | 1388 (0.57×) | 1381 (0.57×) |
 | packed-struct (unpacked) | 3179  | 1356 (0.43×) | 1349 (0.42×) |
 | small-flat-struct        | 1130  | 836 (0.74×)  | 798 (0.71×)  |
 | string-heavy             | 2103  | 755 (0.36×)  | 825 (0.39×)  |
-| tagged-union             | 2741  | 1399 (0.51×) | 1494 (0.55×) |
+| tagged-union             | 2726  | 1399 (0.51×) | 1494 (0.55×) |
 | tree                     | 1721  | —            | —            |
 | wide-struct              | 6845  | 3363 (0.49×) | 3328 (0.49×) |
 

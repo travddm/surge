@@ -1,8 +1,8 @@
 # Transformer specification
 
 Status: current
-Applies to: `@rbxts/surge` at commit `ce86b2f`, `rbxts-transformer-surge` at
-commit `da35c52` (no tagged release yet)
+Applies to: `@rbxts/surge` at commit `8de2795`, `rbxts-transformer-surge` at
+commit `a566bd2` (no tagged release yet)
 
 ## 1. Scope
 
@@ -223,8 +223,9 @@ only fixed-size properties. Such an object's properties take their bytes from
 the run. A run ends before its properties would declare more than 31 locals
 in the Luau roblox-ts compiles, counted on the side, and under the check
 option, that declares more. A property declares one; a `cframe` five, and a
-quantized one six; an `enum`, a `literal`, and a `num` with a range two; and a
-`bitSet` two, and one more for each of its bytes. A nested object declares
+quantized one six; an `enum`, a `literal`, a `num` with a range, a `vector2`,
+a `vector3`, a `color3`, and a `datatype` of more than one component two
+(5.26); and a `bitSet` two, and one more for each of its bytes. A nested object declares
 what its properties declare, at any depth. A tuple's fixed elements do not
 share a reservation.
 
@@ -352,7 +353,8 @@ as an `object` that holds a `blob` and fixed-size properties: a `blob` is not
 fixed-size, so the object is not either. Such an `array` is sized by its count
 times that size. An `array` of unions, or of objects whose size varies, is
 sized by a loop over its elements ahead of the result, which iterates them as
-the write does. A union
+the write does. The bytes every element writes, such as a union's index, are
+added once for all of them, ahead of the loop, which adds only what varies. A union
 adds its index and the size of the variant its write picks, chosen by the
 write's own tests in the write's order: a tag's comparisons or a guarded
 union's guards. A size that compares a `taggedUnion`'s tag more than once
@@ -412,6 +414,13 @@ the reservation of the fixed-size properties that start a `taggedUnion`'s
 variant, or of a `guardedUnion`'s variant of a fixed size, when the run of 5.5
 holds them within its bound, and reserves on its own otherwise. The last
 variant is written when no test passes, as the size of 5.20 takes it.
+
+**5.26** A `vector2`, a `vector3`, a `color3`, and a `datatype` of more than
+one component each read more than one property of their value. When the value
+is not a local, the write reads it into a local once and reads each property
+from that local, inside a run of 5.5 as outside one, and 5.5 counts that
+local. A component reached through two properties, such as a `UDim2`'s
+`X.Scale`, reads the first of them from that local.
 
 ## 6. Injected imports
 
@@ -536,6 +545,7 @@ of `rbxts-transformer-surge`, cited by `describe` block. Source paths are in
 | 5.23      | `emit`: `Emitter nested object values`; `test/golden.test.mjs`: a nested object reads its value once, not once per property                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 | 5.24      | `emit`: `Emitter packed region`, `Emitter packed tag bit`; `test/golden.test.mjs`: a packed region is written and read inline, with no per-bit helper; every round trip in `tests/src/tests/packed.spec.ts`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 | 5.25      | `emit`: `Emitter union writes`, `Emitter packed tag bit`, `Emitter exact sizing` (the write reads the tag the size bound); `test/golden.test.mjs`: a union is sized by the variant its write picks, with the write's own tests, and a size that compares a tag more than once reads it once; every round trip in `tests/src/tests/unions.spec.ts` and `tests/src/tests/bytes.spec.ts`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| 5.26      | `emit`: `Emitter datatype values`, `Emitter local-register ceiling` (runLocals counts at least what one more `vector2`, `vector3`, `color3` or datatype declares), and the snapshots of `Emitter shared reservations` and `Emitter exact sizing`; `test/golden.test.mjs`: a datatype reads its value once, not once per component, inside a run; every round trip in `tests/src/tests/bytes.spec.ts`, `tests/src/tests/roblox.spec.ts` and `tests/src/tests/coverage.spec.ts`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 | 6.1, 6.2  | `transform`: `transform injected imports`, and in `transform (end-to-end)` the single shared import and the same-named local function; `tests/src/tests/coverage.spec.ts`: `leavesAUserDeclarationNamedAfterAnInjectedImportAlone`; `test/golden.test.mjs`: generated code imports its helpers from the package's abi module                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
 | 6.3       | `test/golden.test.mjs`: a file directive survives the transformer's injected imports; `transform`: `transform generated code` (the three directive tests)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
 | 6.4       | `transform`: `transform injected imports` (a `createDeserializer` call site)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
@@ -548,6 +558,9 @@ of `rbxts-transformer-surge`, cited by `describe` block. Source paths are in
 
 ## Changes
 
+- `8de2795` / `a566bd2`: 5.20 adds the bytes every element writes once, ahead
+  of the size loop. 5.26 reads a datatype's value once again, without the
+  `cframe` it read before, and 5.5 counts the local that takes.
 - `ce86b2f` / `da35c52`: no statement changes. The 5.9 row names a round
   trip of a recursive type that holds a blob.
 - `324c701` / `e6325ac`: 5.9 stores a blob at a counted index, where it

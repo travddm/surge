@@ -165,10 +165,11 @@ test("a union is sized by the variant its write picks, with the write's own test
 	const luau = readCompiledLuau("tests/unions.spec.luau");
 	// `WithUnionArrays.readings` is an array of a tagged union, sized by a loop
 	// over its elements, and the size tests each element's tag as its write
-	// does.
+	// does. Each element's index byte is added once ahead of the loop, as
+	// docs/research/tagged-union-closed.md measured.
 	assert.match(
 		luau,
-		/local (arr[0-9]+) = value[.]readings\n[^]*?local (size[0-9]+) = 8\n\s+for _, (item[0-9]+) in \1 do\n\s+\2 [+]= [(]if \3[.]kind == "level" then 1 else #\3[.]text [+] 4[)] [+] 1\n\s+end$/m,
+		/local (arr[0-9]+) = value[.]readings\n[^]*?local (size[0-9]+) = #\1 [+] #arr[0-9]+ [+] 8\n\s+for _, (item[0-9]+) in \1 do\n\s+\2 [+]= [(]if \3[.]kind == "level" then 1 else #\3[.]text [+] 4[)]\n\s+end$/m,
 	);
 	// The write reads the tag once and tests it once, and the branch it takes
 	// writes the variant's index in one reservation with the `u8` after it.
@@ -195,8 +196,25 @@ test("a size that compares a tag more than once reads it once", () => {
 	// into a local of its own.
 	assert.match(
 		luau,
-		/for _, (item[0-9]+) in arr[0-9]+ do\n\s+local (tag[0-9]+) = \1[.]kind\n\s+size[0-9]+ [+]= [(]if \2 == "level" then 1 elseif \2 == "on" then 0 else #\1[.]text [+] 4[)] [+] 1\n\s+end$/m,
+		/for _, (item[0-9]+) in arr[0-9]+ do\n\s+local (tag[0-9]+) = \1[.]kind\n\s+size[0-9]+ [+]= [(]if \2 == "level" then 1 elseif \2 == "on" then 0 else #\1[.]text [+] 4[)]\n\s+end$/m,
 	);
+});
+
+// Regression check for a datatype's value read once. What it was measured as
+// worth is in docs/research/tagged-union-closed.md.
+test("a datatype reads its value once, not once per component, inside a run", () => {
+	const luau = readCompiledLuau("tests/bytes.spec.luau");
+	// `Datatypes` is a `Color3`, a `Vector2` and a `Vector3` in one reservation.
+	assert.match(
+		luau,
+		/__surge_cursor = (pos[0-9]+) [+] 23\n\s+local (vec[0-9]+) = value[.]offset\n\s+buffer[.]writef32[(]__surge_scratch, \1, \2[.]X[)]$/m,
+	);
+	assert.match(
+		luau,
+		/local (vec[0-9]+) = value[.]position\n\s+buffer[.]writef32[(]__surge_scratch, pos[0-9]+, \1[.]X[)]$/m,
+	);
+	assert.match(luau, /local (color[0-9]+) = value[.]tint\n\s+buffer[.]writeu8[(][^\n]*\1[.]R /m);
+	assert.doesNotMatch(luau, /value[.](offset|position|tint)[.][XYZRGB]\b/);
 });
 
 // Regression check for a nested object's value read once. What it was measured
