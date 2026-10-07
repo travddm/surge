@@ -126,3 +126,16 @@ run took a shape past Luau's limit of 200 locals.
   surge `f16bdc3` and rbxts-transformer-surge `8d1c05d`.
 - The figures above were computed from the two `.tsv` files, with the
   recorder's own median, spread and noise rule.
+
+## Correction, 2026-10-07
+
+This corrects the conclusion that reading a datatype's value once is worth
+nothing the speed tier reads. It is worth something one pair of invocations
+cannot read. Within one process, a hand-written codec of the tagged union
+that reads `at` once for each component ran 2% to 3% slower than one that
+reads it once ([tagged-union-attribution.md](tagged-union-attribution.md)).
+The change was taken up again with the local it adds counted in a run's
+locals, so that no shape passes Luau's 200 locals, and without the `cframe`.
+Measured together with a change to the size loop, it closed the tagged
+union's gap to the hand-written codec, and it is kept
+([tagged-union-closed.md](tagged-union-closed.md)).

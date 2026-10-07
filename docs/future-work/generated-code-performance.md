@@ -66,6 +66,9 @@ code the transformer generates runs. What has been measured is under
 - [tagged-union-attribution.md](../research/tagged-union-attribution.md) —
   where the tagged union's gap to the hand-written codec goes, measured within
   one process.
+- [tagged-union-closed.md](../research/tagged-union-closed.md) — a size loop's
+  constant bytes added once, and a datatype's value read once, which closed
+  it.
 
 This document holds what is still open.
 
@@ -80,28 +83,14 @@ a part paid once per call and a part paid per element
 and its correction), and the papers listed above measured each change that
 closed it. The packed toggles are within the band on both halves
 ([packed-bits-read-in-place.md](../research/packed-bits-read-in-place.md)).
-On the tagged union the hand-written codec encodes faster, and its decode is
-within the band
-([tagged-union-attribution.md](../research/tagged-union-attribution.md)); the
-item below is that gap. On the leaderboard, both halves are within the band
-([object-array-loop-sizing.md](../research/object-array-loop-sizing.md)),
-and on the tree
-([recursion-write-cursor.md](../research/recursion-write-cursor.md)) and the
-instance references
+Both halves are within the band on the tagged union
+([tagged-union-closed.md](../research/tagged-union-closed.md)), the
+leaderboard
+([object-array-loop-sizing.md](../research/object-array-loop-sizing.md)), the
+tree ([recursion-write-cursor.md](../research/recursion-write-cursor.md)) and
+the instance references
 ([blob-store-by-index.md](../research/blob-store-by-index.md)) as well. What
 the other rows pay against hand-written Luau is not measured.
-
-**The tagged union's write.** Two differences account for the gap
-([tagged-union-attribution.md](../research/tagged-union-attribution.md)): a
-`spawn` event's `item.at` read once for each component, and the size loop's
-form, which adds each event's variant byte to an if-expression where adding
-the variant bytes once ahead of the loop ran as fast as the hand-written
-codec. Closing it needs a datatype's value read once, with the local that
-takes counted where a run's locals are counted, since reading it once without
-that was withdrawn for passing Luau's 200 locals
-([datatype-values.md](../research/datatype-values.md)); and a loop element's
-constant bytes added once ahead of the size loop. Each is about 2%, which a
-pair of invocations cannot read alone, so the two are measured together.
 
 **What is left per call.** A shape that keeps the scratch buffer still has
 the three candidates a shape sized exactly (Transformer 5.20 in
@@ -233,7 +222,7 @@ its own full catalog run against a reference taken in the same session, read
 as medians over many cells against the untouched libraries as controls. The
 per-call gap is closed on the flat struct, the nested object, the `CFrame`
 array, the packed toggles, the leaderboard, the tree and the instance
-references. On the tagged union, it is attributed and not yet closed.
+references, and the tagged union.
 Everything else is small, or needs a fixture before anything can measure it.
 
 ## How, briefly
@@ -247,8 +236,8 @@ Everything else is small, or needs a fixture before anything can measure it.
   the read table's, the blob channel's, the size's locals, the read state's,
   the packed region's, the size's tag, the blob array's count, the loop's
   boundary, the recursion helper's cursor, the blob list's length and the
-  blob's counted index are there already, and so are the file pragmas on both
-  sides.
+  blob's counted index and the datatype's value read once are there already,
+  and so are the file pragmas on both sides.
 - Predict nothing from the compiled output. Whether a cost is paid per element
   or per call was the heuristic this document used to lean on, and the blob
   channel broke it: a per-call allocation was measurable, and whether a
