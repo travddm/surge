@@ -61,6 +61,8 @@ code the transformer generates runs. What has been measured is under
   state in the closure costs on a tree.
 - [blob-list-length.md](../research/blob-list-length.md) — the blob list
   created at the most blobs a value appends.
+- [blob-store-by-index.md](../research/blob-store-by-index.md) — each blob
+  stored at a counted index rather than with `table.insert`.
 
 This document holds what is still open.
 
@@ -78,14 +80,13 @@ closed it. The packed toggles are within the band on both halves
 On the tagged union the hand-written codec encodes faster, and its decode is
 within the band
 ([datatype-values.md](../research/datatype-values.md)); the item below is
-that gap. On the instance references, too, the hand-written codec encodes
-faster, and their decode is within the band
-([blob-list-length.md](../research/blob-list-length.md)); the item after it
-is that gap. On the leaderboard, both halves are within the band
+that gap. On the leaderboard, both halves are within the band
 ([object-array-loop-sizing.md](../research/object-array-loop-sizing.md)),
-and on the tree as well
-([recursion-write-cursor.md](../research/recursion-write-cursor.md)). What the
-other rows pay against hand-written Luau is not measured.
+and on the tree
+([recursion-write-cursor.md](../research/recursion-write-cursor.md)) and the
+instance references
+([blob-store-by-index.md](../research/blob-store-by-index.md)) as well. What
+the other rows pay against hand-written Luau is not measured.
 
 **The tagged union's write.** What is left of the gap is not attributed.
 The last known difference that read a table, a `spawn` event's `item.at` read
@@ -95,19 +96,6 @@ change was withdrawn for the locals it added
 differences left are arithmetic on locals and cursor moves, and cursor moves
 measured as no change
 ([variant-index-reservation.md](../research/variant-index-reservation.md)).
-
-**The instance references' write.** Creating the blob list at its length
-closed two thirds of what was left of the gap
-([blob-list-length.md](../research/blob-list-length.md)). Two differences
-remain. Each element moves the cursor for its bytes, where the hand-written
-codec writes at an offset it computes from the index, and cursor moves
-measured as no change elsewhere
-([variant-index-reservation.md](../research/variant-index-reservation.md)).
-Each element appends its blob with `table.insert`, where the hand-written
-codec stores it at its index; `table.insert` is what appends nothing for an
-absent blob (Wire format 6.7 in
-[specs/wire-format.md](../specs/wire-format.md)), so a store at an index fits
-only a blob that cannot be absent.
 
 **What is left per call.** A shape that keeps the scratch buffer still has
 the three candidates a shape sized exactly (Transformer 5.20 in
@@ -238,9 +226,8 @@ Every item here is measurement-driven, and the method is settled: a change is
 its own full catalog run against a reference taken in the same session, read
 as medians over many cells against the untouched libraries as controls. The
 per-call gap is closed on the flat struct, the nested object, the `CFrame`
-array and the packed toggles. On the tagged union, what is left of the gap
-is not attributed, and neither is what is left of it on the instance
-references.
+array, the packed toggles, the leaderboard, the tree and the instance
+references. On the tagged union, what is left of the gap is not attributed.
 Everything else is small, or needs a fixture before anything can measure it.
 
 ## How, briefly
@@ -253,8 +240,9 @@ Everything else is small, or needs a fixture before anything can measure it.
   read loop's, the tagged union's, the `CFrame`'s, the shared reservation's,
   the read table's, the blob channel's, the size's locals, the read state's,
   the packed region's, the size's tag, the blob array's count, the loop's
-  boundary, the recursion helper's cursor and the blob list's length are
-  there already, and so are the file pragmas on both sides.
+  boundary, the recursion helper's cursor, the blob list's length and the
+  blob's counted index are there already, and so are the file pragmas on both
+  sides.
 - Predict nothing from the compiled output. Whether a cost is paid per element
   or per call was the heuristic this document used to lean on, and the blob
   channel broke it: a per-call allocation was measurable, and whether a
