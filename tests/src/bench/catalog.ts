@@ -14,6 +14,7 @@ import { smallFlatStruct } from "./fixtures/small-flat-struct";
 import { stringHeavy } from "./fixtures/string-heavy";
 import { taggedUnion } from "./fixtures/tagged-union";
 import { tree } from "./fixtures/tree";
+import { tuples } from "./fixtures/tuples";
 import { wideStruct } from "./fixtures/wide-struct";
 
 /**
@@ -28,6 +29,7 @@ export const CATALOG: ReadonlyArray<Fixture> = [
 	nestedObject,
 	wideStruct,
 	largeArray,
+	tuples,
 	largeRecord,
 	stringHeavy,
 	leaderboard,

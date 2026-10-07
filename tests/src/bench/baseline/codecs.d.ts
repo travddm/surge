@@ -77,4 +77,6 @@ export interface BaselineTreeNode {
 
 export declare const tree: BaselineCodec<BaselineTreeNode>;
 
+export declare const tuples: BaselineCodec<{ samples: Array<[number, number, number]> }>;
+
 export declare const instanceRefs: BaselineBlobCodec<{ entries: Array<{ model: Instance; health: number }> }>;

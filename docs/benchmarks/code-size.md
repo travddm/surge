@@ -31,6 +31,7 @@ level 1; another compiler version can give another count.
 | string-heavy             | 2103  | 755 (0.36×)  | 825 (0.39×)  |
 | tagged-union             | 2726  | 1399 (0.51×) | 1494 (0.55×) |
 | tree                     | 1721  | —            | —            |
+| tuples                   | 1064  | 751 (0.71×)  | 751 (0.71×)  |
 | wide-struct              | 6845  | 3363 (0.49×) | 3328 (0.49×) |
 
 The hand-written baseline, Blink and Zap each hold every row they cover in
@@ -38,6 +39,6 @@ one module, so they have no cell above:
 
 | Column   | Module                                 | Bytes  |
 | -------- | -------------------------------------- | ------ |
-| baseline | `tests/src/bench/baseline/codecs.luau` | 11531  |
+| baseline | `tests/src/bench/baseline/codecs.luau` | 12345  |
 | blink    | `tests/src/bench/blink/server.luau`    | 93486  |
 | zap      | `tests/src/bench/zap/server.luau`      | 160161 |

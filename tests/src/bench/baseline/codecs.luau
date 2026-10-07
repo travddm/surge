@@ -414,6 +414,33 @@ local function readTree(buf)
 	return (readTreeNode(buf, 0))
 end
 
+local function writeTuples(value)
+	local samples = value.samples
+	local count = #samples
+	-- One allocation: every tuple is a u16 and two f32.
+	local buf = buffer.create(4 + 10 * count)
+	buffer.writeu32(buf, 0, count)
+	local offset = 4
+	for _, sample in samples do
+		buffer.writeu16(buf, offset, sample[1])
+		buffer.writef32(buf, offset + 2, sample[2])
+		buffer.writef32(buf, offset + 6, sample[3])
+		offset += 10
+	end
+	return buf
+end
+
+local function readTuples(buf)
+	local count = buffer.readu32(buf, 0)
+	local samples = table.create(count)
+	local offset = 4
+	for index = 1, count do
+		samples[index] = { buffer.readu16(buf, offset), buffer.readf32(buf, offset + 2), buffer.readf32(buf, offset + 6) }
+		offset += 10
+	end
+	return { samples = samples }
+end
+
 local function writeInstanceRefs(value)
 	local entries = value.entries
 	local count = #entries
@@ -446,5 +473,6 @@ return {
 	packedToggles = { write = writePackedToggles, read = readPackedToggles },
 	leaderboard = { write = writeLeaderboard, read = readLeaderboard },
 	tree = { write = writeTree, read = readTree },
+	tuples = { write = writeTuples, read = readTuples },
 	instanceRefs = { write = writeInstanceRefs, read = readInstanceRefs },
 }
