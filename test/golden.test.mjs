@@ -39,6 +39,15 @@ test("a genuinely self-referential shape (TreeNode) does call its generated recu
 	assert.match(luau, /surge_TreeNode_\d+_(?:write|read)/);
 });
 
+// Regression check for the write cursor passed to a recursion helper. What it
+// was measured as worth is in docs/research/recursion-write-cursor.md.
+test("a recursion helper's write takes the write cursor and returns it", () => {
+	const luau = readCompiledLuau("tests/coverage.spec.luau");
+	assert.match(luau, /local function surge_TreeNode_\d+_write\(value, __surge_cursor\)$/m);
+	assert.match(luau, /^\s+__surge_cursor = surge_TreeNode_\d+_write\(item\d+, __surge_cursor\)$/m);
+	assert.match(luau, /^\s+return __surge_cursor$/m);
+});
+
 // Regression checks for the recursive-union-types, enum-encoding and wire-format-determinism
 // findings of docs/research/september-2026-review.md, against the real
 // compiled output (not a unit-level reconstruction of the emitter's input).
