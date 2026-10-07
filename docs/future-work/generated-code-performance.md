@@ -73,8 +73,7 @@ within the band
 that gap. On the instance references, too, the hand-written codec encodes
 faster, and their decode is within the band
 ([blob-array-sizing.md](../research/blob-array-sizing.md)); the item after it
-is that gap. On the leaderboard, surge's encode is within the band and its
-decode ahead
+is that gap. On the leaderboard, both halves are within the band
 ([object-array-loop-sizing.md](../research/object-array-loop-sizing.md)).
 What the other rows pay against hand-written Luau is not measured.
 
@@ -238,8 +237,8 @@ Everything else is small, or needs a fixture before anything can measure it.
 - A golden check in `test/golden.test.mjs` for each change that lands. The
   read loop's, the tagged union's, the `CFrame`'s, the shared reservation's,
   the read table's, the blob channel's, the size's locals, the read state's,
-  the packed region's, the size's tag and the blob array's count are there
-  already, and so are the file pragmas on both sides.
+  the packed region's, the size's tag, the blob array's count and the loop's
+  boundary are there already, and so are the file pragmas on both sides.
 - Predict nothing from the compiled output. Whether a cost is paid per element
   or per call was the heuristic this document used to lean on, and the blob
   channel broke it: a per-call allocation was measurable, and whether a
