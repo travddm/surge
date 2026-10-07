@@ -53,6 +53,9 @@ code the transformer generates runs. What has been measured is under
   of objects that hold a blob by its count.
 - [object-array-loop-sizing.md](../research/object-array-loop-sizing.md) —
   sizing an array of objects that hold a string by a loop over them.
+- [string-and-dict-loops-again.md](../research/string-and-dict-loops-again.md)
+  — the loop over an array of strings and over a dict, measured again and not
+  kept.
 
 This document holds what is still open.
 
@@ -117,11 +120,12 @@ objects whose size varies, are sized by a loop ahead of the result
 (Transformer 5.20); the loop paid on both
 ([exact-sizing-with-loops.md](../research/exact-sizing-with-loops.md) and
 [object-array-loop-sizing.md](../research/object-array-loop-sizing.md)). The
-same loop over an array of strings and over a dictionary measured slower than
-the scratch buffer, so those keep it, and so
-does an array of arrays, which was not measured either way. Why the loop pays
-on unions and objects and not on strings was not probed. The array of strings
-was measured before later changes to the size and the write, and not since. A
+same loop measured slower than the scratch buffer over an array of strings,
+twice, and over a dictionary, then as no change
+([string-and-dict-loops-again.md](../research/string-and-dict-loops-again.md)),
+so those keep it, and so does an array of arrays, which was not measured either
+way. Why the loop pays on unions and objects and not on strings was not
+probed; the number of reservations an element makes does not account for it. A
 sequence and a packed `CFrame` are not sized, and neither is anything that
 holds one. A sequence could be sized from its keypoint count, which reads its
 `Keypoints` property a second time, and what that read costs is not

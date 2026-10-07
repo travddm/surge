@@ -1,8 +1,8 @@
 # Transformer specification
 
 Status: current
-Applies to: `@rbxts/surge` at commit `685401a`, `rbxts-transformer-surge` at
-commit `8727491` (no tagged release yet)
+Applies to: `@rbxts/surge` at commit `a4b36f8`, `rbxts-transformer-surge` at
+commit `50ee379` (no tagged release yet)
 
 ## 1. Scope
 
@@ -349,8 +349,10 @@ branch, and a local declared ahead of the comparisons inside one. Outside a
 loop or a branch and past the 32 locals below, it reads the tag for each
 comparison. An `array` of any other element whose size varies, and a `dict`,
 keep the scratch buffer: a loop measured slower than it on an array of
-strings and on a `dict`
-([research/exact-sizing-with-loops.md](../research/exact-sizing-with-loops.md)),
+strings, twice, and on a `dict`, then as no change
+([research/exact-sizing-with-loops.md](../research/exact-sizing-with-loops.md)
+and
+[research/string-and-dict-loops-again.md](../research/string-and-dict-loops-again.md)),
 and faster on an array of objects that hold a string
 ([research/object-array-loop-sizing.md](../research/object-array-loop-sizing.md)).
 Ahead of the result, the size binds to locals what the write binds outside a
@@ -534,6 +536,8 @@ of `rbxts-transformer-surge`, cited by `describe` block. Source paths are in
 
 ## Changes
 
+- `a4b36f8` / `50ee379`: no statement changes. 5.20 cites the second measurement
+  of a loop over an array of strings and over a `dict`.
 - `685401a` / `8727491`: 5.20 sizes an `array` of objects whose size varies
   by a loop over them.
 - `c9faf84` / `9056ffd`: 5.20 sizes an `array` and a tuple's rest whose element
