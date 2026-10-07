@@ -254,8 +254,7 @@ Everything else is small, or needs a fixture before anything can measure it.
   the read table's, the blob channel's, the size's locals, the read state's,
   the packed region's, the size's tag, the blob array's count, the loop's
   boundary, the recursion helper's cursor and the blob list's length are
-  there already, and so are
-  the file pragmas on both sides.
+  there already, and so are the file pragmas on both sides.
 - Predict nothing from the compiled output. Whether a cost is paid per element
   or per call was the heuristic this document used to lean on, and the blob
   channel broke it: a per-call allocation was measurable, and whether a
