@@ -69,4 +69,12 @@ export declare const leaderboard: BaselineCodec<{
 	entries: Array<{ name: string; score: number; userId: number }>;
 }>;
 
+/** A node of the tree row: its children, then its id, as surge writes it. */
+export interface BaselineTreeNode {
+	id: number;
+	children: Array<BaselineTreeNode>;
+}
+
+export declare const tree: BaselineCodec<BaselineTreeNode>;
+
 export declare const instanceRefs: BaselineBlobCodec<{ entries: Array<{ model: Instance; health: number }> }>;

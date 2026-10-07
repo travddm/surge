@@ -13,6 +13,7 @@ import { packedStruct, unpackedStruct } from "./fixtures/packed-struct";
 import { smallFlatStruct } from "./fixtures/small-flat-struct";
 import { stringHeavy } from "./fixtures/string-heavy";
 import { taggedUnion } from "./fixtures/tagged-union";
+import { tree } from "./fixtures/tree";
 import { wideStruct } from "./fixtures/wide-struct";
 
 /**
@@ -33,6 +34,7 @@ export const CATALOG: ReadonlyArray<Fixture> = [
 	enumHeavy,
 	taggedUnion,
 	guardedUnion,
+	tree,
 	instanceRefs,
 	unpackedStruct,
 	packedStruct,

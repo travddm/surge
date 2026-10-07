@@ -363,6 +363,47 @@ local function readLeaderboard(buf)
 	return { entries = entries }
 end
 
+-- One pass to count the nodes, so the buffer is created once at its size: every node is a
+-- u32 child count and a u16 id.
+local function countTreeNodes(node)
+	local count = 1
+	for _, child in node.children do
+		count += countTreeNodes(child)
+	end
+	return count
+end
+
+local function writeTreeNode(buf, offset, node)
+	local children = node.children
+	buffer.writeu32(buf, offset, #children)
+	offset += 4
+	for _, child in children do
+		offset = writeTreeNode(buf, offset, child)
+	end
+	buffer.writeu16(buf, offset, node.id)
+	return offset + 2
+end
+
+local function writeTree(value)
+	local buf = buffer.create(6 * countTreeNodes(value))
+	writeTreeNode(buf, 0, value)
+	return buf
+end
+
+local function readTreeNode(buf, offset)
+	local count = buffer.readu32(buf, offset)
+	offset += 4
+	local children = table.create(count)
+	for index = 1, count do
+		children[index], offset = readTreeNode(buf, offset)
+	end
+	return { children = children, id = buffer.readu16(buf, offset) }, offset + 2
+end
+
+local function readTree(buf)
+	return (readTreeNode(buf, 0))
+end
+
 local function writeInstanceRefs(value)
 	local entries = value.entries
 	local count = #entries
@@ -394,5 +435,6 @@ return {
 	taggedUnion = { write = writeTaggedUnion, read = readTaggedUnion },
 	packedToggles = { write = writePackedToggles, read = readPackedToggles },
 	leaderboard = { write = writeLeaderboard, read = readLeaderboard },
+	tree = { write = writeTree, read = readTree },
 	instanceRefs = { write = writeInstanceRefs, read = readInstanceRefs },
 }
