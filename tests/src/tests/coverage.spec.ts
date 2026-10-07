@@ -145,6 +145,12 @@ interface LabelledFrameSets {
 }
 const labelledFrameSetsSerializer = createCodec<LabelledFrameSets>();
 
+// Transformer 5.20: the size of 300 strings is 301 terms, which as one chain of
+// additions took `serialize` past Luau's 255 registers.
+type ManyStrings = { [K in `t${"0" | "1" | "2"}${Digit}${Digit}`]: string };
+const MANY_STRINGS = 300;
+const manyStringsSerializer = createCodec<ManyStrings>();
+
 // walker-emitter-robustness: a user declaration named after an injected
 // `@rbxts/surge` import used to collide with it.
 function grow(): string {
@@ -423,6 +429,16 @@ class CoverageTest {
 		const sets: LabelledFrameSets = { meta: labels as Labels, frames: frames as Frames, more: frames as Frames };
 		const setsBuf = labelledFrameSetsSerializer.serialize(sets);
 		Assert.equal(undefined, difference(sets, labelledFrameSetsSerializer.deserialize(setsBuf)));
+	}
+
+	@Fact
+	public roundTripsAnObjectWhoseSizeHasHundredsOfTerms(): void {
+		const value = {} as Record<string, string>;
+		for (const i of $range(0, MANY_STRINGS - 1)) {
+			value[string.format("t%03d", i)] = `text ${i}`;
+		}
+		const buf = manyStringsSerializer.serialize(value as ManyStrings);
+		Assert.equal(undefined, difference(value, manyStringsSerializer.deserialize(buf)));
 	}
 
 	@Fact
