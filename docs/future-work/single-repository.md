@@ -81,7 +81,9 @@ At the root:
   `bench:*` scripts run Prettier on `docs/benchmarks/`. A path in prose,
   such as `tests/src/tests/`, is relative to its package's directory;
   [contributing-docs.md](../contributing-docs.md) says so once, and papers
-  keep the paths they were written with.
+  keep the paths they were written with. The user pages move into a folder
+  of their own later, with the documentation site
+  ([documentation-site.md](documentation-site.md)).
 - `AGENTS.md` and `CLAUDE.md`: surge's become the repository's, with the
   documentation index, the rules and the commands for both packages. The
   transformer keeps its own pair in its directory for what is particular to
@@ -108,10 +110,23 @@ lints and tests with its own toolchain, and `npm ci` runs once per package.
 The root files need their own lint, format and spell checks. The commit
 message needs one too: each package's `spell` reads `.git/COMMIT_EDITMSG`
 from its own root today. A small root npm project with Prettier,
-markdownlint-cli2 and cspell, and no `workspaces`, can run them. A root
-`mise.toml` then defines `ci` as the root checks followed by each package's
-`ci`. Before relying on this, check that a `node_modules/` at the root
-changes nothing that `tests/` resolves.
+markdownlint-cli2 and cspell, and no `workspaces`, runs them. Before relying
+on it, check that a `node_modules/` at the root changes nothing that `tests/`
+resolves.
+
+The root gets a `mise.toml` too, as the toolchain for the whole repository:
+
+- mise merges each `mise.toml` with the ones in its parent directories. The
+  root pins the tools every package uses, such as Node, and each package
+  keeps only its own, such as surge's Rojo, Lune, Blink and Zap.
+- Its `ci` task runs the root checks, then each package's `ci`. mise's
+  monorepo tasks (`monorepo_root = true`, with `[monorepo] config_roots`
+  naming both packages) run a package's task from the root as
+  `mise //surge:ci`. Check whether that feature is still experimental
+  before relying on it.
+- mise's documentation does not say whether `mise install` at the root
+  installs the tools that the packages' `mise.toml` files pin, so a root
+  setup task may need to run `mise install` in each package.
 
 ### History
 
@@ -146,33 +161,91 @@ delete it, so links to its commits keep working.
   line ([research/README.md](../research/README.md)), and in what the speed
   recorder writes.
 
-### Releases
+### Versions
 
-- Both packages carry one version and are bumped together, because the
-  generated code calls the runtime package with no version negotiation
-  (Runtime API 6 in [specs/runtime-api.md](../specs/runtime-api.md)).
-- Publish `@rbxts/surge` from `surge/` with `--access public`, and
-  `rbxts-transformer-surge` from `rbxts-transformer-surge/`. Each package
-  drops `"private": true` and gets a `repository.directory`, and the
+- Both packages carry one version and are bumped together while surge is
+  `0.x`. They meet at the helper ABI that generated code imports from
+  `@rbxts/surge/out/abi` (Runtime API 5 and 6 in
+  [specs/runtime-api.md](../specs/runtime-api.md)), and most changes so far
+  touch both. A fix in one package republishes the other, unchanged, under
+  the new version; that is the whole cost.
+- Independent versions would need a statement of which runtime versions
+  each transformer version works with, and the version backstop in
+  [ci-and-release.md](ci-and-release.md) would check that range instead of
+  equality. The tags and the publishing below work for either.
+
+### Branches and tags
+
+CI makes every tag, after the checks pass in the same workflow run:
+
+| Branch               | Trigger                                     | CI then makes                                                           |
+| -------------------- | ------------------------------------------- | ----------------------------------------------------------------------- |
+| `release`, protected | every push                                  | release tags, the npm publish, a GitHub Release, the documentation site |
+| `master`             | every push                                  | pre-release tags                                                        |
+| any branch           | `workflow_dispatch`, with a `dev-tag` input | dev tags, when the input is set                                         |
+
+A pull request runs the checks only.
+
+- Versions live in commits, and CI never commits. A release commits both
+  packages' version bump and the changelog entry on `master`, then merges
+  `master` into `release` through a pull request. `release` is protected:
+  it takes pull requests with passing checks only, merged with a merge
+  commit, never squashed or rebased.
+- The release run checks that the version has no tag yet, then tags,
+  publishes, creates the GitHub Release, and deploys the documentation site
+  ([documentation-site.md](documentation-site.md)). Each is a job of the
+  same workflow, because a tag that CI pushes with `GITHUB_TOKEN` starts no
+  workflow run of its own.
+- A tag script makes one commit per package with
+  `git commit-tree <commit>:<directory>` and tags it. For a pre-release or
+  a dev tag, it first writes the tag's version into that tree's
+  `package.json`. The commit is on no branch, so nothing else sees the
+  change.
+- For a release of 0.2.0, the tags are `surge-v0.2.0` and
+  `transformer-v0.2.0` on the one-package commits, and `v0.2.0` on the
+  commit itself.
+- A pre-release takes the next patch, because a pre-release of a version
+  that is already out sorts below it: `surge-v0.2.1-next.<N>`, where `N`
+  counts the commits on `master` that the latest release tag does not
+  contain. That count needs `release` to take merge commits. Pushes to
+  `master` tag one at a time (a `concurrency` group), so each `N` is used
+  once. Each push to `master` adds two tags.
+- A dev tag is `surge-v0.2.1-dev.g<short hash>`. The `g`, as in
+  `git describe`, keeps an all-digit hash from reading as a number.
+- A tag ruleset restricts updates and deletions of release and pre-release
+  tags, so that nobody moves or deletes one: a consumer's lockfile records a
+  tag's commit, not the tag. CI only creates tags, so it needs no bypass.
+  The tags CI creates are not signed; the ruleset is what keeps them in
+  place. Dev tags are outside the ruleset so that they can be pruned, after
+  a retention period that [contributing.md](../contributing.md) states,
+  because pruning one breaks a lockfile that records its commit.
+- `workflow_dispatch` exists only once the workflow file is on the default
+  branch. It can then run against any branch.
+
+### Publishing
+
+- `@rbxts/surge` publishes from `surge/` with `--access public`, and
+  `rbxts-transformer-surge` publishes from `rbxts-transformer-surge/`. Each
+  package drops `"private": true` and gets a `repository.directory`, and the
   transformer's `repository`, `bugs` and `homepage` point at travddm/surge.
   `prepare` builds the compiled output before a publish, as it does for a
   git install.
-- A release script takes a commit and makes one commit per package with
-  `git commit-tree <commit>:<directory>`. It tags each of those commits,
-  for example `surge-v0.2.0` and `transformer-v0.2.0`, and tags the commit
-  it was given `v0.2.0`. The maintainer's git configuration signs every
-  tag, so the script makes signed tags.
-- A one-package tag must never move or be deleted, because a consumer's
-  lockfile records the tag's commit, not the tag.
+- The release job publishes with npm trusted publishing
+  (`id-token: write`). It needs npm 11.5.1 and Node 22.14.0 or later, which
+  the pinned Node and its npm meet, and it attests provenance for a public
+  repository and package. npm's documentation does not say whether a
+  package's first publish can use it, so the first publish may need a
+  token, or a publish by hand.
 - [getting-started.md](../getting-started.md) changes to the registry
-  install with the first publish. The release procedure, the changelog and
-  the version backstop stay in [ci-and-release.md](ci-and-release.md).
+  install with the first publish. The changelog, the version backstop and
+  the `typescript` peer dependency stay in
+  [ci-and-release.md](ci-and-release.md).
 
 Open:
 
-- Whether developers get one-package tags only for releases, or also for
-  unreleased commits under a prefix that marks them as not releases.
-- Whether a release publishes from CI or by hand.
+- Whether each push to `master` also publishes both packages to npm as a
+  pre-release, under the `next` dist-tag.
+- How long dev tags are kept.
 
 Not part of the move, and possible after it:
 
