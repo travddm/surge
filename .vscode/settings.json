@@ -1,0 +1,23 @@
+{
+	"files.eol": "\n",
+	"[json]": {
+		"editor.defaultFormatter": "esbenp.prettier-vscode",
+		"editor.formatOnSave": true
+	},
+	"[jsonc]": {
+		"editor.defaultFormatter": "esbenp.prettier-vscode",
+		"editor.formatOnSave": true
+	},
+	"[markdown]": {
+		"editor.defaultFormatter": "esbenp.prettier-vscode",
+		"editor.formatOnSave": true
+	},
+	"[yaml]": {
+		"editor.defaultFormatter": "esbenp.prettier-vscode",
+		"editor.formatOnSave": true
+	},
+	"cSpell.enabled": true,
+	"markdownlint.configFile": ".markdownlint.json",
+	// The root holds no Luau, so luau-lsp has no Rojo project to build a sourcemap from here.
+	"luau-lsp.sourcemap.enabled": false
+}

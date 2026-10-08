@@ -1,0 +1,43 @@
+{
+	"version": "2.0.0",
+	// mise tasks assume a POSIX shell: PowerShell mis-invokes node_modules/.bin's shebang scripts.
+	"windows": {
+		"options": {
+			"shell": {
+				"executable": "C:\Program Files\Git\bin\bash.exe",
+				"args": ["-c"]
+			}
+		}
+	},
+	"tasks": [
+		{
+			"label": "repository: ci",
+			"detail": "Run every check: the root files', the transformer's and surge's (mise run ci)",
+			"type": "shell",
+			"command": "mise run ci",
+			"group": "test",
+			"problemMatcher": []
+		},
+		{
+			"label": "repository: lint:fix",
+			"detail": "Lint the root files and both packages and apply fixes (mise run lint:fix)",
+			"type": "shell",
+			"command": "mise run lint:fix",
+			"problemMatcher": []
+		},
+		{
+			"label": "repository: format:fix",
+			"detail": "Format the root files and both packages (mise run format:fix)",
+			"type": "shell",
+			"command": "mise run format:fix",
+			"problemMatcher": []
+		},
+		{
+			"label": "repository: setup",
+			"detail": "Install every tool and npm project (mise run setup)",
+			"type": "shell",
+			"command": "mise run setup",
+			"problemMatcher": []
+		}
+	]
+}

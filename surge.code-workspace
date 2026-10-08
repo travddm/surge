@@ -1,7 +1,11 @@
 {
 	"folders": [
-		{ "name": "surge (@rbxts/surge)", "path": "." },
-		{ "name": "rbxts-transformer-surge", "path": "../rbxts-transformer-surge" },
+		// surge stays first: js/ts.tsdk.path below resolves against the first folder.
+		{ "name": "surge (@rbxts/surge)", "path": "surge" },
+		{ "name": "rbxts-transformer-surge", "path": "rbxts-transformer-surge" },
+		// docs/, .github/ and the root files. The two package directories are folders of their
+		// own above, so files.exclude below hides them here.
+		{ "name": "repository root", "path": "." },
 	],
 	// Window-scoped settings (task buttons, icon theme associations, the TS SDK picker) are
 	// filtered out of a folder's own .vscode/settings.json when that folder is part of a
@@ -9,6 +13,12 @@
 	// the folder level here. They still work from each folder's settings.json when that folder
 	// is opened standalone; this block is what makes them work in this combined workspace.
 	"settings": {
+		// A pattern without a path matches only at a folder's top level, and only the repository
+		// root has a top-level surge/ or rbxts-transformer-surge/, so these hide nothing in the
+		// two package folders. Here rather than in the root's .vscode/settings.json, so that
+		// opening the repository root on its own still shows both packages.
+		"files.exclude": { "surge": true, "rbxts-transformer-surge": true },
+		"search.exclude": { "surge": true, "rbxts-transformer-surge": true },
 		// Both repos pin the identical TypeScript version (5.5.3), so it doesn't matter which
 		// one's local install backs the single, window-wide TS server -- picking surge's. This
 		// path is relative to the first workspace folder (surge itself), not to this file's own
@@ -42,6 +52,16 @@
 				"label": "$(wrench) Fix",
 				"tooltip": "Apply lint and formatting fixes",
 				"tasks": [
+					{
+						"label": "everything: lint",
+						"task": "repository: lint:fix",
+						"description": "mise run lint:fix (the root files and both packages)",
+					},
+					{
+						"label": "everything: format",
+						"task": "repository: format:fix",
+						"description": "mise run format:fix (the root files and both packages)",
+					},
 					{ "label": "surge: lint", "task": "surge: lint:fix", "description": "mise run lint:fix (surge)" },
 					{
 						"label": "surge: format",
@@ -64,6 +84,11 @@
 				"label": "$(beaker) CI",
 				"tooltip": "Run all CI checks or a single step",
 				"tasks": [
+					{
+						"label": "everything",
+						"task": "repository: ci",
+						"description": "mise run ci (the root files, then both packages)",
+					},
 					{ "label": "surge: all", "task": "surge: ci", "description": "mise run ci (surge)" },
 					{
 						"label": "surge: round-trip tests",
