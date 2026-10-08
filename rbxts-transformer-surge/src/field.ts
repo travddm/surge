@@ -1,7 +1,7 @@
 /**
  * The internal IR every `createSerializer`/`createDeserializer`/
  * `createCodec` call site is walked into (see section 4 of
- * docs/specs/transformer.md in the surge repo), and the only input the emitter
+ * docs/specs/transformer.md), and the only input the emitter
  * (`emit/`) consumes. Producing this from a `ts.Type` is `walk.ts`'s job; turning it
  * into statements is the emitter's.
  *
@@ -10,15 +10,15 @@
  * each other; `minBytes` and `fixedBytes` in emit/layout.ts; `fieldToTypeNode`
  * in emit/types.ts; `guardFor` in emit/write.ts if it can be a
  * `guardedUnion` variant; and `measure` in emit/size.ts if a value of it can
- * be sized before it is written. Its bytes are a statement in the surge repo's
- * docs/specs/wire-format.md and a fact in tests/src/tests/bytes.spec.ts there.
+ * be sized before it is written. Its bytes are a statement in
+ * docs/specs/wire-format.md and a fact in surge/tests/src/tests/bytes.spec.ts.
  */
 export type NumWidth = "f32" | "f64" | "u8" | "u16" | "u24" | "u32" | "i8" | "i16" | "i24" | "i32";
 
 /**
  * The width of the count a variable-length kind writes ahead of its contents,
  * set by `DataType.Length<T, L>` (Wire format 6 in docs/specs/wire-format.md
- * in the surge repo). Unsigned only: a count is never negative and never
+ *). Unsigned only: a count is never negative and never
  * fractional.
  *
  * Absent on a field means `u32`, which is what every one of these kinds wrote
@@ -39,7 +39,7 @@ export type CountSpec = LengthWidth | number;
 /**
  * The widths a `Vector3`'s three components, or a `CFrame`'s position, are
  * stored at, set by `DataType.Vector<X, Y, Z>` and `DataType.Transform<X, Y,
- * Z>` (Wire format 7 in docs/specs/wire-format.md in the surge repo).
+ * Z>` (Wire format 7 in docs/specs/wire-format.md).
  *
  * Absent on a field means three `f32`s, which is what both wrote before the
  * brands existed, so an unbranded shape's bytes do not move.
@@ -49,7 +49,7 @@ export const DEFAULT_COMPONENT_WIDTH: NumWidth = "f32";
 
 /**
  * The values a `num` admits, set by `DataType.Range<T, Min, Max>` (Wire
- * format 4.16 in docs/specs/wire-format.md in the surge repo). It changes no
+ * format 4.16 in docs/specs/wire-format.md). It changes no
  * byte: the width it narrowed to is the field's own `width`. It is what
  * `writeChecks` compares the value with. `whole` holds unless the width is an
  * explicit float, so a fraction that its width would truncate is rejected too.
@@ -122,7 +122,7 @@ export type Field =
 	// `value` is `undefined` for a Set: only the key is written, and the read
 	// side reconstructs the table by setting each read key to `true`. `source`
 	// doesn't affect the byte encoding (identical for all three -- Wire format
-	// 5.4 in docs/specs/wire-format.md in the surge repo) but does affect what the read side casts
+	// 5.4 in docs/specs/wire-format.md) but does affect what the read side casts
 	// the reconstructed table's TypeScript type to, so a `Record` comes back
 	// as a `Record` (plain bracket access) rather than a non-functional `Map`.
 	| {
@@ -138,7 +138,7 @@ export type Field =
 	  }
 	// A `Set` of literal values inside `Packed<T>`: one bit per member, in
 	// canonical literal order, and no count (Wire format 8.8 in
-	// docs/specs/wire-format.md in the surge repo).
+	// docs/specs/wire-format.md).
 	| { readonly kind: "bitSet"; readonly members: ReadonlyArray<SetMember> }
 	| { readonly kind: "optional"; readonly inner: Field; readonly packed: boolean }
 	// A type with one value, which writes no bytes: a literal, `undefined`, or
@@ -163,5 +163,5 @@ export type Field =
 	// A self-referential type reappearing on its own walk path -- compiles to
 	// a call into a named helper in the call site's closure instead of
 	// infinite inlining (Transformer 4.2 and 5.2 in docs/specs/transformer.md
-	// in the surge repo).
+	//).
 	| { readonly kind: "recursiveRef"; readonly helperName: string };

@@ -12,7 +12,7 @@ const packageNameCache = new Map<string, string | undefined>();
  * Walks up from `filePath` to the nearest `package.json` and returns its
  * `name`. Deliberately *not* a check against a `node_modules/@rbxts/surge/`
  * path pattern: `@rbxts/surge` and `rbxts-transformer-surge` ship as two
- * separate repos (see architecture.md), and a consumer's `tests/`-style
+ * separate packages (see docs/architecture.md), and a consumer's `tests/`-style
  * project installs `@rbxts/surge` as a plain `file:`/`github:` dependency,
  * so `ts.Symbol.declarations[0]`'s source file is wherever npm actually
  * placed it -- always somewhere under a `node_modules/@rbxts/surge/`
@@ -60,7 +60,7 @@ function isFromSurgePackage(declarations: ts.Declaration[] | undefined): boolean
  * `Instance` and each of its subclasses, plus `Vector2`, `BrickColor`,
  * `CFrame`, and every other datatype (confirmed via `grep -n "_nominal_"` in
  * the package's own `.d.ts` files; see Transformer 4.1 in
- * docs/specs/transformer.md in the surge repo). Checking property shape plus
+ * docs/specs/transformer.md). Checking property shape plus
  * declaration origin, rather than a fixed name list, covers all of them
  * uniformly and can't be triggered by an unrelated user type that happens to
  * declare its own `_nominal_*`-named property.
@@ -93,7 +93,7 @@ export function isBuiltinCollection(declarations: ts.Declaration[] | undefined):
  * and returns which `@rbxts/surge` factory it identifies, if any.
  * Detection by declaration identity, not by matching the name
  * "createSerializer" as text: confirmed via a spike
- * (docs/research/compile-time-specialization.md in the surge repo) that a
+ * (docs/research/compile-time-specialization.md) that a
  * re-exported/aliased import still resolves correctly, while an unrelated
  * same-named local declaration does not.
  */
@@ -118,8 +118,8 @@ export function resolveFactoryName(
 /**
  * Whether the `Serialized<T>` `@rbxts/surge` declares for this call site is
  * a table with a `blobs` array rather than the buffer alone, resolved for the
- * call's type argument (Runtime API 3.6 in docs/specs/runtime-api.md in the
- * surge repo). It is read from what `serialize` returns, or, for
+ * call's type argument (Runtime API 3.6 in docs/specs/runtime-api.md). It is
+ * read from what `serialize` returns, or, for
  * `createDeserializer`, from what `deserialize` takes. The package's type
  * decides the shape, because the caller's code is checked against it. A type
  * with no `blobs` property, such as a `buffer`, has no array. Under

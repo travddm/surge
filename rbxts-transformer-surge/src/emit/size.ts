@@ -1,7 +1,7 @@
 /**
  * The size of what `serialize` writes, for a shape it can size from its value
- * before writing it (Transformer 5.20 in docs/specs/transformer.md in the
- * surge repo). Such a shape's `serialize` creates its result at this size and
+ * before writing it (Transformer 5.20 in docs/specs/transformer.md). Such a
+ * shape's `serialize` creates its result at this size and
  * writes into it, with no scratch buffer, no capacity check and no copy.
  *
  * The size is an expression over the value, and, for an array of unions, a
@@ -93,7 +93,7 @@ export function exactSize(ctx: EmitContext, field: Field, value: ts.Expression):
 /**
  * The bytes every value of `field` writes, where that does not depend on the
  * value, and `undefined` otherwise: the exact size when it reads nothing of
- * the value. A cursor codec's `size` (Runtime API 3 in the surge repo). It
+ * the value. A cursor codec's `size` (Runtime API 3). It
  * counts a packed region of `boolean`s, which `fixedBytes` leaves out. The
  * names and locals the measure takes are given back either way.
  */
@@ -373,7 +373,7 @@ function readTag(
  * that size is the same for each, and otherwise, for an element that is a
  * union, an object or an array, a loop over them, as the write's own. A loop measured
  * slower than the scratch buffer for an array of strings (docs/research/
- * exact-sizing-with-loops.md in the surge repo), so an array of any other
+ * exact-sizing-with-loops.md), so an array of any other
  * element that varies in size is not sized, and neither is the exact form,
  * whose write reads by index up to its length rather than iterating.
  */

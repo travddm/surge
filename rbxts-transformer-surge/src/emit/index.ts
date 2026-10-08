@@ -20,7 +20,7 @@ export { constantSize } from "./size";
 
 /**
  * Turns a `Field` IR tree into `write`/`read` statements (Transformer 5.1
- * and 5.2 in docs/specs/transformer.md in the surge repo). Every field,
+ * and 5.2 in docs/specs/transformer.md). Every field,
  * fixed or variable-size, is inlined in source order with no runtime
  * dispatch on kind -- the exception is a self-referential field (an `object`
  * carrying `helperName`, or a bare `recursiveRef`), which compiles to a call
@@ -35,7 +35,7 @@ export class Emitter extends EmitContext {
 
 	/**
 	 * Has `serialize` write exactly (Transformer 5.20 in
-	 * docs/specs/transformer.md in the surge repo) when `exactSize` can size
+	 * docs/specs/transformer.md) when `exactSize` can size
 	 * `field`, and leaves it on the scratch buffer otherwise.
 	 */
 	public sizeExactly(field: Field, value: ts.Expression): void {

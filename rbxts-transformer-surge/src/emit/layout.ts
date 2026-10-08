@@ -41,7 +41,7 @@ export function lengthWidth(length: CountSpec | undefined): LengthWidth {
  * truncated, and what a shorter one writes depends on its element type
  * (Wire format 6.3, 6.6 and 6.7 in docs/specs/wire-format.md in the surge
  * repo). The type states the length, and only `writeChecks` checks it
- * (Runtime API 3.10 in docs/specs/runtime-api.md in the surge repo).
+ * (Runtime API 3.10 in docs/specs/runtime-api.md).
  */
 export function exactCount(length: CountSpec | undefined): number | undefined {
 	return typeof length === "number" ? length : undefined;
@@ -277,7 +277,7 @@ export function runLocals(field: Field): number {
  * Whether `field` writes a blob anywhere in it. A recursion helper's fields
  * are not followed: a shape that has one keeps the blob channel's state in
  * its closure whatever it holds (Transformer 5.9 in docs/specs/transformer.md
- * in the surge repo).
+ *).
  */
 export function holdsBlob(field: Field): boolean {
 	switch (field.kind) {

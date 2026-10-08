@@ -395,10 +395,10 @@ describe("TypeWalker classification with fixture packages", () => {
 	});
 
 	// `Instance` is documented as the opaque blob-passthrough channel (section 4
-	// of docs/specs/transformer.md in the surge repo); it's detected by `@rbxts/types`' own
+	// of docs/specs/transformer.md); it's detected by `@rbxts/types`' own
 	// `_nominal_Instance` brand property, not by walking its (hundreds of)
 	// declared properties -- see the blob-classification finding in
-	// docs/research/september-2026-review.md in the surge repo.
+	// docs/research/september-2026-review.md.
 	test("Instance falls back to the blob passthrough channel instead of walking its declared properties", () => {
 		const { field } = walkDeclaration("interface T { i: Instance; }", "T", { roblox: true });
 		expect(field).toEqual({
@@ -521,7 +521,7 @@ describe("TypeWalker classification with fixture packages", () => {
 });
 
 // Regression tests for the walk-type-identity finding in
-// docs/research/september-2026-review.md in the surge repo: `resolved`,
+// docs/research/september-2026-review.md: `resolved`,
 // `inProgress`, and `helperNames` are keyed by `ts.Type` identity, not by
 // the shared declaration symbol, so two instantiations of one generic
 // classify independently instead of colliding.
@@ -594,7 +594,7 @@ describe("TypeWalker generic instantiation identity", () => {
 });
 
 // Regression tests for the recursive-union-types finding in
-// docs/research/september-2026-review.md in the surge repo: recursion
+// docs/research/september-2026-review.md: recursion
 // re-entering through a union (a discriminated union, not only a named
 // interface) must compile to a helper instead of recursing the walker
 // itself forever (these hung with "Maximum call stack size exceeded" before
@@ -714,7 +714,7 @@ describe("TypeWalker unions of tuples", () => {
 });
 
 // Regression tests for the wire-format-determinism finding in
-// docs/research/september-2026-review.md in the surge repo: the
+// docs/research/september-2026-review.md: the
 // checker assigns literal types and enumerates union constituents in
 // type-id/creation order, which depends on what else was declared earlier
 // in the program -- these fixtures reproduce that by declaring the exact
@@ -879,7 +879,7 @@ describe("TypeWalker Map and Set by declaration", () => {
 });
 
 // Regression test for the enum-encoding finding in
-// docs/research/september-2026-review.md in the surge repo: a bare `EnumItem`
+// docs/research/september-2026-review.md: a bare `EnumItem`
 // field (not a specific `Enum.*` type) has no member list to index into and
 // must be rejected, not silently classified into an unusable read.
 describe("TypeWalker bare EnumItem", () => {
@@ -905,7 +905,7 @@ describe("TypeWalker bare EnumItem", () => {
 });
 
 // Regression tests for the blob-classification finding in
-// docs/research/september-2026-review.md in the surge repo.
+// docs/research/september-2026-review.md.
 describe("TypeWalker blob classification", () => {
 	// The scalar-kind table matched by bare symbol name before this fix, so a
 	// user's own unrelated same-named type would misclassify as the Roblox
@@ -1184,7 +1184,7 @@ describe("TypeWalker Length<T, L>", () => {
 		]);
 	});
 
-	// Rule 4 of DataType brands in docs/coding-standards.md in the surge repo:
+	// Rule 4 of DataType brands in docs/coding-standards.md:
 	// a fully defaulted brand has to encode exactly what the unbranded type
 	// encodes, so it must leave no `length` behind for the emitter to act on.
 	test("the default argument leaves the field identical to the unbranded one", () => {
@@ -1371,7 +1371,7 @@ describe("TypeWalker Vector<X, Y, Z> and Transform<X, Y, Z>", () => {
 		expect(byName.get("two")).toEqual(["u8", "u16", "u8"]);
 	});
 
-	// Rule 4 of DataType brands in docs/coding-standards.md in the surge repo,
+	// Rule 4 of DataType brands in docs/coding-standards.md,
 	// as for `Length<T, L>`: a fully defaulted brand has to leave no widths
 	// behind for the emitter to act on.
 	test("the default arguments leave the field identical to the unbranded one", () => {

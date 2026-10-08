@@ -71,7 +71,7 @@ surge only:
 
 Each package's `.vscode/tasks.json` maps its `mise` tasks to VS Code tasks,
 labeled `surge: <task>` or `transformer: <task>`, except surge's
-`bench:definitions` and the two `:only` tasks. The root's adds
+`bench:code`, `bench:definitions` and the two `:only` tasks. The root's adds
 `repository: <task>` for the root tasks. Each has a Windows shell override to
 Git Bash, because the tasks assume a POSIX shell.
 

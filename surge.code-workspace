@@ -19,7 +19,7 @@
 		// opening the repository root on its own still shows both packages.
 		"files.exclude": { "surge": true, "rbxts-transformer-surge": true },
 		"search.exclude": { "surge": true, "rbxts-transformer-surge": true },
-		// Both repos pin the identical TypeScript version (5.5.3), so it doesn't matter which
+		// Both packages pin the identical TypeScript version (5.5.3), so it doesn't matter which
 		// one's local install backs the single, window-wide TS server -- picking surge's. This
 		// path is relative to the first workspace folder (surge itself), not to this file's own
 		// directory -- confirmed by a doubled surge/surge path in the TS server's own "falling
@@ -32,9 +32,8 @@
 		},
 		"VsCodeTaskButtons.showCounter": false,
 		// vscode-task-buttons can't disambiguate two folders' tasks sharing one label (verified
-		// against its own docs), which is why each repo's tasks.json labels are prefixed
-		// (`surge: ...` / `transformer: ...`) rather than both using the bare `mise: ...` labels
-		// the per-folder settings.json below still uses for standalone-open buttons.
+		// against its own docs), which is why each folder's tasks.json labels are prefixed
+		// (`surge: ...`, `transformer: ...`, `repository: ...`).
 		"VsCodeTaskButtons.tasks": [
 			{
 				"label": "$(gear) Compile",

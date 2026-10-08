@@ -18,9 +18,10 @@ Register it in a roblox-ts project's `tsconfig.json`:
 }
 ```
 
-Install it beside `@rbxts/surge`, at the same version;
+It is not released yet. A project will install it beside `@rbxts/surge`, at
+the same version;
 [getting-started.md](https://github.com/travddm/surge/blob/master/docs/getting-started.md)
-has the steps.
+has the rest of the setup.
 
 ## Documentation
 

@@ -22,7 +22,7 @@
 	"eslint.run": "onType",
 	"eslint.format.enable": true,
 	"markdownlint.configFile": ".markdownlint.json",
-	// This repo has zero Luau -- plain Node/CommonJS. luau-lsp's own sourcemap.* settings are
+	// This package has zero Luau -- plain Node/CommonJS. luau-lsp's own sourcemap.* settings are
 	// resource-scoped (correctly per-folder even in the multi-root surge.code-workspace), but
 	// this folder never set any, so it fell back to luau-lsp's compiled-in default
 	// (rojoProjectFile: "default.project.json") and tried to generate a sourcemap for a Rojo

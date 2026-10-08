@@ -27,8 +27,9 @@ export function roundTrip(state: PlayerState): PlayerState {
 surge is two packages, both in this repository: the runtime package
 [`@rbxts/surge`](surge/), which the generated code calls, and
 [`rbxts-transformer-surge`](rbxts-transformer-surge/), the transformer that
-generates the code. Install both at the same version, and register the
-transformer in `tsconfig.json`: [docs/getting-started.md](docs/getting-started.md).
+generates the code. Neither is released yet; a project will install both
+at the same version, and register the transformer in `tsconfig.json`
+([docs/getting-started.md](docs/getting-started.md)).
 
 ## Documentation
 

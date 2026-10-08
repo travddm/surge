@@ -1,6 +1,6 @@
 {
 	"version": "2.0.0",
-	// mise tasks assume a POSIX shell (confirmed against the sibling `surge` repo: PowerShell
+	// mise tasks assume a POSIX shell (confirmed against surge's tasks: PowerShell
 	// mis-invokes node_modules/.bin's shebang scripts, e.g. "uname: command not found").
 	"windows": {
 		"options": {

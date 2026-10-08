@@ -83,7 +83,7 @@ const WIDTH_LIMITS: Readonly<Record<NumWidth, readonly [number, number]>> = {
 
 /**
  * The narrowest integer width holding every whole number from `min` to `max`
- * (Wire format 4.16 in docs/specs/wire-format.md in the surge repo): unsigned
+ * (Wire format 4.16 in docs/specs/wire-format.md): unsigned
  * when neither bound is negative, signed otherwise, and `f64` past 32 bits.
  */
 function narrowestWidth(min: number, max: number): NumWidth {
@@ -95,7 +95,7 @@ function narrowestWidth(min: number, max: number): NumWidth {
  * The members of a `Set` whose key is a fixed list of literal values, in
  * canonical literal order, or `undefined` for any other key. Inside
  * `Packed<T>`, such a set is one bit per member (Wire format 8.8 in
- * docs/specs/wire-format.md in the surge repo).
+ * docs/specs/wire-format.md).
  */
 function setMembers(key: Field): ReadonlyArray<SetMember> | undefined {
 	if (key.kind === "literalConst") {
@@ -128,7 +128,7 @@ function nextHelperName(base: string): string {
 // `type.types`/`type.getProperties()` order reflects the checker's type-id
 // or declaration-creation order -- stable for one program, but not across
 // two programs that differ only in an unrelated file (Wire format 10.1 in
-// docs/specs/wire-format.md in the surge repo promises the bytes depend only
+// docs/specs/wire-format.md promises the bytes depend only
 // on the value and the type). Every place
 // that assigns a wire-format index from declaration/creation order must sort
 // by value first.
@@ -314,7 +314,7 @@ export class TypeWalker {
 		// `interface Vector3 { foo: string }` has `type.symbol.name ===
 		// "Vector3"` too, so the scalar-kind table only applies to the real
 		// `@rbxts/types` declaration (Transformer 4.1 in
-		// docs/specs/transformer.md in the surge repo).
+		// docs/specs/transformer.md).
 		const symbolName = type.symbol?.name;
 		if (symbolName && symbolName in ROBLOX_SCALAR_KINDS && isFromTypesPackage(type.symbol?.declarations)) {
 			const kind = ROBLOX_SCALAR_KINDS[symbolName];
@@ -329,7 +329,7 @@ export class TypeWalker {
 		// property (fbs and serio both key off the same brand). Routing them
 		// to the blob passthrough channel here, before any structural check
 		// below can walk their declared properties, is what makes them blobs
-		// (Transformer 4.1 in docs/specs/transformer.md in the surge repo):
+		// (Transformer 4.1 in docs/specs/transformer.md):
 		// `Instance` has hundreds of properties and `Region3`/`TweenInfo`/etc.
 		// have their own, so without this check they never reach the "opaque
 		// type" fallback further down.
@@ -635,7 +635,7 @@ export class TypeWalker {
 	 * All three at the default is recorded as no widths at all rather than as
 	 * three `f32`s, so a fully defaulted brand walks to the very same field the
 	 * unbranded type does -- rule 4 of DataType brands in
-	 * docs/coding-standards.md in the surge repo, checkable on the IR and not
+	 * docs/coding-standards.md, checkable on the IR and not
 	 * only on the bytes. A bad width reports and is dropped, which leaves the
 	 * same field and the diagnostic to explain it.
 	 */
@@ -667,7 +667,7 @@ export class TypeWalker {
 	/**
 	 * `DataType.Transform<X, Y, Z>` sets the widths of a `CFrame`'s position.
 	 * The rotation is not its business: it stays an f32 axis-angle triple, as
-	 * Wire format 7.1 in docs/specs/wire-format.md in the surge repo states.
+	 * Wire format 7.1 in docs/specs/wire-format.md states.
 	 *
 	 * Inside `Packed<T>` there is nothing to set. That `CFrame` goes through
 	 * `writePackedCFrame`, whose header decides whether a position is written
@@ -911,7 +911,7 @@ export class TypeWalker {
 				// there is no member list to index into. Reported instead of
 				// classified, since the alternative is `Enum.Enum.EnumItem` on the
 				// read side, which errors at runtime (Transformer 7.2 in
-				// docs/specs/transformer.md in the surge repo).
+				// docs/specs/transformer.md).
 				this.report(
 					`a bare "EnumItem" field isn't supported -- narrow it to a specific enum type, e.g. "Enum.KeyCode".`,
 					node,
@@ -1099,8 +1099,8 @@ export class TypeWalker {
 
 		// Every constituent routed to the opaque passthrough channel (for
 		// example a union of `Instance` subclasses, now that they're
-		// nominally detected -- Transformer 4.4 in docs/specs/transformer.md in
-		// the surge repo): there is nothing left to guard on, since the blob
+		// nominally detected -- Transformer 4.4 in docs/specs/transformer.md):
+		// there is nothing left to guard on, since the blob
 		// channel writes and reads identically regardless of which variant
 		// produced the value.
 		if (opaque && fields.length === 0) {
@@ -1228,7 +1228,7 @@ export class TypeWalker {
 		});
 		// Sorted by tag value for the same reason object properties are
 		// sorted by name (Wire format 5.1 and 5.6 in docs/specs/wire-format.md
-		// in the surge repo): union constituent order
+		//): union constituent order
 		// from `type.types` reflects declaration/normalization order, not
 		// anything guaranteed stable across differently-constructed
 		// equivalent types, and the variant index is encoded in the buffer.

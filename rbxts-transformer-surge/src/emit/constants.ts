@@ -47,7 +47,7 @@ export const TERMS_PER_SUM = 32;
 
 /**
  * The module of `@rbxts/surge` that holds the helpers generated code calls
- * (Runtime API 5.1 in docs/specs/runtime-api.md in the surge repo), apart from
+ * (Runtime API 5.1 in docs/specs/runtime-api.md), apart from
  * the API a consumer imports from the package itself.
  */
 export const ABI_MODULE = "@rbxts/surge/out/abi";
@@ -64,7 +64,7 @@ export function importAlias(name: string): string {
 // `deserialize` no recursion helper reads through, rather than owned by
 // `@rbxts/surge`. A reservation is then a compare and two moves here
 // instead of a call into another module (Transformer 5.3 and 5.4 in
-// docs/specs/transformer.md in the surge repo). What that was worth is in
+// docs/specs/transformer.md). What that was worth is in
 // docs/research/generated-code-against-hand-written.md there. They carry the
 // import prefix for the same reason the aliases do: nothing a user wrote can
 // collide with them.
@@ -74,8 +74,8 @@ export const CURSOR = importAlias("cursor");
 export const READ_BUFFER = importAlias("input");
 export const READ_CURSOR = importAlias("readCursor");
 export const READ_LENGTH = importAlias("inputLength");
-// The blob channel's state (Transformer 5.9 in docs/specs/transformer.md in
-// the surge repo): the list `serialize` returns, and the list `deserialize`
+// The blob channel's state (Transformer 5.9 in docs/specs/transformer.md): the
+// list `serialize` returns, and the list `deserialize`
 // was given and the next blob's index.
 export const WRITE_BLOBS = importAlias("writeBlobs");
 export const WRITE_BLOB_COUNT = importAlias("writeBlobCount");
@@ -93,7 +93,7 @@ export const QUANTIZED_ROTATION_BYTES = 6;
 export const QUANTIZED_COMPONENTS: ComponentWidths = ["i16", "i16", "i16"];
 /**
  * What an axis-angle component is multiplied by before it is rounded to an
- * i16 (Wire format 7.4 in docs/specs/wire-format.md in the surge repo). A
+ * i16 (Wire format 7.4 in docs/specs/wire-format.md). A
  * component is at most pi once the angle is folded into [-pi, pi], and pi maps
  * to the largest i16.
  */

@@ -6,11 +6,11 @@ import { TypeWalker } from "./walk";
 
 /**
  * `rbxts-transformer-surge`'s entry point. Registered in a project's
- * `tsconfig.json` `plugins` by package name (see docs/getting-started.md in
- * the surge repo), roblox-ts loads this as a `type: "program"` (the default)
+ * `tsconfig.json` `plugins` by package name (see docs/getting-started.md),
+ * roblox-ts loads this as a `type: "program"` (the default)
  * plugin and calls it with `(program, config, { ts })` -- confirmed via
  * `createTransformerList.js`/`getTransformerFromFactory` in roblox-ts's own
- * source, matching docs/research/compile-time-specialization.md in the surge repo.
+ * source, matching docs/research/compile-time-specialization.md.
  * Relying on the injected `ts` here (rather than importing our own
  * `typescript` dependency) is what keeps this transformer from being a
  * second source of TypeScript-version drift against whatever roblox-ts
@@ -81,7 +81,7 @@ export default function transform(program: ts.Program, _config: unknown, extras:
 
 			/**
 			 * The `readChecks` and `writeChecks` of the factory's options argument
-			 * (Transformer 3.3 in docs/specs/transformer.md in the surge repo), or
+			 * (Transformer 3.3 in docs/specs/transformer.md), or
 			 * `undefined` when the call site cannot be read.
 			 *
 			 * Only an object literal with literal property values is accepted. A
@@ -201,7 +201,7 @@ export default function transform(program: ts.Program, _config: unknown, extras:
 				const needsWrite = factoryName !== "createDeserializer";
 				const needsRead = factoryName !== "createSerializer";
 				// A cursor codec writes into and reads from the caller's cursor
-				// (Runtime API 3 in docs/specs/runtime-api.md in the surge repo).
+				// (Runtime API 3 in docs/specs/runtime-api.md).
 				const isCursor = factoryName === "createCursorCodec";
 				const emitter = new Emitter(typescript, f, walker.getHelperFields(), {
 					...options,

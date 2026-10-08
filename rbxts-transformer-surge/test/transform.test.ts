@@ -296,7 +296,7 @@ describe("transform (end-to-end)", () => {
 	});
 
 	// Regression test for the recursive-union-types finding in
-	// docs/research/september-2026-review.md in the surge repo: this
+	// docs/research/september-2026-review.md: this
 	// used to crash the whole transform with an uncaught
 	// "Maximum call stack size exceeded" instead of producing a helper.
 	test("a recursive discriminated union compiles to helper declarations instead of crashing the transform", () => {

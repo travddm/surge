@@ -1,9 +1,10 @@
 # surge: documentation guide
 
 Which kind of statement goes where, when a change has to update a document,
-and how to write one. It covers both packages: `rbxts-transformer-surge/`
-keeps a `README.md` for its npm page, and an `AGENTS.md` and a `CLAUDE.md`
-for what is particular to it, and every other document is in `docs/`.
+and how to write one. It covers both packages. Every document is in
+`docs/` apart from the root's `README.md`, `AGENTS.md` and `CLAUDE.md`, a
+`README.md` in each package's directory for its npm page, and the
+transformer's own `AGENTS.md` and `CLAUDE.md` for what is particular to it.
 
 ## What lives where
 

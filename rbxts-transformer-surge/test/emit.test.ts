@@ -200,7 +200,7 @@ describe("Emitter per-kind write/read snapshots", () => {
 });
 
 // Regression tests for the read-order-side-effects finding in
-// docs/research/september-2026-review.md in the surge repo:
+// docs/research/september-2026-review.md:
 // `readObjectInline` pushes each field's read *statements* in field order but
 // evaluates each field's returned *expression* later, inside the object
 // literal -- sound only if every returned expression is side-effect free. A
@@ -263,7 +263,7 @@ describe("Emitter read-order for side-effecting fields", () => {
 });
 
 // Regression test for the wire-format-determinism finding in
-// docs/research/september-2026-review.md in the surge repo: packed
+// docs/research/september-2026-review.md: packed
 // booleans must write a whole computed byte (zeroing any unused high bits by
 // construction) instead of one `packBit` call per bit into scratch memory
 // that may still hold a previous payload's bits.
@@ -366,7 +366,7 @@ describe("Emitter packed boolean padding", () => {
 });
 
 // Regression tests for the enum-encoding finding in
-// docs/research/september-2026-review.md in the surge repo: an enum index
+// docs/research/september-2026-review.md: an enum index
 // wider than one byte, and an O(1) lookup table instead of a linear ternary
 // chain of string/index comparisons.
 describe("Emitter enum index width and lookup table", () => {
@@ -591,7 +591,7 @@ describe("Emitter union guards", () => {
 
 // One reservation per run of consecutive fixed-size fields, rather than one
 // per field (what it was measured as worth is in
-// docs/research/generated-code-against-hand-written.md in the surge repo).
+// docs/research/generated-code-against-hand-written.md).
 /**
  * The constant sizes a body reserves, in order. A reservation is inline now
  * -- `cursor = posN + <size>;` -- so this is what stands in for counting
@@ -1415,7 +1415,7 @@ describe("Emitter exact sizing", () => {
 });
 
 // Luau allows 200 registers per function; 100 `const [buf, pos]` pairs in one
-// scope exceed it (see Transformer 5.8 in docs/specs/transformer.md in the surge repo).
+// scope exceed it (see Transformer 5.8 in docs/specs/transformer.md).
 describe("Emitter local-register ceiling", () => {
 	const manyFields = (count: number): Field => ({
 		kind: "object",
@@ -1527,7 +1527,7 @@ describe("Emitter local-register ceiling", () => {
 	const u8: Field = { kind: "num", width: "u8" };
 	// What the emitter declares, which is what this can see. roblox-ts hoists a
 	// local of its own out of an enum's write and out of a quantized rotation's
-	// product; the round trips in the surge repository compile shapes at the
+	// product; the round tripssitory compile shapes at the
 	// bound through roblox-ts.
 	test.each([
 		["u8", u8],
@@ -1590,7 +1590,7 @@ describe("Emitter count widths", () => {
 		expect(output).not.toContain("buffer.readu32");
 	});
 
-	// Rule 4 of DataType brands in docs/coding-standards.md in the surge repo,
+	// Rule 4 of DataType brands in docs/coding-standards.md,
 	// on the bytes rather than on the IR: the walker records the default as
 	// absence, and the emitter has to turn that absence back into exactly the
 	// u32 every one of these wrote before.
@@ -1663,7 +1663,7 @@ describe("Emitter component widths", () => {
 		expect(reservations(output, "read")).toEqual([8]);
 	});
 
-	// Rule 4 of DataType brands in docs/coding-standards.md in the surge repo,
+	// Rule 4 of DataType brands in docs/coding-standards.md,
 	// on the emitter's side of the IR: the walker records the all-default case
 	// as absence, and the two must agree.
 	test("the default widths emit exactly what absent widths do", () => {
@@ -1791,7 +1791,7 @@ describe("Emitter write-side checks", () => {
 	});
 
 	// The read side checks no value: what a number means is the caller's to
-	// check (Runtime API 4.7 in docs/specs/runtime-api.md in the surge repo).
+	// check (Runtime API 4.7 in docs/specs/runtime-api.md).
 	test("a Range adds nothing to the read side", () => {
 		const field: Field = { kind: "num", width: "u8", range: { min: 0, max: 100, whole: true } };
 		// Local names are numbered across both sides, so the write side's extra

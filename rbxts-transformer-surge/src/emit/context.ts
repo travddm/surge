@@ -35,7 +35,7 @@ export interface Slot {
 
 /**
  * A local that the size of a `serialize` written exactly binds ahead of the
- * result (Transformer 5.20 in docs/specs/transformer.md in the surge repo),
+ * result (Transformer 5.20 in docs/specs/transformer.md),
  * and that the write reads instead of binding its own: the value of an
  * object, an array or a tuple, or of a `str` or a `buffer` with its length.
  */
@@ -82,7 +82,7 @@ export const BOTH_SIDES: EmitSides = { write: true, read: true };
 export interface EmitOptions {
 	/**
 	 * Emit the read-side bounds checks of the `readChecks` factory option
-	 * (Transformer 5.10 in docs/specs/transformer.md in the surge repo).
+	 * (Transformer 5.10 in docs/specs/transformer.md).
 	 * Off, the read path is what it always was: no branch per read, and a
 	 * malformed payload is a raw Luau error or worse. Per call site, so one
 	 * place can hold a checked serializer for a remote boundary and an
@@ -91,7 +91,7 @@ export interface EmitOptions {
 	readonly readChecks?: boolean;
 	/**
 	 * Emit the write-side checks of the `writeChecks` factory option
-	 * (Transformer 5.14 in docs/specs/transformer.md in the surge repo): a
+	 * (Transformer 5.14 in docs/specs/transformer.md): a
 	 * value whose length or count does not fit its type raises instead of
 	 * being padded, truncated or wrapped.
 	 */
@@ -257,8 +257,8 @@ export abstract class EmitContext {
 
 	/**
 	 * Has the `serialize` about to be emitted create its result at `size`
-	 * and write into it (Transformer 5.20 in docs/specs/transformer.md in the
-	 * surge repo): its buffer and its cursor are locals of `serialize`,
+	 * and write into it (Transformer 5.20 in docs/specs/transformer.md): its
+	 * buffer and its cursor are locals of `serialize`,
 	 * which count toward its budget, and no reservation checks the capacity.
 	 * `statements`, which bind the locals in `bindings` and run the loops that
 	 * add up what `size` reads, run first. Called after {@link beginFunction}
@@ -339,7 +339,7 @@ export abstract class EmitContext {
 	 * read cursor in locals of its own, which count toward its budget, where
 	 * no recursion helper reads them: a helper's read function takes no
 	 * arguments and reads the closure's (Transformer 5.3 in
-	 * docs/specs/transformer.md in the surge repo). Called after
+	 * docs/specs/transformer.md). Called after
 	 * {@link beginFunction} and before the body is emitted.
 	 */
 	public readLocally(): void {
@@ -423,7 +423,7 @@ export abstract class EmitContext {
 	 * function about to be emitted, where that function holds them: a shape
 	 * that holds a blob and reaches no recursion helper, whose function would
 	 * read the closure's instead (Transformer 5.9 in docs/specs/transformer.md
-	 * in the surge repo). The write side holds its list and its count, and the
+	 *). The write side holds its list and its count, and the
 	 * read side its list and its index. Called after {@link beginFunction} and
 	 * before the body is emitted.
 	 */
@@ -866,7 +866,7 @@ export abstract class EmitContext {
 	 * its `readField` case routes through this instead of returning the call
 	 * expression directly, and a `blob`'s read binds its own local (the
 	 * read-order-side-effects finding in
-	 * docs/research/september-2026-review.md in the surge repo).
+	 * docs/research/september-2026-review.md).
 	 */
 	public bindSideEffect(expr: ts.Expression, out: ts.Statement[]): ts.Expression {
 		const tmp = this.fresh("val");
@@ -1269,7 +1269,7 @@ export abstract class EmitContext {
 	 * Declares the write-side `{[name]: index}` map and read-side
 	 * `EnumItem[]` for one enum field (an O(1) lookup, not the linear ternary
 	 * chain this replaced -- see the enum-encoding finding in
-	 * docs/research/september-2026-review.md in the surge repo; the index they
+	 * docs/research/september-2026-review.md; the index they
 	 * hold is Wire format 4.12 in docs/specs/wire-format.md there), and
 	 * returns their names, generating the
 	 * declarations only the first time this exact member list is seen.

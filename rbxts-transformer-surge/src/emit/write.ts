@@ -177,7 +177,7 @@ function checkCountFits(ctx: EmitContext, width: LengthWidth, count: ts.Expressi
  * its type declares. Unchecked, a longer one is truncated and a shorter one
  * pads or raises by element kind. `padsShort` is for an element whose padding
  * is the contract rather than a defect (Wire format 6.6 in
- * docs/specs/wire-format.md in the surge repo), so only a longer value raises.
+ * docs/specs/wire-format.md), so only a longer value raises.
  */
 function checkExactLength(
 	ctx: EmitContext,
@@ -205,8 +205,7 @@ function checkExactLength(
 /**
  * Whether a missing element of this kind is written as a valid absent value:
  * an `optional`, or a `literal` that includes `undefined`, which canonical
- * literal order puts last (Wire format 6.6 in docs/specs/wire-format.md in the
- * surge repo).
+ * literal order puts last (Wire format 6.6 in docs/specs/wire-format.md).
  */
 function padsAsAbsent(element: Field): boolean {
 	return (
@@ -908,7 +907,7 @@ export function literalCheck(
  * itself has no iteration protocol for a bare indexed object: the cast
  * only affects what the *type checker* sees, and a `Record`'s runtime
  * representation is already an indistinguishable plain table (behavior 2 in
- * docs/research/compile-time-specialization.md in the surge repo), so the
+ * docs/research/compile-time-specialization.md), so the
  * cast is lossless either way.
  */
 function asMapOrSet(
@@ -1167,7 +1166,7 @@ function writePackedBits(
 	// bit-at-a-time write would leave any bit past `bits.length`
 	// holding whatever an earlier `serialize()` call left there (the
 	// wire-format-determinism finding in
-	// docs/research/september-2026-review.md in the surge repo). Computing the
+	// docs/research/september-2026-review.md). Computing the
 	// whole byte writes every bit, including the unused high ones (implicitly
 	// zero), so the result is deterministic by construction.
 	for (let byteIndex = 0; byteIndex < byteCount; byteIndex++) {

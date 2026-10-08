@@ -29,8 +29,8 @@ Run `mise run setup` at the repository root;
 
 ## Commands
 
-In this directory; at the repository root, each also covers surge and the
-root files:
+In this directory. At the repository root, `mise run ci`, `mise run lint:fix`
+and `mise run format:fix` also cover surge and the root files:
 
 | Command                                    | Does                                            |
 | ------------------------------------------ | ----------------------------------------------- |
