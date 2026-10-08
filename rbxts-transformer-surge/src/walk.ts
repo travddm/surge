@@ -412,7 +412,7 @@ export class TypeWalker {
 		}
 
 		if (indexInfos.length > 0) {
-			return this.walkIndexSignature(type, indexInfos, node, packed);
+			return this.walkIndexSignature(indexInfos, node, packed);
 		}
 
 		if (type.getProperties().length === 0) {
@@ -861,12 +861,7 @@ export class TypeWalker {
 		return { kind: "dict", key: keyField, value: valueField, source: isSet ? "set" : "map" };
 	}
 
-	private walkIndexSignature(
-		type: ts.Type,
-		indexInfos: readonly ts.IndexInfo[],
-		node: ts.Node,
-		packed: boolean,
-	): Field {
+	private walkIndexSignature(indexInfos: readonly ts.IndexInfo[], node: ts.Node, packed: boolean): Field {
 		// `Record<SomeUnion, V>` (a finite key union, not a true index
 		// signature) is intentionally out of scope for this kind -- a finite
 		// key union is walked as a fixed-property object instead, above,
