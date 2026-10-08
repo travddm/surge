@@ -18,10 +18,10 @@ const [ok, request] = pcall(() => readRequest(input));
 
 |                | `readChecks`                                                                                                                                                           | `writeChecks`                                                                                                                                              |
 | -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Governs        | `deserialize`                                                                                                                                                          | `serialize`                                                                                                                                                |
+| Governs        | `deserialize`, and a cursor codec's `read`                                                                                                                             | `serialize`, and a cursor codec's `write`                                                                                                                  |
 | Guards against | input a client crafted, read on the server                                                                                                                             | a value of the game's own that does not fit its `DataType` brands                                                                                          |
 | Rejects        | an input that is not what `serialize` returns, a read past the end, a count the rest cannot hold, an enum index past its items, a packed rotation code that names none | an exact `Length<T, N>` value that is not `N` long, a count too large for its `u8`, `u16` or `u24` width, a number its `Range<T, Min, Max>` does not admit |
-| Taken by       | `createDeserializer`, `createCodec`                                                                                                                                    | `createSerializer`, `createCodec`                                                                                                                          |
+| Taken by       | `createDeserializer`, `createCodec`, `createCursorCodec`                                                                                                               | `createSerializer`, `createCodec`, `createCursorCodec`                                                                                                     |
 | Costs          | a branch per read and a shape check per call: a few percent of a decode ([research](research/read-checks-cost.md))                                                     | a branch per narrowed or exact `Length` and per `Range` number; nothing for a type with neither                                                            |
 
 Both default to `false`, and both must be written as `true` or `false` at the
@@ -61,6 +61,11 @@ A blob field holds whatever the `blobs` array holds at its position, and
 blob field's type before using it. Reading past the end of `blobs` raises
 with or without `readChecks`, and so does reading a blob field from an input
 with no `blobs` array.
+
+A cursor codec's `read` with `readChecks` stays inside `cursor.buffer`, not
+inside the value it reads. In a buffer that holds several values, a count in
+one value can reach into the values after it, and `read` reads their bytes as
+its elements. It does not check the cursor, which the caller builds.
 
 After a call that raised, the serializer is ready for the next call: nothing
 it keeps between calls is left half-read.
@@ -106,7 +111,8 @@ so turning it on costs such a type nothing.
 A serializer can keep its buffer and cursors between calls. A `serialize` must
 not start while the same serializer's `serialize` is running, whatever its
 type: the second call can reset the cursor the first one uses, and the first
-then returns wrong bytes without an error. The same holds for `deserialize`.
+then returns wrong bytes without an error. The same holds for `deserialize`,
+and for a cursor codec's `write` and `read`.
 
 Two different serializers may overlap: one may run inside a call of the
 other, and each returns what it returns when it runs alone.

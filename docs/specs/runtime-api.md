@@ -1,8 +1,8 @@
 # Runtime API specification
 
 Status: current
-Applies to: `@rbxts/surge` at commit `8375f07`, `rbxts-transformer-surge` at
-commit `46bffef` (no tagged release yet)
+Applies to: `@rbxts/surge` at commit `c783929`, `rbxts-transformer-surge` at
+commit `fbdc265` (no tagged release yet)
 
 ## 1. Scope
 
@@ -118,15 +118,57 @@ empty. A type that declares its own `_nominal_*` property is one such `T`. A
 call site whose `serialize` passes a blob where `Serialized<T>` is `buffer` is
 a diagnostic (Transformer 7.3).
 
-**3.13** The package's own exports are the three factories, the types
+**3.13** The package's own exports are the four factories, the types
 `Codec`, `CheckedCodec`, `Serializer`, `Deserializer`, `CheckedDeserializer`,
-`Serialized` and `CodecOptions`, and `DataType`. The helper ABI is a module of its own (5.1).
+`Serialized`, `CodecOptions`, `Cursor` and `CursorCodec`, and `DataType`.
+The helper ABI is a module of its own (5.1).
 
 **3.14** With checks, `createCodec` returns `CheckedCodec<T>` and
 `createDeserializer` returns `CheckedDeserializer<T>`, whose second call
 signature takes `unknown` as well as the first's `Serialized<T>`.
 `deserialize` reads an input of the shape `Serialized<T>` names, as 3.7
 states, and any other input raises by 4.11.
+
+**3.15** `createCursorCodec<T>(options?: CodecOptions): CursorCodec<T>`
+returns functions that write values of `T` into, and read them from, a cursor
+the caller owns, which codecs of different types can share:
+
+```ts
+interface Cursor {
+	buffer: buffer;
+	offset: number;
+	blobs: Array<defined>;
+	blobIndex: number;
+}
+
+interface CursorCodec<in out T> {
+	write: (cursor: Cursor, value: T) => void;
+	read: (cursor: Cursor) => T;
+	size: number | undefined;
+}
+```
+
+**3.16** `write(cursor, value)` writes at `cursor.offset` of `cursor.buffer`
+the bytes `serialize` writes for `value`, and sets `cursor.offset` past them.
+Where they do not fit, `cursor.buffer` becomes a new buffer that holds every
+byte of the old one before `cursor.offset`, followed by the value; a buffer
+the caller read from `cursor.buffer` before the call is then not the one
+written to. `write` appends the value's blobs to `cursor.blobs`, after the
+values already in it, in the order 3.6 states. `writeChecks` governs `write`
+as it governs `serialize` (3.10 and 3.11).
+
+**3.17** `read(cursor)` reads a value of `T` at `cursor.offset` of
+`cursor.buffer`, takes its blobs from `cursor.blobs` starting at
+`cursor.blobIndex`, and sets both past what it read. Under `readChecks`, each
+read is bounded against the length of `cursor.buffer`, and a count against
+the bytes after the read cursor in it (4.2 and 4.3), not against the end of
+the value: a count that the bytes of later values can hold is admitted, and
+those bytes are read as its elements. `read` does not check the cursor
+itself, which the caller builds.
+
+**3.18** `size` is the number of bytes every value of `T` writes, where that
+does not depend on the value, and `undefined` otherwise: the size of
+Transformer 5.20 where it reads nothing of the value.
 
 ## 4. What `deserialize` does with input it did not write
 
@@ -191,12 +233,12 @@ the table, any input but a table whose `buffer` is a buffer and whose
 `out/abi` module, which it imports as `@rbxts/surge/out/abi`. Their
 signatures are part of the coupling in section 6.
 
-| Export              | Called                                            | Contract                                                                                                                                                  |
-| ------------------- | ------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `grow`              | when a reservation passes the capacity            | `grow(current, live, needed)` returns a buffer of at least `needed` bytes whose first `live` bytes are `current`'s. `current` must have a nonzero length. |
-| `finishWrite`       | once per `serialize`, except as 5.4 and 5.9 state | `finishWrite(written, size)` returns a new buffer of exactly `size` bytes holding `written`'s first `size`.                                               |
-| `writePackedCFrame` | per `CFrame` inside `Packed<T>`                   | writes the packed form at the given offset and returns the bytes it used.                                                                                 |
-| `readPackedCFrame`  | per `CFrame` inside `Packed<T>`                   | reads the packed form at the given offset and returns the value and the bytes it used.                                                                    |
+| Export              | Called                                            | Contract                                                                                                                                         |
+| ------------------- | ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `grow`              | when a reservation passes the capacity            | `grow(current, live, needed)` returns a buffer of at least `needed` bytes whose first `live` bytes are `current`'s. `current` may have no bytes. |
+| `finishWrite`       | once per `serialize`, except as 5.4 and 5.9 state | `finishWrite(written, size)` returns a new buffer of exactly `size` bytes holding `written`'s first `size`.                                      |
+| `writePackedCFrame` | per `CFrame` inside `Packed<T>`                   | writes the packed form at the given offset and returns the bytes it used.                                                                        |
+| `readPackedCFrame`  | per `CFrame` inside `Packed<T>`                   | reads the packed form at the given offset and returns the value and the bytes it used.                                                           |
 
 **5.2** The package owns no scratch buffer and no byte cursor. Each generated
 serializer declares, in the closure it is emitted into, the scratch buffer,
@@ -204,7 +246,9 @@ capacity and write cursor its `serialize` uses and the read cursor its
 `deserialize` uses, and reserves bytes inline, and the blob channel's state
 of 5.5. A `serialize` sized exactly declares its own, in 5.9,
 and so does a `deserialize` of a `T` that holds no recursive type
-(Transformer 4.2 and 5.3).
+(Transformer 4.2 and 5.3). A cursor codec's `write` and `read` take this
+state from the cursor on each call, as locals of their own where `T` holds no
+recursive type, and into the closure otherwise (3.16 and 3.17).
 
 **5.3** Neither side of a `Packed<T>` bit region calls a helper. The write
 side is emitted inline, one whole byte at a time, and the read side reads
@@ -229,8 +273,10 @@ created at, unless `table.create` does not accept the answer, which raises.
 **5.6** The state of 5.2 belongs to a serializer, not to a call. A `serialize`
 must not start while a `serialize` of the same serializer is running, and a
 `deserialize` must not start while a `deserialize` of the same serializer is
-running, whatever `T` is. A call that starts anyway resets the cursor that the
-running call uses, where the serializer holds it. The running `serialize` then
+running, whatever `T` is, and neither may a cursor codec's `write` or `read`
+while a call of the same function of that codec is running. A call that
+starts anyway resets the cursor that the running call uses, where the
+serializer holds it. The running `serialize` then
 returns wrong bytes without an error, and the running `deserialize` reads the
 rest of its value from the other call's input.
 
@@ -291,6 +337,10 @@ A test file named `*.spec.ts` is under `tests/src/tests/`. A path starting
 | 3.12                        | `rbxts-transformer-surge` `test/transform.test.ts`, `transform (end-to-end)`: the declared result has a blobs array exactly when the walk finds a blob, on fourteen shapes; every call site under `tests/src/`, each of which Transformer 7.3 would reject. Source: `Serialized` in `src/serializer.ts`                                                                                                                                                   |
 | 3.13                        | `test/golden.test.mjs`: generated code imports its helpers from the package's abi module, whose second half reads `out/index.d.ts`. Source: `src/index.ts`                                                                                                                                                                                                                                                                                                |
 | 3.14                        | `checks.spec.ts`: `rejectsAnythingButABufferForAShapeWithNoBlob`, `rejectsAnythingButItsTableForAShapeWithABlob`; `rbxts-transformer-surge` `test/transform.test.ts`, `transform readChecks option`: a caller passing `unknown`, and without `readChecks` it does not type-check                                                                                                                                                                          |
+| 3.15                        | `cursor.spec.ts`: every test; `rbxts-transformer-surge` `test/transform.test.ts`, `transform generated code`: a cursor codec's generated code passes the type check, and takes its state from the cursor                                                                                                                                                                                                                                                  |
+| 3.16                        | `cursor.spec.ts`: `writesTwoCodecsIntoOneCursorAndReadsThemBackInOrder` (the same bytes as `serialize`), `growsTheBufferAndKeepsTheBytesBeforeTheValue`, `appendsBlobsAfterTheOnesAlreadyInTheCursor`; `test/golden.test.mjs`: a cursor codec writes into the caller's buffer and gives its state back                                                                                                                                                    |
+| 3.17                        | `cursor.spec.ts`: `writesTwoCodecsIntoOneCursorAndReadsThemBackInOrder`, `appendsBlobsAfterTheOnesAlreadyInTheCursor`, `boundsAReadByTheBufferNotByTheValue`                                                                                                                                                                                                                                                                                              |
+| 3.18                        | `cursor.spec.ts`: `givesTheConstantSizeOfATypeThatHasOne`; `rbxts-transformer-surge` `test/transform.test.ts`: a cursor codec's generated code (`size: 5`, `size: undefined`)                                                                                                                                                                                                                                                                             |
 | 4.1                         | Source only: the unchecked read path under `emit/`; a statement of what is not guaranteed has nothing to pin                                                                                                                                                                                                                                                                                                                                              |
 | 4.2–4.4                     | `checks.spec.ts`: `rejectsATruncatedPayload`, `rejectsATruncatedPackedCFrame`, `rejectsACountTheInputCannotHold`, `rejectsACountOfElementsThatReadNoBytes`                                                                                                                                                                                                                                                                                                |
 | 4.3 (no over-rejection)     | `checks.spec.ts`: `acceptsWhatSerializeWrote`, `acceptsEveryKindThatReadsACount`, `acceptsEmptyContainers`                                                                                                                                                                                                                                                                                                                                                |
@@ -302,8 +352,8 @@ A test file named `*.spec.ts` is under `tests/src/tests/`. A path starting
 | 4.9                         | `checks.spec.ts`: `rejectsAnEnumIndexPastItsItems`, `rejectsAPackedRotationCodeThatNamesNoRotation`                                                                                                                                                                                                                                                                                                                                                       |
 | 4.10                        | Source only: `enumFromIndexExpr` in `emit/read.ts`; `readPackedCFrame` in `src/cframe.ts`                                                                                                                                                                                                                                                                                                                                                                 |
 | 4.11                        | `checks.spec.ts`: `rejectsAnythingButABufferForAShapeWithNoBlob`, `rejectsAnythingButItsTableForAShapeWithABlob`; `test/golden.test.mjs`: a serializer with `readChecks` carries them. Source only for the order: `buildCheckedDeserialize` in `src/index.ts` of `rbxts-transformer-surge` checks before the body                                                                                                                                         |
-| 5.1                         | `test/golden.test.mjs`: generated code imports its helpers from the package's abi module. Source: the calls the emitter makes under `emit/`, and the exports of `src/abi.ts`                                                                                                                                                                                                                                                                              |
-| 5.2                         | `test/golden.test.mjs`: consecutive fixed-size fields share one reservation, inline, and a deserialize that reaches no recursion helper holds its input and cursor in locals                                                                                                                                                                                                                                                                              |
+| 5.1                         | `test/golden.test.mjs`: generated code imports its helpers from the package's abi module. Source: the calls the emitter makes under `emit/`, and the exports of `src/abi.ts`; a buffer of no bytes: `cursor.spec.ts`: `growsTheBufferAndKeepsTheBytesBeforeTheValue`                                                                                                                                                                                      |
+| 5.2                         | `test/golden.test.mjs`: consecutive fixed-size fields share one reservation, inline, and a deserialize that reaches no recursion helper holds its input and cursor in locals; a cursor codec: `rbxts-transformer-surge` `test/transform.test.ts`, a cursor codec's generated code                                                                                                                                                                         |
 | 5.3                         | `test/golden.test.mjs`: a packed region is written and read inline, with no per-bit helper                                                                                                                                                                                                                                                                                                                                                                |
 | 5.4                         | Source only: `finishWriteExpression` and `writeStateDecls` in `emit/context.ts`                                                                                                                                                                                                                                                                                                                                                                           |
 | 5.5                         | `test/golden.test.mjs`: a blob is appended and read inline, with no call into the package, and a blob list is created at the most blobs its value appends; `rbxts-transformer-surge` `test/transform.test.ts`: a shape with a blob field, and a blob reachable only through a recursion helper                                                                                                                                                            |
@@ -315,6 +365,8 @@ A test file named `*.spec.ts` is under `tests/src/tests/`. A path starting
 
 ## Changes
 
+- `c783929` / `fbdc265`: adds 3.15 to 3.18 (the cursor codec), names its exports in 3.13 and its
+  state in 5.2 and 5.6, and lets `grow` take a buffer of no bytes (5.1).
 - `8375f07` / `46bffef`: 5.9 names an `array` of arrays among those a sized `serialize` iterates
   twice.
 - `11b4a64` / `680cff4`: 5.5 creates the list at its count only where

@@ -19,14 +19,15 @@
 /**
  * Doubles `current` until it holds `needed` bytes and copies the first `live`
  * across. Generated code calls this only on the reservation that runs past
- * the end of its buffer, which is once per doubling.
+ * the end of its buffer, which is once per doubling. A buffer of no bytes,
+ * which a cursor's may be, grows from one, since nothing doubles from zero.
  *
  * Returns the new buffer; the caller re-reads `buffer.len` for its own
  * capacity rather than taking a second return value, because this is the cold
  * path and the caller's hot path is what the shape of this API is for.
  */
 export function grow(current: buffer, live: number, needed: number): buffer {
-	let capacity = buffer.len(current);
+	let capacity = math.max(buffer.len(current), 1);
 	while (capacity < needed) {
 		capacity *= 2;
 	}

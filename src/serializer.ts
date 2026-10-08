@@ -138,7 +138,7 @@ export interface CheckedCodec<in out T> {
 function notConfigured(): never {
 	throw (
 		"rbxts-transformer-surge is not registered in this project's tsconfig.json `plugins`. " +
-		"createCodec/createSerializer/createDeserializer have no real implementation on " +
+		"createCodec/createSerializer/createDeserializer/createCursorCodec have no real implementation on " +
 		"their own -- the transformer replaces every call to them at compile time."
 	);
 }
@@ -195,6 +195,41 @@ export function createCodec<T>(options?: CodecOptions): CheckedCodec<T> {
 
 /** See {@link createCodec}. Takes the write side of {@link CodecOptions}. */
 export function createSerializer<T>(options?: Pick<CodecOptions, "writeChecks">): Serializer<T> {
+	return notConfigured();
+}
+
+/**
+ * Where a {@link CursorCodec} writes and reads: a buffer, the offset of the
+ * next value in it, the values a buffer cannot hold, and the index of the next
+ * of those to read. The caller owns it, and several codecs can share it, so
+ * that one buffer and one `blobs` list hold a batch of values in order.
+ */
+export interface Cursor {
+	buffer: buffer;
+	offset: number;
+	blobs: Array<defined>;
+	blobIndex: number;
+}
+
+/**
+ * Writes values of `T` into a {@link Cursor} and reads them back from one
+ * (Runtime API 3.15 to 3.18 in docs/specs/runtime-api.md).
+ *
+ * `write` writes at `cursor.offset` and moves it past the value. A value that
+ * does not fit grows the buffer: `cursor.buffer` is then a new buffer that
+ * holds every byte before the value, so read it back after each write. Blobs
+ * are appended to `cursor.blobs`. `read` reads at `cursor.offset`, takes blobs
+ * from `cursor.blobIndex`, and moves both past the value. `size` is the bytes
+ * every value of `T` writes, or `undefined` where that depends on the value.
+ */
+export interface CursorCodec<in out T> {
+	write: (cursor: Cursor, value: T) => void;
+	read: (cursor: Cursor) => T;
+	size: number | undefined;
+}
+
+/** See {@link createCodec} and {@link CursorCodec}. Takes both sides of {@link CodecOptions}. */
+export function createCursorCodec<T>(options?: CodecOptions): CursorCodec<T> {
 	return notConfigured();
 }
 

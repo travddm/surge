@@ -378,6 +378,23 @@ test("a blob is appended and read inline, with no call into the package", () => 
 	assert.doesNotMatch(luau, /__surge_(beginWriteBlobs|pushBlob|finishWriteBlobs|beginReadBlobs|nextBlob)/);
 });
 
+// The cursor codec of Runtime API 3.15 to 3.18: the scratch path's body, with
+// its state taken from the caller's cursor and given back to it.
+test("a cursor codec writes into the caller's buffer and gives its state back", () => {
+	const luau = readCompiledLuau("tests/cursor.spec.luau");
+	assert.match(
+		luau,
+		/write = function[(]cursor, value[)]\n\s+local __surge_scratch = cursor[.]buffer\n\s+local __surge_capacity = buffer[.]len[(]__surge_scratch[)]\n\s+local __surge_cursor = cursor[.]offset$/m,
+	);
+	assert.match(luau, /\n\s+cursor[.]buffer = __surge_scratch\n\s+cursor[.]offset = __surge_cursor\n\s+end,/);
+	assert.match(
+		luau,
+		/read = function[(]cursor[)]\n\s+local __surge_input = cursor[.]buffer\n\s+local __surge_readCursor = cursor[.]offset$/m,
+	);
+	assert.match(luau, /local __surge_writeBlobCount = #__surge_writeBlobs$/m);
+	assert.match(luau, /\n\s+cursor[.]blobIndex = __surge_readBlobIndex\n/);
+});
+
 // Regression check for the blob list created at its length. What it was
 // measured as worth is in docs/research/blob-list-length.md.
 test("a blob list is created at the most blobs its value appends", () => {

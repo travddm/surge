@@ -98,17 +98,44 @@ property that holds it, such as `error TS surge: "symbol" can't be
 structurally encoded`. [supported-types.md](supported-types.md) lists what is
 encoded, what goes into `blobs`, and what is rejected.
 
-## Three factories
+## Four factories
 
 | Factory                 | Returns                                                                                          | Options                     |
 | ----------------------- | ------------------------------------------------------------------------------------------------ | --------------------------- |
 | `createCodec<T>`        | a `Codec<T>`: `{ serialize, deserialize }`, or a `CheckedCodec<T>` with `readChecks`             | `readChecks`, `writeChecks` |
 | `createSerializer<T>`   | the `serialize` function, a `Serializer<T>`                                                      | `writeChecks`               |
 | `createDeserializer<T>` | the `deserialize` function, a `Deserializer<T>`, or a `CheckedDeserializer<T>` with `readChecks` | `readChecks`                |
+| `createCursorCodec<T>`  | a `CursorCodec<T>`: `{ write, read, size }`, which write into and read from a `Cursor`           | `readChecks`, `writeChecks` |
 
 Each call site generates its own code. Options are written as literals at the
 call site, such as `createDeserializer<PlayerState>({ readChecks: true })`, and
 default to `false`.
+
+## Many values in one buffer
+
+A cursor codec writes values one after another into a buffer the caller
+owns, and reads them back in the same order. Codecs of different types share
+one `Cursor`: its buffer, the offset of the next value, the values a buffer
+cannot hold, and the index of the next of those to read.
+
+```ts
+const moves = createCursorCodec<Move>();
+const chats = createCursorCodec<Chat>();
+
+const out: Cursor = { buffer: buffer.create(256), offset: 0, blobs: [], blobIndex: 0 };
+moves.write(out, move);
+chats.write(out, chat);
+// `out.buffer` holds both, up to `out.offset`; send them, and `out.blobs`.
+
+const input: Cursor = { buffer: received, offset: 0, blobs: receivedBlobs, blobIndex: 0 };
+const firstMove = moves.read(input);
+const firstChat = chats.read(input);
+```
+
+A write that does not fit grows the buffer, so read `cursor.buffer` back
+after writing rather than keeping the buffer you started with. `size` is the
+bytes every value of a type writes, where that does not depend on the value,
+and `undefined` otherwise.
 
 ## Input from a client
 
