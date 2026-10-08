@@ -104,6 +104,10 @@ export struct LargeArray {
     values: u16[],
 }
 
+export struct NestedArrays {
+    rows: u16[][],
+}
+
 map Entries = { [string]: u8 }
 
 export struct LargeRecord {

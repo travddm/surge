@@ -441,6 +441,46 @@ local function readTuples(buf)
 	return { samples = samples }
 end
 
+local function writeNestedArrays(value)
+	local rows = value.rows
+	local count = #rows
+	-- The count, and each row's count and two bytes an element.
+	local size = 4 + 4 * count
+	for _, row in rows do
+		size += 2 * #row
+	end
+
+	local buf = buffer.create(size)
+	buffer.writeu32(buf, 0, count)
+	local offset = 4
+	for _, row in rows do
+		buffer.writeu32(buf, offset, #row)
+		offset += 4
+		for _, element in row do
+			buffer.writeu16(buf, offset, element)
+			offset += 2
+		end
+	end
+	return buf
+end
+
+local function readNestedArrays(buf)
+	local count = buffer.readu32(buf, 0)
+	local rows = table.create(count)
+	local offset = 4
+	for index = 1, count do
+		local length = buffer.readu32(buf, offset)
+		offset += 4
+		local row = table.create(length)
+		for element = 1, length do
+			row[element] = buffer.readu16(buf, offset)
+			offset += 2
+		end
+		rows[index] = row
+	end
+	return { rows = rows }
+end
+
 local function writeInstanceRefs(value)
 	local entries = value.entries
 	local count = #entries
@@ -474,5 +514,6 @@ return {
 	leaderboard = { write = writeLeaderboard, read = readLeaderboard },
 	tree = { write = writeTree, read = readTree },
 	tuples = { write = writeTuples, read = readTuples },
+	nestedArrays = { write = writeNestedArrays, read = readNestedArrays },
 	instanceRefs = { write = writeInstanceRefs, read = readInstanceRefs },
 }

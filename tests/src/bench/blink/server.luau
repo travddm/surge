@@ -169,6 +169,7 @@ export type First = { inner: { inner: { leaf: { name: string, weight: number }, 
 export type NestedObject = { root: { inner: { inner: { leaf: { name: string, weight: number }, flag: boolean }, count: number }, label: string }, version: number }
 export type WideStruct = { f1: number, f2: number, f3: number, f4: number, f5: number, f6: number, f7: number, f8: number, f9: number, f10: number, f11: number, f12: number, f13: number, f14: number, f15: number, f16: number, f17: number, f18: number, f19: number, f20: number, f21: number, f22: number, f23: number, f24: number, f25: number, f26: number, f27: number, f28: number, f29: number, f30: number, f31: number, f32: number, f33: number, f34: number, f35: number, f36: number, f37: number, f38: number, f39: number, f40: number, f41: number, f42: number, f43: number, f44: number, f45: number, f46: number, f47: number, f48: number, f49: number, f50: number }
 export type LargeArray = { values: { number } }
+export type NestedArrays = { rows: { { number } } }
 export type Entries = {[string]: number}
 export type LargeRecord = { entries: {[string]: number} }
 export type StringHeavy = { title: string, author: string, lines: { string } }
@@ -464,6 +465,90 @@ if not RunService:IsRunning() then
 				local OPERATION_OFFSET_0 = ARRAY_START_1
 				ARRAY_START_1 += 2
 				buffer.writeu16(SendBuffer, OPERATION_OFFSET_0, Item_1)
+			end
+			-- END ARRAY
+			-- Buffer restore
+			local Result = buffer.create(SendCursor)
+			buffer.copy(Result, 0, SendBuffer, 0, SendCursor)
+			Load(Previous)
+			return Result
+		end
+	},
+	NestedArrays = {
+		Read = function(Buffer: buffer): (NestedArrays)
+			-- Buffer overwrite
+			local PreviousCursor = RecieveCursor
+			local PreviousBuffer = RecieveBuffer
+			local PreviousInstanceCursor = RecieveInstanceCursor
+			RecieveCursor = 0
+			RecieveBuffer = Buffer
+			-- Read BLOCK: 2 bytes
+			local BLOCK_START = Read(2)
+			-- Buffer read
+			local Value = {} :: any
+			-- START ARRAY
+			local Length = buffer.readu16(RecieveBuffer, BLOCK_START + 0)
+			if Length < 0 then error(`Expected "Length" to be larger than 0, got {Length} instead.`) end
+			if Length > 65535 then error(`Expected "Length" to be smaller than 65535, got {Length} instead.`) end
+			Value.rows = table.create(Length)
+				-- Read BLOCK: 2 bytes
+			local ARRAY_START_1 = Read(2 * Length)
+			for Index = 1, Length do
+				-- START ARRAY
+				-- Read 2
+				local OPERATION_OFFSET_0 = ARRAY_START_1
+				ARRAY_START_1 += 2
+				Length = buffer.readu16(RecieveBuffer, OPERATION_OFFSET_0)
+				if Length < 0 then error(`Expected "Length" to be larger than 0, got {Length} instead.`) end
+				if Length > 65535 then error(`Expected "Length" to be smaller than 65535, got {Length} instead.`) end
+				local Item_1 = table.create(Length)
+					-- Read BLOCK: 2 bytes
+				local ARRAY_START_2 = Read(2 * Length)
+				for Index = 1, Length do
+					-- Read 2
+					local OPERATION_OFFSET_0 = ARRAY_START_2
+					ARRAY_START_2 += 2
+					local Item_2 = buffer.readu16(RecieveBuffer, OPERATION_OFFSET_0)
+					table.insert(Item_1, Item_2)
+				end
+				-- END ARRAY
+				table.insert(Value.rows, Item_1)
+			end
+			-- END ARRAY
+			-- Buffer restore
+			RecieveCursor = PreviousCursor
+			RecieveBuffer = PreviousBuffer
+			RecieveInstanceCursor = PreviousInstanceCursor
+			return Value
+		end,
+		Write = function(Value: NestedArrays): (buffer)
+			-- Buffer overwrite
+			local Previous = Save()
+			Load()
+			-- Allocate BLOCK: 2 bytes
+			local BLOCK_START = Allocate(2)
+			-- Buffer write
+			-- START ARRAY
+			buffer.writeu16(SendBuffer, BLOCK_START + 0, #Value.rows)
+				-- Allocate BLOCK: 2 bytes
+			local ARRAY_START_1 = Allocate(2 * #Value.rows)
+			for Index = 1, #Value.rows do
+				local Item_1 = Value.rows[Index]
+				-- START ARRAY
+				-- Allocate 2
+				local OPERATION_OFFSET_0 = ARRAY_START_1
+				ARRAY_START_1 += 2
+				buffer.writeu16(SendBuffer, OPERATION_OFFSET_0, #Item_1)
+					-- Allocate BLOCK: 2 bytes
+				local ARRAY_START_2 = Allocate(2 * #Item_1)
+				for Index = 1, #Item_1 do
+					local Item_2 = Item_1[Index]
+					-- Allocate 2
+					local OPERATION_OFFSET_0 = ARRAY_START_2
+					ARRAY_START_2 += 2
+					buffer.writeu16(SendBuffer, OPERATION_OFFSET_0, Item_2)
+				end
+				-- END ARRAY
 			end
 			-- END ARRAY
 			-- Buffer restore
@@ -1514,6 +1599,90 @@ local Returns = table.freeze({
 				local OPERATION_OFFSET_0 = ARRAY_START_1
 				ARRAY_START_1 += 2
 				buffer.writeu16(SendBuffer, OPERATION_OFFSET_0, Item_1)
+			end
+			-- END ARRAY
+			-- Buffer restore
+			local Result = buffer.create(SendCursor)
+			buffer.copy(Result, 0, SendBuffer, 0, SendCursor)
+			Load(Previous)
+			return Result
+		end
+	},
+	NestedArrays = {
+		Read = function(Buffer: buffer): (NestedArrays)
+			-- Buffer overwrite
+			local PreviousCursor = RecieveCursor
+			local PreviousBuffer = RecieveBuffer
+			local PreviousInstanceCursor = RecieveInstanceCursor
+			RecieveCursor = 0
+			RecieveBuffer = Buffer
+			-- Read BLOCK: 2 bytes
+			local BLOCK_START = Read(2)
+			-- Buffer read
+			local Value = {} :: any
+			-- START ARRAY
+			local Length = buffer.readu16(RecieveBuffer, BLOCK_START + 0)
+			if Length < 0 then error(`Expected "Length" to be larger than 0, got {Length} instead.`) end
+			if Length > 65535 then error(`Expected "Length" to be smaller than 65535, got {Length} instead.`) end
+			Value.rows = table.create(Length)
+				-- Read BLOCK: 2 bytes
+			local ARRAY_START_1 = Read(2 * Length)
+			for Index = 1, Length do
+				-- START ARRAY
+				-- Read 2
+				local OPERATION_OFFSET_0 = ARRAY_START_1
+				ARRAY_START_1 += 2
+				Length = buffer.readu16(RecieveBuffer, OPERATION_OFFSET_0)
+				if Length < 0 then error(`Expected "Length" to be larger than 0, got {Length} instead.`) end
+				if Length > 65535 then error(`Expected "Length" to be smaller than 65535, got {Length} instead.`) end
+				local Item_1 = table.create(Length)
+					-- Read BLOCK: 2 bytes
+				local ARRAY_START_2 = Read(2 * Length)
+				for Index = 1, Length do
+					-- Read 2
+					local OPERATION_OFFSET_0 = ARRAY_START_2
+					ARRAY_START_2 += 2
+					local Item_2 = buffer.readu16(RecieveBuffer, OPERATION_OFFSET_0)
+					table.insert(Item_1, Item_2)
+				end
+				-- END ARRAY
+				table.insert(Value.rows, Item_1)
+			end
+			-- END ARRAY
+			-- Buffer restore
+			RecieveCursor = PreviousCursor
+			RecieveBuffer = PreviousBuffer
+			RecieveInstanceCursor = PreviousInstanceCursor
+			return Value
+		end,
+		Write = function(Value: NestedArrays): (buffer)
+			-- Buffer overwrite
+			local Previous = Save()
+			Load()
+			-- Allocate BLOCK: 2 bytes
+			local BLOCK_START = Allocate(2)
+			-- Buffer write
+			-- START ARRAY
+			buffer.writeu16(SendBuffer, BLOCK_START + 0, #Value.rows)
+				-- Allocate BLOCK: 2 bytes
+			local ARRAY_START_1 = Allocate(2 * #Value.rows)
+			for Index = 1, #Value.rows do
+				local Item_1 = Value.rows[Index]
+				-- START ARRAY
+				-- Allocate 2
+				local OPERATION_OFFSET_0 = ARRAY_START_1
+				ARRAY_START_1 += 2
+				buffer.writeu16(SendBuffer, OPERATION_OFFSET_0, #Item_1)
+					-- Allocate BLOCK: 2 bytes
+				local ARRAY_START_2 = Allocate(2 * #Item_1)
+				for Index = 1, #Item_1 do
+					local Item_2 = Item_1[Index]
+					-- Allocate 2
+					local OPERATION_OFFSET_0 = ARRAY_START_2
+					ARRAY_START_2 += 2
+					buffer.writeu16(SendBuffer, OPERATION_OFFSET_0, Item_2)
+				end
+				-- END ARRAY
 			end
 			-- END ARRAY
 			-- Buffer restore

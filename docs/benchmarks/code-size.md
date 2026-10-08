@@ -24,6 +24,7 @@ level 1; another compiler version can give another count.
 | large-array              | 817   | 636 (0.78×)  | 631 (0.77×)  |
 | large-record             | 1725  | 668 (0.39×)  | 689 (0.40×)  |
 | leaderboard              | 1261  | 846 (0.67×)  | 860 (0.68×)  |
+| nested-arrays            | 1750  | 659 (0.38×)  | 679 (0.39×)  |
 | nested-object            | 1700  | 1229 (0.72×) | 1247 (0.73×) |
 | packed-struct (packed)   | 2414  | 1388 (0.57×) | 1381 (0.57×) |
 | packed-struct (unpacked) | 3179  | 1356 (0.43×) | 1349 (0.42×) |
@@ -39,6 +40,6 @@ one module, so they have no cell above:
 
 | Column   | Module                                 | Bytes  |
 | -------- | -------------------------------------- | ------ |
-| baseline | `tests/src/bench/baseline/codecs.luau` | 12345  |
-| blink    | `tests/src/bench/blink/server.luau`    | 93486  |
-| zap      | `tests/src/bench/zap/server.luau`      | 160161 |
+| baseline | `tests/src/bench/baseline/codecs.luau` | 13210  |
+| blink    | `tests/src/bench/blink/server.luau`    | 99263  |
+| zap      | `tests/src/bench/zap/server.luau`      | 167751 |

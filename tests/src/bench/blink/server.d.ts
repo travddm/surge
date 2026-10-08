@@ -88,6 +88,8 @@ export declare const LargeArray: BlinkCodec<{ values: Array<number> }>;
 
 export declare const LargeRecord: BlinkCodec<{ entries: Record<string, number> }>;
 
+export declare const NestedArrays: BlinkCodec<{ rows: Array<Array<number>> }>;
+
 export declare const StringHeavy: BlinkCodec<{ title: string; author: string; lines: Array<string> }>;
 
 export declare const Leaderboard: BlinkCodec<{ entries: Array<{ name: string; score: number; userId: number }> }>;

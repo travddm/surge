@@ -72,6 +72,17 @@ event Large = {
 	data: LargeArray,
 }
 
+type NestedArrays = struct {
+	rows: u16[][],
+}
+
+event Rows = {
+	from: Server,
+	type: Reliable,
+	call: SingleSync,
+	data: NestedArrays,
+}
+
 type LargeRecord = struct {
 	entries: map { [string.binary]: u8 },
 }
