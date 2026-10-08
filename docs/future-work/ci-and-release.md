@@ -20,9 +20,6 @@ Part of the [surge](../architecture.md) design.
   Before its first registry publish, the transformer declares `typescript`
   under `peerDependencies`, as `rbxts-transformer-flamework` does, so that
   it uses the compiler's copy rather than one of its own.
-- **No Windows job.** The maintainer develops on Windows and the mise
-  tasks assume a POSIX shell (documented as a VS Code task override);
-  nothing exercises that path automatically.
 - **No release documentation.** There is no `CHANGELOG`, no tagging
   procedure, and no statement of which Roblox, roblox-ts and `@rbxts/types`
   versions the generated code targets. [getting-started.md](../getting-started.md)
@@ -37,14 +34,17 @@ Part of the [surge](../architecture.md) design.
 - **No contributor files on GitHub.** `.github/` holds only the workflow.
   There is no `CONTRIBUTING.md`, which GitHub links when someone opens an
   issue or a pull request, and no issue or pull request template.
+- **Benchmark tables recorded on older code.** Each table names the commits
+  it ran on, and later commits have changed the code since. A release's site
+  would publish numbers for code the release does not ship.
 
 ## Why deferred
 
-Each item is a workflow change rather than a code change; the version
-backstop is the only one that touches the transformer, and it should land
-with the first tagged release it would protect. The Windows job
-has no such dependency, and [README.md](README.md) lists it as work that can
-land at any time. The first release follows
+The version backstop is the only item that changes the transformer's code,
+and it lands with the first tagged release it would protect. The test in
+[transformer-unit-test-coverage.md](transformer-unit-test-coverage.md) lands
+with it: the backstop reads the version through `nearestPackageName`, whose
+cache that test covers. The first release follows
 [single-repository.md](single-repository.md), which sets where a release is
 cut from and how users and developers install it, and
 [documentation-site.md](documentation-site.md), which publishes it. The
@@ -76,5 +76,9 @@ release's documentation.
   `AGENTS.md`; a bug-report issue template that asks for the surge version,
   the type, and the generated code; and a pull request template that lists
   the verification steps in `AGENTS.md`.
-- Add a `windows-latest` matrix entry running the same steps through Git
-  Bash.
+- Before the release, record all three benchmark tiers again on the
+  release's code (`mise run bench:size`, `mise run bench:code` and
+  `mise run bench:speed`), after the fixes in
+  [benchmark-tooling.md](benchmark-tooling.md), so that the tables the site
+  publishes measure what the release ships. The speed tier needs Roblox
+  Studio, so the maintainer runs it.

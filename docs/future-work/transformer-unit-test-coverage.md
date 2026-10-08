@@ -11,7 +11,9 @@ package name found for each directory, is untested.
 ## Why deferred
 
 A test needs `fs` mocking to count the `package.json` reads, and the function
-is not exported.
+is not exported. It lands with the version backstop in
+[ci-and-release.md](ci-and-release.md), which changes the same function to
+read the package's version too.
 
 ## How, briefly
 

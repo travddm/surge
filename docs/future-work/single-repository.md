@@ -153,6 +153,11 @@ delete it, so links to its commits keep working.
   so a change to either package is tested with the other at the same
   commit. It installs each package with `npm ci`, checks each lockfile, and
   runs the root checks and then each package's `ci`.
+- The checks run on `ubuntu-latest` and on `windows-latest`, the second
+  through Git Bash. The maintainer works on Windows, and the mise tasks
+  assume a POSIX shell (documented as a VS Code task override), but no CI
+  job runs that path today. A tag, a publish or a deploy runs once, on
+  Ubuntu, after both pass.
 - Delete both `ci/*-ref` files, the transformer's integration job, and the
   pin rules in `AGENTS.md`, `CLAUDE.md`, [contributing.md](../contributing.md)
   and [testing.md](../testing.md).

@@ -31,6 +31,8 @@ because neither package has a release
 ([ci-and-release.md](ci-and-release.md)), and no game has asked to detect a
 changed type. The consumer also decides between the two ways to enable it
 below. The design is small and depends on nothing else in this directory.
+It is the first work to revisit after the first release, which makes such a
+consumer possible ([README.md](README.md)).
 
 ## How, briefly
 

@@ -53,14 +53,16 @@ batches it, and [networking.md](networking.md) is where that would come from.
 A Zap-shaped timing has no driver either, and a transcription would measure
 the transcription as much as Zap.
 
-A readable `Blink: Booleans` encode cell waits on nothing either. It costs
-one row per measurement, and the rest of the catalog is read without it.
-
-A stable fbs and serio column waits on nothing. It is not in the way today:
-a measurement reads its controls as a median over many cells, and one that
-changed its code on one row moves that median little.
-[one-reservation-per-array.md](../research/one-reservation-per-array.md) left
-the two cells out.
+A stable fbs and serio column and a readable `Blink: Booleans` encode cell
+land before the first release, after the documentation site
+([documentation-site.md](documentation-site.md)), which publishes the
+benchmark tables as a comparison with other libraries. A measurement is not
+held up by either today: it reads its controls as a median over many cells,
+and one that changed its code on one row moves that median little
+([one-reservation-per-array.md](../research/one-reservation-per-array.md)
+left the two cells out), and the rest of the catalog is read without the
+`Blink: Booleans` encode cell. A published table is read one cell at a time,
+so each cell it shows has to be stable and readable.
 
 ## How, briefly
 
