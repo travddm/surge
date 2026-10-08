@@ -76,8 +76,11 @@ Not checked by a machine, and load-bearing:
   `tests/src/tests/bytes.spec.ts` and the size table in the same commit.
 - A measurement is a paper under `docs/research/`, never an edit to a number
   in a page.
-- A change that spans both repositories is pushed transformer first: this
-  repository's CI checks out the transformer's default branch.
+- A change that spans both repositories moves the CI pins: this
+  repository's `ci/transformer-ref` and the transformer's `ci/surge-ref`
+  (Working across both repositories in
+  [docs/contributing.md](docs/contributing.md)). Push a commit before any
+  commit whose pin names it.
 
 Enforced by review:
 

@@ -12,5 +12,8 @@ wins. This file adds only what is particular to Claude Code:
   commit message with a word cspell does not know fails the next
   `mise run ci`, so write commit messages in words it knows, or add a real
   word to `cspell.json`.
-- The transformer lives in `../rbxts-transformer-surge`. Push it before this
-  repository when a change spans both.
+- The transformer lives in `../rbxts-transformer-surge`. Each repository's
+  CI tests the other at a pinned commit; a change that spans both sets the
+  pins as Working across both repositories in
+  [docs/contributing.md](docs/contributing.md) states, and pushes a commit
+  before any commit whose pin names it.

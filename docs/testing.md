@@ -86,10 +86,19 @@ benchmark speed tier needs Roblox Studio, and it is not part of `ci`.
 
 Each repository's `.github/workflows/ci.yml` runs the steps of `mise run ci`
 on every push and pull request, on `ubuntu-latest` through
-`jdx/mise-action`. surge's workflow also checks out the transformer's default
-branch as a sibling directory and runs `npm install` in both before
-`tests:install`, because each `file:` dependency builds with its own
-devDependencies.
+`jdx/mise-action`. Each installs with `npm ci`, and fails if a lockfile was
+rewritten during the run.
+
+The two repositories test each other at pinned commits. surge's workflow
+checks out the transformer at the commit in `ci/transformer-ref`, as a sibling
+directory, and runs `npm ci` in both before installing `tests/`, because each
+`file:` dependency builds with its own devDependencies. The transformer's
+workflow has an integration job that checks out surge at the commit in its
+own `ci/surge-ref` the same way, and runs surge's `mise run ci` against the
+transformer's commit: a transformer change that breaks the round-trip suite
+or a golden check fails the transformer's own run. A pin moves only in a
+commit that changes it, so a run's result does not change with a push to the
+other repository. [contributing.md](contributing.md) says when to move one.
 
 To run the same checks before pushing, `mise run hooks:install` installs a
 pre-push hook, or run the `surge: ci` or `transformer: ci` VS Code task.

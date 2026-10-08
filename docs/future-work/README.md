@@ -21,10 +21,8 @@ and what has landed since, is in
 These are small, have no dependency on the order above, and can land at any
 time:
 
-- The CI items in [ci-and-release.md](ci-and-release.md): the transformer
-  workflow running the integration suite, the pinned sibling ref, `npm ci`,
-  and the Windows job. The transformer's CI cannot see a broken
-  serializer today.
+- The Windows job in [ci-and-release.md](ci-and-release.md): nothing runs
+  the mise tasks through Git Bash on Windows, where the maintainer works.
 - [transformer-unit-test-coverage.md](transformer-unit-test-coverage.md): a
   test of the package-name cache in `detect.ts`, which needs `fs` mocking.
 - A stable fbs and serio column, in

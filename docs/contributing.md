@@ -51,9 +51,15 @@ surge only:
   either one, `mise run tests:install` copies it again; `mise run ci` and the
   benchmark tasks do that first
   ([specs/test-harness.md](specs/test-harness.md) section 6).
-- surge's GitHub workflow checks out the transformer's default branch, not a
-  pinned commit. Push the transformer first when a change spans both, or
-  surge's run tests against the old transformer.
+- Each repository's CI tests the other at a pinned commit: surge's at the
+  transformer commit in `ci/transformer-ref`, and the transformer's
+  integration job at the surge commit in its `ci/surge-ref` (see CI in
+  [testing.md](testing.md)). A change that spans both takes three commits:
+  the transformer's change; surge's, with `ci/transformer-ref` set to it; and
+  the transformer's `ci/surge-ref` set to surge's commit. The first runs
+  against the old surge commit and may fail; the third is the run that
+  checks the pair. Push a commit before a commit whose pin names it, so each
+  run can check out what it names.
 - A change that moves bytes changes `tests/src/tests/bytes.spec.ts` and the
   size table in the same commit.
 - Documentation changes in the same commit as the code it describes; the
