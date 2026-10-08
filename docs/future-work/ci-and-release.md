@@ -37,7 +37,8 @@ with the first tagged release it would protect. The Windows job
 has no such dependency, and [README.md](README.md) lists it as work that can
 land at any time. The first release follows
 [single-repository.md](single-repository.md), which sets where a release is
-cut from and how users and developers install it.
+cut from and how users and developers install it, and
+[documentation-site.md](documentation-site.md), which publishes it.
 
 ## How, briefly
 
