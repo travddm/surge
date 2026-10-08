@@ -25,9 +25,10 @@ up.
   [architecture.md](../architecture.md)).
 - Builds on `@rbxts/surge`'s `Codec<T>` (Runtime API 3.1 in
   [specs/runtime-api.md](../specs/runtime-api.md)) rather than re-deriving its own wire format.
-- Batching a frame's events into one buffer needs the offset entry points in
-  [caller-buffers.md](caller-buffers.md). Without them, each event costs a
-  buffer of its own and a copy into the batch.
+- Batching a frame's events into one buffer can use the cursor codec
+  (Runtime API 3.15 in [specs/runtime-api.md](../specs/runtime-api.md)),
+  which writes each event into one buffer the batch owns, where each
+  `serialize` would cost a buffer of its own and a copy into the batch.
 - Not designed further than this until picked up — gets its own design
   pass (detection/dispatch model, batching strategy, channel semantics,
   and its own repository, following the same two-repo distribution

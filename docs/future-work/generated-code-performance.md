@@ -111,7 +111,17 @@ bytes, its write reads again.
 One design the `finishWrite` probe did not reach: handing the caller a buffer
 surge owns and reuses, which removes the allocation as well as the copy. It
 would have to be an opt-in API, since a reused buffer is dead the moment
-anything calls `serialize()` again, and what it is worth is unmeasured.
+anything calls `serialize()` again, and what it is worth is unmeasured. The
+cursor codec (Runtime API 3.15 in
+[specs/runtime-api.md](../specs/runtime-api.md)) writes into a buffer the
+caller owns and reuses instead, and what writing that way is worth against
+`serialize` is unmeasured too.
+
+**A cursor codec's write.** A cursor codec writes every shape through the
+scratch path, with a capacity check at each reservation (Transformer 5.3). A
+shape sized exactly could check the room for its size once, and write with no
+check per reservation. That is a second form of the body, and measuring it
+needs a catalog row that writes into a cursor, which the catalog lacks.
 
 **Kinds exact sizing leaves out.** An array of unions, of objects whose size
 varies, and of arrays, is sized by a loop ahead of the result (Transformer
