@@ -251,10 +251,16 @@ A pull request runs the checks only.
   A published version number can never be used again, even after an
   unpublish, so this review is the last check.
 - Staged publishing needs npm 11.15.0 or later, newer than the pinned Node's
-  npm, so the release job installs it. The first staged publish of a package
-  that does not exist yet also publishes a placeholder version,
-  `0.0.0-stage`. npm's documentation does not say whether the feature is
-  generally available; check before relying on it.
+  npm, so the release job installs it. It worked on 2026-10-08 with npm
+  11.21.0, when the maintainer's npm account claimed both names by staging
+  a `0.0.0-claim` version of each and rejecting it:
+    - Staging a package that did not exist published a placeholder,
+      `0.0.0-stage`, which `latest` points at until the first release.
+      Rejecting the staged version left the placeholder.
+    - A staged version stayed in validation for one to two minutes before it
+      could be approved or rejected. The release run waits for that.
+    - Staging asked for no second factor. Rejecting from the CLI asked for a
+      sign-in in the browser; the npm website rejects too.
 - The run stages with a token the maintainer provides: a granular access
   token, limited to the two packages where npm allows it, with Bypass 2FA
   off. It is a secret of a GitHub environment that only the staging job
@@ -280,13 +286,6 @@ A pull request runs the checks only.
   [ci-and-release.md](ci-and-release.md).
 - Only a release publishes to npm. A pre-release or a dev build reaches
   another project through its one-package tag.
-- Stage both packages once before the first release, so that their
-  `0.0.0-stage` placeholders claim the names. `rbxts-transformer-surge` is
-  unscoped, so anyone can register it, and any member of the `@rbxts`
-  organization can publish `@rbxts/surge`. Neither name was registered on
-  2026-10-08. Stage a version that will never be released, reject it, and
-  check that the placeholder stays. This needs the maintainer's npm login
-  and npm 11.15.0 or later, not the move, so it can happen at any time.
 
 Not part of the move, and possible after it:
 

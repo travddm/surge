@@ -3,8 +3,8 @@
 Part of the [surge](../architecture.md) design. One document per unit of
 work. The order below is the recommended implementation order; each step
 names the documents it delivers and why it comes where it does. The sections
-after it list work with no step of its own, the first work to revisit after
-the first release, and the documents that can be deferred indefinitely.
+after it list the first work to revisit after the first release, and the
+documents that can be deferred indefinitely.
 
 This directory holds open work only. What the September 2026 review found,
 and what has landed since, is in
@@ -19,15 +19,6 @@ and what has landed since, is in
 | 2    | [documentation-site.md](documentation-site.md): one site for users and contributors, with the benchmarks and an API reference                                       | The first release waits for it, and it waits for the move, which sets where `docs/` lives and which workflow deploys it.                                                                                                                                                                                                                      |
 | 3    | [benchmark-tooling.md](benchmark-tooling.md): a stable fbs and serio column, and a readable `Blink: Booleans` encode cell                                           | The site publishes the benchmark tables as a comparison with other libraries, so before the first release each column's code must stay the same from build to build, and each cell must be readable.                                                                                                                                          |
 | 4    | [ci-and-release.md](ci-and-release.md): version backstop and first release, with the test in [transformer-unit-test-coverage.md](transformer-unit-test-coverage.md) | The backstop lands with the release it protects, and it changes the function whose cache that test covers. The release records all three benchmark tiers again on its own code. The cursor codec, the last addition to the consumer API that the plan held, has landed (Runtime API 3.15 in [specs/runtime-api.md](../specs/runtime-api.md)). |
-
-## No step of its own
-
-This is small, has no dependency on the order above, and can land at any
-time:
-
-- Claiming both npm names with a staged publish, in
-  [single-repository.md](single-repository.md): `rbxts-transformer-surge` is
-  unscoped, so anyone can register it before the first release.
 
 ## After the first release
 
