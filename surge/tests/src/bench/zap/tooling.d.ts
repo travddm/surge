@@ -10,7 +10,7 @@
  * `from: Server`, so only the second form is declared here. It returns one
  * entry per event in the packet, or nothing when the remote is not Zap's.
  */
-export interface ZapDecodedEvent {
+interface ZapDecodedEvent {
 	Name: string;
 	Arguments: Array<unknown>;
 }

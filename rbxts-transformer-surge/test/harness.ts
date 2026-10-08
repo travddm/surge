@@ -41,6 +41,30 @@ export interface FixtureProgram {
 	readonly cleanup: () => void;
 }
 
+// Parsing and binding `@rbxts/types` or the default lib costs most of a fixture program, and every
+// test builds at least one. Declaration files are read-only for the whole run, and the options the
+// tests vary do not change how one parses or binds, so each program reuses the same `SourceFile`,
+// as a language service does. The key keeps the parse options, which do change a parse.
+const declarationFiles = new Map<string, ts.SourceFile>();
+
+function createCachingHost(compilerOptions: ts.CompilerOptions): ts.CompilerHost {
+	const host = ts.createCompilerHost(compilerOptions);
+	const getSourceFile = host.getSourceFile.bind(host);
+	host.getSourceFile = (fileName, languageVersionOrOptions, onError, shouldCreateNewSourceFile) => {
+		if (!fileName.endsWith(".d.ts") || shouldCreateNewSourceFile) {
+			return getSourceFile(fileName, languageVersionOrOptions, onError, shouldCreateNewSourceFile);
+		}
+		const key = `${fileName}\0${JSON.stringify(languageVersionOrOptions)}`;
+		let sourceFile = declarationFiles.get(key);
+		if (sourceFile === undefined) {
+			sourceFile = getSourceFile(fileName, languageVersionOrOptions, onError);
+			if (sourceFile !== undefined) declarationFiles.set(key, sourceFile);
+		}
+		return sourceFile;
+	};
+	return host;
+}
+
 /**
  * Compiles `source` in a real, throwaway `ts.Program` (matching this
  * project's established "verify against the real compiler" approach rather
@@ -61,6 +85,9 @@ export function createFixtureProgram(source: string, options: FixtureOptions = {
 		paths: options.surge
 			? { "@rbxts/surge": ["rbxts-surge/index"], "@rbxts/surge/*": ["rbxts-surge/*"] }
 			: undefined,
+		// Unset, `types` includes every `@types` package under this package's `node_modules`, such
+		// as Node's and Jest's, in each fixture.
+		types: [],
 		...options.compilerOptions,
 	};
 	if (options.roblox || options.surge) {
@@ -69,7 +96,7 @@ export function createFixtureProgram(source: string, options: FixtureOptions = {
 		compilerOptions.types = ["types"];
 	}
 
-	const program = ts.createProgram([file], compilerOptions);
+	const program = ts.createProgram([file], compilerOptions, createCachingHost(compilerOptions));
 	const checker = program.getTypeChecker();
 	const sourceFile = program.getSourceFile(file);
 	if (!sourceFile) {

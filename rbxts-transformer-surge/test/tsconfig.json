@@ -5,6 +5,7 @@
 		"noEmit": true,
 		"declaration": false,
 		"incremental": false,
+		"tsBuildInfoFile": null,
 		"types": ["node", "jest"]
 	},
 	"include": ["../src/**/*", "**/*"],

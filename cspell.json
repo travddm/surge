@@ -122,6 +122,11 @@
 	"ignoreWords": ["flatmodule"],
 	"maxNumberOfProblems": 1000,
 	"useGitignore": true,
+	"cache": {
+		"useCache": true,
+		"cacheLocation": "node_modules/.cache/cspell/.cspellcache",
+		"cacheStrategy": "content"
+	},
 	"ignorePaths": [
 		".gitignore",
 		".vscode/**",

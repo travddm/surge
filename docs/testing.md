@@ -28,6 +28,14 @@ benchmark speed tier needs Roblox Studio, and it is not part of `ci`.
 `tests:install` runs first because ESLint resolves `tests/`'s imports against
 `tests/node_modules`, which a fresh checkout does not have.
 
+`format:check`, `format:fix` and `spell` record the files that passed in
+each project's `node_modules/.cache/`, and check a file again only when the
+file, Prettier's options or the `cspell.json` changes. Prettier's record
+does not include its plugins' versions: after an update to
+`@trivago/prettier-plugin-sort-imports`, delete
+`node_modules/.cache/prettier` in each package, or `format:check` can pass a
+file the new version would reorder.
+
 ## Runtime tests
 
 - **Round-trip suite** (surge, `mise run tests:test`): the `@rbxts/runit`
@@ -88,10 +96,11 @@ benchmark speed tier needs Roblox Studio, and it is not part of `ci`.
 `.github/workflows/ci.yml` runs on every push to `master` and every pull
 request into it, through `jdx/mise-action`, on `ubuntu-latest` and on
 `windows-latest` through Git Bash. It installs the root and each package
-with `npm ci`, then runs the root `mise run ci`, the task a contributor
-runs, and fails if a lock file was rewritten during the run. Both packages
-are checked at the same commit, so a transformer change that breaks the
-round-trip suite or a golden check fails its own run. Windows is in the run
+with `npm ci`, restores the Prettier and cspell records of the newest run
+with the same lock files, then runs the root `mise run ci`, the task a
+contributor runs, and fails if a lock file was rewritten during the run.
+Both packages are checked at the same commit, so a transformer change that
+breaks the round-trip suite or a golden check fails its own run. Windows is in the run
 because roblox-ts projects are built on Windows or macOS, where the
 transformer runs inside `rbxtsc`, and because the mise tasks run there
 through Git Bash.

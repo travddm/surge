@@ -62,6 +62,25 @@ jobs:
               working-directory: surge
               run: npm ci
 
+            # Prettier's and cspell's records of the files that passed, which `format:check` and
+            # `spell` read from each project's node_modules/.cache, so this follows the `npm ci` steps
+            # that delete node_modules. Unlike npm's cache, this one falls back to the newest cache
+            # with the same lock files: each tool checks a file again when its content, its options or
+            # its configuration changes. Neither tool records its plugins' or dictionaries' versions,
+            # so the key holds the lock files.
+            - name: Cache Prettier and cspell results
+              uses: actions/cache@v6
+              with:
+                  path: |
+                      node_modules/.cache/prettier
+                      node_modules/.cache/cspell
+                      rbxts-transformer-surge/node_modules/.cache/prettier
+                      rbxts-transformer-surge/node_modules/.cache/cspell
+                      surge/node_modules/.cache/prettier
+                      surge/node_modules/.cache/cspell
+                  key: ${{ runner.os }}-checks-${{ hashFiles('package-lock.json', 'rbxts-transformer-surge/package-lock.json', 'surge/package-lock.json') }}-${{ github.sha }}
+                  restore-keys: ${{ runner.os }}-checks-${{ hashFiles('package-lock.json', 'rbxts-transformer-surge/package-lock.json', 'surge/package-lock.json') }}-
+
             # The root files' checks, then the transformer's `ci`, then surge's, which installs
             # its tests/ first: the same task a contributor runs, so the two cannot drift apart.
             - name: mise run ci
