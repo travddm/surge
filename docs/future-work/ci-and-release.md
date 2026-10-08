@@ -14,6 +14,12 @@ Part of the [surge](../architecture.md) design.
   small, cheap backstop. Neither repository has a tag yet, both are
   `0.1.0`, and there is no documented tagging step. The transformer's
   `package.json` is also `"private": true`.
+- **No `typescript` peer dependency.** The transformer imports `typescript`
+  at run time but lists it only under `devDependencies`, and it resolves in
+  a consumer's project only because roblox-ts depends on `typescript` too.
+  Before its first registry publish, the transformer declares `typescript`
+  under `peerDependencies`, as `rbxts-transformer-flamework` does, so that
+  it uses the compiler's copy rather than one of its own.
 - **No Windows job.** The maintainer develops on Windows and the mise
   tasks assume a POSIX shell (documented as a VS Code task override);
   nothing exercises that path automatically.
