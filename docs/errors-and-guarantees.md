@@ -115,7 +115,10 @@ then returns wrong bytes without an error. The same holds for `deserialize`,
 and for a cursor codec's `write` and `read`.
 
 Two different serializers may overlap: one may run inside a call of the
-other, and each returns what it returns when it runs alone.
+other, and each returns what it returns when it runs alone. A cursor is the
+exception: no `write` or `read` into a cursor may start while another into the
+same cursor is running, whatever codec makes it, because each takes the
+cursor's offset when it starts and stores its own back when it ends.
 
 A serializer runs code it did not generate only through the metamethods of a
 table it is given, so the rule matters only for a value with a metatable:

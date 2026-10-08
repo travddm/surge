@@ -1,7 +1,7 @@
 # Runtime API specification
 
 Status: current
-Applies to: `@rbxts/surge` at commit `c783929`, `rbxts-transformer-surge` at
+Applies to: `@rbxts/surge` at commit `d3fd281`, `rbxts-transformer-surge` at
 commit `fbdc265` (no tagged release yet)
 
 ## 1. Scope
@@ -155,7 +155,9 @@ byte of the old one before `cursor.offset`, followed by the value; a buffer
 the caller read from `cursor.buffer` before the call is then not the one
 written to. `write` appends the value's blobs to `cursor.blobs`, after the
 values already in it, in the order 3.6 states. `writeChecks` governs `write`
-as it governs `serialize` (3.10 and 3.11).
+as it governs `serialize` (3.10 and 3.11). `write` does not check the
+cursor, which the caller builds: an `offset` past the buffer's length raises a
+Luau error, not one of the package's.
 
 **3.17** `read(cursor)` reads a value of `T` at `cursor.offset` of
 `cursor.buffer`, takes its blobs from `cursor.blobs` starting at
@@ -274,9 +276,12 @@ created at, unless `table.create` does not accept the answer, which raises.
 must not start while a `serialize` of the same serializer is running, and a
 `deserialize` must not start while a `deserialize` of the same serializer is
 running, whatever `T` is, and neither may a cursor codec's `write` or `read`
-while a call of the same function of that codec is running. A call that
-starts anyway resets the cursor that the running call uses, where the
-serializer holds it. The running `serialize` then
+while a call of the same function of that codec is running. No `write` or
+`read` may start into a cursor while another `write` or `read` into the same
+cursor is running, whatever codec makes it: each takes the cursor's offset
+when it starts and stores its own back when it ends, so the running call
+overwrites what the other wrote or read. A call that starts anyway resets the
+cursor that the running call uses, where the serializer holds it. The running `serialize` then
 returns wrong bytes without an error, and the running `deserialize` reads the
 rest of its value from the other call's input.
 
@@ -365,6 +370,8 @@ A test file named `*.spec.ts` is under `tests/src/tests/`. A path starting
 
 ## Changes
 
+- `d3fd281` / `fbdc265`: 5.6 forbids overlapping calls into one cursor, and
+  3.16 states that `write` does not check the cursor.
 - `c783929` / `fbdc265`: adds 3.15 to 3.18 (the cursor codec), names its exports in 3.13 and its
   state in 5.2 and 5.6, and lets `grow` take a buffer of no bytes (5.1).
 - `8375f07` / `46bffef`: 5.9 names an `array` of arrays among those a sized `serialize` iterates
