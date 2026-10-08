@@ -16,7 +16,7 @@ jobs:
             matrix:
                 os: [ubuntu-latest, windows-latest]
         runs-on: ${{ matrix.os }}
-        timeout-minutes: 30
+        timeout-minutes: 45
         defaults:
             run:
                 # Git Bash on Windows: the mise tasks assume a POSIX shell (see testing.md).
