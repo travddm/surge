@@ -1,0 +1,1945 @@
+import * as ts from "typescript";
+
+import { FIXED_DATATYPES } from "../src/datatypes";
+import { Emitter } from "../src/emit";
+import { TERMS_PER_SUM } from "../src/emit/constants";
+import type { EmitOptions } from "../src/emit/context";
+import { runLocals } from "../src/emit/layout";
+import type { Field } from "../src/field";
+import { printNodes } from "./harness";
+
+/** Runs `field` through `Emitter.writeField`/`readField` and prints the resulting statements, for snapshotting. */
+function emitSnapshot(
+	field: Field,
+	helperFields: ReadonlyMap<string, Field> = new Map(),
+	options: EmitOptions = {},
+): string {
+	const emitter = new Emitter(ts, ts.factory, helperFields, options);
+	const writeOut: ts.Statement[] = [];
+	emitter.writeField(field, ts.factory.createIdentifier("value"), writeOut);
+
+	const readOut: ts.Statement[] = [];
+	const resultExpr = emitter.readField(field, readOut);
+	readOut.push(ts.factory.createReturnStatement(resultExpr));
+
+	const helperDecls = emitter.getHelperDecls();
+	const sections = [
+		`// write\n${printNodes(writeOut)}`,
+		`// read\n${printNodes(readOut)}`,
+		...(helperDecls.length > 0 ? [`// helpers\n${printNodes(helperDecls)}`] : []),
+	];
+	return sections.join("\n\n");
+}
+
+describe("Emitter per-kind write/read snapshots", () => {
+	test("num", () => {
+		expect(emitSnapshot({ kind: "num", width: "f32" })).toMatchSnapshot();
+	});
+
+	test("bool", () => {
+		expect(emitSnapshot({ kind: "bool", packed: false })).toMatchSnapshot();
+	});
+
+	test("str", () => {
+		expect(emitSnapshot({ kind: "str" })).toMatchSnapshot();
+	});
+
+	test("vector2", () => {
+		expect(emitSnapshot({ kind: "vector2" })).toMatchSnapshot();
+	});
+
+	test.each(Object.keys(FIXED_DATATYPES))("datatype %s", (name) => {
+		expect(emitSnapshot({ kind: "datatype", name })).toMatchSnapshot();
+	});
+
+	test.each(["u24", "i24"] as const)("num %s", (width) => {
+		expect(emitSnapshot({ kind: "num", width })).toMatchSnapshot();
+	});
+
+	test("cframe inside Packed", () => {
+		expect(emitSnapshot({ kind: "cframe", packed: true })).toMatchSnapshot();
+	});
+
+	test("buffer", () => {
+		expect(emitSnapshot({ kind: "buffer" })).toMatchSnapshot();
+	});
+
+	test("vector3", () => {
+		expect(emitSnapshot({ kind: "vector3" })).toMatchSnapshot();
+	});
+
+	test("cframe", () => {
+		expect(emitSnapshot({ kind: "cframe" })).toMatchSnapshot();
+	});
+
+	test("a cframe reads its Position once for its three components", () => {
+		for (const field of [{ kind: "cframe" }, { kind: "cframe", quantized: true }] as Field[]) {
+			const write = emitSnapshot(field).split("// read\n")[0];
+			expect(write.match(/\.Position\b/g)).toHaveLength(1);
+		}
+	});
+
+	test("bitSet", () => {
+		expect(emitSnapshot({ kind: "bitSet", members: [false, -1, "a"] })).toMatchSnapshot();
+	});
+
+	test("color3", () => {
+		expect(emitSnapshot({ kind: "color3" })).toMatchSnapshot();
+	});
+
+	test("colorSequence", () => {
+		expect(emitSnapshot({ kind: "colorSequence" })).toMatchSnapshot();
+	});
+
+	test("numberSequence", () => {
+		expect(emitSnapshot({ kind: "numberSequence" })).toMatchSnapshot();
+	});
+
+	test("enum", () => {
+		expect(
+			emitSnapshot({ kind: "enum", enumName: "SortOrder", members: ["Custom", "LayoutOrder", "Name"] }),
+		).toMatchSnapshot();
+	});
+
+	test("object", () => {
+		expect(
+			emitSnapshot({
+				kind: "object",
+				fields: [
+					{ name: "a", field: { kind: "num", width: "f64" } },
+					{ name: "b", field: { kind: "str" } },
+				],
+			}),
+		).toMatchSnapshot();
+	});
+
+	test("array", () => {
+		expect(emitSnapshot({ kind: "array", element: { kind: "num", width: "f64" } })).toMatchSnapshot();
+	});
+
+	test("tuple with a rest element", () => {
+		expect(
+			emitSnapshot({
+				kind: "tuple",
+				fixed: [{ kind: "str" }],
+				rest: { kind: "num", width: "f64" },
+			}),
+		).toMatchSnapshot();
+	});
+
+	test("dict (map)", () => {
+		expect(
+			emitSnapshot({
+				kind: "dict",
+				key: { kind: "str" },
+				value: { kind: "num", width: "f64" },
+				source: "map",
+			}),
+		).toMatchSnapshot();
+	});
+
+	test("dict (set, no value)", () => {
+		expect(emitSnapshot({ kind: "dict", key: { kind: "str" }, value: undefined, source: "set" })).toMatchSnapshot();
+	});
+
+	test("optional", () => {
+		expect(
+			emitSnapshot({ kind: "optional", inner: { kind: "num", width: "f64" }, packed: false }),
+		).toMatchSnapshot();
+	});
+
+	test("literalConst", () => {
+		expect(emitSnapshot({ kind: "literalConst", value: "fixed" })).toMatchSnapshot();
+	});
+
+	test("literal", () => {
+		expect(emitSnapshot({ kind: "literal", values: ["a", "b", "c"] })).toMatchSnapshot();
+	});
+
+	test("taggedUnion", () => {
+		expect(
+			emitSnapshot({
+				kind: "taggedUnion",
+				tagKey: "kind",
+				variants: [
+					{ tagValue: "a", fields: [{ name: "x", field: { kind: "num", width: "f64" } }] },
+					{ tagValue: "b", fields: [{ name: "y", field: { kind: "str" } }] },
+				],
+			}),
+		).toMatchSnapshot();
+	});
+
+	test("guardedUnion", () => {
+		expect(
+			emitSnapshot({
+				kind: "guardedUnion",
+				variants: [{ kind: "num", width: "f64" }, { kind: "str" }],
+			}),
+		).toMatchSnapshot();
+	});
+
+	test("blob", () => {
+		expect(emitSnapshot({ kind: "blob" })).toMatchSnapshot();
+	});
+
+	test("recursiveRef", () => {
+		const helperFields = new Map<string, Field>([
+			[
+				"surge_Node_1",
+				{
+					kind: "object",
+					fields: [
+						{ name: "value", field: { kind: "num", width: "f64" } },
+						{ name: "next", field: { kind: "recursiveRef", helperName: "surge_Node_1" } },
+					],
+				},
+			],
+		]);
+		expect(emitSnapshot({ kind: "recursiveRef", helperName: "surge_Node_1" }, helperFields)).toMatchSnapshot();
+	});
+});
+
+// Regression tests for the read-order-side-effects finding in
+// docs/research/september-2026-review.md in the surge repo:
+// `readObjectInline` pushes each field's read *statements* in field order but
+// evaluates each field's returned *expression* later, inside the object
+// literal -- sound only if every returned expression is side-effect free. A
+// helper call and a blob read are not, so a sibling field whose own read
+// needs a statement (anything but those two, plus a handful of expression-
+// only kinds) must not have its statement land ahead of an earlier-declared
+// side-effecting field's binding.
+describe("Emitter read-order for side-effecting fields", () => {
+	test("a helper-object field followed by a plain field binds the helper call before the next statement", () => {
+		const helperFields = new Map<string, Field>([
+			[
+				"surge_Tree_1",
+				{
+					kind: "object",
+					fields: [{ name: "kids", field: { kind: "array", element: { kind: "num", width: "f64" } } }],
+				},
+			],
+		]);
+		const field: Field = {
+			kind: "object",
+			fields: [
+				{
+					name: "inner",
+					field: {
+						kind: "object",
+						fields: [{ name: "kids", field: { kind: "array", element: { kind: "num", width: "f64" } } }],
+						helperName: "surge_Tree_1",
+					},
+				},
+				{ name: "zebra", field: { kind: "num", width: "f64" } },
+			],
+		};
+		const output = emitSnapshot(field, helperFields);
+		const readSection = output.slice(output.indexOf("// read"));
+		const helperCallIndex = readSection.indexOf("surge_Tree_1_read()");
+		const zebraAllocIndex = readSection.indexOf("__surge_readCursor = pos");
+		expect(helperCallIndex).toBeGreaterThan(-1);
+		expect(zebraAllocIndex).toBeGreaterThan(-1);
+		expect(helperCallIndex).toBeLessThan(zebraAllocIndex);
+		expect(output).toMatchSnapshot();
+	});
+
+	test("a blob field followed by a plain field binds the blob read before the next statement", () => {
+		const field: Field = {
+			kind: "object",
+			fields: [
+				{ name: "a", field: { kind: "blob" } },
+				{ name: "b", field: { kind: "num", width: "f64" } },
+			],
+		};
+		const output = emitSnapshot(field);
+		const readSection = output.slice(output.indexOf("// read"));
+		const blobIndex = readSection.indexOf("__surge_readBlobIndex += 1;");
+		const bAllocIndex = readSection.indexOf("__surge_readCursor = pos");
+		expect(blobIndex).toBeGreaterThan(-1);
+		expect(bAllocIndex).toBeGreaterThan(-1);
+		expect(blobIndex).toBeLessThan(bAllocIndex);
+		expect(output).toMatchSnapshot();
+	});
+});
+
+// Regression test for the wire-format-determinism finding in
+// docs/research/september-2026-review.md in the surge repo: packed
+// booleans must write a whole computed byte (zeroing any unused high bits by
+// construction) instead of one `packBit` call per bit into scratch memory
+// that may still hold a previous payload's bits.
+describe("Emitter packed region", () => {
+	// The region is first on both sides: the read side needs a presence bit
+	// before it reaches the optional's value.
+	test("a packed optional is a presence bit at the head of its object, with no flag byte", () => {
+		const output = emitSnapshot({
+			kind: "object",
+			fields: [
+				{ name: "count", field: { kind: "optional", inner: { kind: "num", width: "u8" }, packed: true } },
+				{ name: "flag", field: { kind: "bool", packed: true } },
+				{ name: "label", field: { kind: "str" } },
+				{ name: "maybeFlag", field: { kind: "optional", inner: { kind: "bool", packed: true }, packed: true } },
+			],
+		});
+		// Bits in name order: count present, flag, maybeFlag present, maybeFlag value.
+		expect(output).toContain(
+			"(value.count !== undefined ? 1 : 0) + (value.flag ? 2 : 0) + (value.maybeFlag !== undefined ? 4 : 0) + (value.maybeFlag === true ? 8 : 0)",
+		);
+		const [write, read] = output.split("// read");
+		expect(write.indexOf("__surge_cursor = pos")).toBeLessThan(write.indexOf("value.label"));
+		expect(read.indexOf("__surge_readCursor = pos")).toBeLessThan(read.indexOf("readstring"));
+		// One byte for the region and one for `count`, then the string, whose
+		// size is known only at run time. No flag byte, and nothing of its own
+		// for `maybeFlag`.
+		expect(reservations(write, "write")).toEqual([1, 1]);
+		expect(reservations(read, "read")).toEqual([1, 1]);
+		expect(output).toMatchSnapshot();
+	});
+
+	const packedBools = (count: number): Field => ({
+		kind: "object",
+		fields: Array.from({ length: count }, (_, i) => ({
+			name: `b${String(i).padStart(3, "0")}`,
+			field: { kind: "bool", packed: true } as Field,
+		})),
+	});
+
+	test("the read side reads each byte of the region once and tests each bit in place", () => {
+		const read = emitSnapshot(packedBools(10)).split("// read")[1];
+		expect(read.match(/const bits\d+ = buffer\.readu8\(__surge_input, pos\d+( \+ 1)?\);/g)).toHaveLength(2);
+		// Bit 9 is the second byte's second bit.
+		expect(read).toMatch(/b009: bit32\.btest\(bits\d+, 2\)/);
+		expect(read).not.toContain("unpackBit");
+	});
+
+	test("a region of more than LOCALS_PER_BLOCK bytes reads the bytes past them in place", () => {
+		const read = emitSnapshot(packedBools(33 * 8)).split("// read")[1];
+		expect(read.match(/const bits\d+ = /g)).toHaveLength(32);
+		expect(read).toMatch(/b256: bit32\.btest\(buffer\.readu8\(__surge_input, pos\d+ \+ 32\), 1\)/);
+	});
+});
+
+describe("Emitter packed tag bit", () => {
+	const union = (variantCount: number): Field => ({
+		kind: "taggedUnion",
+		tagKey: "kind",
+		packed: true,
+		variants: ["a", "b", "c"].slice(0, variantCount).map((tagValue) => ({
+			tagValue,
+			fields: [{ name: "n", field: { kind: "num", width: "u8" } }],
+		})),
+	});
+
+	test("a packed two-variant tagged union property is one tag bit, with no index byte", () => {
+		const output = emitSnapshot({ kind: "object", fields: [{ name: "shape", field: union(2) }] });
+		expect(output).toContain('value.shape.kind === "b" ? 1 : 0');
+		expect(output).toMatch(/bit32\.btest\(bits\d+, 1\)/);
+		expect(output).not.toContain("readu8(buf3"); // no index byte is read before the variant
+		expect(output).toMatchSnapshot();
+	});
+
+	test("a packed tagged union with three variants keeps its index byte", () => {
+		const output = emitSnapshot({ kind: "object", fields: [{ name: "shape", field: union(3) }] });
+		expect(output).not.toContain("bit32.btest(");
+	});
+
+	test("a packed two-variant tagged union that is not an object property keeps its index byte", () => {
+		expect(emitSnapshot(union(2))).not.toContain("bit32.btest(");
+	});
+});
+
+describe("Emitter packed boolean padding", () => {
+	test("packed booleans write one computed byte per group instead of per-bit packBit calls", () => {
+		const field: Field = {
+			kind: "object",
+			fields: [
+				{ name: "a", field: { kind: "bool", packed: true } },
+				{ name: "b", field: { kind: "bool", packed: true } },
+				{ name: "c", field: { kind: "bool", packed: true } },
+			],
+		};
+		const output = emitSnapshot(field);
+		const writeSection = output.slice(0, output.indexOf("// read"));
+		expect(writeSection).not.toContain("packBit");
+		expect(writeSection).toContain("writeu8");
+		expect(output).toMatchSnapshot();
+	});
+});
+
+// Regression tests for the enum-encoding finding in
+// docs/research/september-2026-review.md in the surge repo: an enum index
+// wider than one byte, and an O(1) lookup table instead of a linear ternary
+// chain of string/index comparisons.
+describe("Emitter enum index width and lookup table", () => {
+	test("an enum with more than 256 members uses a 2-byte index", () => {
+		const members = Array.from({ length: 300 }, (_, i) => `M${i}`);
+		const output = emitSnapshot({ kind: "enum", enumName: "Big", members });
+		expect(output).toContain("writeu16");
+		expect(output).toContain("readu16");
+		expect(output).not.toContain("writeu8");
+	});
+
+	test("an enum index is an O(1) table lookup, not a chain of Name comparisons", () => {
+		const output = emitSnapshot({
+			kind: "enum",
+			enumName: "SortOrder",
+			members: ["Custom", "LayoutOrder", "Name"],
+		});
+		expect(output).not.toMatch(/\.Name ===/);
+		expect(output).toMatch(/_index\.get\(value\.Name\)/);
+		expect(output).toMatch(/_items\[idx\d+\]/);
+	});
+});
+
+describe("Emitter literal index width", () => {
+	test("a literal with more than 256 values uses a 2-byte index", () => {
+		const values = Array.from({ length: 257 }, (_, i) => i);
+		const output = emitSnapshot({ kind: "literal", values });
+		expect(output).toContain("buffer.writeu16(");
+		expect(output).toContain("buffer.readu16(");
+		expect(reservations(output, "write")).toEqual([2]);
+		expect(emitSnapshot({ kind: "literal", values: values.slice(0, 256) })).toContain("buffer.writeu8(");
+	});
+});
+
+describe("Emitter property names that are not identifiers", () => {
+	test("a non-identifier name uses element access and a quoted key; a numeric key stays a number", () => {
+		const output = emitSnapshot({
+			kind: "object",
+			fields: [
+				{ name: "0", numericKey: true, field: { kind: "num", width: "u8" } },
+				{ name: "1", field: { kind: "num", width: "u8" } },
+				{ name: "my-key", field: { kind: "num", width: "u8" } },
+				{ name: "plain", field: { kind: "num", width: "u8" } },
+			],
+		});
+		expect(output).toContain("value[0])");
+		expect(output).toContain('value["1"])');
+		expect(output).toContain('value["my-key"])');
+		expect(output).toContain("value.plain)");
+		expect(output).toMatch(/\b0: buffer\.readu8/);
+		expect(output).toMatch(/"1": buffer\.readu8/);
+		expect(output).toMatch(/"my-key": buffer\.readu8/);
+		expect(output).toMatch(/plain: buffer\.readu8/);
+	});
+
+	test("a non-identifier tag key and variant field name are quoted in a tagged union", () => {
+		const output = emitSnapshot({
+			kind: "taggedUnion",
+			tagKey: "the-kind",
+			variants: [
+				{ tagValue: "a", fields: [{ name: "a-value", field: { kind: "str" } }] },
+				{ tagValue: "b", fields: [] },
+			],
+		});
+		expect(output).toContain('const tag1 = value["the-kind"];');
+		expect(output).toContain('"the-kind": "a"');
+		expect(output).toContain('"a-value": string');
+		expect(output).not.toContain("value.the-kind");
+	});
+});
+
+describe("Emitter union writes", () => {
+	const u8: Field = { kind: "num", width: "u8" };
+
+	test("a tagged union reads its tag once and tests it once, each branch writing its own index", () => {
+		const write = emitSnapshot({
+			kind: "taggedUnion",
+			tagKey: "kind",
+			variants: ["a", "b", "c"].map((tagValue) => ({ tagValue, fields: [{ name: "n", field: u8 }] })),
+		}).split("// read")[0];
+		expect(write.match(/value\.kind/g)).toHaveLength(1);
+		expect(write).not.toContain("idx");
+		expect(write).toMatch(/^\/\/ write\nconst (tag\d+) = value\.kind;\nif \(\1 === "a"\) \{/);
+		expect(write).toMatch(/else if \(tag\d+ === "b"\)/);
+		// The last variant is written when no test passes, as the size takes it.
+		expect(write).toMatch(/\}\nelse \{\n[^]*?writeu8\(__surge_scratch, pos\d+, 2\)/);
+	});
+
+	test("a guarded union tests each guard once, each branch writing its own index", () => {
+		const write = emitSnapshot({
+			kind: "guardedUnion",
+			variants: [{ kind: "num", width: "f64" }, { kind: "str" }, { kind: "bool", packed: false }],
+		}).split("// read")[0];
+		expect(write.match(/typeIs\(value, "number"\)/g)).toHaveLength(1);
+		expect(write.match(/typeIs\(value, "string"\)/g)).toHaveLength(1);
+		expect(write).not.toContain('typeIs(value, "boolean")');
+		expect(write).not.toContain("idx");
+	});
+
+	test("a variant's index shares the reservation of the fixed-size fields that follow it", () => {
+		const write = emitSnapshot({
+			kind: "taggedUnion",
+			tagKey: "kind",
+			variants: [
+				// The index, a u16 and a u32: one reservation of 7.
+				{
+					tagValue: "damage",
+					fields: [
+						{ name: "amount", field: { kind: "num", width: "u16" } },
+						{ name: "id", field: { kind: "num", width: "u32" } },
+					],
+				},
+				// A string first: the index reserves on its own.
+				{ tagValue: "say", fields: [{ name: "text", field: { kind: "str" } }] },
+				// No fields: the index reserves on its own.
+				{ tagValue: "quit", fields: [] },
+			],
+		}).split("// read")[0];
+		expect(reservations(write, "write")).toEqual([7, 1, 1]);
+		const guarded = emitSnapshot({
+			kind: "guardedUnion",
+			variants: [{ kind: "num", width: "f64" }, { kind: "str" }],
+		}).split("// read")[0];
+		expect(reservations(guarded, "write")).toEqual([9, 1]);
+	});
+});
+
+describe("Emitter opaque union variant", () => {
+	test("a blob variant is the write's last branch, with no test, and goes to the blob channel", () => {
+		const output = emitSnapshot({ kind: "guardedUnion", variants: [{ kind: "str" }, { kind: "blob" }] });
+		const [write, read] = output.split("// read");
+		expect(write.match(/typeIs\(/g)).toHaveLength(1);
+		expect(write).toMatch(
+			/else \{[^]*?writeu8\(__surge_scratch, pos\d+, 1\);[^]*?__surge_writeBlobs\[__surge_writeBlobCount\] = /,
+		);
+		expect(read).toContain("__surge_readBlobs![__surge_readBlobIndex]");
+	});
+});
+
+describe("Emitter blob list", () => {
+	test("a blob is stored at the counted index unless it is nil, and an optional's presence is its test", () => {
+		const [bare] = emitSnapshot({ kind: "blob" }).split("// read");
+		expect(bare).toMatch(
+			/if \(value !== undefined\) \{\n\s+__surge_writeBlobs\[__surge_writeBlobCount\] = value as unknown as defined;\n\s+__surge_writeBlobCount \+= 1;\n\s*\}/,
+		);
+		const [optional] = emitSnapshot({ kind: "optional", inner: { kind: "blob" }, packed: false }).split("// read");
+		// The flag byte's test and the branch's, and none inside the branch.
+		expect(optional.match(/!== undefined/g)).toHaveLength(2);
+		expect(optional).toMatch(
+			/if \((opt\d+) !== undefined\) \{\n\s+__surge_writeBlobs\[__surge_writeBlobCount\] = \1 as unknown as defined;/,
+		);
+	});
+});
+
+describe("Emitter enum guards", () => {
+	const order: Field = { kind: "enum", enumName: "SortOrder", members: ["Custom", "Name"] };
+	const rig: Field = { kind: "enum", enumName: "HumanoidRigType", members: ["R15", "R6"] };
+
+	test("one enum in a union is guarded by its runtime type alone", () => {
+		const output = emitSnapshot({ kind: "guardedUnion", variants: [order, { kind: "str" }] });
+		expect(output).toContain('if (typeIs(value, "EnumItem")) {');
+		expect(output).not.toContain("EnumType");
+	});
+
+	test("two enums in a union are each guarded by the enum that declares their items", () => {
+		const write = emitSnapshot({ kind: "guardedUnion", variants: [rig, order, { kind: "str" }] }).split(
+			"// read",
+		)[0];
+		expect(write).toContain('if (typeIs(value, "EnumItem") && value.EnumType === Enum.HumanoidRigType) {');
+		expect(write).toContain('else if (typeIs(value, "EnumItem") && value.EnumType === Enum.SortOrder) {');
+	});
+
+	const r15: Field = { kind: "literalConst", value: { enumName: "HumanoidRigType", member: "R15" } };
+
+	test("one enum item writes nothing and reads back as that item", () => {
+		const [write, read] = emitSnapshot({ kind: "object", fields: [{ name: "rig", field: r15 }] }).split("// read");
+		expect(write).not.toContain("buffer.");
+		expect(read).toContain("rig: Enum.HumanoidRigType.R15");
+		expect(read).not.toContain("buffer.");
+	});
+
+	test("one enum item in a union is guarded by equality with that item", () => {
+		const write = emitSnapshot({ kind: "guardedUnion", variants: [r15, { kind: "str" }] }).split("// read")[0];
+		expect(write).toContain("if (value === Enum.HumanoidRigType.R15) {");
+	});
+});
+
+describe("Emitter union guards", () => {
+	test("Roblox datatype, enum, and recursive-object variants are guarded by their runtime type", () => {
+		const node: Field = { kind: "object", fields: [{ name: "x", field: { kind: "num", width: "u8" } }] };
+		const output = emitSnapshot(
+			{
+				kind: "guardedUnion",
+				variants: [
+					{ kind: "cframe" },
+					{ kind: "color3" },
+					{ kind: "colorSequence" },
+					{ kind: "enum", enumName: "SortOrder", members: ["Name"] },
+					{ kind: "numberSequence" },
+					{ kind: "recursiveRef", helperName: "surge_Node_1" },
+					{ kind: "vector2" },
+					{ kind: "vector3" },
+					{ kind: "str" },
+				],
+			},
+			new Map([["surge_Node_1", node]]),
+		);
+		for (const tag of [
+			"CFrame",
+			"Color3",
+			"ColorSequence",
+			"EnumItem",
+			"NumberSequence",
+			"table",
+			"Vector2",
+			"Vector3",
+		]) {
+			expect(output).toContain(`typeIs(value, "${tag}")`);
+		}
+	});
+});
+
+// One reservation per run of consecutive fixed-size fields, rather than one
+// per field (what it was measured as worth is in
+// docs/research/generated-code-against-hand-written.md in the surge repo).
+/**
+ * The constant sizes a body reserves, in order. A reservation is inline now
+ * -- `cursor = posN + <size>;` -- so this is what stands in for counting
+ * `alloc` calls. A variable-size reservation adds an identifier rather than a
+ * literal and is deliberately not matched.
+ */
+function reservations(source: string, side: "write" | "read"): Array<number> {
+	const cursor = side === "write" ? "__surge_cursor" : "__surge_readCursor";
+	const pattern = new RegExp(`${cursor} = pos[0-9]+ [+] ([0-9]+);`, "g");
+	return [...source.matchAll(pattern)].map((match) => Number(match[1]));
+}
+
+describe("Emitter shared reservations", () => {
+	test("consecutive fixed-size fields share one alloc, at their own offsets", () => {
+		const output = emitSnapshot({
+			kind: "object",
+			fields: [
+				{ name: "flag", field: { kind: "bool", packed: false } },
+				{ name: "id", field: { kind: "num", width: "u32" } },
+				{ name: "at", field: { kind: "vector3" } },
+			],
+		});
+		expect(output).toMatchSnapshot();
+		// 1 + 4 + 12, reserved once on each side and nowhere else.
+		expect(reservations(output, "write")).toEqual([17]);
+		expect(reservations(output, "read")).toEqual([17]);
+	});
+
+	test("a variable-size field ends the run, and the fields after it start another", () => {
+		const output = emitSnapshot({
+			kind: "object",
+			fields: [
+				{ name: "a", field: { kind: "num", width: "u8" } },
+				{ name: "b", field: { kind: "num", width: "u8" } },
+				{ name: "name", field: { kind: "str" } },
+				{ name: "y", field: { kind: "num", width: "f32" } },
+				{ name: "z", field: { kind: "num", width: "f32" } },
+			],
+		});
+		// Reservation order is byte order, so the two fields after the string
+		// cannot join the two before it. The string's count and bytes are one
+		// reservation whose size is known only at run time, which this does not count.
+		expect(reservations(output, "write")).toEqual([2, 8]);
+		expect(reservations(output, "read")).toEqual([2, 8]);
+	});
+
+	test("a field whose bytes the packed region holds does not join a run", () => {
+		const output = emitSnapshot({
+			kind: "object",
+			fields: [
+				{ name: "on", field: { kind: "bool", packed: true } },
+				{ name: "id", field: { kind: "num", width: "u32" } },
+				{ name: "n", field: { kind: "num", width: "u8" } },
+			],
+		});
+		// One byte for the packed region, then 4 + 1 shared by the two that
+		// write their own bytes.
+		expect(reservations(output, "write")).toEqual([1, 5]);
+		expect(reservations(output, "read")).toEqual([1, 5]);
+	});
+
+	const u8: Field = { kind: "num", width: "u8" };
+	const u8Fields = (count: number) => Array.from({ length: count }, (_, i) => ({ name: `f${i}`, field: u8 }));
+
+	test("a nested object of fixed-size properties joins the run around it", () => {
+		const output = emitSnapshot({
+			kind: "object",
+			fields: [
+				{ name: "id", field: { kind: "num", width: "u32" } },
+				{
+					name: "at",
+					field: {
+						kind: "object",
+						fields: [
+							{ name: "x", field: { kind: "num", width: "i16" } },
+							{ name: "inner", field: { kind: "object", fields: [{ name: "y", field: u8 }] } },
+						],
+					},
+				},
+				{ name: "tag", field: u8 },
+			],
+		});
+		expect(output).toMatchSnapshot();
+		// 4 + (2 + 1) + 1, reserved once on each side.
+		expect(reservations(output, "write")).toEqual([8]);
+		expect(reservations(output, "read")).toEqual([8]);
+		expect(output).toContain("value.at.inner.y");
+		expect(output).toMatch(/at: \{\s+x: buffer\.readi16\(__surge_input, pos\d+\),\s+inner: \{\s+y: /);
+	});
+
+	test("a nested object with a variable-size property or a packed region ends the run", () => {
+		const withString = emitSnapshot({
+			kind: "object",
+			fields: [
+				{ name: "a", field: u8 },
+				{ name: "inner", field: { kind: "object", fields: [{ name: "s", field: { kind: "str" } }] } },
+				{ name: "b", field: u8 },
+			],
+		});
+		// Between the two is the string's reservation, whose size is known only at run time.
+		expect(reservations(withString, "write")).toEqual([1, 1]);
+		expect(reservations(withString, "read")).toEqual([1, 1]);
+		const withPackedRegion = emitSnapshot({
+			kind: "object",
+			fields: [
+				{ name: "a", field: u8 },
+				{
+					name: "inner",
+					field: {
+						kind: "object",
+						fields: [
+							{ name: "on", field: { kind: "bool", packed: true } },
+							{ name: "n", field: u8 },
+						],
+					},
+				},
+				{ name: "b", field: u8 },
+			],
+		});
+		// The nested object's packed region, then its own field.
+		expect(reservations(withPackedRegion, "write")).toEqual([1, 1, 1, 1]);
+		expect(reservations(withPackedRegion, "read")).toEqual([1, 1, 1, 1]);
+	});
+
+	test("a nested object counts as the fields it holds toward the bound on a run", () => {
+		const nested = (count: number): Field => ({ kind: "object", fields: u8Fields(count) });
+		// 1 + 30 is the bound, so the two share one reservation.
+		const atBound = emitSnapshot({
+			kind: "object",
+			fields: [
+				{ name: "head", field: u8 },
+				{ name: "inner", field: nested(30) },
+			],
+		});
+		expect(reservations(atBound, "write")).toEqual([31]);
+		expect(reservations(atBound, "read")).toEqual([31]);
+		// 1 + 31 is past it, so the nested object reserves on its own.
+		const pastBound = emitSnapshot({
+			kind: "object",
+			fields: [
+				{ name: "head", field: u8 },
+				{ name: "inner", field: nested(31) },
+			],
+		});
+		expect(reservations(pastBound, "write")).toEqual([1, 31]);
+		expect(reservations(pastBound, "read")).toEqual([1, 31]);
+	});
+});
+
+describe("Emitter element reservations", () => {
+	/** The statements of the first loop body in `section`, which is `// write` or `// read`. */
+	function loopBody(output: string, section: "write" | "read"): string {
+		const text = output.split(`// ${section}\n`)[1].split("\n\n// ")[0];
+		return text.slice(text.indexOf("for ("));
+	}
+
+	test("an array of fixed-size elements reserves every element once, ahead of its loop", () => {
+		const output = emitSnapshot({ kind: "array", element: { kind: "num", width: "u16" } });
+		expect(output).toContain("__surge_cursor = pos4 + arr1.size() * 2;");
+		expect(output).toMatch(/__surge_readCursor = pos\d+ \+ count\d+ \* 2;/);
+		for (const section of ["write", "read"] as const) {
+			const body = loopBody(output, section);
+			expect(body).not.toContain("__surge_cursor");
+			expect(body).not.toContain("__surge_readCursor");
+			expect(body).toMatch(/element\d+ \+= 2;/);
+		}
+	});
+
+	test("an element of several fields reads and writes each at its offset from the element", () => {
+		const output = emitSnapshot({
+			kind: "array",
+			element: {
+				kind: "object",
+				fields: [
+					{ name: "a", field: { kind: "num", width: "u8" } },
+					{ name: "b", field: { kind: "num", width: "u16" } },
+				],
+			},
+		});
+		expect(output).toMatchSnapshot();
+		expect(output).toContain("arr1.size() * 3;");
+		// The read waits for the store, so the element moves on after it.
+		expect(loopBody(output, "read")).toMatch(/\] = \{[^]*\};\s+element\d+ \+= 3;\s+\}\s+return /);
+	});
+
+	test("a tuple's fixed-size elements share a reservation, and an array of such tuples reserves them all once", () => {
+		const u8: Field = { kind: "num", width: "u8" };
+		const mixed = emitSnapshot({
+			kind: "tuple",
+			fixed: [u8, { kind: "num", width: "u16" }, { kind: "str" }, u8, u8],
+			rest: undefined,
+		});
+		expect(reservations(mixed, "write")).toEqual([3, 2]);
+		expect(reservations(mixed, "read")).toEqual([3, 2]);
+		const array = emitSnapshot({
+			kind: "array",
+			element: {
+				kind: "tuple",
+				fixed: [
+					{ kind: "num", width: "u16" },
+					{ kind: "num", width: "f32" },
+				],
+				rest: undefined,
+			},
+		});
+		expect(array).toContain("arr1.size() * 6;");
+		for (const section of ["write", "read"] as const) {
+			const body = loopBody(array, section);
+			expect(body).not.toContain("__surge_cursor");
+			expect(body).not.toContain("__surge_readCursor");
+			expect(body).toMatch(/element\d+ \+= 6;/);
+		}
+		// Each element is read into one table constructor.
+		expect(loopBody(array, "read")).toMatch(/\] = \[buffer\.readu16\([^]*?, buffer\.readf32\(/);
+	});
+
+	test("the exact form reserves a constant, and a variable-size element still reserves in the loop", () => {
+		const exact = emitSnapshot({ kind: "array", element: { kind: "num", width: "u8" }, length: 3 });
+		expect(reservations(exact, "write")).toEqual([3]);
+		expect(reservations(exact, "read")).toEqual([3]);
+		const strings = emitSnapshot({ kind: "array", element: { kind: "str" } });
+		expect(loopBody(strings, "write")).toContain("__surge_cursor");
+		expect(loopBody(strings, "read")).toContain("__surge_readCursor");
+	});
+
+	test("an element with more fields than a run holds reserves on its own", () => {
+		const nested = (count: number): Field => ({
+			kind: "object",
+			fields: Array.from({ length: count }, (_, i) => ({ name: `f${i}`, field: { kind: "num", width: "u8" } })),
+		});
+		// Two elements of 31 fields each: one reservation for both.
+		const atBound = emitSnapshot({ kind: "array", element: nested(31), length: 2 });
+		expect(reservations(atBound, "write")).toEqual([62]);
+		expect(reservations(atBound, "read")).toEqual([62]);
+		// 32 fields: the element's own runs, of 31 and then 1, inside the loop.
+		const pastBound = emitSnapshot({ kind: "array", element: nested(32), length: 2 });
+		expect(reservations(pastBound, "write")).toEqual([31, 1]);
+		expect(reservations(pastBound, "read")).toEqual([31, 1]);
+	});
+
+	test("with readChecks, one bound covers every element", () => {
+		const output = emitSnapshot({ kind: "array", element: { kind: "num", width: "u16" } }, new Map(), {
+			readChecks: true,
+		});
+		expect(loopBody(output, "read")).not.toContain("__surge_inputLength");
+		// The count's own reservation, the count bound, and the elements' reservation.
+		expect(output.match(/__surge_inputLength/g)).toHaveLength(3);
+	});
+});
+
+describe("Emitter counted bytes", () => {
+	/** The lines of `output`'s `// write` or `// read` section that assign `cursor`. */
+	function cursorMoves(output: string, section: "write" | "read", cursor: string): string[] {
+		const text = output.split(`// ${section}\n`)[1].split("\n\n// ")[0];
+		return text.split("\n").filter((line) => line.trim().startsWith(`${cursor} = `));
+	}
+
+	test.each([
+		["str", { kind: "str" } as Field],
+		["buffer", { kind: "buffer" } as Field],
+	])("a %s reserves its count and its bytes at once", (_label, field) => {
+		const output = emitSnapshot(field);
+		expect(cursorMoves(output, "write", "__surge_cursor")).toEqual([
+			expect.stringMatching(/^__surge_cursor = pos\d+ \+ \(len\d+ \+ 4\);$/),
+		]);
+		expect(cursorMoves(output, "read", "__surge_readCursor")).toEqual([
+			expect.stringMatching(/^__surge_readCursor = pos\d+ \+ 4 \+ len\d+;$/),
+		]);
+	});
+
+	test("a string's length is taken once", () => {
+		const output = emitSnapshot({ kind: "str" }, new Map(), { writeChecks: true });
+		expect(output.match(/\.size\(\)/g)).toHaveLength(1);
+	});
+
+	test("with readChecks, the count is bounded before it is read and the bytes after", () => {
+		const output = emitSnapshot({ kind: "str" }, new Map(), { readChecks: true });
+		const read = output.split("// read\n")[1];
+		const countBound = read.search(/pos\d+ \+ 4 > __surge_inputLength/);
+		const countRead = read.indexOf("buffer.readu32");
+		const bytesBound = read.search(/__surge_readCursor > __surge_inputLength/);
+		expect(countBound).toBeGreaterThan(-1);
+		expect(countBound).toBeLessThan(countRead);
+		expect(bytesBound).toBeGreaterThan(countRead);
+	});
+});
+
+describe("Emitter read tables", () => {
+	const u8: Field = { kind: "num", width: "u8" };
+
+	function readSection(output: string): string {
+		return output.split("// read\n")[1].split("\n\n// ")[0];
+	}
+
+	test("an array's table is created at its count, and each element is stored at its index", () => {
+		const read = readSection(emitSnapshot({ kind: "array", element: { kind: "str" } }));
+		expect(read).toMatch(/const result\d+ = new Array<string>\(count\d+\);/);
+		// roblox-ts adds 1 to the index and folds it into the `- 1`.
+		expect(read).toMatch(/for \(const (i\d+) of \$range\(1, count\d+\)\) \{[^]*result\d+\[\1 - 1\] = /);
+		expect(read).not.toContain("push(");
+	});
+
+	test("the exact form creates its table at the literal count", () => {
+		const read = readSection(emitSnapshot({ kind: "array", element: u8, length: 3 }));
+		expect(read).toMatch(/const result\d+ = new Array<number>\(3\);/);
+	});
+
+	test.each([
+		[0, "i\\d+ - 1"],
+		[1, "i\\d+"],
+		[3, "i\\d+ \\+ 2"],
+	])("a tuple's rest after %i fixed elements is stored past them", (fixedCount, index) => {
+		const fixed = Array.from({ length: fixedCount }, () => u8);
+		const read = readSection(emitSnapshot({ kind: "tuple", fixed, rest: u8 }));
+		expect(read).toMatch(new RegExp(`tup\\d+\\[${index}\\] = `));
+	});
+
+	test("a tuple's fixed elements are stored at their indexes, an absent one included", () => {
+		const optional: Field = { kind: "optional", inner: { kind: "str" }, packed: false };
+		const read = readSection(emitSnapshot({ kind: "tuple", fixed: [u8, optional, u8], rest: undefined }));
+		expect(read).toMatch(/const tup\d+ = new Array<unknown>\(3\);/);
+		for (const k of [0, 1, 2]) {
+			expect(read).toMatch(new RegExp(`tup\\d+\\[${k}\\] = `));
+		}
+	});
+});
+
+describe("Emitter read state", () => {
+	const u8: Field = { kind: "num", width: "u8" };
+
+	function deserializeBody(field: Field, helperFields: ReadonlyMap<string, Field>, options: EmitOptions = {}) {
+		const emitter = new Emitter(ts, ts.factory, helperFields, options);
+		const body: ts.Statement[] = [];
+		emitter.beginFunction();
+		emitter.readLocally();
+		const result = emitter.readField(field, body);
+		return {
+			closure: printNodes(emitter.readStateDecls()),
+			body: printNodes([
+				...emitter.beginReadStatements(ts.factory.createIdentifier("input")),
+				...body,
+				ts.factory.createReturnStatement(result),
+			]),
+		};
+	}
+
+	test("a deserialize that reaches no recursion helper holds the input and the cursor in locals", () => {
+		const { closure, body } = deserializeBody({ kind: "object", fields: [{ name: "n", field: u8 }] }, new Map());
+		expect(closure).toBe("");
+		expect(body).toMatch(/^const __surge_input = input;\nlet __surge_readCursor = 0;\n/);
+		const checked = deserializeBody(u8, new Map(), { readChecks: true });
+		expect(checked.closure).toBe("");
+		expect(checked.body).toMatch(
+			/^const __surge_input = input;\nlet __surge_readCursor = 0;\nconst __surge_inputLength = buffer\.len\(__surge_input\);\n/,
+		);
+	});
+
+	test("one that reaches a recursion helper keeps them in the closure, where the helper reads them", () => {
+		const helperFields = new Map<string, Field>([
+			[
+				"surge_Node_1",
+				{
+					kind: "object",
+					fields: [
+						{
+							name: "next",
+							field: {
+								kind: "optional",
+								inner: { kind: "recursiveRef", helperName: "surge_Node_1" },
+								packed: false,
+							},
+						},
+						{ name: "value", field: u8 },
+					],
+				},
+			],
+		]);
+		const { closure, body } = deserializeBody({ kind: "recursiveRef", helperName: "surge_Node_1" }, helperFields);
+		expect(closure).toContain("let __surge_input = buffer.create(0);");
+		expect(closure).toContain("let __surge_readCursor = 0;");
+		expect(body).toMatch(/^__surge_input = input;\n__surge_readCursor = 0;\n/);
+	});
+});
+
+describe("Emitter nested object values", () => {
+	const u8: Field = { kind: "num", width: "u8" };
+	const str: Field = { kind: "str" };
+
+	function writeSection(field: Field): string {
+		return emitSnapshot(field).split("// read\n")[0];
+	}
+
+	test("a nested object of more than one property reads its value once", () => {
+		const write = writeSection({
+			kind: "object",
+			fields: [
+				{
+					name: "inner",
+					field: {
+						kind: "object",
+						fields: [
+							{ name: "a", field: str },
+							{ name: "b", field: u8 },
+						],
+					},
+				},
+			],
+		});
+		expect(write).toMatch(/const (obj\d+) = value\.inner;[^]*\1\.a;[^]*\1\.b\)/);
+		expect(write).not.toContain("value.inner.");
+	});
+
+	test("a local, a cast local, one property, or a run binds nothing", () => {
+		const pairFields = [
+			{ name: "a", field: str },
+			{ name: "b", field: u8 },
+		];
+		// The root value is a local already.
+		expect(writeSection({ kind: "object", fields: pairFields })).not.toMatch(/const obj\d+/);
+		// A union's variant is the union's value under a cast, which compiles
+		// to nothing.
+		const union = writeSection({
+			kind: "taggedUnion",
+			tagKey: "kind",
+			variants: [
+				{ tagValue: "a", fields: pairFields },
+				{ tagValue: "b", fields: [{ name: "y", field: u8 }] },
+			],
+		});
+		expect(union).toMatch(/as unknown as/);
+		expect(union).not.toMatch(/const obj\d+/);
+		// One property reads the path once anyway.
+		expect(
+			writeSection({
+				kind: "object",
+				fields: [{ name: "inner", field: { kind: "object", fields: [{ name: "a", field: str }] } }],
+			}),
+		).not.toMatch(/const obj\d+/);
+		// A nested object of fixed-size properties joins the run around it.
+		const inRun = writeSection({
+			kind: "object",
+			fields: [
+				{ name: "head", field: u8 },
+				{
+					name: "inner",
+					field: {
+						kind: "object",
+						fields: [
+							{ name: "a", field: u8 },
+							{ name: "b", field: u8 },
+						],
+					},
+				},
+			],
+		});
+		expect(inRun).not.toMatch(/const obj\d+/);
+		expect(inRun).toContain("value.inner.a");
+	});
+});
+
+describe("Emitter datatype values", () => {
+	function writeSection(field: Field): string {
+		return emitSnapshot(field).split("// read\n")[0];
+	}
+
+	const property = (field: Field): Field => ({
+		kind: "object",
+		fields: [
+			{ name: "id", field: { kind: "num", width: "u32" } },
+			{ name: "at", field },
+		],
+	});
+
+	test.each([
+		["vector2", { kind: "vector2" } as Field, "vec", ["X", "Y"]],
+		["vector3", { kind: "vector3" } as Field, "vec", ["X", "Y", "Z"]],
+		["color3", { kind: "color3" } as Field, "color", ["R", "G", "B"]],
+		["UDim2", { kind: "datatype", name: "UDim2" } as Field, "dt", ["X.Scale", "Y.Offset"]],
+	])("a %s read through a property path is read into a local once, inside a run", (_label, field, base, reads) => {
+		const write = writeSection(property(field));
+		const local = new RegExp(`const (${base}\\d+) = value\\.at;`).exec(write)?.[1];
+		expect(local).toBeDefined();
+		for (const read of reads) {
+			expect(write).toContain(`${local}.${read}`);
+		}
+		expect(write.match(/value\.at\b/g)).toHaveLength(1);
+		// `id` and `at` share one reservation.
+		expect(write.match(/__surge_cursor = pos\d+ \+ \d+;/g)).toHaveLength(1);
+	});
+
+	test("a local value and a one-component datatype bind nothing", () => {
+		expect(writeSection({ kind: "vector3" })).not.toMatch(/const vec\d+/);
+		expect(writeSection(property({ kind: "datatype", name: "BrickColor" }))).not.toMatch(/const dt\d+/);
+	});
+});
+
+describe("Emitter exact arrays", () => {
+	test("an element read by index is cast to the element's type", () => {
+		const point: Field = {
+			kind: "object",
+			fields: [{ name: "x", field: { kind: "num", width: "f64" } }],
+		};
+		const write = emitSnapshot({ kind: "array", element: point, length: 3 }).split("// read\n")[0];
+		expect(write).toMatch(/arr1\[i\d+\] as unknown as \{\s+x: number;\s+\}/);
+	});
+});
+
+describe("Emitter exact sizing", () => {
+	/** The body of `serialize` for `field`, as the transform assembles it: opening, writes, and the value returned. */
+	function serializeBody(field: Field, options: EmitOptions = {}): string {
+		const emitter = new Emitter(ts, ts.factory, new Map(), options);
+		const value = ts.factory.createIdentifier("value");
+		const body: ts.Statement[] = [];
+		emitter.beginFunction();
+		emitter.sizeExactly(field, value);
+		emitter.writeField(field, value, body);
+		return printNodes([
+			...emitter.beginWriteStatements(),
+			...body,
+			ts.factory.createReturnStatement(emitter.finishWriteExpression()),
+			...emitter.writeStateDecls(),
+		]);
+	}
+
+	const u8: Field = { kind: "num", width: "u8" };
+
+	test("a shape of fixed size is created at that size, with no capacity check and no copy", () => {
+		const output = serializeBody({
+			kind: "object",
+			fields: [
+				{ name: "id", field: { kind: "num", width: "u32" } },
+				{ name: "at", field: { kind: "vector3" } },
+			],
+		});
+		expect(output).toMatchSnapshot();
+		expect(output).toContain("const __surge_scratch = buffer.create(16);");
+		expect(output).toContain("let __surge_cursor = 0;");
+		expect(output).not.toContain("__surge_capacity");
+		expect(output).not.toContain("__surge_grow");
+		expect(output).toMatch(/return __surge_scratch;$/m);
+	});
+
+	test("a size is its lengths and counts, read from the value, and one constant", () => {
+		const output = serializeBody({
+			kind: "object",
+			fields: [
+				{ name: "list", field: { kind: "array", element: { kind: "num", width: "u16" } } },
+				{ name: "name", field: { kind: "str" } },
+				{ name: "nick", field: { kind: "optional", inner: { kind: "str" }, packed: false } },
+				{ name: "pair", field: { kind: "tuple", fixed: [u8], rest: u8, length: "u8" } },
+				{ name: "tag", field: u8 },
+			],
+		});
+		expect(output).toMatchSnapshot();
+		// 4 (list count) + 4 (name count) + 1 (nick flag) + 1 + 1 (pair) + 1 (tag).
+		// The optional's string is read in a branch, so it is read by its path.
+		expect(output).toMatch(
+			/buffer\.create\(arr\d+\.size\(\) \* 2 \+ len\d+ \+ \(value\.nick !== undefined \? value\.nick!\.size\(\) \+ 4 : 0\) \+ \(tup\d+\.size\(\) - 1\) \+ 12\)/,
+		);
+	});
+
+	test("the size binds the locals the write reads, and the write binds none of them again", () => {
+		const str: Field = { kind: "str" };
+		const object = (...fields: [string, Field][]): Field => ({
+			kind: "object",
+			fields: fields.map(([name, field]) => ({ name, field })),
+		});
+		const leaf = object(["name", str], ["weight", { kind: "num", width: "f32" }]);
+		const third = object(["flag", { kind: "bool", packed: false }], ["leaf", leaf]);
+		const second = object(["count", { kind: "num", width: "u16" }], ["inner", third]);
+		const output = serializeBody(object(["root", object(["inner", second], ["label", str])], ["version", u8]));
+		expect(output).toMatch(
+			/^const (obj\d+) = value\.root;\nconst (obj\d+) = \1\.inner;\nconst (obj\d+) = \2\.inner;\nconst (obj\d+) = \3\.leaf;\nconst (s\d+) = \4\.name;\nconst (len\d+) = \5\.size\(\);\nconst (s\d+) = \1\.label;\nconst (len\d+) = \7\.size\(\);\nconst __surge_scratch = buffer\.create\(\6 \+ \8 \+ 16\);/,
+		);
+		expect(output.match(/\bconst obj\d+ =/g)).toHaveLength(4);
+		expect(output.match(/\.size\(\)/g)).toHaveLength(2);
+	});
+
+	test("a size binds no more than LOCALS_PER_BLOCK locals, and reads the value's path for the rest", () => {
+		const output = serializeBody({
+			kind: "object",
+			fields: Array.from({ length: 20 }, (_, i) => ({ name: `s${i}`, field: { kind: "str" } as Field })),
+		});
+		const create = /buffer\.create\((.*)\);/.exec(output)![1];
+		// Two locals a string: sixteen are bound, and the last four are read.
+		expect(create.match(/len\d+/g)).toHaveLength(16);
+		expect(create).toContain("value.s16.size() + value.s17.size() + value.s18.size() + value.s19.size()");
+		expect(output.match(/\bconst len\d+ =/g)).toHaveLength(20);
+	});
+
+	test("a size of many terms sums chains of TERMS_PER_SUM terms in pairs", () => {
+		/** How deeply `+` nests in `node`, which is what Luau holds a register for at each level. */
+		const plusDepth = (node: ts.Node): number => {
+			if (ts.isParenthesizedExpression(node)) {
+				return plusDepth(node.expression);
+			}
+			if (ts.isBinaryExpression(node) && node.operatorToken.kind === ts.SyntaxKind.PlusToken) {
+				return 1 + Math.max(plusDepth(node.left), plusDepth(node.right));
+			}
+			return 0;
+		};
+		const depthOf = (strings: number): number => {
+			const output = serializeBody({
+				kind: "object",
+				fields: Array.from({ length: strings }, (_, i) => ({ name: `s${i}`, field: { kind: "str" } as Field })),
+			});
+			const size = /buffer\.create\((.*)\);/.exec(output)![1];
+			const source = ts.createSourceFile("size.ts", `(${size});`, ts.ScriptTarget.Latest);
+			return plusDepth((source.statements[0] as ts.ExpressionStatement).expression);
+		};
+		// Twenty strings and the constant are one chain of 21 terms.
+		expect(depthOf(20)).toBe(20);
+		// 300 strings and the constant are ten chains, added in four rounds of pairs.
+		expect(depthOf(300)).toBe(TERMS_PER_SUM - 1 + 4);
+	});
+
+	test("a packed region counts as its bytes, and a packed optional adds no flag byte", () => {
+		const output = serializeBody({
+			kind: "object",
+			fields: [
+				{ name: "a", field: { kind: "bool", packed: true } },
+				{ name: "n", field: { kind: "optional", inner: { kind: "num", width: "i16" }, packed: true } },
+			],
+		});
+		expect(output).toContain("buffer.create((value.n !== undefined ? 2 : 0) + 1)");
+	});
+
+	const either: Field = { kind: "guardedUnion", variants: [{ kind: "num", width: "f64" }, { kind: "str" }] };
+
+	test("an array of unions is sized by a loop over them, ahead of the result", () => {
+		const output = serializeBody({ kind: "array", element: either });
+		expect(output).toMatch(
+			/^const (arr\d+) = value;\nlet (size\d+) = \1\.size\(\) \+ 4;\nfor \(const (item\d+) of \1\) \{\n\s+\2 \+= \(typeIs\(\3, "number"\) \? 8 : /,
+		);
+		expect(output).toMatch(/\nconst __surge_scratch = buffer\.create\(size\d+\);/);
+		expect(output).not.toContain("__surge_capacity");
+	});
+
+	test("an array of objects that hold a string is sized by a loop over them, ahead of the result", () => {
+		const output = serializeBody({
+			kind: "array",
+			element: {
+				kind: "object",
+				fields: [
+					{ name: "name", field: { kind: "str" } },
+					{ name: "score", field: { kind: "num", width: "u32" } },
+				],
+			},
+		});
+		expect(output).toMatch(
+			/^const (arr\d+) = value;\nlet (size\d+) = \1\.size\(\) \* 8 \+ 4;\nfor \(const (item\d+) of \1\) \{\n\s+\2 \+= \3\.name\.size\(\);\n\}\nconst __surge_scratch = buffer\.create\(\2\);/,
+		);
+		expect(output).not.toContain("__surge_capacity");
+	});
+
+	test("an array of arrays is sized by a loop over its rows, with each row's count added ahead of it", () => {
+		const output = serializeBody({
+			kind: "array",
+			element: { kind: "array", element: { kind: "num", width: "u16" } },
+		});
+		expect(output).toMatch(
+			/^const (arr\d+) = value;\nlet (size\d+) = \1\.size\(\) \* 4 \+ 4;\nfor \(const (item\d+) of \1\) \{\n\s+\2 \+= \3\.size\(\) \* 2;\n\}\nconst __surge_scratch = buffer\.create\(\2\);/,
+		);
+		expect(output).not.toContain("__surge_capacity");
+	});
+
+	test("an element that holds a blob is sized by its count, in an array, an exact array and a tuple's rest", () => {
+		const holder: Field = {
+			kind: "object",
+			fields: [
+				{ name: "model", field: { kind: "blob" } },
+				{ name: "health", field: { kind: "num", width: "u16" } },
+			],
+		};
+		expect(serializeBody({ kind: "array", element: holder })).toMatch(
+			/^const (arr\d+) = value;\nconst __surge_scratch = buffer\.create\(\1\.size\(\) \* 2 \+ 4\);/,
+		);
+		expect(serializeBody({ kind: "array", element: holder, length: 3 })).toMatch(
+			/^const __surge_scratch = buffer\.create\(6\);/,
+		);
+		expect(serializeBody({ kind: "tuple", fixed: [u8], rest: { kind: "blob" }, length: "u8" })).toMatch(
+			/^const (tup\d+) = value;\nconst __surge_scratch = buffer\.create\(2\);/,
+		);
+	});
+
+	test("a loop inside a loop, and inside an optional, adds to the one size", () => {
+		const nested = serializeBody({
+			kind: "optional",
+			inner: {
+				kind: "array",
+				element: {
+					kind: "taggedUnion",
+					tagKey: "kind",
+					variants: [
+						{ tagValue: "a", fields: [] },
+						{ tagValue: "b", fields: [{ name: "list", field: { kind: "array", element: either } }] },
+					],
+				},
+			},
+			packed: false,
+		});
+		expect(nested.match(/let size\d+/g)).toHaveLength(1);
+		expect(nested).toMatch(
+			/if \(value !== undefined\) \{\s+for \(const (item\d+) of value!\) \{\s+if \(\1\.kind === "a"\)/,
+		);
+	});
+
+	test("a union is sized by the variant its write picks, with the write's own tests", () => {
+		const tagged = serializeBody({
+			kind: "taggedUnion",
+			tagKey: "kind",
+			variants: [
+				{ tagValue: "a", fields: [] },
+				{ tagValue: "b", fields: [{ name: "s", field: { kind: "str" } }] },
+			],
+		});
+		expect(tagged).toMatch(/^const __surge_scratch = buffer\.create\(\(value\.kind === "a" \? 0 : /);
+		const guarded = serializeBody({
+			kind: "guardedUnion",
+			variants: [{ kind: "num", width: "f64" }, { kind: "str" }],
+		});
+		expect(guarded).toMatch(/^const __surge_scratch = buffer\.create\(\(typeIs\(value, "number"\) \? 8 : /);
+	});
+
+	/** A tagged union of `a`, which holds `inner`, then `b`, which holds a string, then `c`, which holds nothing. */
+	const threeTags = (inner: Field = u8): Field => ({
+		kind: "taggedUnion",
+		tagKey: "kind",
+		variants: [
+			{ tagValue: "a", fields: [{ name: "x", field: inner }] },
+			{ tagValue: "b", fields: [{ name: "s", field: { kind: "str" } }] },
+			{ tagValue: "c", fields: [] },
+		],
+	});
+
+	test("a size that compares a tag more than once reads it into a local once, in a loop and out of one", () => {
+		const array = serializeBody({ kind: "array", element: threeTags() });
+		expect(array).toMatch(
+			/for \(const (item\d+) of arr\d+\) \{\n\s+const (tag\d+) = \1\.kind;\n\s+size\d+ \+= \(\2 === "a" \? 1 : \2 === "b" \? [^]*?\.s\.size\(\) \+ 4 : 0\);\n\}/,
+		);
+		// The write reads the tag again inside its own loop.
+		expect(array.match(/\.kind;/g)).toHaveLength(2);
+		const alone = serializeBody(threeTags());
+		expect(alone).toMatch(
+			/^const (tag\d+) = value\.kind;\n[^]*?buffer\.create\(\(\1 === "a" \? 1 : \1 === "b" \? /,
+		);
+		// Outside a loop, the write reads the local the size bound.
+		expect(alone.match(/\.kind\b/g)).toHaveLength(1);
+		expect(alone).toMatch(/^if \(tag\d+ === "a"\) \{$/m);
+	});
+
+	test("a tag read inside a variant's branch is declared in that branch", () => {
+		const output = serializeBody(threeTags(threeTags()));
+		expect(output).toMatch(
+			/^const (tag\d+) = value\.kind;\nlet (size\d+) = 1;\nif \(\1 === "a"\) \{\n\s+const (tag\d+) = [^]*?\.x\.kind;\n\s+\2 \+= \(\3 === "a" \? 1 : /,
+		);
+	});
+
+	test("a union whose variants are one size tests nothing, and one with a loop in a variant is an if chain", () => {
+		const sameSize = serializeBody({
+			kind: "taggedUnion",
+			tagKey: "kind",
+			variants: [
+				{ tagValue: "a", fields: [{ name: "x", field: u8 }] },
+				{ tagValue: "b", fields: [{ name: "y", field: u8 }] },
+			],
+		});
+		expect(sameSize).toMatch(/^const __surge_scratch = buffer\.create\(2\);/);
+		const withLoop = serializeBody({
+			kind: "taggedUnion",
+			tagKey: "kind",
+			variants: [
+				{ tagValue: "a", fields: [{ name: "x", field: u8 }] },
+				{ tagValue: "b", fields: [{ name: "list", field: { kind: "array", element: either } }] },
+			],
+		});
+		expect(withLoop).toMatch(
+			/^let (size\d+) = 1;\nif \(value\.kind === "a"\) \{\n\s+\1 \+= 1;\n\}\nelse \{\n\s+for /,
+		);
+	});
+
+	test.each([
+		// A loop measured slower than the scratch buffer on an array of strings
+		// and on a dict (docs/research/exact-sizing-with-loops.md in the surge
+		// repo).
+		["an array of strings", { kind: "array", element: { kind: "str" } } as Field],
+		[
+			"an array of arrays of strings",
+			{ kind: "array", element: { kind: "array", element: { kind: "str" } } } as Field,
+		],
+		["a dict", { kind: "dict", key: { kind: "str" }, value: u8, source: "map" } as Field],
+		["an exact array of unions", { kind: "array", element: either, length: 3 } as Field],
+		[
+			"a tagged union whose tag is a packed bit",
+			{
+				kind: "object",
+				fields: [
+					{
+						name: "event",
+						field: {
+							kind: "taggedUnion",
+							tagKey: "kind",
+							packed: true,
+							variants: [
+								{ tagValue: "a", fields: [] },
+								{ tagValue: "b", fields: [{ name: "n", field: u8 }] },
+							],
+						},
+					},
+				],
+			} as Field,
+		],
+		["a packed CFrame", { kind: "cframe", packed: true } as Field],
+	])("%s keeps the scratch buffer", (_label, field) => {
+		const output = serializeBody(field);
+		expect(output).not.toContain("const __surge_scratch");
+		expect(output).toContain("let __surge_scratch = buffer.create(64);");
+		expect(output).toContain("__surge_capacity");
+		expect(output).toContain("__surge_finishWrite(");
+	});
+});
+
+// Luau allows 200 registers per function; 100 `const [buf, pos]` pairs in one
+// scope exceed it (see Transformer 5.8 in docs/specs/transformer.md in the surge repo).
+describe("Emitter local-register ceiling", () => {
+	const manyFields = (count: number): Field => ({
+		kind: "object",
+		fields: Array.from({ length: count }, (_, i) => ({
+			name: `f${i}`,
+			field: { kind: "num", width: "f64" } as Field,
+		})),
+	});
+
+	/** The largest number of `const` declarations that are live at once in one block scope of `printed`. */
+	function maxLocalsInOneScope(printed: string): number {
+		let max = 0;
+		const stack = [0];
+		for (const line of printed.split("\n")) {
+			const trimmed = line.trim();
+			if (trimmed === "{") {
+				stack.push(0);
+			} else if (trimmed === "}") {
+				stack.pop();
+			} else if (trimmed.startsWith("const [")) {
+				stack[stack.length - 1] += 2;
+			} else if (trimmed.startsWith("const ")) {
+				stack[stack.length - 1] += 1;
+			}
+			max = Math.max(
+				max,
+				stack.reduce((a, b) => a + b, 0),
+			);
+		}
+		return max;
+	}
+
+	test("a small object is emitted flat, with no blocks and an object literal on the read side", () => {
+		const output = emitSnapshot(manyFields(20));
+		expect(output).not.toMatch(/^\{$/m);
+		expect(output).not.toContain("result");
+	});
+
+	test("a 150-field object is split into blocks that keep each scope far below the limit", () => {
+		const output = emitSnapshot(manyFields(150));
+		expect(output).toMatch(/^\{$/m);
+		expect(maxLocalsInOneScope(output)).toBeLessThanOrEqual(40);
+		// Every field is still written and read exactly once.
+		expect(output.match(/buffer\.writef64/g)).toHaveLength(150);
+		expect(output.match(/buffer\.readf64/g)).toHaveLength(150);
+		expect(output).toMatch(/result\d+\.f149 = buffer\.readf64\(/);
+	});
+
+	test("a run through nested objects stays inside one block", () => {
+		// 50 nested objects of three f64 each: runs of ten, 30 positions each.
+		const output = emitSnapshot({
+			kind: "object",
+			fields: Array.from({ length: 50 }, (_, i) => ({
+				name: `c${i}`,
+				field: {
+					kind: "object",
+					fields: ["x", "y", "z"].map((name) => ({ name, field: { kind: "num", width: "f64" } as Field })),
+				} as Field,
+			})),
+		});
+		expect(output).toMatch(/^\{$/m);
+		expect(maxLocalsInOneScope(output)).toBeLessThanOrEqual(40);
+		expect(reservations(output, "write")).toEqual([240, 240, 240, 240, 240]);
+		expect(reservations(output, "read")).toEqual([240, 240, 240, 240, 240]);
+		expect(output.match(/buffer\.writef64/g)).toHaveLength(150);
+		expect(output.match(/buffer\.readf64/g)).toHaveLength(150);
+		expect(output).toMatch(/result\d+\.c49 = \{/);
+	});
+
+	test("a 150-element tuple is split into blocks the same way", () => {
+		const output = emitSnapshot({
+			kind: "tuple",
+			fixed: Array.from({ length: 150 }, () => ({ kind: "num", width: "f64" }) as Field),
+			rest: undefined,
+		});
+		expect(maxLocalsInOneScope(output)).toBeLessThanOrEqual(40);
+		expect(output.match(/buffer\.writef64/g)).toHaveLength(150);
+	});
+
+	test("a run of CFrame properties ends before its locals would pass 31", () => {
+		// Five locals a CFrame, so six to a run: 31 CFrames are six runs.
+		const output = emitSnapshot({
+			kind: "object",
+			fields: Array.from({ length: 31 }, (_, i) => ({ name: `c${i}`, field: { kind: "cframe" } as Field })),
+		});
+		expect(reservations(output, "write")).toEqual([144, 144, 144, 144, 144, 24]);
+		expect(reservations(output, "read")).toEqual([144, 144, 144, 144, 144, 24]);
+	});
+
+	/** The names the `const` and `let` statements of one side of `field` declare, each name of a destructuring counted. */
+	function declaredLocals(field: Field, side: "write" | "read", options: EmitOptions): number {
+		const emitter = new Emitter(ts, ts.factory, new Map(), options);
+		const out: ts.Statement[] = [];
+		if (side === "write") {
+			emitter.writeField(field, ts.factory.createIdentifier("value"), out);
+		} else {
+			out.push(ts.factory.createReturnStatement(emitter.readField(field, out)));
+		}
+		let count = 0;
+		for (const line of printNodes(out).split("\n")) {
+			const declaration = /^\s*(?:const|let) (\[[^\]]*\]|\w+)/.exec(line);
+			if (declaration !== null) {
+				count += declaration[1].split(",").length;
+			}
+		}
+		return count;
+	}
+
+	const u8: Field = { kind: "num", width: "u8" };
+	// What the emitter declares, which is what this can see. roblox-ts hoists a
+	// local of its own out of an enum's write and out of a quantized rotation's
+	// product; the round trips in the surge repository compile shapes at the
+	// bound through roblox-ts.
+	test.each([
+		["u8", u8],
+		["ranged u8", { kind: "num", width: "u8", range: { min: 0, max: 10, whole: true } } as Field],
+		["bool", { kind: "bool", packed: false } as Field],
+		["vector2", { kind: "vector2" } as Field],
+		["vector3", { kind: "vector3" } as Field],
+		["color3", { kind: "color3" } as Field],
+		["cframe", { kind: "cframe" } as Field],
+		["quantized cframe", { kind: "cframe", quantized: true } as Field],
+		["bitSet", { kind: "bitSet", members: ["a", "b", "c", "d", "e", "f", "g", "h", "i"] } as Field],
+		["enum", { kind: "enum", enumName: "Material", members: ["Air", "Brick", "Glass"] } as Field],
+		["literal", { kind: "literal", values: ["a", "b", "c"] } as Field],
+		["tuple", { kind: "tuple", fixed: [u8, { kind: "vector3" }], rest: undefined } as Field],
+		...Object.keys(FIXED_DATATYPES).map((name): [string, Field] => [name, { kind: "datatype", name }]),
+		[
+			"nested object",
+			{
+				kind: "object",
+				fields: [
+					{ name: "x", field: u8 },
+					{ name: "at", field: { kind: "cframe" } },
+				],
+			} as Field,
+		],
+	])("runLocals counts at least what one more %s declares in a run", (_label, field) => {
+		const object = (count: number): Field => ({
+			kind: "object",
+			fields: [{ name: "a", field: u8 }, ...Array.from({ length: count }, (_, i) => ({ name: `p${i}`, field }))],
+		});
+		for (const side of ["write", "read"] as const) {
+			for (const options of [{}, { writeChecks: true, readChecks: true }]) {
+				const added = declaredLocals(object(2), side, options) - declaredLocals(object(1), side, options);
+				expect(added).toBeLessThanOrEqual(runLocals(field));
+			}
+		}
+	});
+});
+
+describe("Emitter count widths", () => {
+	/** Every kind that writes a count, as `[label, field]` with `length` left to the caller. */
+	const counted: Array<[string, (length?: "u8" | "u16" | "u24" | "u32") => Field]> = [
+		["str", (length) => ({ kind: "str", length })],
+		["buffer", (length) => ({ kind: "buffer", length })],
+		["array", (length) => ({ kind: "array", element: { kind: "num", width: "u8" }, length })],
+		// A fixed-width key, so the dict's own count is the only count in the shape.
+		[
+			"dict",
+			(length) => ({ kind: "dict", key: { kind: "num", width: "u8" }, value: undefined, source: "set", length }),
+		],
+		["tuple rest", (length) => ({ kind: "tuple", fixed: [], rest: { kind: "num", width: "u8" }, length })],
+	];
+
+	test.each(counted)("a %s writes and reads its count at the branded width", (_label, build) => {
+		const output = emitSnapshot(build("u16"));
+		expect(output).toContain("buffer.writeu16");
+		expect(output).toContain("buffer.readu16");
+		// The count is the only u16 in these shapes; nothing else moved to it.
+		expect(output).not.toContain("buffer.writeu32");
+		expect(output).not.toContain("buffer.readu32");
+	});
+
+	// Rule 4 of DataType brands in docs/coding-standards.md in the surge repo,
+	// on the bytes rather than on the IR: the walker records the default as
+	// absence, and the emitter has to turn that absence back into exactly the
+	// u32 every one of these wrote before.
+	test.each(counted)("a %s with no branded width emits what it always did", (_label, build) => {
+		expect(emitSnapshot(build())).toBe(emitSnapshot(build("u32")));
+	});
+
+	// Luau's `buffer` has no 24-bit call, so a u24 count is the same two
+	// writes the `num` kind uses, and the reservation is 3 bytes and not 4.
+	test("a u24 count reserves three bytes and splits into a u16 and a u8", () => {
+		const output = emitSnapshot({ kind: "array", element: { kind: "num", width: "u8" }, length: "u24" });
+		// The count is reserved first, then every element at once.
+		expect(reservations(output, "write")[0]).toBe(3);
+		expect(reservations(output, "read")[0]).toBe(3);
+		expect(output).toContain("buffer.writeu16");
+		expect(output).toContain("buffer.writeu8");
+	});
+
+	// The exact form's whole point: the count is in the type, so no bytes of
+	// the payload go to saying how many there are.
+	// `f32` elements, so that any unsigned read or write left in the output is
+	// a count and not an element. An array reserves its three elements at once.
+	test.each([
+		["str", { kind: "str", length: 8 } as Field, 8],
+		["buffer", { kind: "buffer", length: 16 } as Field, 16],
+		["array", { kind: "array", element: { kind: "num", width: "f32" }, length: 3 } as Field, 12],
+		["tuple rest", { kind: "tuple", fixed: [], rest: { kind: "num", width: "f32" }, length: 2 } as Field, 4],
+	])("an exact %s writes no count at all", (_label, field, firstReservation) => {
+		const output = emitSnapshot(field);
+		for (const width of ["u8", "u16", "u24", "u32"]) {
+			expect(output).not.toContain(`buffer.write${width}(`);
+			expect(output).not.toContain(`buffer.read${width}(`);
+		}
+		expect(reservations(output, "write")[0]).toBe(firstReservation);
+		expect(reservations(output, "read")[0]).toBe(firstReservation);
+	});
+
+	test("an exact string passes its byte count to writestring and readstring", () => {
+		const output = emitSnapshot({ kind: "str", length: 8 });
+		expect(output).toContain("buffer.writestring");
+		expect(output).toContain("buffer.readstring");
+		// The count reaches both calls, which is what truncates a longer value
+		// and raises on a shorter one.
+		expect(output.match(/, 8\)/g)?.length).toBeGreaterThanOrEqual(2);
+	});
+
+	test("an exact array loops a literal number of times on both sides", () => {
+		const output = emitSnapshot({ kind: "array", element: { kind: "num", width: "u8" }, length: 3 });
+		// Indexed on the write side so exactly three are written; `$range` on
+		// the read side, whose bound is the same literal.
+		expect(output).toMatch(/i[0-9]+ < 3;/);
+		expect(output).toContain("$range(1, 3)");
+	});
+
+	test("a u8 count reserves one byte", () => {
+		// The count and the string's bytes are one reservation, one byte longer
+		// than the string.
+		const output = emitSnapshot({ kind: "str", length: "u8" });
+		expect(output).toMatch(/__surge_cursor = pos\d+ \+ \(len\d+ \+ 1\);/);
+		expect(output).toMatch(/__surge_readCursor = pos\d+ \+ 1 \+ len\d+;/);
+	});
+});
+
+describe("Emitter component widths", () => {
+	test("a Vector3 writes each component at its own width, at cumulative offsets", () => {
+		const output = emitSnapshot({ kind: "vector3", components: ["u8", "u24", "f32"] });
+		expect(output).toMatchSnapshot();
+		// 1 + 3 + 4, and the u24 is the two writes Luau's buffer has no call for.
+		expect(reservations(output, "write")).toEqual([8]);
+		expect(reservations(output, "read")).toEqual([8]);
+	});
+
+	// Rule 4 of DataType brands in docs/coding-standards.md in the surge repo,
+	// on the emitter's side of the IR: the walker records the all-default case
+	// as absence, and the two must agree.
+	test("the default widths emit exactly what absent widths do", () => {
+		expect(emitSnapshot({ kind: "vector3", components: ["f32", "f32", "f32"] })).toBe(
+			emitSnapshot({ kind: "vector3" }),
+		);
+		expect(emitSnapshot({ kind: "cframe", position: ["f32", "f32", "f32"] })).toBe(
+			emitSnapshot({ kind: "cframe" }),
+		);
+	});
+
+	test("a CFrame narrows its position and leaves its rotation an f32 triple", () => {
+		const output = emitSnapshot({ kind: "cframe", position: ["i16", "i16", "i16"] });
+		expect(output).toMatchSnapshot();
+		// 6 for the position, then the rotation's 12 at an offset that moved with it.
+		expect(reservations(output, "write")).toEqual([18]);
+		expect(reservations(output, "read")).toEqual([18]);
+		expect(output).toContain("buffer.writei16(");
+		expect(output.match(/buffer\.writef32\(/g)).toHaveLength(3);
+	});
+
+	test("a quantized CFrame writes its rotation as three rounded i16s", () => {
+		const output = emitSnapshot({ kind: "cframe", quantized: true });
+		expect(output).toMatchSnapshot();
+		// 12 for the position, then 6 for the rotation.
+		expect(reservations(output, "write")).toEqual([18]);
+		expect(reservations(output, "read")).toEqual([18]);
+		expect(output.match(/buffer\.writei16\(/g)).toHaveLength(3);
+		expect(output.match(/math\.round\(/g)).toHaveLength(3);
+		expect(output.match(/buffer\.writef32\(/g)).toHaveLength(3);
+		expect(output.match(/buffer\.readi16\(/g)).toHaveLength(3);
+	});
+
+	test("a quantized CFrame keeps the position widths a Transform gives it", () => {
+		const output = emitSnapshot({ kind: "cframe", position: ["i16", "i16", "i16"], quantized: true });
+		expect(reservations(output, "write")).toEqual([12]);
+		expect(output.match(/buffer\.writei16\(/g)).toHaveLength(6);
+		expect(output).not.toContain("writef32");
+	});
+
+	test("a narrowed Vector3 joins the reservation of the fields beside it", () => {
+		const output = emitSnapshot({
+			kind: "object",
+			fields: [
+				{ name: "at", field: { kind: "vector3", components: ["u8", "u8", "u8"] } },
+				{ name: "id", field: { kind: "num", width: "u8" } },
+			],
+		});
+		// 3 + 1 in one alloc, where three unnarrowed components alone would be 12.
+		expect(reservations(output, "write")).toEqual([4]);
+		expect(reservations(output, "read")).toEqual([4]);
+	});
+});
+
+describe("Emitter write-side checks", () => {
+	/** The write half of `field` emitted with `writeChecks: true`. */
+	function checkedWrite(field: Field): string {
+		const output = emitSnapshot(field, new Map(), { writeChecks: true });
+		return output.slice(0, output.indexOf("// read"));
+	}
+
+	test("a count is checked against every width narrower than u32", () => {
+		for (const [width, limit] of [
+			["u8", 255],
+			["u16", 65535],
+			["u24", 16777215],
+		] as const) {
+			expect(checkedWrite({ kind: "array", element: { kind: "num", width: "f64" }, length: width })).toContain(
+				`> ${limit}`,
+			);
+		}
+		expect(checkedWrite({ kind: "array", element: { kind: "num", width: "f64" } })).not.toContain("@rbxts/surge: ");
+	});
+
+	test("a dict's count is checked once it is known, before it is written back", () => {
+		const output = checkedWrite({
+			kind: "dict",
+			key: { kind: "str" },
+			value: { kind: "num", width: "u8" },
+			source: "map",
+			length: "u8",
+		});
+		expect(output).toMatch(/count[0-9]+ > 255/);
+		expect(output.indexOf("> 255")).toBeGreaterThan(output.indexOf("for ("));
+	});
+
+	test("an exact length must match, and an array of optionals may only be shorter", () => {
+		expect(checkedWrite({ kind: "array", element: { kind: "num", width: "u8" }, length: 3 })).toMatch(
+			/size\(\) !== 3/,
+		);
+		expect(
+			checkedWrite({
+				kind: "array",
+				element: { kind: "optional", inner: { kind: "num", width: "u8" }, packed: false },
+				length: 3,
+			}),
+		).toMatch(/size\(\) > 3/);
+		expect(
+			checkedWrite({ kind: "array", element: { kind: "literal", values: ["a", "b", undefined] }, length: 3 }),
+		).toMatch(/size\(\) > 3/);
+		expect(checkedWrite({ kind: "str", length: 4 })).toMatch(/size\(\) !== 4/);
+		expect(checkedWrite({ kind: "buffer", length: 4 })).toMatch(/buffer\.len\(src[0-9]+\) !== 4/);
+	});
+
+	test("writeChecks off emits no check", () => {
+		for (const field of [
+			{ kind: "array", element: { kind: "num", width: "u8" }, length: "u8" } as Field,
+			{ kind: "str", length: 4 } as Field,
+			{ kind: "num", width: "u8", range: { min: 0, max: 100, whole: true } } as Field,
+		]) {
+			expect(emitSnapshot(field)).not.toContain("@rbxts/surge: ");
+		}
+	});
+
+	// `!(n >= min && n <= max)` rather than `n < min || n > max`, which a NaN
+	// passes; the fraction test only where the range holds whole numbers.
+	test("a Range is checked against both bounds, and against a fraction where it holds whole numbers", () => {
+		const whole = checkedWrite({ kind: "num", width: "i8", range: { min: -100, max: 100, whole: true } });
+		expect(whole).toMatchSnapshot();
+		expect(whole).toMatch(/if \(!\(n[0-9]+ >= -100 && n[0-9]+ <= 100\) \|\| n[0-9]+ % 1 !== 0\)/);
+		expect(whole).toContain("does not admit");
+		const fractional = checkedWrite({ kind: "num", width: "f32", range: { min: 0, max: 0.5, whole: false } });
+		expect(fractional).toMatch(/if \(!\(n[0-9]+ >= 0 && n[0-9]+ <= 0\.5\)\)/);
+		expect(fractional).not.toContain("% 1");
+	});
+
+	// The read side checks no value: what a number means is the caller's to
+	// check (Runtime API 4.7 in docs/specs/runtime-api.md in the surge repo).
+	test("a Range adds nothing to the read side", () => {
+		const field: Field = { kind: "num", width: "u8", range: { min: 0, max: 100, whole: true } };
+		// Local names are numbered across both sides, so the write side's extra
+		// local renumbers the read side's; the numbers are dropped.
+		const read = (options: EmitOptions) => {
+			const output = emitSnapshot(field, new Map(), options);
+			return output.slice(output.indexOf("// read")).replace(/([a-z])[0-9]+/g, "$1");
+		};
+		expect(read({ readChecks: true, writeChecks: true })).toBe(read({ readChecks: true }));
+	});
+});
+
+describe("Emitter bit sets", () => {
+	const members = ["a", "b", "c", "d", "e", "f", "g", "h", "i"];
+
+	test("one bit per member, each byte computed whole and written once", () => {
+		const output = emitSnapshot({ kind: "bitSet", members });
+		expect(output).toMatchSnapshot();
+		// Nine members are two bytes, and nothing else is reserved: there is no count.
+		expect(reservations(output, "write")).toEqual([2]);
+		expect(reservations(output, "read")).toEqual([2]);
+		const [write, read] = output.split("// read");
+		expect(write.match(/buffer\.writeu8\(/g)).toHaveLength(2);
+		expect(write.match(/\.has\(/g)).toHaveLength(9);
+		expect(write).toContain('set1.has("h") ? 128 : 0');
+		expect(read.match(/buffer\.readu8\(/g)).toHaveLength(2);
+		expect(read.match(/\.add\(/g)).toHaveLength(9);
+	});
+
+	test("a bit set joins the reservation of the fixed-size fields beside it", () => {
+		const output = emitSnapshot({
+			kind: "object",
+			fields: [
+				{ name: "id", field: { kind: "num", width: "u8" } },
+				{ name: "tags", field: { kind: "bitSet", members } },
+			],
+		});
+		expect(reservations(output, "write")).toEqual([3]);
+		expect(reservations(output, "read")).toEqual([3]);
+	});
+});
+
+describe("Emitter read-side checks", () => {
+	/** The read half of `field` emitted with `readChecks: true`. */
+	function checkedRead(field: Field): string {
+		const output = emitSnapshot(field, new Map(), { readChecks: true });
+		return output.slice(output.indexOf("// read"));
+	}
+
+	test("every read is bounded against the input length", () => {
+		const output = checkedRead({ kind: "num", width: "u32" });
+		expect(output).toMatchSnapshot();
+		expect(output).toContain("@rbxts/surge: ");
+	});
+
+	// The default is what the read path has always been: no branch per read.
+	test("readChecks off emits no branch and no message", () => {
+		for (const field of [
+			{ kind: "num", width: "u32" } as Field,
+			{ kind: "array", element: { kind: "num", width: "u8" } } as Field,
+			{ kind: "str" } as Field,
+		]) {
+			expect(emitSnapshot(field)).not.toContain("@rbxts/surge: ");
+		}
+	});
+
+	// Its size is in its header, so the header is bounded before it is read,
+	// and the bytes it says follow before the runtime reads them.
+	test("a packed CFrame is bounded in two steps, and its rotation code is checked", () => {
+		const output = checkedRead({ kind: "cframe", packed: true });
+		expect(output).toMatch(/__surge_readCursor \+ 1 > __surge_inputLength/);
+		expect(output).toMatch(/rotation[0-9]+ > 23 && rotation[0-9]+ !== 31/);
+		expect(output).toMatch(/__surge_readCursor \+ size[0-9]+ > __surge_inputLength/);
+		expect(output.indexOf("> __surge_inputLength")).toBeLessThan(output.indexOf("__surge_readPackedCFrame("));
+		expect(emitSnapshot({ kind: "cframe", packed: true })).not.toContain("@rbxts/surge: ");
+	});
+
+	test("an enum index is bounded by the number of items", () => {
+		const members = ["A", "B", "C"];
+		const output = checkedRead({ kind: "enum", enumName: "Letter", members });
+		expect(output).toMatch(/idx[0-9]+ >= 3/);
+		expect(emitSnapshot({ kind: "enum", enumName: "Letter", members })).not.toContain("@rbxts/surge: ");
+	});
+
+	test("a count is bounded by what the rest of the input could hold", () => {
+		const output = checkedRead({ kind: "array", element: { kind: "num", width: "f64" } });
+		expect(output).toMatchSnapshot();
+		// Eight bytes an element, against the bytes left.
+		expect(output).toMatch(/count[0-9]+ \* 8 > __surge_inputLength - __surge_readCursor/);
+	});
+
+	// The payload cannot bound a count of elements that read no bytes, which is
+	// the denial of service the cap is for.
+	test.each([
+		["a literal constant", { kind: "literalConst", value: 7 } as Field],
+		["a blob", { kind: "blob" } as Field],
+		[
+			"an object of constants",
+			{ kind: "object", fields: [{ name: "a", field: { kind: "literalConst", value: "x" } }] } as Field,
+		],
+	])("an array of %s is capped instead", (_label, element) => {
+		const output = checkedRead({ kind: "array", element });
+		expect(output).toMatch(/count[0-9]+ > 16777216/);
+		expect(output).not.toContain("__surge_inputLength - __surge_readCursor");
+	});
+
+	test("a dict's bound counts its key and its value", () => {
+		const map = checkedRead({
+			kind: "dict",
+			key: { kind: "num", width: "u8" },
+			value: { kind: "num", width: "u16" },
+			source: "map",
+		});
+		expect(map).toMatch(/count[0-9]+ \* 3 >/);
+		// A set writes only its keys, so an entry is the key alone.
+		const set = checkedRead({ kind: "dict", key: { kind: "num", width: "u8" }, value: undefined, source: "set" });
+		expect(set).toMatch(/count[0-9]+ > __surge_inputLength - __surge_readCursor/);
+	});
+
+	// The bound must never exceed what a valid value costs, or it rejects one.
+	test("a bound never counts bytes a valid value can leave out", () => {
+		const optional = checkedRead({
+			kind: "array",
+			element: { kind: "optional", inner: { kind: "num", width: "f64" }, packed: false },
+		});
+		// One presence byte an element, not the f64 behind it.
+		expect(optional).toMatch(/count[0-9]+ > __surge_inputLength - __surge_readCursor/);
+		const variants = checkedRead({
+			kind: "array",
+			element: {
+				kind: "guardedUnion",
+				variants: [
+					{ kind: "num", width: "f64" },
+					{ kind: "bool", packed: false },
+				],
+			},
+		});
+		// The tag, plus the smallest variant rather than the largest.
+		expect(variants).toMatch(/count[0-9]+ \* 2 >/);
+	});
+
+	test("the input length is read once per deserialize", () => {
+		const emitter = new Emitter(ts, ts.factory, new Map(), { readChecks: true });
+		emitter.beginFunction();
+		emitter.readField({ kind: "num", width: "u8" }, []);
+		expect(printNodes(emitter.readStateDecls())).toContain("__surge_inputLength");
+		const begin = printNodes(emitter.beginReadStatements(ts.factory.createIdentifier("input")));
+		expect(begin).toContain("__surge_inputLength = buffer.len(__surge_input)");
+		expect(begin.match(/buffer\.len/g)).toHaveLength(1);
+	});
+});
