@@ -37,7 +37,7 @@
 		"bench:speed:render": "npm run bench:speed:render --prefix tests && prettier --write docs/benchmarks/speed.md"
 	},
 	"author": "travddm",
-	"license": "ISC",
+	"license": "MIT",
 	"repository": {
 		"type": "git",
 		"url": "git+https://github.com/travddm/surge.git"

@@ -19,7 +19,7 @@
 		"bench:speed:render": "node scripts/record-speed-benchmarks.mjs --render"
 	},
 	"author": "travddm",
-	"license": "ISC",
+	"license": "MIT",
 	"dependencies": {
 		"@rbxts/surge": "file:..",
 		"@flamework/core": "^1.3.2",
