@@ -8,89 +8,124 @@ on:
 
 jobs:
     ci:
-        name: Lint + Format + Spell Check + Compile + Test
-        runs-on: ubuntu-latest
-        timeout-minutes: 15
-        # tests/'s file: dependencies on both packages (see architecture.md) mean every mise/npm
-        # command below needs to run from inside surge/, not $GITHUB_WORKSPACE itself.
+        # Both packages at one commit, so a change to either is tested with the other. Windows
+        # too, because the maintainer works there and the mise tasks run through Git Bash.
+        name: CI (${{ matrix.os }})
+        strategy:
+            fail-fast: false
+            matrix:
+                os: [ubuntu-latest, windows-latest]
+        runs-on: ${{ matrix.os }}
+        timeout-minutes: 30
         defaults:
             run:
-                working-directory: surge
+                # Git Bash on Windows: the mise tasks assume a POSIX shell (see testing.md).
+                shell: bash
         steps:
-            - name: Checkout surge
+            - name: Checkout
               uses: actions/checkout@v7
-              with:
-                  path: surge
 
-            # The transformer's commit this repository is tested against, recorded in
-            # ci/transformer-ref and bumped deliberately (see testing.md), so that a run is
-            # reproducible and a push to the transformer alone cannot change its result.
-            - name: Read the pinned rbxts-transformer-surge commit
-              id: transformer
-              run: echo "ref=$(tr -d '[:space:]' < ci/transformer-ref)" >> "$GITHUB_OUTPUT"
-
-            # A sibling checkout, not a submodule: tests/package.json's
-            # `"rbxts-transformer-surge": "file:../../rbxts-transformer-surge"` (see architecture.md)
-            # resolves relative to surge/tests/, exactly matching local sibling-checkout dev.
-            - name: Checkout rbxts-transformer-surge
-              uses: actions/checkout@v7
-              with:
-                  repository: travddm/rbxts-transformer-surge
-                  ref: ${{ steps.transformer.outputs.ref }}
-                  path: rbxts-transformer-surge
-
-            # npm's download cache, not node_modules: `npm ci` removes node_modules before it
-            # installs. Keyed on the exact lockfiles, with no fallback to another key's cache.
-            - name: Cache npm downloads
-              uses: actions/cache@v6
-              with:
-                  path: ~/.npm
-                  key: ${{ runner.os }}-npm-${{ hashFiles('surge/package-lock.json', 'surge/tests/package-lock.json', 'rbxts-transformer-surge/package-lock.json') }}
-
+            # Installs the root's tools (Node) and runs its postinstall hook.
             - name: Set up mise
               uses: jdx/mise-action@v4
               with:
                   install: true
                   cache: true
-                  working_directory: surge
 
-            # Each file: dependency's own `prepare` script (which compiles it) runs during the
-            # *consumer's* install, so each package needs its own devDependencies in place first
-            # -- confirmed by reproducing this exact failure in a from-scratch sibling checkout
-            # before adding these two steps (see testing.md). `npm ci` installs what the lockfile
-            # records and fails where it does not match package.json.
-            - name: Install rbxts-transformer-surge's own dependencies
+            # surge's own tools (Rojo, Lune, run-in-roblox, Blink, Zap) are in surge/mise.toml,
+            # which `mise install` at the root does not read.
+            - name: Install surge's tools
+              working-directory: surge
+              run: mise install
+
+            # npm's download cache, not node_modules: `npm ci` removes node_modules before it
+            # installs. Keyed on every lock file, with no fallback to another key's cache. The
+            # directory differs by platform, so npm reports it.
+            - name: Find npm's cache
+              id: npm-cache
+              run: echo "dir=$(npm config get cache)" >> "$GITHUB_OUTPUT"
+
+            - name: Cache npm downloads
+              uses: actions/cache@v6
+              with:
+                  path: ${{ steps.npm-cache.outputs.dir }}
+                  key: ${{ runner.os }}-npm-${{ hashFiles('package-lock.json', 'rbxts-transformer-surge/package-lock.json', 'surge/package-lock.json', 'surge/tests/package-lock.json') }}
+
+            # `npm ci` installs what each lock file records and fails where one does not match its
+            # package.json. The transformer installs before surge: surge's tests/ builds a copy
+            # of it with its own devDependencies (see testing.md).
+            - name: Install the root's dependencies
+              run: npm ci
+
+            - name: Install the transformer's dependencies
               working-directory: rbxts-transformer-surge
               run: npm ci
 
-            - name: Install this package's own dependencies
+            - name: Install surge's dependencies
+              working-directory: surge
               run: npm ci
 
             # What `mise run tests:install` does, with `npm ci` in place of `npm install`.
-            - name: "Test: install tests/ (needed before lint can resolve its imports)"
+            - name: Install surge's tests/
+              working-directory: surge
               run: node tests/scripts/clear-stale-build.mjs && npm ci --prefix tests
 
-            # mise's postinstall hook runs `npm install`, which can rewrite a lockfile that does
-            # not match its package.json; a rewritten one fails here instead of passing unseen.
-            - name: "Check: Lockfiles"
-              run: git diff --exit-code -- package-lock.json tests/package-lock.json
+            # The postinstall hooks run `npm install`, which can rewrite a lock file that does not
+            # match its package.json; a rewritten one fails here instead of passing unseen.
+            - name: "Check: Lock files"
+              run: git diff --exit-code -- package-lock.json rbxts-transformer-surge/package-lock.json surge/package-lock.json surge/tests/package-lock.json
 
-            - name: "Check: Lint"
+            - name: "Root: Lint"
+              run: npm run lint:check
+
+            - name: "Root: Format"
+              run: npm run format:check
+
+            - name: "Root: Spell"
+              run: npm run spell
+
+            - name: "Transformer: Lint"
+              working-directory: rbxts-transformer-surge
               run: mise run lint:check
 
-            - name: "Check: Format"
+            - name: "Transformer: Format"
+              working-directory: rbxts-transformer-surge
               run: mise run format:check
 
-            - name: "Check: Spell"
+            - name: "Transformer: Spell"
+              working-directory: rbxts-transformer-surge
               run: mise run spell
 
-            - name: "Check: Compile"
+            - name: "Transformer: Compile"
+              working-directory: rbxts-transformer-surge
               run: mise run compile
 
-            - name: "Test: round-trip suite (Lune)"
+            - name: "Transformer: Jest"
+              working-directory: rbxts-transformer-surge
+              run: mise run test
+
+            - name: "surge: Lint"
+              working-directory: surge
+              run: mise run lint:check
+
+            - name: "surge: Format"
+              working-directory: surge
+              run: mise run format:check
+
+            - name: "surge: Spell"
+              working-directory: surge
+              run: mise run spell
+
+            - name: "surge: Compile"
+              working-directory: surge
+              run: mise run compile
+
+            - name: "surge: Round-trip suite (Lune)"
+              working-directory: surge
               run: |
                   mise run tests:compile
                   mise run tests:test
 
-            - name: "Test: golden-Luau invariants"
+            - name: "surge: Golden-Luau invariants"
+              working-directory: surge
               run: mise run test
