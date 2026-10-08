@@ -1,0 +1,1396 @@
+/** The write side: one function per `Field` kind, each appending to the caller's statement list. */
+import type ts from "typescript";
+
+import { FIXED_DATATYPES } from "../datatypes";
+import type { ComponentWidths, CountSpec, Field, LengthWidth, NumRange, ObjectFieldEntry } from "../field";
+import {
+	ALLOC_RUN_LOCALS,
+	CURSOR,
+	DEFAULT_COMPONENTS,
+	PACKED_CFRAME_MAX_BYTES,
+	QUANTIZED_ROTATION_SCALE,
+	WIDTH_BYTES,
+} from "./constants";
+import type { EmitContext, ScopedItem, Slot } from "./context";
+import type { PackedBit } from "./layout";
+import {
+	allocRuns,
+	bitSetBytes,
+	cframeBytes,
+	componentBytes,
+	componentsOf,
+	elementBytes,
+	exactCount,
+	fixedBytes,
+	isAllPackedBits,
+	lengthWidth,
+	packedBits,
+	runLocals,
+	tagKeyOf,
+} from "./layout";
+import { fieldToTypeNode, objectShapeTypeNode } from "./types";
+
+export function writeField(ctx: EmitContext, field: Field, value: ts.Expression, out: ts.Statement[]): void {
+	switch (field.kind) {
+		case "num":
+			return writeNum(ctx, field, value, out);
+		case "bool":
+			return writeBool(ctx, value, out);
+		case "str":
+			return writeStr(ctx, field, value, out);
+		case "vector2":
+			return writeNum2(ctx, value, "X", "Y", "f32", out);
+		case "datatype":
+			return writeDatatype(ctx, field.name, value, out);
+		case "buffer":
+			return writeBuffer(ctx, field, value, out);
+		case "vector3":
+			return writeVector3(ctx, field, value, out);
+		case "color3":
+			return writeColor3(ctx, value, out);
+		case "cframe":
+			return field.packed ? writePackedCFrame(ctx, value, out) : writeCFrame(ctx, field, value, out);
+		case "colorSequence":
+			return writeSequence(ctx, value, "ColorSequence", out);
+		case "numberSequence":
+			return writeSequence(ctx, value, "NumberSequence", out);
+		case "enum":
+			return writeEnum(ctx, field, value, out);
+		case "object":
+			return writeObject(ctx, field, value, out);
+		case "recursiveRef":
+			return writeRecursiveRef(ctx, field, value, out);
+		case "array":
+			return writeArray(ctx, field, value, out);
+		case "tuple":
+			return writeTuple(ctx, field, value, out);
+		case "dict":
+			return writeDict(ctx, field, value, out);
+		case "bitSet":
+			return writeBitSet(ctx, field, value, out);
+		case "optional":
+			return writeOptional(ctx, field, value, out, true);
+		case "literalConst":
+			return; // zero bytes -- known on both ends at compile time.
+		case "literal":
+			return writeLiteral(ctx, field, value, out);
+		case "taggedUnion":
+			return writeTaggedUnion(ctx, field, value, out);
+		case "guardedUnion":
+			return writeGuardedUnion(ctx, field, value, out);
+		case "blob":
+			return writeBlob(ctx, value, out);
+	}
+}
+
+function writeNum(
+	ctx: EmitContext,
+	field: Extract<Field, { kind: "num" }>,
+	value: ts.Expression,
+	out: ts.Statement[],
+): void {
+	let written = value;
+	if (ctx.writeChecks && field.range !== undefined) {
+		const n = ctx.fresh("n");
+		out.push(ctx.constStatement(n, value));
+		checkRange(ctx, field.range, n, out);
+		written = n;
+	}
+	const { buf, pos, statements } = ctx.destructureAlloc("alloc", WIDTH_BYTES[field.width]);
+	out.push(...statements);
+	out.push(...ctx.writeNumberAt(field.width, buf, pos, written));
+}
+
+/**
+ * Under `writeChecks`, raises for a number its `DataType.Range` does not
+ * admit. The bounds are tested as `!(n >= min && n <= max)`, which a NaN fails,
+ * where `n < min || n > max` would let it through. A range that holds whole
+ * numbers also rejects a fraction, which its width would truncate.
+ */
+function checkRange(ctx: EmitContext, range: NumRange, value: ts.Expression, out: ts.Statement[]): void {
+	const f = ctx.factory;
+	const syntax = ctx.ts_.SyntaxKind;
+	let rejected: ts.Expression = f.createPrefixUnaryExpression(
+		syntax.ExclamationToken,
+		f.createParenthesizedExpression(
+			f.createBinaryExpression(
+				f.createBinaryExpression(value, syntax.GreaterThanEqualsToken, ctx.num(range.min)),
+				syntax.AmpersandAmpersandToken,
+				f.createBinaryExpression(value, syntax.LessThanEqualsToken, ctx.num(range.max)),
+			),
+		),
+	);
+	if (range.whole) {
+		rejected = f.createBinaryExpression(
+			rejected,
+			syntax.BarBarToken,
+			f.createBinaryExpression(
+				f.createBinaryExpression(value, syntax.PercentToken, ctx.num(1)),
+				syntax.ExclamationEqualsEqualsToken,
+				ctx.num(0),
+			),
+		);
+	}
+	out.push(ctx.throwIf(rejected, "serialize given a number its DataType.Range does not admit"));
+}
+
+function writeBool(ctx: EmitContext, value: ts.Expression, out: ts.Statement[]): void {
+	const f = ctx.factory;
+	const { buf, pos, statements } = ctx.destructureAlloc("alloc", 1);
+	out.push(...statements);
+	out.push(
+		f.createExpressionStatement(
+			ctx.bufferCall("writeu8", [
+				buf,
+				pos,
+				f.createConditionalExpression(value, undefined, ctx.num(1), undefined, ctx.num(0)),
+			]),
+		),
+	);
+}
+
+/**
+ * The largest count each narrower width holds. A `u32` count is not checked:
+ * no Luau string, buffer or table comes near it.
+ */
+const COUNT_LIMITS: Partial<Readonly<Record<LengthWidth, number>>> = { u8: 255, u16: 65535, u24: 16777215 };
+
+/**
+ * Under `writeChecks`, raises when `count` does not fit its width. Unchecked,
+ * the width's `buffer` write wraps it, and the read side reads that many.
+ */
+function checkCountFits(ctx: EmitContext, width: LengthWidth, count: ts.Expression, out: ts.Statement[]): void {
+	const limit = COUNT_LIMITS[width];
+	if (!ctx.writeChecks || limit === undefined) {
+		return;
+	}
+	out.push(
+		ctx.throwIf(
+			ctx.factory.createBinaryExpression(count, ctx.ts_.SyntaxKind.GreaterThanToken, ctx.num(limit)),
+			`serialize given a value whose count does not fit its ${width} Length width`,
+		),
+	);
+}
+
+/**
+ * Under `writeChecks`, raises when a value in the exact form is not the length
+ * its type declares. Unchecked, a longer one is truncated and a shorter one
+ * pads or raises by element kind. `padsShort` is for an element whose padding
+ * is the contract rather than a defect (Wire format 6.6 in
+ * docs/specs/wire-format.md), so only a longer value raises.
+ */
+function checkExactLength(
+	ctx: EmitContext,
+	actual: ts.Expression,
+	exact: number,
+	padsShort: boolean,
+	out: ts.Statement[],
+): void {
+	if (!ctx.writeChecks) {
+		return;
+	}
+	const syntax = ctx.ts_.SyntaxKind;
+	out.push(
+		ctx.throwIf(
+			ctx.factory.createBinaryExpression(
+				actual,
+				padsShort ? syntax.GreaterThanToken : syntax.ExclamationEqualsEqualsToken,
+				ctx.num(exact),
+			),
+			`serialize given a value whose length is not the exact length ${exact} its type declares`,
+		),
+	);
+}
+
+/**
+ * Whether a missing element of this kind is written as a valid absent value:
+ * an `optional`, or a `literal` that includes `undefined`, which canonical
+ * literal order puts last (Wire format 6.6 in docs/specs/wire-format.md).
+ */
+function padsAsAbsent(element: Field): boolean {
+	return (
+		element.kind === "optional" ||
+		(element.kind === "literal" && element.values[element.values.length - 1] === undefined)
+	);
+}
+
+/** Reserves and writes the count a variable-length kind puts ahead of its contents. */
+/**
+ * `const <base>N = <value>`, and the new local. Where the size of 5.20 has
+ * bound the value already, the caller takes that local from
+ * `ctx.boundBySize` instead.
+ */
+function bindLocal(ctx: EmitContext, base: string, value: ts.Expression, out: ts.Statement[]): ts.Identifier {
+	const local = ctx.fresh(base);
+	out.push(ctx.constStatement(local, value));
+	return local;
+}
+
+/**
+ * `value`, read into a local first when it is not a local itself, for a
+ * write that reads more than one of its properties (Transformer 5.26). The
+ * path to the value is then read once, inside a run of 5.5 as outside one,
+ * and `runLocals` counts the local.
+ */
+function readOnce(ctx: EmitContext, base: string, value: ts.Expression, out: ts.Statement[]): ts.Expression {
+	return isLocal(ctx, value) ? value : bindLocal(ctx, base, value, out);
+}
+
+function writeCount(ctx: EmitContext, length: CountSpec | undefined, count: ts.Expression, out: ts.Statement[]): void {
+	const width = lengthWidth(length);
+	checkCountFits(ctx, width, count, out);
+	const { buf, pos, statements } = ctx.destructureAlloc("alloc", WIDTH_BYTES[width]);
+	out.push(...statements);
+	out.push(...ctx.writeNumberAt(width, buf, pos, count));
+}
+
+/**
+ * Reserves the count a `str` or a `buffer` writes and the `len` bytes after
+ * it at once, writes the count, and returns where the bytes go.
+ */
+function writeCountedBytes(
+	ctx: EmitContext,
+	length: CountSpec | undefined,
+	len: ts.Identifier,
+	out: ts.Statement[],
+): Slot {
+	const width = lengthWidth(length);
+	checkCountFits(ctx, width, len, out);
+	const countBytes = WIDTH_BYTES[width];
+	const { buf, pos, statements } = ctx.destructureAlloc(
+		"alloc",
+		ctx.factory.createBinaryExpression(len, ctx.ts_.SyntaxKind.PlusToken, ctx.num(countBytes)),
+	);
+	out.push(...statements);
+	out.push(...ctx.writeNumberAt(width, buf, pos, len));
+	return { buf, pos, offset: countBytes };
+}
+
+function writeStr(
+	ctx: EmitContext,
+	field: Extract<Field, { kind: "str" }>,
+	value: ts.Expression,
+	out: ts.Statement[],
+): void {
+	const f = ctx.factory;
+	const bound = ctx.boundBySize(value);
+	const s = bound?.value ?? bindLocal(ctx, "s", value, out);
+	const lenExpr = ctx.sizeOf(s);
+	const exact = exactCount(field.length);
+	if (exact !== undefined) {
+		checkExactLength(ctx, lenExpr, exact, false, out);
+		const { buf, pos, statements } = ctx.destructureAlloc("alloc", exact);
+		out.push(...statements);
+		// The fourth argument is a byte count, so a longer string is
+		// truncated to it and a shorter one raises `string length overflow`.
+		out.push(f.createExpressionStatement(ctx.bufferCall("writestring", [buf, pos, s, ctx.num(exact)])));
+		return;
+	}
+	const len = bound?.len ?? bindLocal(ctx, "len", lenExpr, out);
+	const bytes = writeCountedBytes(ctx, field.length, len, out);
+	out.push(f.createExpressionStatement(ctx.bufferCall("writestring", [bytes.buf, ctx.at(bytes, 0), s])));
+}
+
+function writeBuffer(
+	ctx: EmitContext,
+	field: Extract<Field, { kind: "buffer" }>,
+	value: ts.Expression,
+	out: ts.Statement[],
+): void {
+	const f = ctx.factory;
+	const bound = ctx.boundBySize(value);
+	const source = bound?.value ?? bindLocal(ctx, "src", value, out);
+	const exact = exactCount(field.length);
+	if (exact !== undefined) {
+		checkExactLength(ctx, ctx.bufferCall("len", [source]), exact, false, out);
+		const { buf, pos, statements } = ctx.destructureAlloc("alloc", exact);
+		out.push(...statements);
+		// `buffer.copy`'s count is what is read from the source, so a
+		// shorter source is out of bounds and a longer one is truncated.
+		out.push(f.createExpressionStatement(ctx.bufferCall("copy", [buf, pos, source, ctx.num(0), ctx.num(exact)])));
+		return;
+	}
+	const len = bound?.len ?? bindLocal(ctx, "len", ctx.bufferCall("len", [source]), out);
+	const bytes = writeCountedBytes(ctx, field.length, len, out);
+	out.push(
+		f.createExpressionStatement(ctx.bufferCall("copy", [bytes.buf, ctx.at(bytes, 0), source, ctx.num(0), len])),
+	);
+}
+
+function writeVector3(
+	ctx: EmitContext,
+	field: Extract<Field, { kind: "vector3" }>,
+	value: ts.Expression,
+	out: ts.Statement[],
+): void {
+	const widths = componentsOf(field.components);
+	const { buf, pos, statements } = ctx.destructureAlloc("alloc", componentBytes(widths));
+	out.push(...statements);
+	writeNum3(ctx, readOnce(ctx, "vec", value, out), "X", "Y", "Z", widths, { buf, pos, offset: 0 }, out);
+}
+
+/**
+ * The packed form branches on the value, so it is a runtime function
+ * (cframe.ts in @rbxts/surge) and not inlined code. It writes 1, 13 or
+ * 25 bytes: reserve the largest, then pull the cursor back to what it
+ * actually used. Reserving first is what guarantees the room.
+ */
+function writePackedCFrame(ctx: EmitContext, value: ts.Expression, out: ts.Statement[]): void {
+	const { buf, pos, statements } = ctx.destructureAlloc("alloc", PACKED_CFRAME_MAX_BYTES);
+	out.push(...statements);
+	out.push(
+		ctx.assign(
+			CURSOR,
+			ctx.factory.createBinaryExpression(
+				pos,
+				ctx.ts_.SyntaxKind.PlusToken,
+				ctx.call("writePackedCFrame", [buf, pos, value]),
+			),
+		),
+	);
+}
+
+function writeEnum(
+	ctx: EmitContext,
+	field: Extract<Field, { kind: "enum" }>,
+	value: ts.Expression,
+	out: ts.Statement[],
+): void {
+	const bytes = field.members.length <= 256 ? 1 : 2;
+	const { buf, pos, statements } = ctx.destructureAlloc("alloc", bytes);
+	out.push(...statements);
+	out.push(
+		ctx.factory.createExpressionStatement(
+			ctx.bufferCall(bytes === 1 ? "writeu8" : "writeu16", [
+				buf,
+				pos,
+				enumIndexExpr(ctx, field.enumName, field.members, value),
+			]),
+		),
+	);
+}
+
+function writeRecursiveRef(
+	ctx: EmitContext,
+	field: Extract<Field, { kind: "recursiveRef" }>,
+	value: ts.Expression,
+	out: ts.Statement[],
+): void {
+	// `ensureHelper` is idempotent (guarded by `generatedHelpers`):
+	// calling it here matters when this `recursiveRef` is the root
+	// field itself (a directly recursive union/alias, not one reached
+	// through an `object`'s `helperName`, which already calls it from
+	// `writeObject`) -- without it, this call site would reference a
+	// helper function that's never declared.
+	ctx.ensureHelper(field.helperName);
+	out.push(ctx.callWriteHelper(field.helperName, value));
+}
+
+function writeArray(
+	ctx: EmitContext,
+	field: Extract<Field, { kind: "array" }>,
+	value: ts.Expression,
+	out: ts.Statement[],
+): void {
+	const f = ctx.factory;
+	const arr = ctx.boundBySize(value)?.value ?? bindLocal(ctx, "arr", value, out);
+	const exact = exactCount(field.length);
+	if (exact !== undefined) {
+		// Indexed rather than `for...of`, so exactly this many are
+		// written however many the value holds. A longer one is
+		// ignored past the bound. A shorter one writes `nil`
+		// elements, which raises for every element kind but an
+		// optional -- `nil` is what an absent optional writes, so
+		// there it pads instead (pinned in collections.spec.ts).
+		checkExactLength(ctx, ctx.sizeOf(arr), exact, padsAsAbsent(field.element), out);
+		const i = ctx.fresh("i");
+		const body: ts.Statement[] = [];
+		// Cast, because `arr[i]` is typed with `undefined` under a
+		// consumer's `noUncheckedIndexedAccess`. What a `nil` element
+		// writes is stated above.
+		const element = ctx.castTo(f.createElementAccessExpression(arr, i), fieldToTypeNode(ctx, field.element));
+		writeElement(ctx, field.element, element, exact, out, body);
+		out.push(ctx.indexedLoop(i, 0, ctx.num(exact), body));
+		return;
+	}
+	writeCount(ctx, field.length, ctx.sizeOf(arr), out);
+	const item = ctx.fresh("item");
+	const body: ts.Statement[] = [];
+	writeElement(ctx, field.element, item, ctx.sizeOf(arr), out, body);
+	out.push(
+		f.createForOfStatement(
+			undefined,
+			f.createVariableDeclarationList([f.createVariableDeclaration(item)], ctx.ts_.NodeFlags.Const),
+			arr,
+			f.createBlock(body, true),
+		),
+	);
+}
+
+/**
+ * Writes one element of an array's loop into `body`. An element that
+ * `elementBytes` admits takes its bytes from one reservation of all `count`
+ * of them, which `out` makes ahead of the loop.
+ */
+function writeElement(
+	ctx: EmitContext,
+	element: Field,
+	value: ts.Expression,
+	count: number | ts.Expression,
+	out: ts.Statement[],
+	body: ts.Statement[],
+): void {
+	const bytes = elementBytes(element);
+	if (bytes === undefined) {
+		writeField(ctx, element, value, body);
+		return;
+	}
+	const start = ctx.reserveElements("alloc", bytes, count, out);
+	ctx.withAllocRun("alloc", bytes, () => writeField(ctx, element, value, body), start);
+	body.push(ctx.nextElement(start, bytes));
+}
+
+function writeTuple(
+	ctx: EmitContext,
+	field: Extract<Field, { kind: "tuple" }>,
+	value: ts.Expression,
+	out: ts.Statement[],
+): void {
+	const f = ctx.factory;
+	// `fixedBytes` admitted this tuple into the enclosing run, so each element
+	// takes the run's next bytes, and nothing is bound, as for a nested object
+	// (`writeObjectInline`).
+	if (ctx.inAllocRun()) {
+		field.fixed.forEach((elementField, i) =>
+			writeField(ctx, elementField, f.createElementAccessExpression(value, ctx.num(i)), out),
+		);
+		return;
+	}
+	const tup = ctx.boundBySize(value)?.value ?? (isLocal(ctx, value) ? value : bindLocal(ctx, "tup", value, out));
+	// Consecutive fixed-size elements share a reservation, as an object's
+	// properties do (Transformer 5.5).
+	const elements = field.fixed.map((elementField, i) => ({ elementField, i }));
+	const groups = allocRuns(
+		elements,
+		(element) => fixedBytes(element.elementField) !== undefined,
+		(element) => element.elementField,
+	);
+	ctx.pushScoped(
+		groups.map((group) =>
+			ctx.measure((itemOut) => {
+				const write = () => {
+					for (const { elementField, i } of group) {
+						writeField(ctx, elementField, f.createElementAccessExpression(tup, ctx.num(i)), itemOut);
+					}
+				};
+				if (group.length > 1) {
+					ctx.withAllocRun(
+						"alloc",
+						group.reduce((sum, element) => sum + fixedBytes(element.elementField)!, 0),
+						write,
+					);
+				} else {
+					write();
+				}
+			}),
+		),
+		out,
+	);
+	if (!field.rest) {
+		return;
+	}
+	const rest = field.rest;
+	const fixedCount = field.fixed.length;
+	const exact = exactCount(field.length);
+	// `tup[i]` has the union of every element type; the index is past
+	// the fixed elements, so it is a rest element.
+	const restElement = (i: ts.Identifier): ts.Expression =>
+		ctx.castTo(f.createElementAccessExpression(tup, i), fieldToTypeNode(ctx, rest));
+	if (exact !== undefined) {
+		checkExactLength(
+			ctx,
+			f.createBinaryExpression(ctx.sizeOf(tup), ctx.ts_.SyntaxKind.MinusToken, ctx.num(fixedCount)),
+			exact,
+			padsAsAbsent(rest),
+			out,
+		);
+		const i = ctx.fresh("i");
+		const body: ts.Statement[] = [];
+		writeField(ctx, rest, restElement(i), body);
+		out.push(ctx.indexedLoop(i, fixedCount, ctx.num(fixedCount + exact), body));
+		return;
+	}
+	writeCount(
+		ctx,
+		field.length,
+		f.createBinaryExpression(ctx.sizeOf(tup), ctx.ts_.SyntaxKind.MinusToken, ctx.num(fixedCount)),
+		out,
+	);
+	const i = ctx.fresh("i");
+	const body: ts.Statement[] = [];
+	writeField(ctx, rest, restElement(i), body);
+	out.push(
+		f.createForStatement(
+			f.createVariableDeclarationList(
+				[f.createVariableDeclaration(i, undefined, undefined, ctx.num(fixedCount))],
+				ctx.ts_.NodeFlags.Let,
+			),
+			f.createBinaryExpression(i, ctx.ts_.SyntaxKind.LessThanToken, ctx.sizeOf(tup)),
+			f.createPostfixIncrement(i),
+			f.createBlock(body, true),
+		),
+	);
+}
+
+function writeLiteral(
+	ctx: EmitContext,
+	field: Extract<Field, { kind: "literal" }>,
+	value: ts.Expression,
+	out: ts.Statement[],
+): void {
+	const bytes = field.values.length <= 256 ? 1 : 2;
+	const { buf, pos, statements } = ctx.destructureAlloc("alloc", bytes);
+	out.push(...statements);
+	out.push(
+		ctx.factory.createExpressionStatement(
+			ctx.bufferCall(bytes === 1 ? "writeu8" : "writeu16", [
+				buf,
+				pos,
+				literalIndexExpr(ctx, field.values, value),
+			]),
+		),
+	);
+}
+
+function writeBlob(ctx: EmitContext, value: ts.Expression, out: ts.Statement[]): void {
+	ctx.pushBlob(value, out);
+}
+
+function writeDatatype(ctx: EmitContext, name: string, value: ts.Expression, out: ts.Statement[]): void {
+	const f = ctx.factory;
+	const { components } = FIXED_DATATYPES[name];
+	const size = components.reduce((total, component) => total + WIDTH_BYTES[component.width], 0);
+	const { buf, pos, statements } = ctx.destructureAlloc("alloc", size);
+	out.push(...statements);
+	const source = components.length > 1 ? readOnce(ctx, "dt", value, out) : value;
+	let offset = 0;
+	for (const component of components) {
+		const read = component.path.reduce<ts.Expression>(
+			(target, key) => f.createPropertyAccessExpression(target, key),
+			source,
+		);
+		out.push(
+			f.createExpressionStatement(
+				ctx.bufferCall(`write${component.width}`, [buf, ctx.offsetFrom(pos, offset), read]),
+			),
+		);
+		offset += WIDTH_BYTES[component.width];
+	}
+}
+
+function writeNum2(
+	ctx: EmitContext,
+	vector: ts.Expression,
+	a: string,
+	b: string,
+	width: "f32",
+	out: ts.Statement[],
+): void {
+	const f = ctx.factory;
+	const { buf, pos, statements } = ctx.destructureAlloc("alloc", 8);
+	out.push(...statements);
+	const value = readOnce(ctx, "vec", vector, out);
+	out.push(
+		f.createExpressionStatement(
+			ctx.bufferCall(`write${width}`, [buf, pos, f.createPropertyAccessExpression(value, a)]),
+		),
+	);
+	out.push(
+		f.createExpressionStatement(
+			ctx.bufferCall(`write${width}`, [
+				buf,
+				f.createBinaryExpression(pos, ctx.ts_.SyntaxKind.PlusToken, ctx.num(4)),
+				f.createPropertyAccessExpression(value, b),
+			]),
+		),
+	);
+}
+
+/**
+ * Writes three components, each at its own width, into the bytes `slot`
+ * starts at. The caller reserves `componentBytes(widths)` of them.
+ */
+function writeNum3(
+	ctx: EmitContext,
+	value: ts.Expression,
+	a: string,
+	b: string,
+	c: string,
+	widths: ComponentWidths,
+	slot: Slot,
+	out: ts.Statement[],
+): void {
+	const f = ctx.factory;
+	let offset = 0;
+	[a, b, c].forEach((component, i) => {
+		out.push(
+			...ctx.writeNumberAt(
+				widths[i],
+				slot.buf,
+				ctx.at(slot, offset),
+				f.createPropertyAccessExpression(value, component),
+			),
+		);
+		offset += WIDTH_BYTES[widths[i]];
+	});
+}
+
+function writeColor3(ctx: EmitContext, color: ts.Expression, out: ts.Statement[]): void {
+	const f = ctx.factory;
+	const { buf, pos, statements } = ctx.destructureAlloc("alloc", 3);
+	out.push(...statements);
+	const value = readOnce(ctx, "color", color, out);
+	(["R", "G", "B"] as const).forEach((channel, i) => {
+		const byteExpr = f.createCallExpression(
+			f.createPropertyAccessExpression(f.createIdentifier("math"), "floor"),
+			undefined,
+			[
+				f.createBinaryExpression(
+					f.createPropertyAccessExpression(value, channel),
+					ctx.ts_.SyntaxKind.AsteriskToken,
+					ctx.num(255),
+				),
+			],
+		);
+		out.push(
+			f.createExpressionStatement(
+				ctx.bufferCall("writeu8", [
+					buf,
+					i === 0 ? pos : f.createBinaryExpression(pos, ctx.ts_.SyntaxKind.PlusToken, ctx.num(i)),
+					byteExpr,
+				]),
+			),
+		);
+	});
+}
+
+function writeCFrame(
+	ctx: EmitContext,
+	field: Extract<Field, { kind: "cframe" }>,
+	value: ts.Expression,
+	out: ts.Statement[],
+): void {
+	const f = ctx.factory;
+	const widths = componentsOf(field.position);
+	const positionBytes = componentBytes(widths);
+	// One reservation for both halves. `ToAxisAngle` and `Vector3.mul`
+	// sit between the two writes, and neither can grow the scratch
+	// buffer, so `buf` is still the buffer `alloc` handed back when the
+	// rotation is written.
+	const { buf, pos, statements } = ctx.destructureAlloc("alloc", cframeBytes(field));
+	out.push(...statements);
+	// Read once rather than once per component: `Position` is a property of
+	// a Roblox userdata, which the engine answers on every read.
+	const position = ctx.fresh("position");
+	out.push(ctx.constStatement(position, f.createPropertyAccessExpression(value, "Position")));
+	writeNum3(ctx, position, "X", "Y", "Z", widths, { buf, pos, offset: 0 }, out);
+	const axis = ctx.fresh("axis");
+	const angle = ctx.fresh("angle");
+	out.push(
+		f.createVariableStatement(
+			undefined,
+			f.createVariableDeclarationList(
+				[
+					f.createVariableDeclaration(
+						f.createArrayBindingPattern([
+							f.createBindingElement(undefined, undefined, axis),
+							f.createBindingElement(undefined, undefined, angle),
+						]),
+						undefined,
+						undefined,
+						f.createCallExpression(f.createPropertyAccessExpression(value, "ToAxisAngle"), undefined, []),
+					),
+				],
+				ctx.ts_.NodeFlags.Const,
+			),
+		),
+	);
+	const rv = ctx.fresh("rv");
+	const rotationSlot = { buf, pos, offset: positionBytes };
+	if (!field.quantized) {
+		out.push(
+			ctx.constStatement(
+				rv,
+				f.createCallExpression(f.createPropertyAccessExpression(axis, "mul"), undefined, [angle]),
+			),
+		);
+		writeNum3(ctx, rv, "X", "Y", "Z", DEFAULT_COMPONENTS, rotationSlot, out);
+		return;
+	}
+	// The angle is folded into [-pi, pi], which turns the same rotation the
+	// other way round the axis, so that no component is larger than pi and the
+	// scale maps each onto an i16. Rounded, not truncated, which halves the error.
+	const syntax = ctx.ts_.SyntaxKind;
+	const turn = f.createConditionalExpression(
+		f.createBinaryExpression(angle, syntax.GreaterThanToken, ctx.num(Math.PI)),
+		undefined,
+		f.createBinaryExpression(angle, syntax.MinusToken, ctx.num(2 * Math.PI)),
+		undefined,
+		angle,
+	);
+	out.push(
+		ctx.constStatement(
+			rv,
+			f.createCallExpression(f.createPropertyAccessExpression(axis, "mul"), undefined, [
+				f.createBinaryExpression(
+					f.createParenthesizedExpression(turn),
+					syntax.AsteriskToken,
+					ctx.num(QUANTIZED_ROTATION_SCALE),
+				),
+			]),
+		),
+	);
+	const rounded = (component: string) =>
+		f.createCallExpression(f.createPropertyAccessExpression(f.createIdentifier("math"), "round"), undefined, [
+			f.createPropertyAccessExpression(rv, component),
+		]);
+	["X", "Y", "Z"].forEach((component, i) => {
+		out.push(...ctx.writeNumberAt("i16", buf, ctx.at(rotationSlot, i * 2), rounded(component)));
+	});
+}
+
+/**
+ * One bit per member, in the order of `field.members`, each set when the set
+ * holds that member. Every byte is computed whole from its bits and written
+ * once, as the packed region is, so bits past the last member are always 0
+ * and no bit keeps what an earlier `serialize()` left in the scratch buffer.
+ */
+function writeBitSet(
+	ctx: EmitContext,
+	field: Extract<Field, { kind: "bitSet" }>,
+	value: ts.Expression,
+	out: ts.Statement[],
+): void {
+	const f = ctx.factory;
+	const set = ctx.fresh("set");
+	out.push(ctx.constStatement(set, ctx.castTo(value, fieldToTypeNode(ctx, field))));
+	const { buf, pos, statements } = ctx.destructureAlloc("alloc", bitSetBytes(field));
+	out.push(...statements);
+	for (let byteIndex = 0; byteIndex * 8 < field.members.length; byteIndex++) {
+		let byteExpr: ts.Expression | undefined;
+		field.members.slice(byteIndex * 8, byteIndex * 8 + 8).forEach((member, bitIndex) => {
+			const term = f.createConditionalExpression(
+				f.createCallExpression(f.createPropertyAccessExpression(set, "has"), undefined, [
+					ctx.literalValueExpr(member),
+				]),
+				undefined,
+				ctx.num(1 << bitIndex),
+				undefined,
+				ctx.num(0),
+			);
+			byteExpr = byteExpr ? f.createBinaryExpression(byteExpr, ctx.ts_.SyntaxKind.PlusToken, term) : term;
+		});
+		out.push(
+			f.createExpressionStatement(ctx.bufferCall("writeu8", [buf, ctx.offsetFrom(pos, byteIndex), byteExpr!])),
+		);
+	}
+}
+
+function writeSequence(
+	ctx: EmitContext,
+	value: ts.Expression,
+	kind: "ColorSequence" | "NumberSequence",
+	out: ts.Statement[],
+): void {
+	const f = ctx.factory;
+	const keypoints = ctx.fresh("keypoints");
+	out.push(ctx.constStatement(keypoints, f.createPropertyAccessExpression(value, "Keypoints")));
+	const { buf, pos, statements } = ctx.destructureAlloc("alloc", 1);
+	out.push(...statements);
+	out.push(f.createExpressionStatement(ctx.bufferCall("writeu8", [buf, pos, ctx.sizeOf(keypoints)])));
+	const kp = ctx.fresh("kp");
+	const body: ts.Statement[] = [];
+	const { buf: kbuf, pos: kpos, statements: kstmt } = ctx.destructureAlloc("alloc", 4);
+	body.push(...kstmt);
+	body.push(
+		f.createExpressionStatement(
+			ctx.bufferCall("writef32", [kbuf, kpos, f.createPropertyAccessExpression(kp, "Time")]),
+		),
+	);
+	if (kind === "ColorSequence") {
+		const colorBody: ts.Statement[] = [];
+		writeColor3(ctx, f.createPropertyAccessExpression(kp, "Value"), colorBody);
+		body.push(...colorBody);
+	} else {
+		const { buf: vbuf, pos: vpos, statements: vstmt } = ctx.destructureAlloc("alloc", 8);
+		body.push(...vstmt);
+		body.push(
+			f.createExpressionStatement(
+				ctx.bufferCall("writef32", [vbuf, vpos, f.createPropertyAccessExpression(kp, "Value")]),
+			),
+		);
+		// fbs drops the envelope. It is part of the value, so it is kept here.
+		body.push(
+			f.createExpressionStatement(
+				ctx.bufferCall("writef32", [
+					vbuf,
+					ctx.offsetFrom(vpos, 4),
+					f.createPropertyAccessExpression(kp, "Envelope"),
+				]),
+			),
+		);
+	}
+	out.push(
+		f.createForOfStatement(
+			undefined,
+			f.createVariableDeclarationList([f.createVariableDeclaration(kp)], ctx.ts_.NodeFlags.Const),
+			keypoints,
+			f.createBlock(body, true),
+		),
+	);
+}
+
+function enumIndexExpr(
+	ctx: EmitContext,
+	enumName: string,
+	members: ReadonlyArray<string>,
+	value: ts.Expression,
+): ts.Expression {
+	const { indexName } = ctx.ensureEnumTable(enumName, members);
+	const f = ctx.factory;
+	return f.createNonNullExpression(
+		f.createCallExpression(f.createPropertyAccessExpression(f.createIdentifier(indexName), "get"), undefined, [
+			f.createPropertyAccessExpression(value, "Name"),
+		]),
+	);
+}
+
+function literalIndexExpr(
+	ctx: EmitContext,
+	values: ReadonlyArray<string | number | boolean | undefined>,
+	value: ts.Expression,
+): ts.Expression {
+	const f = ctx.factory;
+	let expr: ts.Expression = ctx.num(values.length - 1);
+	for (let i = values.length - 2; i >= 0; i--) {
+		expr = f.createConditionalExpression(
+			literalCheck(ctx, value, values[i]),
+			undefined,
+			ctx.num(i),
+			undefined,
+			expr,
+		);
+	}
+	return expr;
+}
+
+/** `value === <literal>`, one test of {@link literalIndexExpr}'s chain. */
+export function literalCheck(
+	ctx: EmitContext,
+	value: ts.Expression,
+	literal: string | number | boolean | undefined,
+): ts.Expression {
+	const f = ctx.factory;
+	return f.createBinaryExpression(
+		value,
+		ctx.ts_.SyntaxKind.EqualsEqualsEqualsToken,
+		literal === undefined ? f.createIdentifier("undefined") : ctx.literalValueExpr(literal),
+	);
+}
+
+/**
+ * Casts to a real `Map<K,V>`/`Set<K>` type (never `any`: roblox-ts
+ * outright refuses to compile a call/method on an `any`-typed value --
+ * confirmed by hitting exactly that error -- so the placeholder has to be
+ * a real, usable type). This is what lets the write loop below iterate a
+ * plain `Record` with `for...of` destructuring even though TypeScript
+ * itself has no iteration protocol for a bare indexed object: the cast
+ * only affects what the *type checker* sees, and a `Record`'s runtime
+ * representation is already an indistinguishable plain table (behavior 2 in
+ * docs/research/compile-time-specialization.md), so the
+ * cast is lossless either way.
+ */
+function asMapOrSet(
+	ctx: EmitContext,
+	value: ts.Expression,
+	keyField: Field,
+	valueField: Field | undefined,
+): ts.Expression {
+	const f = ctx.factory;
+	const typeNode = valueField
+		? f.createTypeReferenceNode("Map", [fieldToTypeNode(ctx, keyField), fieldToTypeNode(ctx, valueField)])
+		: f.createTypeReferenceNode("Set", [fieldToTypeNode(ctx, keyField)]);
+	return f.createAsExpression(
+		f.createAsExpression(value, f.createKeywordTypeNode(ctx.ts_.SyntaxKind.UnknownKeyword)),
+		typeNode,
+	);
+}
+
+function writeDict(
+	ctx: EmitContext,
+	field: Extract<Field, { kind: "dict" }>,
+	value: ts.Expression,
+	out: ts.Statement[],
+): void {
+	const f = ctx.factory;
+	const isSet = field.value === undefined;
+	const dictTmp = ctx.fresh("dict");
+	out.push(ctx.constStatement(dictTmp, value));
+	const countWidth = lengthWidth(field.length);
+	const { buf: cbuf, pos: cpos, statements: cstmt } = ctx.destructureAlloc("alloc", WIDTH_BYTES[countWidth]);
+	out.push(...cstmt);
+	const count = ctx.fresh("count");
+	out.push(
+		f.createVariableStatement(
+			undefined,
+			f.createVariableDeclarationList(
+				[f.createVariableDeclaration(count, undefined, undefined, ctx.num(0))],
+				ctx.ts_.NodeFlags.Let,
+			),
+		),
+	);
+	const k = ctx.fresh("k");
+	const body: ts.Statement[] = [];
+	writeField(ctx, field.key, k, body);
+	if (!isSet) {
+		const v = ctx.fresh("v");
+		writeField(ctx, field.value!, v, body);
+		body.push(f.createExpressionStatement(f.createPostfixUnaryExpression(count, ctx.ts_.SyntaxKind.PlusPlusToken)));
+		out.push(
+			f.createForOfStatement(
+				undefined,
+				f.createVariableDeclarationList(
+					[
+						f.createVariableDeclaration(
+							f.createArrayBindingPattern([
+								f.createBindingElement(undefined, undefined, k),
+								f.createBindingElement(undefined, undefined, v),
+							]),
+						),
+					],
+					ctx.ts_.NodeFlags.Const,
+				),
+				asMapOrSet(ctx, dictTmp, field.key, field.value),
+				f.createBlock(body, true),
+			),
+		);
+	} else {
+		body.push(f.createExpressionStatement(f.createPostfixUnaryExpression(count, ctx.ts_.SyntaxKind.PlusPlusToken)));
+		out.push(
+			f.createForOfStatement(
+				undefined,
+				f.createVariableDeclarationList([f.createVariableDeclaration(k)], ctx.ts_.NodeFlags.Const),
+				asMapOrSet(ctx, dictTmp, field.key, undefined),
+				f.createBlock(body, true),
+			),
+		);
+	}
+	checkCountFits(ctx, countWidth, count, out);
+	out.push(...ctx.writeNumberAt(countWidth, cbuf, cpos, count));
+}
+
+function writeObject(
+	ctx: EmitContext,
+	field: Extract<Field, { kind: "object" }>,
+	value: ts.Expression,
+	out: ts.Statement[],
+): void {
+	if (field.helperName) {
+		ctx.ensureHelper(field.helperName);
+		out.push(ctx.callWriteHelper(field.helperName, value));
+		return;
+	}
+	writeObjectInline(ctx, field.fields, value, out);
+}
+
+/** Whether `value` is a local once the casts around it, which compile to nothing, are taken off. */
+export function isLocal(ctx: EmitContext, value: ts.Expression): boolean {
+	let inner = value;
+	while (ctx.ts_.isAsExpression(inner) || ctx.ts_.isParenthesizedExpression(inner)) {
+		inner = inner.expression;
+	}
+	return ctx.ts_.isIdentifier(inner);
+}
+
+export function writeObjectInline(
+	ctx: EmitContext,
+	fields: ReadonlyArray<ObjectFieldEntry>,
+	value: ts.Expression,
+	out: ts.Statement[],
+	// A union variant's index, written ahead of the object's properties.
+	lead?: VariantIndex,
+): void {
+	// `fixedBytes` admitted this object into the enclosing run, so it has no
+	// packed region and each property takes the run's next bytes.
+	if (ctx.inAllocRun()) {
+		for (const entry of fields) {
+			writeField(ctx, entry.field, ctx.propertyAccess(value, entry), out);
+		}
+		return;
+	}
+	// A nested object's value is a path of property reads from the value
+	// `serialize` was given. Each property's write would read the whole path
+	// again, so an object with more than one property reads it once, into a
+	// local. A run above binds nothing: its locals are counted by property
+	// (`runLocals` in layout.ts). A size ahead of the result may have bound it
+	// already, under this same condition (`measureObject` in size.ts).
+	if (!isLocal(ctx, value) && fields.length > 1) {
+		value = ctx.boundBySize(value)?.value ?? bindLocal(ctx, "obj", value, out);
+	}
+	// The packed region comes first: the read side needs an optional's
+	// presence bit before it reaches that optional's value.
+	const bits = packedBits(fields);
+	// A field whose bytes the packed region already holds writes nothing
+	// here; one whose presence or tag is a bit writes the rest of itself
+	// through its own path, so neither can share a reservation.
+	const written = fields.filter((entry) => !isAllPackedBits(entry.field));
+	const shareable = (entry: ObjectFieldEntry) =>
+		!bits.some((bit) => bit.entry === entry) && fixedBytes(entry.field) !== undefined;
+	const groups = allocRuns(written, shareable, (entry) => entry.field);
+	const items: ScopedItem[] = [];
+	// A variant's index comes before everything the variant writes. It
+	// shares the reservation of the properties right after it when those have
+	// a fixed size and the run stays within its bound, and reserves on its
+	// own otherwise.
+	let pendingLead = lead;
+	const first = groups[0];
+	if (
+		pendingLead !== undefined &&
+		(bits.length > 0 ||
+			first === undefined ||
+			!shareable(first[0]) ||
+			first.reduce((sum, entry) => sum + runLocals(entry.field), 1) > ALLOC_RUN_LOCALS)
+	) {
+		const index = pendingLead;
+		items.push(ctx.measure((itemOut) => writeVariantIndex(ctx, index, itemOut)));
+		pendingLead = undefined;
+	}
+	if (bits.length > 0) {
+		items.push(ctx.measure((itemOut) => writePackedBits(ctx, bits, value, itemOut)));
+	}
+	for (const group of groups) {
+		if (group.length > 1 || pendingLead !== undefined) {
+			const index = pendingLead;
+			pendingLead = undefined;
+			const total = group.reduce((sum, entry) => sum + fixedBytes(entry.field)!, index?.bytes ?? 0);
+			items.push(
+				ctx.measure((itemOut) => {
+					ctx.withAllocRun("alloc", total, () => {
+						if (index !== undefined) {
+							writeVariantIndex(ctx, index, itemOut);
+						}
+						for (const entry of group) {
+							writeField(ctx, entry.field, ctx.propertyAccess(value, entry), itemOut);
+						}
+					});
+				}),
+			);
+			continue;
+		}
+		const entry = group[0];
+		const field = entry.field;
+		items.push(
+			ctx.measure((itemOut) => {
+				const property = ctx.propertyAccess(value, entry);
+				if (field.kind === "optional" && field.packed) {
+					writeOptional(ctx, field, property, itemOut, false);
+				} else if (bits.some((bit) => bit.entry === entry && bit.role === "tag")) {
+					writeTaggedUnion(ctx, field as Extract<Field, { kind: "taggedUnion" }>, property, itemOut, false);
+				} else {
+					writeField(ctx, field, property, itemOut);
+				}
+			}),
+		);
+	}
+	ctx.pushScoped(items, out);
+}
+
+function writeOptional(
+	ctx: EmitContext,
+	field: Extract<Field, { kind: "optional" }>,
+	value: ts.Expression,
+	out: ts.Statement[],
+	writeFlag: boolean,
+): void {
+	const f = ctx.factory;
+	// Bound to a local first, and narrowed via a direct `!== undefined`
+	// check on that local (not a separately-computed boolean), which is
+	// what lets TS narrow it to non-optional for the inner write below --
+	// narrowing a repeated property-access expression like `value.x`
+	// doesn't survive being routed through an intermediate variable.
+	const tmp = ctx.fresh("opt");
+	out.push(ctx.constStatement(tmp, value));
+	const isPresent = (expr: ts.Expression) =>
+		f.createBinaryExpression(
+			expr,
+			ctx.ts_.SyntaxKind.ExclamationEqualsEqualsToken,
+			f.createIdentifier("undefined"),
+		);
+	// Without the flag, the presence bit is in the enclosing object's packed region.
+	if (writeFlag) {
+		const { buf, pos, statements } = ctx.destructureAlloc("alloc", 1);
+		out.push(...statements);
+		out.push(
+			f.createExpressionStatement(
+				ctx.bufferCall("writeu8", [
+					buf,
+					pos,
+					f.createConditionalExpression(isPresent(tmp), undefined, ctx.num(1), undefined, ctx.num(0)),
+				]),
+			),
+		);
+	}
+	const innerStatements: ts.Statement[] = [];
+	if (field.inner.kind === "blob") {
+		// The presence test is the blob's own test for `nil`.
+		ctx.pushBlob(tmp, innerStatements, true);
+	} else {
+		writeField(ctx, field.inner, tmp, innerStatements);
+	}
+	out.push(f.createIfStatement(isPresent(tmp), f.createBlock(innerStatements, true)));
+}
+
+function writePackedBits(
+	ctx: EmitContext,
+	bits: ReadonlyArray<PackedBit>,
+	value: ts.Expression,
+	out: ts.Statement[],
+): void {
+	const f = ctx.factory;
+	const byteCount = Math.ceil(bits.length / 8);
+	const { buf, pos, statements } = ctx.destructureAlloc("alloc", byteCount);
+	out.push(...statements);
+	// One `writeu8` per byte, computed from all its bits at once, rather
+	// than one `packBit` call per bit into the reused scratch region:
+	// `alloc()` doesn't zero a region it didn't just grow into, so a
+	// bit-at-a-time write would leave any bit past `bits.length`
+	// holding whatever an earlier `serialize()` call left there (the
+	// wire-format-determinism finding in
+	// docs/research/september-2026-review.md). Computing the
+	// whole byte writes every bit, including the unused high ones (implicitly
+	// zero), so the result is deterministic by construction.
+	for (let byteIndex = 0; byteIndex < byteCount; byteIndex++) {
+		const chunk = bits.slice(byteIndex * 8, byteIndex * 8 + 8);
+		const byteExpr = packedByteExpr(ctx, chunk, value);
+		out.push(
+			f.createExpressionStatement(ctx.bufferCall("writeu8", [buf, ctx.offsetFrom(pos, byteIndex), byteExpr])),
+		);
+	}
+}
+
+/** Sums `1 << bitIndex` for each set bit in `bits` (bit 0 = the byte's least-significant bit, as the read side's `bit32.btest` tests it). */
+function packedByteExpr(ctx: EmitContext, bits: ReadonlyArray<PackedBit>, value: ts.Expression): ts.Expression {
+	const f = ctx.factory;
+	let expr: ts.Expression | undefined;
+	bits.forEach(({ entry, role }, bitIndex) => {
+		const property = ctx.propertyAccess(value, entry);
+		let condition: ts.Expression = property;
+		if (role === "tag" && entry.field.kind === "taggedUnion") {
+			condition = f.createBinaryExpression(
+				ctx.propertyAccess(property, tagKeyOf(entry.field)),
+				ctx.ts_.SyntaxKind.EqualsEqualsEqualsToken,
+				ctx.literalValueExpr(entry.field.variants[1].tagValue),
+			);
+		} else if (role === "present") {
+			condition = f.createBinaryExpression(
+				property,
+				ctx.ts_.SyntaxKind.ExclamationEqualsEqualsToken,
+				f.createIdentifier("undefined"),
+			);
+		} else if (entry.field.kind === "optional") {
+			// The value bit of an optional boolean: `undefined` is not a condition TypeScript accepts.
+			condition = f.createBinaryExpression(property, ctx.ts_.SyntaxKind.EqualsEqualsEqualsToken, f.createTrue());
+		}
+		const term = f.createConditionalExpression(condition, undefined, ctx.num(1 << bitIndex), undefined, ctx.num(0));
+		expr = expr ? f.createBinaryExpression(expr, ctx.ts_.SyntaxKind.PlusToken, term) : term;
+	});
+	return expr!;
+}
+
+function writeTaggedUnion(
+	ctx: EmitContext,
+	field: Extract<Field, { kind: "taggedUnion" }>,
+	value: ts.Expression,
+	out: ts.Statement[],
+	// `false` when the enclosing object's packed region holds the tag as one bit.
+	writeIndex = true,
+): void {
+	const access = ctx.propertyAccess(value, tagKeyOf(field));
+	const bound = ctx.boundBySize(access)?.value;
+	const tag = bound ?? ctx.fresh("tag");
+	if (bound === undefined) {
+		out.push(ctx.constStatement(tag, access));
+	}
+	writeVariants(
+		ctx,
+		field.variants.map((variant) => ({
+			check: () => literalCheck(ctx, tag, variant.tagValue),
+			write: (branch: ts.Statement[], index: VariantIndex | undefined) =>
+				writeObjectInline(
+					ctx,
+					variant.fields,
+					ctx.castTo(value, objectShapeTypeNode(ctx, variant.fields)),
+					branch,
+					index,
+				),
+		})),
+		writeIndex,
+		out,
+	);
+}
+
+function writeGuardedUnion(
+	ctx: EmitContext,
+	field: Extract<Field, { kind: "guardedUnion" }>,
+	value: ts.Expression,
+	out: ts.Statement[],
+): void {
+	writeVariants(
+		ctx,
+		field.variants.map((variant) => ({
+			check: () => guardFor(ctx, variant, value, severalEnums(field.variants)),
+			write: (branch: ts.Statement[], index: VariantIndex | undefined) => {
+				const cast = ctx.castTo(value, fieldToTypeNode(ctx, variant));
+				const bytes = fixedBytes(variant);
+				if (index === undefined || bytes === undefined || runLocals(variant) + 1 > ALLOC_RUN_LOCALS) {
+					if (index !== undefined) {
+						writeVariantIndex(ctx, index, branch);
+					}
+					writeField(ctx, variant, cast, branch);
+					return;
+				}
+				// A variant of a fixed size shares its index's reservation.
+				ctx.withAllocRun("alloc", index.bytes + bytes, () => {
+					writeVariantIndex(ctx, index, branch);
+					writeField(ctx, variant, cast, branch);
+				});
+			},
+		})),
+		true,
+		out,
+	);
+}
+
+/** A union variant's index, which its branch writes ahead of the variant. */
+interface VariantIndex {
+	readonly bytes: number;
+	readonly index: number;
+}
+
+function writeVariantIndex(ctx: EmitContext, variant: VariantIndex, out: ts.Statement[]): void {
+	const { buf, pos, statements } = ctx.destructureAlloc("alloc", variant.bytes);
+	out.push(...statements);
+	out.push(
+		ctx.factory.createExpressionStatement(
+			ctx.bufferCall(variant.bytes === 1 ? "writeu8" : "writeu16", [buf, pos, ctx.num(variant.index)]),
+		),
+	);
+}
+
+/**
+ * A union's write, which tests its variants once: each test's branch writes
+ * the variant's index, unless a packed region holds it, and then the
+ * variant. The index shares the variant's first reservation where the
+ * variant starts with bytes of a fixed size. The last variant is written
+ * when no test passes, as the size (`measureUnion` in size.ts) takes it, so
+ * the two agree on a value that matches no variant.
+ */
+function writeVariants(
+	ctx: EmitContext,
+	variants: ReadonlyArray<{
+		// Built only for a variant that is not the last, which has no test.
+		readonly check: () => ts.Expression;
+		readonly write: (branch: ts.Statement[], index: VariantIndex | undefined) => void;
+	}>,
+	writeIndex: boolean,
+	out: ts.Statement[],
+): void {
+	const f = ctx.factory;
+	const idxBytes = variants.length <= 256 ? 1 : 2;
+	const last = variants.length - 1;
+	let chain: ts.Statement | undefined;
+	for (let i = last; i >= 0; i--) {
+		const branch: ts.Statement[] = [];
+		variants[i].write(branch, writeIndex ? { bytes: idxBytes, index: i } : undefined);
+		const block = f.createBlock(branch, true);
+		chain = i === last ? block : f.createIfStatement(variants[i].check(), block, chain);
+	}
+	if (chain === undefined) {
+		return;
+	}
+	if (ctx.ts_.isBlock(chain)) {
+		out.push(...chain.statements);
+	} else {
+		out.push(chain);
+	}
+}
+
+/** Whether a union holds more than one `enum` variant, which `typeIs` alone cannot tell apart. */
+export function severalEnums(variants: ReadonlyArray<Field>): boolean {
+	return variants.filter((variant) => variant.kind === "enum").length > 1;
+}
+
+/**
+ * The test that picks `field` among a guarded union's variants. Where the
+ * union holds more than one enum (`byEnumType`), an `enum` variant is also
+ * tested by the enum that declares its items.
+ */
+export function guardFor(ctx: EmitContext, field: Field, value: ts.Expression, byEnumType = false): ts.Expression {
+	const f = ctx.factory;
+	const typeIs = (tag: string) => ctx.callLocal("typeIs", [value, f.createStringLiteral(tag)]);
+	switch (field.kind) {
+		case "num":
+			return typeIs("number");
+		case "str":
+			return typeIs("string");
+		case "bool":
+			return typeIs("boolean");
+		case "literalConst":
+			return f.createBinaryExpression(
+				value,
+				ctx.ts_.SyntaxKind.EqualsEqualsEqualsToken,
+				ctx.literalValueExpr(field.value),
+			);
+		// A `recursiveRef` is a table too: only an object type or a union is
+		// ever walked into a helper, and a union is never a member of
+		// another union.
+		case "object":
+		case "array":
+		case "tuple":
+		case "dict":
+		case "bitSet":
+		case "recursiveRef":
+			return typeIs("table");
+		case "vector2":
+			return typeIs("Vector2");
+		case "datatype":
+			return typeIs(field.name);
+		case "buffer":
+			return typeIs("buffer");
+		case "vector3":
+			return typeIs("Vector3");
+		case "cframe":
+			return typeIs("CFrame");
+		case "color3":
+			return typeIs("Color3");
+		case "colorSequence":
+			return typeIs("ColorSequence");
+		case "numberSequence":
+			return typeIs("NumberSequence");
+		case "enum":
+			return byEnumType
+				? f.createLogicalAnd(
+						typeIs("EnumItem"),
+						f.createBinaryExpression(
+							f.createPropertyAccessExpression(value, "EnumType"),
+							ctx.ts_.SyntaxKind.EqualsEqualsEqualsToken,
+							f.createPropertyAccessExpression(f.createIdentifier("Enum"), field.enumName),
+						),
+					)
+				: typeIs("EnumItem");
+		default:
+			// `classifyUnion` in walk.ts reports a diagnostic for every other
+			// kind, so none of them reaches the emitter.
+			throw new Error(`surge: internal error -- no union guard for a "${field.kind}" variant`);
+	}
+}

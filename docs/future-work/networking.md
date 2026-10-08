@@ -20,9 +20,9 @@ up.
 
 ## How, briefly
 
-- Its own repository and package, `surge-net`: `@rbxts/surge` is the
-  serializer's runtime package (Two packages, two repositories in
-  [architecture.md](../architecture.md)).
+- A package of its own, `surge-net`, in a directory of its own in this
+  repository: `@rbxts/surge` is the serializer's runtime package (Two
+  packages, one repository in [architecture.md](../architecture.md)).
 - Builds on `@rbxts/surge`'s `Codec<T>` (Runtime API 3.1 in
   [specs/runtime-api.md](../specs/runtime-api.md)) rather than re-deriving its own wire format.
 - Batching a frame's events into one buffer can use the cursor codec
@@ -31,9 +31,8 @@ up.
   `serialize` would cost a buffer of its own and a copy into the batch.
 - Not designed further than this until picked up — gets its own design
   pass (detection/dispatch model, batching strategy, channel semantics,
-  and its own repository, following the same two-repo distribution
-  reasoning as `@rbxts/surge`/`rbxts-transformer-surge` if it also needs a
-  transformer) at that point.
+  and whether it needs a transformer of its own, as `@rbxts/surge` does) at
+  that point.
 - Until then, nothing for it exists yet — it isn't part of the "full
   stack" the current tooling/tests exercise (see
   [testing.md](../testing.md)).

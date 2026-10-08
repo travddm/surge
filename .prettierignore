@@ -1,0 +1,3 @@
+# Each package formats its own files with its own Prettier.
+surge/
+rbxts-transformer-surge/

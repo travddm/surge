@@ -1,0 +1,123 @@
+# Node comes from the repository root's mise.toml; these are the tools only this package uses.
+[tools]
+"github:rojo-rbx/rojo" = "7.7.0-rc.1"
+# Runs the round-trip suite and the benchmark size tier headlessly (see testing.md) via the
+# fake-Instance shim in tests/scripts/lune-roblox-shim.luau -- Roblox Studio is reserved for the
+# speed tier, whose timings only the real engine can give.
+"github:lune-org/lune" = "0.10.5"
+# Drives a real Roblox Studio process to run the benchmark speed suite (see testing.md), via
+# tests/scripts/run-in-roblox-benchmarks.luau -- confirmed to run as its own Script instance
+# without simulating Play, so it never triggers MainServer/MainBenchmarks itself.
+"github:rojo-rbx/run-in-roblox" = "0.3.0"
+# Compiles the benchmark's Blink twins (tests/src/bench/definitions/catalog.blink) into the
+# generated modules the Blink adapter drives, via `mise run bench:definitions`. Pinned to the
+# version the coverage matrix in docs/research/type-coverage-across-libraries.md was read at, since the
+# bytes it emits are a result this repository checks in.
+"github:1Axen/blink" = "0.18.8"
+# Compiles the benchmark's Zap twins (tests/src/bench/definitions/catalog.zap) into the modules
+# the Zap adapter fires events at, via the same task. Pinned for the same reason as Blink: the
+# bytes it emits are a result this repository checks in.
+"github:red-blox/zap" = "0.6.29"
+
+[tasks.compile]
+description = "Build @rbxts/surge (this package) with rbxtsc"
+run = "npm run compile"
+
+[tasks."tests:install"]
+description = "npm install inside tests/ (its own project, not a workspace member)"
+run = "npm run tests:install"
+
+[tasks."tests:compile"]
+description = "Build the tests place through the real transformer + this package"
+run = "npm run tests:compile"
+
+[tasks."tests:compile:watch"]
+description = "Watch-compile the tests place"
+run = "npm run tests:compile:watch"
+
+[tasks."tests:sourcemap"]
+description = "Generate the sourcemap for the tests place with Rojo"
+run = "npm run tests:sourcemap"
+
+[tasks."tests:serve"]
+description = "Serve the tests place with Rojo"
+run = "npm run tests:serve"
+
+[tasks."tests:build"]
+description = "Build the tests place into a .rbxl"
+run = "npm run tests:build"
+
+[tasks."tests:test"]
+description = "Run the @rbxts/runit round-trip suite headlessly under Lune (see testing.md)"
+run = "npm run tests:test"
+
+[tasks."bench:definitions"]
+description = "Recompile the benchmark's Blink and Zap definitions into tests/src/bench/blink/ and tests/src/bench/zap/ (the generated modules are checked in, so this only runs when a definition changes)"
+run = "npm run bench:definitions"
+
+[tasks."bench:size"]
+description = "Reinstall and recompile tests/, measure the bytes each fixture costs under Lune, and rewrite docs/benchmarks/size.md (the size tier, see docs/specs/benchmark-harness.md); not part of ci -- a byte change is read, not gated pass/fail"
+run = "npm run bench:size"
+
+[tasks."bench:size:only"]
+description = "Reinstall and recompile tests/, then measure only the fixtures the given patterns select and print the table instead of rewriting docs/benchmarks/size.md -- for reading one change without a full run; a pattern is one word, matched against the fixture name with case and everything that is not a letter or a digit ignored, so `large-array` picks one row and `cframe` picks three"
+run = "npm run bench:size:only -- {{arg(name='fixture', var=true)}}"
+
+[tasks."bench:code"]
+description = "Reinstall and recompile tests/, compile each codec module of the benchmark to Luau bytecode under Lune, and rewrite docs/benchmarks/code-size.md (the code-size tier, see docs/specs/benchmark-harness.md); not part of ci -- a size change is read, not gated pass/fail"
+run = "npm run bench:code"
+
+[tasks."bench:speed"]
+description = "Reinstall and recompile tests/, run the speed suite twice back to back in a real Roblox Studio process via run-in-roblox (about ten minutes), and rewrite docs/benchmarks/speed.md and speed-trials.tsv (the speed tier, see docs/specs/benchmark-harness.md); not part of ci -- a timing is read, not gated pass/fail, and it needs Roblox Studio installed"
+run = "npm run bench:speed"
+
+[tasks."bench:speed:only"]
+description = "Reinstall and recompile tests/, then time only the fixtures the given patterns select in a real Roblox Studio process and print the tables instead of rewriting docs/benchmarks/speed.md -- for reading one change without a full run; a pattern is one word, matched against the fixture name with case and everything that is not a letter or a digit ignored, so `large-array` picks one row and `cframe` picks three"
+run = "npm run bench:speed:only -- {{arg(name='fixture', var=true)}}"
+
+[tasks."bench:speed:render"]
+description = "Rewrite docs/benchmarks/speed.md from docs/benchmarks/speed-trials.tsv without a run -- for reading a change to how the recorder summarizes or lays out the table without ten minutes of Studio"
+run = "npm run bench:speed:render"
+
+[tasks."dev:tests"]
+description = "Compile once, then watch-compile and serve the tests place"
+run = "npm run dev:tests"
+
+[tasks."lint:check"]
+description = "Lint with ESLint and markdownlint"
+run = "npm run lint:check"
+
+[tasks."lint:fix"]
+description = "Lint with ESLint and markdownlint and apply fixes"
+run = "npm run lint:fix"
+
+[tasks."format:check"]
+description = "Check formatting with Prettier"
+run = "npm run format:check"
+
+[tasks."format:fix"]
+description = "Format with Prettier and apply fixes"
+run = "npm run format:fix"
+
+[tasks.spell]
+description = "Spell check with cspell"
+run = "npm run spell"
+
+[tasks.test]
+description = "Run the golden-Luau invariant checks against tests/'s compiled output (plain Node, node:test)"
+run = "npm run test"
+
+[tasks.ci]
+description = "Run all CI checks in order (for agent verification)"
+# tests:install runs before lint:check: ESLint resolves tests/'s own @rbxts/* imports against
+# tests/node_modules, which doesn't exist yet on a fresh checkout (see testing.md).
+run = [
+	"npm run tests:install",
+	"npm run lint:check",
+	"npm run format:check",
+	"npm run spell",
+	"npm run compile",
+	"npm run tests:compile",
+	"npm run tests:test",
+	"npm run test",
+]

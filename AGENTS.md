@@ -1,10 +1,11 @@
 # AGENTS.md
 
 The entry point for anyone changing surge, person or agent. It links out
-rather than explaining. surge is two repositories: this one holds the runtime
-package `@rbxts/surge`, the `tests/` project, and all documentation;
-[`rbxts-transformer-surge`](https://github.com/travddm/rbxts-transformer-surge)
-holds the transformer and its own `AGENTS.md`.
+rather than explaining. surge is one repository with two packages: `surge/`
+holds the runtime package `@rbxts/surge` and its `tests/` project,
+`rbxts-transformer-surge/` holds the transformer and its own
+[`AGENTS.md`](rbxts-transformer-surge/AGENTS.md), and `docs/` holds all
+documentation.
 
 ## Documentation
 
@@ -16,11 +17,11 @@ holds the transformer and its own `AGENTS.md`.
 | [docs/data-types.md](docs/data-types.md)                       | The `DataType` brands                                                           |
 | [docs/errors-and-guarantees.md](docs/errors-and-guarantees.md) | `readChecks`, `writeChecks`, what each side raises, and what is not guaranteed  |
 | [docs/performance.md](docs/performance.md)                     | The file directives, the module shape, and what to expect                       |
-| [docs/contributing.md](docs/contributing.md)                   | Setup, every task, working across both repositories, and the editor             |
+| [docs/contributing.md](docs/contributing.md)                   | Setup, every task, working across both packages, and the editor                 |
 | [docs/coding-standards.md](docs/coding-standards.md)           | Formatting, types, naming, brands, boundaries, files, comments, generated files |
 | [docs/testing.md](docs/testing.md)                             | What `mise run ci` checks, how to write a suite, and the benchmarks             |
 | [docs/contributing-docs.md](docs/contributing-docs.md)         | What kind of statement goes where, and how to write it                          |
-| [docs/architecture.md](docs/architecture.md)                   | Why two repositories, and how they depend on each other                         |
+| [docs/architecture.md](docs/architecture.md)                   | The two packages, how they are built together, and how a release reaches a user |
 | [docs/specs/](docs/specs/README.md)                            | What the code guarantees: runtime API, wire format, transformer, both harnesses |
 | [docs/research/](docs/research/README.md)                      | Dated papers on what was measured                                               |
 | [docs/benchmarks/](docs/benchmarks/)                           | The generated size, speed and code-size tables                                  |
@@ -28,16 +29,24 @@ holds the transformer and its own `AGENTS.md`.
 
 ## Setup
 
-Clone this repository and `rbxts-transformer-surge` side by side, then run
-`mise install` in each. [docs/contributing.md](docs/contributing.md) has the
-rest.
+Clone this repository, then run `mise run setup` at its root.
+[docs/contributing.md](docs/contributing.md) has the rest.
 
 ## Commands
 
+At the root, a task covers the root files and both packages; in a
+package's directory, it covers that package:
+
+| Command                                    | Does                                             |
+| ------------------------------------------ | ------------------------------------------------ |
+| `mise run setup`                           | install every tool and npm project (at the root) |
+| `mise run ci`                              | every check, in order                            |
+| `mise run lint:fix`, `mise run format:fix` | apply the lint and format fixes                  |
+
+In `surge/`:
+
 | Command                                                 | Does                                                        |
 | ------------------------------------------------------- | ----------------------------------------------------------- |
-| `mise run ci`                                           | every check, in order                                       |
-| `mise run lint:fix`, `mise run format:fix`              | apply the lint and format fixes                             |
 | `mise run compile`                                      | build `@rbxts/surge`                                        |
 | `mise run tests:test`                                   | run the round-trip suite under Lune                         |
 | `mise run bench:size`, `mise run bench:speed`           | record the size and speed tables; speed needs Roblox Studio |
@@ -49,24 +58,26 @@ The full list is in [docs/contributing.md](docs/contributing.md).
 
 ## Where to make changes
 
-- `src/`: the runtime package the generated code calls, compiled by
+- `surge/src/`: the runtime package the generated code calls, compiled by
   roblox-ts.
-- `tests/`: a standalone npm project with its own `node_modules`. It depends
-  on this package through `file:..` and on the transformer through
-  `file:../../rbxts-transformer-surge`, which is why the two repositories
-  must be siblings. It holds the round-trip suite (`tests/src/tests/`) and
-  the benchmark harness (`tests/src/bench/`).
-- `test/`: the golden checks, plain Node, reading `tests/out/`.
-- The transformer's `src/` is in the sibling repository. A change there is
-  seen here only after `mise run tests:install`, which `mise run ci` runs.
+- `surge/tests/`: a standalone npm project with its own `node_modules`. It
+  depends on surge through `file:..` and on the transformer through
+  `file:../../rbxts-transformer-surge`. It holds the round-trip suite
+  (`tests/src/tests/`) and the benchmark harness (`tests/src/bench/`).
+- `surge/test/`: the golden checks, plain Node, reading `tests/out/`.
+- `rbxts-transformer-surge/src/`: the transformer; its
+  [`AGENTS.md`](rbxts-transformer-surge/AGENTS.md) says where in it. A change
+  there is seen in `surge/tests/` only after `mise run tests:install` in
+  `surge/`, which `mise run ci` runs.
+- `docs/`: every document, for both packages.
 
 ## Rules
 
 Enforced by tooling, so breaking one fails `mise run ci`:
 
 - No `any`.
-- `src/` never imports the transformer, the transformer never depends on
-  `@rbxts/surge` at run time, and only `tests/` depends on both.
+- `surge/src/` never imports the transformer, the transformer never depends
+  on `@rbxts/surge` at run time, and only `surge/tests/` depends on both.
 - Every word in a Markdown file and in the last commit message is one cspell
   knows, or one added to `cspell.json`.
 
@@ -76,11 +87,6 @@ Not checked by a machine, and load-bearing:
   `tests/src/tests/bytes.spec.ts` and the size table in the same commit.
 - A measurement is a paper under `docs/research/`, never an edit to a number
   in a page.
-- A change that spans both repositories moves the CI pins: this
-  repository's `ci/transformer-ref` and the transformer's `ci/surge-ref`
-  (Working across both repositories in
-  [docs/contributing.md](docs/contributing.md)). Push a commit before any
-  commit whose pin names it.
 
 Enforced by review:
 
@@ -92,9 +98,9 @@ Enforced by review:
 ## Verifying changes
 
 Before a change is complete, run `mise run lint:fix` and
-`mise run format:fix`, then `mise run ci`, in each repository the change
-touches. [docs/testing.md](docs/testing.md) says what each step checks and
-how to fix a failure.
+`mise run format:fix`, then `mise run ci`, at the repository root.
+[docs/testing.md](docs/testing.md) says what each step checks and how to fix
+a failure.
 
 ## Updating documentation
 
@@ -105,7 +111,7 @@ part of the change.
 | Changed                                                                | Update                                                                                                                                                                                                                                                         |
 | ---------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | a mise task or an npm script                                           | [docs/contributing.md](docs/contributing.md), and [docs/testing.md](docs/testing.md) if `mise run ci` runs it                                                                                                                                                  |
-| the repository split, the sibling checkout, or where a package lives   | [docs/architecture.md](docs/architecture.md) and [docs/contributing.md](docs/contributing.md)                                                                                                                                                                  |
+| the repository layout, or where a package lives                        | [docs/architecture.md](docs/architecture.md) and [docs/contributing.md](docs/contributing.md)                                                                                                                                                                  |
 | the runtime package's exports, or what a factory or `deserialize` does | [docs/specs/runtime-api.md](docs/specs/runtime-api.md), [docs/getting-started.md](docs/getting-started.md), [docs/errors-and-guarantees.md](docs/errors-and-guarantees.md)                                                                                     |
 | any byte an encoding writes                                            | [docs/specs/wire-format.md](docs/specs/wire-format.md), [docs/supported-types.md](docs/supported-types.md) or [docs/data-types.md](docs/data-types.md), `bytes.spec.ts`, and [docs/benchmarks/size.md](docs/benchmarks/size.md) through `mise run bench:size`  |
 | type classification, a diagnostic, or an emission rule                 | [docs/specs/transformer.md](docs/specs/transformer.md), [docs/supported-types.md](docs/supported-types.md) for what a user sees, and [docs/benchmarks/code-size.md](docs/benchmarks/code-size.md) through `mise run bench:code` where the emitted code changes |

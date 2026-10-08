@@ -1,0 +1,8 @@
+{
+	"name": "@rbxts/surge",
+	"version": "0.0.0",
+	"private": true,
+	"description": "Fixture standing in for the real @rbxts/surge in ../surge/, which this package does not depend on (see Package boundaries in docs/coding-standards.md), so detect.ts's package-identity check and DataType/Packed<T> brands can appear in transformer test fixtures.",
+	"main": "index.ts",
+	"types": "index.ts"
+}

@@ -29,10 +29,9 @@ differ.
 ## Why deferred
 
 The first release waits for the site
-([ci-and-release.md](ci-and-release.md)). The site waits for
-[single-repository.md](single-repository.md), which sets where `docs/`
-lives, which npm project holds the site's tools, and which workflow deploys
-it.
+([ci-and-release.md](ci-and-release.md)), and the release run deploys it.
+It comes after the one-package tags ([one-package-tags.md](one-package-tags.md)),
+which finish the move into one repository.
 
 ## How, briefly
 
@@ -80,8 +79,8 @@ it.
   with `noLib` against types in `node_modules/@rbxts`. A doc comment links
   to the Runtime API specification rather than restating it, because a
   statement lives in one document.
-- Deploy from a job in the release workflow
-  ([single-repository.md](single-repository.md)), and by
+- Deploy from a job in the release run
+  ([ci-and-release.md](ci-and-release.md)), and by
   `workflow_dispatch` to redeploy. A workflow that runs on a tag push would
   not start, because a tag that CI pushes with `GITHUB_TOKEN` starts no
   workflow run. Build the site on every pull request too, so a broken build

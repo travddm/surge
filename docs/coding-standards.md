@@ -1,6 +1,6 @@
 # Coding standards
 
-The rules for code in both repositories. Tooling enforces formatting, types
+The rules for code in both packages. Tooling enforces formatting, types
 and the lint rules, and `mise run ci` fails on a break; review enforces the
 rest.
 
@@ -13,11 +13,14 @@ rest.
 | Prettier     | `.prettierrc`        | `mise run format:check` / `mise run format:fix` |
 | cspell       | `cspell.json`        | `mise run spell`                                |
 
-Run `mise run lint:fix` and `mise run format:fix` in each repository a change
-touches before `mise run ci`. Each repository keeps its own copy of every
-config, trimmed to what it needs: the transformer is plain Node, so its
-ESLint config has no roblox-ts rules. cspell checks Markdown, text and YAML,
-and the last commit message; add a real word to `cspell.json`.
+Run `mise run lint:fix` and `mise run format:fix` at the repository root
+before `mise run ci`; each covers the root files and both packages. Each
+package keeps its own copy of every config, trimmed to what it needs: the
+transformer is plain Node, so its ESLint config has no roblox-ts rules. The
+root keeps its own Prettier, markdownlint and cspell configs for `docs/` and
+the root files. cspell checks Markdown, text and YAML, and at the root the
+last commit message; add a real word to the `cspell.json` that covers the
+file it flags.
 
 ## Formatting
 

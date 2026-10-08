@@ -1,5 +1,5 @@
 -- The code-size tier (section 11 of docs/specs/benchmark-harness.md): writes
--- ../docs/benchmarks/code-size.md from the Luau bytecode each codec module of the benchmark
+-- ../../docs/benchmarks/code-size.md from the Luau bytecode each codec module of the benchmark
 -- compiles to, via `mise run bench:code`. It runs under Lune because the figure is deterministic
 -- for a pinned Lune: it is the length of what `luau.compile` returns, which no timing touches.
 --
@@ -15,7 +15,7 @@ local luau = require("@lune/luau")
 local process = require("@lune/process")
 
 local CODECS_DIRECTORY = "out/bench/codecs"
-local OUTPUT_PATH = "../docs/benchmarks/code-size.md"
+local OUTPUT_PATH = "../../docs/benchmarks/code-size.md"
 local LIBRARIES = { "surge", "fbs", "serio" }
 local BASELINE = "surge"
 local EMPTY = "—"

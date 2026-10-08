@@ -1,4 +1,4 @@
-# @rbxts/surge
+# surge
 
 [![CI](https://github.com/travddm/surge/actions/workflows/ci.yml/badge.svg)](https://github.com/travddm/surge/actions/workflows/ci.yml)
 
@@ -24,11 +24,12 @@ export function roundTrip(state: PlayerState): PlayerState {
 }
 ```
 
-surge is two packages: this runtime package, and
-[`rbxts-transformer-surge`](https://github.com/travddm/rbxts-transformer-surge),
-the transformer that generates the code. Install both, pinned to the same
-release, and register the transformer in `tsconfig.json`:
-[docs/getting-started.md](docs/getting-started.md).
+surge is two packages, both in this repository: the runtime package
+[`@rbxts/surge`](surge/), which the generated code calls, and
+[`rbxts-transformer-surge`](rbxts-transformer-surge/), the transformer that
+generates the code. Neither is released yet; a project will install both
+at the same version, and register the transformer in `tsconfig.json`
+([docs/getting-started.md](docs/getting-started.md)).
 
 ## Documentation
 
@@ -48,5 +49,4 @@ release, and register the transformer in `tsconfig.json`:
 ## Contributing
 
 Start with [AGENTS.md](AGENTS.md), which indexes every document and states
-the rules, then [docs/contributing.md](docs/contributing.md) for setup. Both
-repositories must be checked out side by side.
+the rules, then [docs/contributing.md](docs/contributing.md) for setup.
