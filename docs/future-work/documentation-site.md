@@ -34,8 +34,10 @@ and which workflow deploys the site.
   to `performance.md`, and `per-element-encode.md`, `read-checks-cost.md`
   and `sized-read-tables.md` to `errors-and-guarantees.md`. These are five
   links. [research/README.md](../research/README.md) allows a paper only an
-  appended correction, so the move either appends one to each paper, or
-  first amends that rule to allow a link-target update when a file moves.
+  appended correction. In the same change as the move, that rule gains an
+  exception: when a file moves, a link to it is updated, because the new
+  path changes nothing the paper reports. The move then updates the five
+  links.
 - The user pages link into `specs/`, `research/` and `benchmarks/`, and
   `performance.md` alone links eleven papers. The build rewrites each link
   that leaves `docs/guide/` to the file on GitHub at the release's tag.

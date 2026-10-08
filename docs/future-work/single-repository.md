@@ -240,12 +240,10 @@ A pull request runs the checks only.
   install with the first publish. The changelog, the version backstop and
   the `typescript` peer dependency stay in
   [ci-and-release.md](ci-and-release.md).
+- Only a release publishes to npm. A pre-release or a dev build reaches
+  another project through its one-package tag.
 
-Open:
-
-- Whether each push to `master` also publishes both packages to npm as a
-  pre-release, under the `next` dist-tag.
-- How long dev tags are kept.
+Open: how long dev tags are kept.
 
 Not part of the move, and possible after it:
 
