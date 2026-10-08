@@ -1,9 +1,5 @@
-# Node comes from the repository root's mise.toml.
-
-[hooks]
-# Keeps node_modules in sync whenever `mise install` runs (e.g. after a [tools] version bump),
-# without a separate manual step.
-postinstall = "npm install"
+# Node comes from the repository root's mise.toml, which also installs this package's npm
+# dependencies (`mise run setup`).
 
 [tasks.compile]
 description = "Build the transformer with tsc"

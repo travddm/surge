@@ -85,14 +85,16 @@ benchmark speed tier needs Roblox Studio, and it is not part of `ci`.
 
 ## CI
 
-`.github/workflows/ci.yml` runs the steps of the root `mise run ci` on every
-push and pull request, through `jdx/mise-action`, on `ubuntu-latest` and on
+`.github/workflows/ci.yml` runs on every push to `master` and every pull
+request into it, through `jdx/mise-action`, on `ubuntu-latest` and on
 `windows-latest` through Git Bash. It installs the root and each package
-with `npm ci`, the transformer before surge, because surge's `tests/` builds
-a copy of the transformer with the transformer's own devDependencies. It
-fails if a lock file was rewritten during the run. Both packages are checked
-at the same commit, so a transformer change that breaks the round-trip suite
-or a golden check fails its own run.
+with `npm ci`, then runs the root `mise run ci`, the task a contributor
+runs, and fails if a lock file was rewritten during the run. Both packages
+are checked at the same commit, so a transformer change that breaks the
+round-trip suite or a golden check fails its own run. Windows is in the run
+because roblox-ts projects are built on Windows or macOS, where the
+transformer runs inside `rbxtsc`, and because the mise tasks run there
+through Git Bash.
 
 To run the same checks before pushing, `mise run hooks:install` installs a
 pre-push hook, or run the `repository: ci` VS Code task.

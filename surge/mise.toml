@@ -19,11 +19,6 @@
 # bytes it emits are a result this repository checks in.
 "github:red-blox/zap" = "0.6.29"
 
-[hooks]
-# Keeps node_modules in sync whenever `mise install` runs (e.g. after a [tools] version bump),
-# without a separate manual step.
-postinstall = "npm install"
-
 [tasks.compile]
 description = "Build @rbxts/surge (this package) with rbxtsc"
 run = "npm run compile"

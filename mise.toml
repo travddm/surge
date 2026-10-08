@@ -7,15 +7,18 @@
 [tools]
 node = "24.21.0"
 
-[hooks]
-# Keeps the root project's node_modules in sync whenever `mise install` runs here.
-postinstall = "npm install"
-
 [tasks.setup]
-description = "Install every tool and npm project: the root's, then each package's (`mise install` here installs only the root's)"
-# The transformer installs before surge: surge's tests/ builds a copy of it with its own
-# devDependencies (see testing.md).
-run = ["mise install", "cd rbxts-transformer-surge && mise install", "cd surge && mise install"]
+description = "Install every tool and npm project: the root's, then each package's. Run it again after a tool's version changes"
+# `mise install` here installs only the root's tools, so surge's are installed from its directory.
+# No mise hook runs `npm install`: CI installs with `npm ci`, and a hook would install each
+# project a second time. surge's tests/ is installed by its own `mise run ci`, after both packages
+# here, because it builds a copy of each with that package's own devDependencies.
+run = [
+	"mise install",
+	"npm install",
+	"cd rbxts-transformer-surge && npm install",
+	"cd surge && mise install && npm install",
+]
 
 [tasks."lint:check"]
 description = "Lint the root files and both packages with ESLint and markdownlint"

@@ -13,8 +13,8 @@ is `@rbxts/surge`, and `rbxts-transformer-surge/` is the transformer.
 `docs/` and the files at the root belong to both. `mise run setup` installs
 the tools that the root's `mise.toml` pins (Node) and each package's
 (surge's Rojo, Lune, `run-in-roblox`, Blink and Zap), and runs `npm install`
-in the root and in each package. mise asks to trust each `mise.toml` the
-first time it reads it.
+in the root and in each package. Run it again after a tool's version
+changes. mise asks to trust each `mise.toml` the first time it reads it.
 
 ## Commands
 
