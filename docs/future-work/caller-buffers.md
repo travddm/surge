@@ -27,70 +27,84 @@ into the caller's buffer and returns the offset after the value, and
 `Sera.Deserialize(schema, b, offset)` returns the value and the offset after
 it ([`Sera.luau`](https://github.com/MadStudioRoblox/Sera/blob/main/Sera.luau)).
 
-The work is three additions:
+## The decided shape
 
-- a write entry point that takes a buffer and an offset, and returns the
-  buffer and the offset after the value;
-- a read entry point that takes an offset, and returns the value and the
-  offset after it;
-- for a type whose size is a constant, that constant, so a caller can size a
-  buffer before writing.
+A new factory, so that `createCodec`'s call sites and their `serialize` and
+`deserialize` do not change, whose functions take one mutable cursor that the
+caller owns and that several codecs can share in a batch:
+
+```ts
+interface Cursor {
+	buffer: buffer;
+	offset: number;
+	blobs: Array<defined>;
+	blobIndex: number;
+}
+
+interface CursorCodec<in out T> {
+	write: (cursor: Cursor, value: T) => void;
+	read: (cursor: Cursor) => T;
+	size: number | undefined;
+}
+
+function createCursorCodec<T>(options?: CodecOptions): CursorCodec<T>;
+```
+
+`write`, `read` and `size` are properties, as `Codec`'s are, and not methods:
+roblox-ts calls a method with `:`, which passes the object as `self`, and the
+generated functions take no `self`.
+
+- **`write(cursor, value)`** writes `value` at `cursor.offset` of
+  `cursor.buffer` and moves `cursor.offset` past it. When the value does not
+  fit, it grows the buffer: a new one that holds every byte before the value,
+  which replaces `cursor.buffer`. The caller reads `cursor.buffer` back after
+  each write, since a buffer it held before may be the old one. A blob is
+  appended to `cursor.blobs` after the blobs already in it, so one batch has
+  one list, in order, across every codec that wrote into it.
+- **`read(cursor)`** reads a value at `cursor.offset` of `cursor.buffer`,
+  takes its blobs from `cursor.blobs` starting at `cursor.blobIndex`, and moves
+  both past the value.
+- **`size`** is the number of bytes every value of `T` writes, where that does
+  not depend on the value, and `undefined` otherwise: the exact size of
+  Transformer 5.20 when it reads nothing of the value. It counts a packed
+  region of `boolean`s, which `fixedBytes` leaves out.
+- **`writeChecks` and `readChecks`** govern `write` and `read` as they govern
+  `serialize` and `deserialize`. A read is bounded against the length of
+  `cursor.buffer`, not against the end of the value: in a buffer that holds
+  several values, the bytes left include the values after this one, so a
+  count that fits the buffer but not this value is admitted, as it is for a
+  value read from a buffer with bytes after it.
 
 ## Why deferred
 
 It adds to the consumer API, which is `Codec<T>` today (Runtime API 3.1), so
 it lands before the first release in [ci-and-release.md](ci-and-release.md).
-The shape of the addition is undecided, and deciding it is the first step. It
-does not wait for `surge-net`, its first caller, which stays deferred
+It does not wait for `surge-net`, its first caller, which stays deferred
 ([networking.md](networking.md)).
 
 ## How, briefly
 
-- **The body does not change.** A generated `serialize` writes through closure
-  state: the scratch buffer, its capacity and the write cursor (Transformer
-  5.3 in [specs/transformer.md](../specs/transformer.md)). The write entry
-  point sets them from the caller's buffer and offset instead of the
-  serializer's own buffer and `0`, runs the same body, and returns the buffer
-  and the cursor instead of calling `finishWrite`. A shape sized exactly
-  (Transformer 5.20) is the exception: its buffer and cursor are locals of
-  `serialize`, and its reservations check no capacity. Its entry point needs
-  the body emitted with the caller's buffer and offset in their place, and one
-  check before the body that the buffer has room for the size, where the
-  scratch path checks at every reservation. The read entry point sets
-  the read cursor to the offset, and returns it after the value. The `readChecks`
-  bounds need no new form: each read is bounded against `buffer.len` of the
-  input, and a count against the bytes left after the cursor (Runtime API 4.2
-  and 4.3). In a buffer that holds several values, though, the bytes left
-  include the values after this one. The bounds then stop a read at the end of
-  the buffer, not at the end of the value, and admit a count that a buffer of
-  this value alone would reject.
-- **The caller's buffer cannot grow in place.** A Luau `buffer` has a fixed
-  length. A write past its end must either raise, as `Sera.Push` does, or call
-  `grow` and return the new buffer for the caller to keep, as Zap's `alloc`
-  does with its own buffer. Only the second lets a caller write without
-  sizing the buffer first.
-- **Restore the serializer's own scratch buffer** after the call. Otherwise
-  the closure keeps the caller's buffer, and the next `serialize` writes into
-  it.
-- **Code size.** Emitting the body once per entry point doubles each
-  serializer. Emitting it once, as a local function that both entry points
-  call, adds a call to every `serialize`. Emitting the new entry points only
-  from a new factory leaves existing call sites as they are. Measure the call
-  before choosing.
-- **Blobs.** Values batched into one buffer need one `blobs` array, in order,
-  for the whole batch. The write side appends to an array the caller passes.
-  The read side starts at a blob index the caller passes, and returns the
-  index after the value. The blob channel's state is the serializer's
-  (Runtime API 5.5 in [specs/runtime-api.md](../specs/runtime-api.md)), so the
-  list and the index can come from the caller.
-- **A constant size.** `fixedBytes` in the transformer's `emit/layout.ts`
-  gives the size of each kind that has a constant one, including an `object`
-  whose properties all have one. It leaves out an object with a packed
-  region, because the region cannot join a run, but a region of `boolean`s
-  alone has a constant size too, and the constant this unit adds has to count
-  it. Sizing a type without a constant size is the exact-size question in
-  [generated-code-performance.md](generated-code-performance.md), not part of
-  this one.
-- Update Runtime API 3 and 5.1, [getting-started.md](../getting-started.md)
-  and [errors-and-guarantees.md](../errors-and-guarantees.md). A new factory
-  also updates Transformer 3.1.
+- **The body does not change.** `write` declares the scratch path's state, the
+  buffer, its capacity and the write cursor (Transformer 5.3 in
+  [specs/transformer.md](../specs/transformer.md)), from the cursor, runs the
+  body the scratch path runs, and stores the buffer and the write cursor back.
+  `read` declares the read state from the cursor in the same way. Where the
+  shape reaches no recursion helper, the state is locals of `write` and
+  `read`. Where it reaches one, it is the closure's, which the helper reads,
+  and Runtime API 5.6 applies to the cursor codec as it does to `serialize`.
+- **The blob list is the caller's.** `write`'s count of stored blobs starts at
+  the length of `cursor.blobs`, and the list is not created at a length.
+- **`grow` must start from an empty buffer.** It doubles the buffer's length
+  until the value fits, and a caller's buffer may be `buffer.create(0)`, whose
+  length doubles to nothing. A buffer of length 0 grows to the length needed
+  (a change to the helper ABI, Runtime API 5.1).
+- **One check ahead of an exactly sized body, later.** A shape sized exactly
+  could check the room for its size once and write with no check per
+  reservation. That is a second form of the body, and it is measured before it
+  is built, on a catalog row that writes into a cursor.
+- **Code size.** The cursor codec has a body of its own, and no `createCodec`
+  call site changes. A shape that needs both one value at a time and batches
+  declares both.
+- Update Runtime API 3, 5.1, 5.2 and 5.6, Transformer 3.1,
+  [getting-started.md](../getting-started.md) and
+  [errors-and-guarantees.md](../errors-and-guarantees.md).
