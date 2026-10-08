@@ -4,30 +4,14 @@ Install the two packages, register the transformer, and declare a serializer.
 
 ## Install
 
-Add both packages to the roblox-ts project's `package.json`, pinned to the
-same tag or commit:
+Neither package is released yet. The first release publishes both to the
+npm registry, at the same version, and this section will give the install.
 
-```json
-{
-	"dependencies": {
-		"@rbxts/surge": "github:travddm/surge#<ref>"
-	},
-	"devDependencies": {
-		"rbxts-transformer-surge": "github:travddm/rbxts-transformer-surge#<ref>"
-	}
-}
-```
-
-`@rbxts/surge` is the runtime package the generated code calls.
-`rbxts-transformer-surge` runs only at compile time, so it is a
-devDependency. Update the two `<ref>`s
-together: the generated code calls the runtime package with no version
-check, and nothing detects a mismatch
+`@rbxts/surge` is the runtime package the generated code calls, so a project
+depends on it. `rbxts-transformer-surge` runs only at compile time, so it is
+a devDependency. Update the two together: the generated code calls the
+runtime package with no version check, and nothing detects a mismatch
 ([specs/runtime-api.md](specs/runtime-api.md) 6.1 and 6.2).
-
-Neither package is on the npm registry. `npm install` clones each repository
-and builds it with its `prepare` script, so the install needs network access
-to fetch roblox-ts and the `@rbxts` packages each one builds against.
 
 ## Register the transformer
 

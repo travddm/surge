@@ -4,7 +4,7 @@ Part of the [surge](../architecture.md) design.
 
 ## What
 
-Two conventions for an agent working in these repositories:
+Two conventions for an agent working in this repository:
 
 - A `PreToolUse` hook that blocks an agent's edits to the generated files
   [coding-standards.md](../coding-standards.md) lists.

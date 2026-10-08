@@ -1,33 +1,36 @@
 # AGENTS.md
 
 The entry point for anyone changing `rbxts-transformer-surge`, person or
-agent. This repository holds the transformer only. Its documentation, the
-runtime package it generates calls to, and the tests that run what it
-generates are in [surge](https://github.com/travddm/surge), which must be
-checked out beside this repository at `../surge`.
+agent. This directory holds the transformer only. The repository's
+[AGENTS.md](../AGENTS.md) holds the rules and the commands for both packages.
+The documentation is in [docs/](../docs/), the runtime package the
+transformer generates calls to is in [surge/](../surge/), and the tests that
+run what it generates are in `surge/tests/`.
 
 ## Documentation
 
-Every document is in surge's `docs/`. The ones this repository answers to:
+Every document is in the repository's `docs/`. The ones this package answers to:
 
-| Document                                                                                       | Owns                                                          |
-| ---------------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
-| [specs/transformer.md](https://github.com/travddm/surge/blob/master/docs/specs/transformer.md) | What the transformer detects, classifies, emits and reports   |
-| [specs/wire-format.md](https://github.com/travddm/surge/blob/master/docs/specs/wire-format.md) | The bytes the generated code writes                           |
-| [specs/runtime-api.md](https://github.com/travddm/surge/blob/master/docs/specs/runtime-api.md) | The runtime functions the generated code calls                |
-| [supported-types.md](https://github.com/travddm/surge/blob/master/docs/supported-types.md)     | What a user is told about each type                           |
-| [contributing.md](https://github.com/travddm/surge/blob/master/docs/contributing.md)           | Setup, every task, and working across both repositories       |
-| [coding-standards.md](https://github.com/travddm/surge/blob/master/docs/coding-standards.md)   | Formatting, types, naming, file organization and comments     |
-| [testing.md](https://github.com/travddm/surge/blob/master/docs/testing.md)                     | What `mise run ci` checks, and how to write a test            |
-| [AGENTS.md](https://github.com/travddm/surge/blob/master/AGENTS.md)                            | surge's rules, and which document each kind of change updates |
+| Document                                             | Owns                                                                   |
+| ---------------------------------------------------- | ---------------------------------------------------------------------- |
+| [specs/transformer.md](../docs/specs/transformer.md) | What the transformer detects, classifies, emits and reports            |
+| [specs/wire-format.md](../docs/specs/wire-format.md) | The bytes the generated code writes                                    |
+| [specs/runtime-api.md](../docs/specs/runtime-api.md) | The runtime functions the generated code calls                         |
+| [supported-types.md](../docs/supported-types.md)     | What a user is told about each type                                    |
+| [contributing.md](../docs/contributing.md)           | Setup, every task, and working across both packages                    |
+| [coding-standards.md](../docs/coding-standards.md)   | Formatting, types, naming, file organization and comments              |
+| [testing.md](../docs/testing.md)                     | What `mise run ci` checks, and how to write a test                     |
+| [AGENTS.md](../AGENTS.md)                            | the repository's rules, and which document each kind of change updates |
 
 ## Setup
 
-Clone this repository and surge side by side, then run `mise install` in
-each. surge's [contributing.md](https://github.com/travddm/surge/blob/master/docs/contributing.md)
-has the rest.
+Run `mise run setup` at the repository root;
+[contributing.md](../docs/contributing.md) has the rest.
 
 ## Commands
+
+In this directory; at the repository root, each also covers surge and the
+root files:
 
 | Command                                    | Does                                            |
 | ------------------------------------------ | ----------------------------------------------- |
@@ -44,11 +47,12 @@ has the rest.
   kind needs. `src/index.ts` finds call sites and reads their options, and
   `src/detect.ts` recognizes surge's factories and brands.
 - `test/fixtures/rbxts-surge/` is a stand-in for `@rbxts/surge`'s public
-  declarations, which this repository cannot depend on. Change it in the
+  declarations, which this package does not depend on. Change it in the
   same commit as a change to what surge exports.
-- What the generated code does when it runs is tested in surge: its
-  round-trip suite compiles through this transformer. Run `mise run ci` in
-  surge after a change here; it reinstalls this repository first.
+- What the generated code does when it runs is tested by surge's round-trip
+  suite in `surge/tests/`, which compiles through this transformer. Run
+  `mise run ci` at the repository root after a change here: it checks this
+  package, then surge, whose `tests:install` copies this package first.
 
 ## Rules
 
@@ -58,17 +62,11 @@ has the rest.
 - A diagnostic is how a type the transformer cannot encode is reported. Never
   fall back to something that compiles but is wrong.
 - A change to what the generated code does, or to a diagnostic, changes
-  surge's specifications in the matching commit; see surge's
-  [AGENTS.md](https://github.com/travddm/surge/blob/master/AGENTS.md).
+  the specifications in `docs/specs/` in the same commit; see the
+  repository's [AGENTS.md](../AGENTS.md).
 - Review a snapshot change before accepting it with `npx jest -u`.
-- Each repository's CI tests the other at a pinned commit: this
-  repository's integration job runs surge's CI at the commit in
-  `ci/surge-ref`, and surge's CI checks out this repository at the commit in
-  its `ci/transformer-ref`. A change that spans both moves the pins as surge's
-  [contributing.md](https://github.com/travddm/surge/blob/master/docs/contributing.md)
-  states, and a commit is pushed before any commit whose pin names it.
 
 ## Verifying changes
 
 Before a change is complete, run `mise run lint:fix` and
-`mise run format:fix`, then `mise run ci` here and in surge.
+`mise run format:fix`, then `mise run ci`, at the repository root.

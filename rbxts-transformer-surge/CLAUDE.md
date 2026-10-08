@@ -7,7 +7,8 @@ This file adds only what is particular to Claude Code:
   tool, which is Git Bash, not through PowerShell.
 - Read a command's exit status, not its tail: `mise run ci | tail` hides a
   failed step.
-- The spell step checks the last commit message, so write it in words cspell
-  knows, or add a real word to `cspell.json`.
-- surge is at `../surge`. Its `mise run ci` compiles the tests through this
-  transformer, so run it after a change here.
+- The root's spell step checks the last commit message, so write it in words
+  cspell knows, or add a real word to the root's `cspell.json`.
+- surge is at `../surge`. `mise run ci` at the repository root checks this
+  package and then compiles surge's tests through it, so run it there after
+  a change here.

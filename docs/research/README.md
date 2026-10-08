@@ -12,7 +12,7 @@ Every paper has this shape:
 ```text
 # <Title>
 
-<date> · surge <commit> · rbxts-transformer-surge <commit> · <runner and version>
+<date> · <commit> · <runner and version>
 
 Abstract      the question and the answer, five sentences at most
 Background    what was known, and why the question mattered
@@ -24,10 +24,12 @@ Conclusion    one paragraph
 Data          the trials file or run output the tables were made from
 ```
 
-- The header line records the state that was measured: the date, a commit in
-  each repository, and what ran the code — a Roblox Studio version for the
-  speed tier, a Lune version for what the shim runs. A measurement whose
-  commits are not recorded cannot be repeated.
+- The header line records the state that was measured: the date, the
+  commit, and what ran the code — a Roblox Studio version for the speed
+  tier, a Lune version for what the shim runs. A measurement whose commit is
+  not recorded cannot be repeated. A paper written while the two packages
+  were separate repositories names a commit of each; both are in this
+  repository's history.
 - `Method` names the control. A ratio between two runs is worth nothing
   without one: the libraries, columns, or rows that did not change are what
   say how much of the difference is drift.

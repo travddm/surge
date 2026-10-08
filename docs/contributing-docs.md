@@ -1,9 +1,9 @@
 # surge: documentation guide
 
 Which kind of statement goes where, when a change has to update a document,
-and how to write one. It covers both repositories:
-`rbxts-transformer-surge` keeps a `README.md`, an `AGENTS.md` and a
-`CLAUDE.md`, and its documentation lives here.
+and how to write one. It covers both packages: `rbxts-transformer-surge/`
+keeps a `README.md` for its npm page, and an `AGENTS.md` and a `CLAUDE.md`
+for what is particular to it, and every other document is in `docs/`.
 
 ## What lives where
 
@@ -46,6 +46,10 @@ Prose, in every document and in code comments:
 - **must** is required, **should** is recommended, **may** is permitted.
 - File, task, and symbol names in backticks; cross-references as Markdown
   links; a byte diagram or a command in a code block.
+- A path in prose, such as `tests/src/tests/`, is relative to the directory
+  of the package it belongs to, and a path such as `docs/specs/` is relative
+  to the repository root. Name the package's directory, as in
+  `surge/tests/`, where the page does not make the package clear.
 - `mise run lint:fix` and `mise run format:fix` before the change is
   finished. markdownlint holds a line to 100 columns outside tables and code
   blocks, and `mise run spell` checks every word — add a real one to

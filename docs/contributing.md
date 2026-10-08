@@ -1,33 +1,41 @@
 # Contributing
 
-Clone both repositories side by side, install the pinned tools, and run the
-checks before every change is finished:
+Clone the repository, install the pinned tools, and run the checks before
+every change is finished:
 
 ```sh
 git clone https://github.com/travddm/surge
-git clone https://github.com/travddm/rbxts-transformer-surge
-cd surge && mise install && mise run ci
-cd ../rbxts-transformer-surge && mise install && mise run ci
+cd surge && mise run setup && mise run ci
 ```
 
-`mise install` installs the tools each repository pins in its `mise.toml`
-(Node, and in surge Rojo, Lune, `run-in-roblox`, Blink and Zap) and runs
-`npm install` after. surge's `tests/` project depends on the transformer
-through `file:../../rbxts-transformer-surge`, so the two must be siblings.
+The repository holds two packages, each in a directory of its own: `surge/`
+is `@rbxts/surge`, and `rbxts-transformer-surge/` is the transformer.
+`docs/` and the files at the root belong to both. `mise run setup` installs
+the tools that the root's `mise.toml` pins (Node) and each package's
+(surge's Rojo, Lune, `run-in-roblox`, Blink and Zap), and runs `npm install`
+in the root and in each package. mise asks to trust each `mise.toml` the
+first time it reads it.
 
 ## Commands
 
-Both repositories:
+At the root, each task covers the root files and both packages:
 
-| Task                                           | Does                                                      |
-| ---------------------------------------------- | --------------------------------------------------------- |
-| `mise run ci`                                  | every check, in order; must pass before a change is done  |
-| `mise run compile`                             | build the package                                         |
-| `mise run lint:fix`, `mise run format:fix`     | apply ESLint, markdownlint and Prettier fixes             |
-| `mise run lint:check`, `mise run format:check` | the same checks, reporting without fixing                 |
-| `mise run spell`                               | cspell over the documentation and the last commit message |
-| `mise run test`                                | the transformer's unit tests, or surge's golden checks    |
-| `mise run hooks:install`                       | opt in to a pre-push hook that runs `mise run ci`         |
+| Task                                           | Does                                                                      |
+| ---------------------------------------------- | ------------------------------------------------------------------------- |
+| `mise run setup`                               | install every tool and every npm project                                  |
+| `mise run ci`                                  | every check, in order; must pass before a change is done                  |
+| `mise run lint:fix`, `mise run format:fix`     | apply ESLint, markdownlint and Prettier fixes                             |
+| `mise run lint:check`, `mise run format:check` | the same checks, reporting without fixing                                 |
+| `mise run spell`                               | cspell over the documentation, the last commit message, and both packages |
+| `mise run hooks:install`                       | opt in to a pre-push hook that runs `mise run ci`                         |
+
+In a package's directory, a task of the same name covers that package only,
+and these tasks are added. Both packages:
+
+| Task               | Does                                                   |
+| ------------------ | ------------------------------------------------------ |
+| `mise run compile` | build the package                                      |
+| `mise run test`    | the transformer's unit tests, or surge's golden checks |
 
 surge only:
 
@@ -45,21 +53,14 @@ surge only:
 | `mise run tests:sourcemap`                              | write the test place's Rojo sourcemap                         |
 | `mise run tests:build`                                  | build the test place into a `.rbxl`                           |
 
-## Working across both repositories
+## Working across both packages
 
-- `tests/` holds copies of both packages, not links. After a change to
+- `surge/tests/` holds copies of both packages, not links. After a change to
   either one, `mise run tests:install` copies it again; `mise run ci` and the
   benchmark tasks do that first
   ([specs/test-harness.md](specs/test-harness.md) section 6).
-- Each repository's CI tests the other at a pinned commit: surge's at the
-  transformer commit in `ci/transformer-ref`, and the transformer's
-  integration job at the surge commit in its `ci/surge-ref` (see CI in
-  [testing.md](testing.md)). A change that spans both takes three commits:
-  the transformer's change; surge's, with `ci/transformer-ref` set to it; and
-  the transformer's `ci/surge-ref` set to surge's commit. The first runs
-  against the old surge commit and may fail; the third is the run that
-  checks the pair. Push a commit before a commit whose pin names it, so each
-  run can check out what it names.
+- A change that spans both packages is one commit. CI checks both packages
+  at every commit (see CI in [testing.md](testing.md)).
 - A change that moves bytes changes `tests/src/tests/bytes.spec.ts` and the
   size table in the same commit.
 - Documentation changes in the same commit as the code it describes; the
@@ -68,20 +69,23 @@ surge only:
 
 ## Editors
 
-Each repository's `.vscode/tasks.json` maps its `mise` tasks to VS Code
-tasks, labeled `surge: <task>` or `transformer: <task>`, except surge's
-`bench:definitions` and the two `:only` tasks, with a Windows shell
-override to Git Bash because the tasks assume a POSIX shell.
+Each package's `.vscode/tasks.json` maps its `mise` tasks to VS Code tasks,
+labeled `surge: <task>` or `transformer: <task>`, except surge's
+`bench:definitions` and the two `:only` tasks. The root's adds
+`repository: <task>` for the root tasks. Each has a Windows shell override to
+Git Bash, because the tasks assume a POSIX shell.
 
-`surge.code-workspace` opens both repositories in one window, and expects
-the sibling layout above. It carries its own `settings` block because VS Code
-reads window-scoped settings, such as the task buttons, the TypeScript SDK
-path and the icon theme, only from the workspace file when more than one
-folder is open. The labels carry the repository's name so that the task
-buttons can tell the two repositories' tasks apart in that window. The
-transformer disables `luau-lsp`'s sourcemap in its own settings, since it has
-no Luau. Nothing depends on the workspace file; opening one repository alone
-works the same way.
+`surge.code-workspace` opens three folders in one window: surge, the
+transformer, and the repository root, which shows `docs/` and the root files
+and hides the two package directories. It carries its own `settings` block
+because VS Code reads window-scoped settings, such as the task buttons, the
+TypeScript SDK path and the icon theme, only from the workspace file when
+more than one folder is open. The labels carry each folder's name so that
+the task buttons can tell the folders' tasks apart in that window. The
+transformer and the root disable `luau-lsp`'s sourcemap in their own
+settings, since neither has Luau. Nothing depends on the workspace file;
+opening the repository root, or one package's directory, alone works the
+same way.
 
 ## Where to look
 
@@ -89,7 +93,7 @@ works the same way.
   organization, comments, and which files are generated.
 - [testing.md](testing.md): what each step of `mise run ci` checks, how to
   write a suite, and how to run the benchmarks.
-- [architecture.md](architecture.md): why there are two repositories and how
-  they depend on each other.
+- [architecture.md](architecture.md): the two packages, how they are built
+  together, and how a release reaches a user.
 - [specs/](specs/README.md): what the code guarantees, statement by statement.
 - [future-work/](future-work/README.md): what is open, in order.

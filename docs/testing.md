@@ -1,6 +1,7 @@
 # Testing
 
-`mise run ci` runs every check a change must pass, in each repository:
+`mise run ci` at the repository root runs every check a change must pass:
+the root files', then the transformer's, then surge's.
 
 ```sh
 mise run lint:fix && mise run format:fix && mise run ci
@@ -13,16 +14,16 @@ benchmark speed tier needs Roblox Studio, and it is not part of `ci`.
 
 `mise run ci` stops at the first step that fails:
 
-| Step            | Repository | Catches                                                         | To fix                                                                                |
-| --------------- | ---------- | --------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
-| `tests:install` | surge      | a `tests/` install that cannot resolve either package           | check that the transformer is a sibling checkout ([contributing.md](contributing.md)) |
-| `lint:check`    | both       | an ESLint rule or a markdownlint rule                           | `mise run lint:fix`, then fix what it cannot                                          |
-| `format:check`  | both       | Prettier formatting                                             | `mise run format:fix`                                                                 |
-| `spell`         | both       | a word cspell does not know, in docs or the last commit message | correct it, or add a real word to `cspell.json`                                       |
-| `compile`       | both       | a type error, or roblox-ts refusing the runtime package         | the compiler's message                                                                |
-| `tests:compile` | surge      | a type error in a suite, or in code the transformer generated   | a transformer defect if the error is in generated code                                |
-| `tests:test`    | surge      | a failing round-trip fact                                       | the fact's message names the path of the first difference                             |
-| `test`          | both       | a failing golden check, or a failing transformer unit test      | the test's message; a snapshot change is reviewed, then `npx jest -u`                 |
+| Step            | Where               | Catches                                                         | To fix                                                                                         |
+| --------------- | ------------------- | --------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| `tests:install` | surge               | a `tests/` install that cannot resolve either package           | `mise run setup` at the root, which installs the transformer's own dependencies first          |
+| `lint:check`    | root, both packages | an ESLint rule or a markdownlint rule                           | `mise run lint:fix`, then fix what it cannot                                                   |
+| `format:check`  | root, both packages | Prettier formatting                                             | `mise run format:fix`                                                                          |
+| `spell`         | root, both packages | a word cspell does not know, in docs or the last commit message | correct it, or add a real word to the `cspell.json` beside the file; the root's covers `docs/` |
+| `compile`       | both packages       | a type error, or roblox-ts refusing the runtime package         | the compiler's message                                                                         |
+| `tests:compile` | surge               | a type error in a suite, or in code the transformer generated   | a transformer defect if the error is in generated code                                         |
+| `tests:test`    | surge               | a failing round-trip fact                                       | the fact's message names the path of the first difference                                      |
+| `test`          | both packages       | a failing golden check, or a failing transformer unit test      | the test's message; a snapshot change is reviewed, then `npx jest -u`                          |
 
 `tests:install` runs first because ESLint resolves `tests/`'s imports against
 `tests/node_modules`, which a fresh checkout does not have.
@@ -84,24 +85,17 @@ benchmark speed tier needs Roblox Studio, and it is not part of `ci`.
 
 ## CI
 
-Each repository's `.github/workflows/ci.yml` runs the steps of `mise run ci`
-on every push and pull request, on `ubuntu-latest` through
-`jdx/mise-action`. Each installs with `npm ci`, and fails if a lockfile was
-rewritten during the run.
-
-The two repositories test each other at pinned commits. surge's workflow
-checks out the transformer at the commit in `ci/transformer-ref`, as a sibling
-directory, and runs `npm ci` in both before installing `tests/`, because each
-`file:` dependency builds with its own devDependencies. The transformer's
-workflow has an integration job that checks out surge at the commit in its
-own `ci/surge-ref` the same way, and runs surge's `mise run ci` against the
-transformer's commit: a transformer change that breaks the round-trip suite
-or a golden check fails the transformer's own run. A pin moves only in a
-commit that changes it, so a run's result does not change with a push to the
-other repository. [contributing.md](contributing.md) says when to move one.
+`.github/workflows/ci.yml` runs the steps of the root `mise run ci` on every
+push and pull request, through `jdx/mise-action`, on `ubuntu-latest` and on
+`windows-latest` through Git Bash. It installs the root and each package
+with `npm ci`, the transformer before surge, because surge's `tests/` builds
+a copy of the transformer with the transformer's own devDependencies. It
+fails if a lock file was rewritten during the run. Both packages are checked
+at the same commit, so a transformer change that breaks the round-trip suite
+or a golden check fails its own run.
 
 To run the same checks before pushing, `mise run hooks:install` installs a
-pre-push hook, or run the `surge: ci` or `transformer: ci` VS Code task.
+pre-push hook, or run the `repository: ci` VS Code task.
 
 The benchmarks are not part of CI. A timing needs a real Roblox process and
 has no pass or fail to gate on;

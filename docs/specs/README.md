@@ -35,10 +35,12 @@ Changes           one line per change, newest first
 - `Applies to` names a version of each package, because the two only work
   together at the version each was built against (see Install in
   [../getting-started.md](../getting-started.md)). Until the first tagged
-  release, it names a commit in each repository instead: the code the
-  statements were checked against. A commit cannot name its own hash, so this
-  is the commit before the one that adds or changes the specification, and
-  the `Changes` line for that edit is keyed by the same pair.
+  release, it names a commit instead: the code the statements were checked
+  against. A commit cannot name its own hash, so this is the commit before
+  the one that adds or changes the specification, and the `Changes` line for
+  that edit is keyed by the same commit. A line written while the two
+  packages were separate repositories names a commit of each; both are in
+  this repository's history.
 - Every normative statement is numbered, so a test, a comment, or another
   document can cite it as `4.2`. One statement states one requirement.
 - **must** is a requirement: an implementation that does otherwise is wrong.

@@ -22,8 +22,8 @@ export interface FixtureOptions {
 	readonly roblox?: boolean;
 	/**
 	 * Adds `test/fixtures/rbxts-surge` (a hand-maintained stand-in for the
-	 * real `@rbxts/surge`, which lives in a separate repository -- see
-	 * Package boundaries in surge's docs/coding-standards.md) to the program under the
+	 * real `@rbxts/surge` in ../surge/, which this package does not depend on
+	 * -- see Package boundaries in docs/coding-standards.md) to the program under the
 	 * `@rbxts/surge` package name, so `DataType.*`, `Packed<T>`, and the
 	 * `createCodec`/`createSerializer`/`createDeserializer`
 	 * factories can appear in fixture source and be resolved by
