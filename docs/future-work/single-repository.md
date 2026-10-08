@@ -181,16 +181,18 @@ CI makes every tag, after the checks pass in the same workflow run:
 | Branch               | Trigger                                     | CI then makes                                                                                |
 | -------------------- | ------------------------------------------- | -------------------------------------------------------------------------------------------- |
 | `release`, protected | every push                                  | a staged npm publish; after approval, release tags, a GitHub Release, the documentation site |
-| `master`             | every push                                  | pre-release tags                                                                             |
+| `master`, protected  | every push                                  | pre-release tags                                                                             |
 | any branch           | `workflow_dispatch`, with a `dev-tag` input | dev tags, when the input is set                                                              |
 
 A pull request runs the checks only.
 
-- Versions live in commits, and CI never commits. A release commits both
-  packages' version bump and the changelog entry on `master`, then merges
-  `master` into `release` through a pull request. `release` is protected:
-  it takes pull requests with passing checks only, merged with a merge
-  commit, never squashed or rebased.
+- Versions live in commits, and CI never commits. A release's pull request
+  into `master` bumps both packages' versions and adds the changelog entry,
+  and a second pull request merges `master` into `release`.
+- Both branches are protected: each takes pull requests with passing checks
+  only. Each push to `master` makes pre-release tags that can never be
+  deleted, so nothing reaches `master` without review. `release` takes merge
+  commits, never squashes or rebases.
 - The release run checks that the version has no tag yet, and stages the
   npm publish. Once the maintainer approves it (Publishing, below), the run
   tags, creates the GitHub Release, deploys the documentation site
@@ -273,6 +275,13 @@ A pull request runs the checks only.
   [ci-and-release.md](ci-and-release.md).
 - Only a release publishes to npm. A pre-release or a dev build reaches
   another project through its one-package tag.
+- Stage both packages once before the first release, so that their
+  `0.0.0-stage` placeholders claim the names. `rbxts-transformer-surge` is
+  unscoped, so anyone can register it, and any member of the `@rbxts`
+  organization can publish `@rbxts/surge`. Neither name was registered on
+  2026-10-08. Stage a version that will never be released, reject it, and
+  check that the placeholder stays. This needs the maintainer's npm login
+  and npm 11.15.0 or later, not the move, so it can happen at any time.
 
 Not part of the move, and possible after it:
 

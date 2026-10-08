@@ -23,6 +23,9 @@ and what has landed since, is in
 These are small, have no dependency on the order above, and can land at any
 time:
 
+- Claiming both npm names with a staged publish, in
+  [single-repository.md](single-repository.md): `rbxts-transformer-surge` is
+  unscoped, so anyone can register it before the first release.
 - The Windows job in [ci-and-release.md](ci-and-release.md): nothing runs
   the mise tasks through Git Bash on Windows, where the maintainer works.
 - [transformer-unit-test-coverage.md](transformer-unit-test-coverage.md): a
