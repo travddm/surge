@@ -178,11 +178,11 @@ delete it, so links to its commits keep working.
 
 CI makes every tag, after the checks pass in the same workflow run:
 
-| Branch               | Trigger                                     | CI then makes                                                           |
-| -------------------- | ------------------------------------------- | ----------------------------------------------------------------------- |
-| `release`, protected | every push                                  | release tags, the npm publish, a GitHub Release, the documentation site |
-| `master`             | every push                                  | pre-release tags                                                        |
-| any branch           | `workflow_dispatch`, with a `dev-tag` input | dev tags, when the input is set                                         |
+| Branch               | Trigger                                     | CI then makes                                                                                |
+| -------------------- | ------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| `release`, protected | every push                                  | a staged npm publish; after approval, release tags, a GitHub Release, the documentation site |
+| `master`             | every push                                  | pre-release tags                                                                             |
+| any branch           | `workflow_dispatch`, with a `dev-tag` input | dev tags, when the input is set                                                              |
 
 A pull request runs the checks only.
 
@@ -191,11 +191,12 @@ A pull request runs the checks only.
   `master` into `release` through a pull request. `release` is protected:
   it takes pull requests with passing checks only, merged with a merge
   commit, never squashed or rebased.
-- The release run checks that the version has no tag yet, then tags,
-  publishes, creates the GitHub Release, and deploys the documentation site
-  ([documentation-site.md](documentation-site.md)). Each is a job of the
-  same workflow, because a tag that CI pushes with `GITHUB_TOKEN` starts no
-  workflow run of its own.
+- The release run checks that the version has no tag yet, and stages the
+  npm publish. Once the maintainer approves it (Publishing, below), the run
+  tags, creates the GitHub Release, deploys the documentation site
+  ([documentation-site.md](documentation-site.md)), and prunes dev tags.
+  Each is a job of the same workflow, because a tag that CI pushes with
+  `GITHUB_TOKEN` starts no workflow run of its own.
 - A tag script makes one commit per package with
   `git commit-tree <commit>:<directory>` and tags it. For a pre-release or
   a dev tag, it first writes the tag's version into that tree's
@@ -210,15 +211,21 @@ A pull request runs the checks only.
   contain. That count needs `release` to take merge commits. Pushes to
   `master` tag one at a time (a `concurrency` group), so each `N` is used
   once. Each push to `master` adds two tags.
-- A dev tag is `surge-v0.2.1-dev.g<short hash>`. The `g`, as in
-  `git describe`, keeps an all-digit hash from reading as a number.
+- A dev tag is `surge-v0.2.1-dev-<short hash>`. The hyphen makes `dev` and
+  the hash one identifier of the version. As an identifier of its own, an
+  all-digit hash with a leading zero, such as `0123456`, is not a valid
+  version.
 - A tag ruleset restricts updates and deletions of release and pre-release
   tags, so that nobody moves or deletes one: a consumer's lockfile records a
   tag's commit, not the tag. CI only creates tags, so it needs no bypass.
   The tags CI creates are not signed; the ruleset is what keeps them in
-  place. Dev tags are outside the ruleset so that they can be pruned, after
-  a retention period that [contributing.md](../contributing.md) states,
-  because pruning one breaks a lockfile that records its commit.
+  place. Dev tags are outside the ruleset so that a release can prune them.
+- A major or minor release deletes the dev tags whose version is below the
+  major or minor release before it. Releasing 0.5.0 after 0.4.0 deletes
+  every dev tag below 0.4.0, so a dev tag outlives one more major or minor
+  release. A patch release deletes none.
+  [contributing.md](../contributing.md) states the rule, because deleting a
+  tag breaks a lockfile that records its commit.
 - `workflow_dispatch` exists only once the workflow file is on the default
   branch. It can then run against any branch.
 
@@ -230,20 +237,42 @@ A pull request runs the checks only.
   transformer's `repository`, `bugs` and `homepage` point at travddm/surge.
   `prepare` builds the compiled output before a publish, as it does for a
   git install.
-- The release job publishes with npm trusted publishing
-  (`id-token: write`). It needs npm 11.5.1 and Node 22.14.0 or later, which
-  the pinned Node and its npm meet, and it attests provenance for a public
-  repository and package. npm's documentation does not say whether a
-  package's first publish can use it, so the first publish may need a
-  token, or a publish by hand.
+- Every publish is staged. The release run uses npm's staged publishing
+  (`npm stage publish`), so neither version can be installed until the
+  maintainer approves it, on the npm website or with the CLI, with two-factor
+  authentication. `npm stage download` fetches a staged tarball for review.
+  A published version number can never be used again, even after an
+  unpublish, so this review is the last check.
+- Staged publishing needs npm 11.15.0 or later, newer than the pinned Node's
+  npm, so the release job installs it. The first staged publish of a package
+  that does not exist yet also publishes a placeholder version,
+  `0.0.0-stage`. npm's documentation does not say whether the feature is
+  generally available; check before relying on it.
+- The run stages with a token the maintainer provides: a granular access
+  token, limited to the two packages where npm allows it, with Bypass 2FA
+  off. It is a secret of a GitHub environment that only the staging job
+  uses. With two-factor authentication required for publishing, such a
+  token can stage a publish but not complete one; confirm that with the
+  first staged publish.
+- A write token lasts at most 90 days, and npm removes direct publishing
+  with a granular token in January 2027. Once both packages exist, the run
+  moves to trusted publishing (`id-token: write`, with no stored secret).
+  Whether a trusted publisher can be limited to staging is not confirmed.
+- After staging, the run waits on a second GitHub environment that requires
+  the maintainer's approval. The maintainer approves both staged versions on
+  npm, then approves the run, which checks that both versions are live
+  before it tags anything. Rejecting ends the release with nothing tagged.
+  Check whether a rejected version number can be staged again; if not, the
+  fix takes the next version.
+- To try a release before approving it, install the pre-release tags of the
+  `master` commit being released: their trees match the release's, except
+  for the version.
 - [getting-started.md](../getting-started.md) changes to the registry
   install with the first publish. The changelog, the version backstop and
   the `typescript` peer dependency stay in
   [ci-and-release.md](ci-and-release.md).
 - Only a release publishes to npm. A pre-release or a dev build reaches
   another project through its one-package tag.
-
-Open: how long dev tags are kept.
 
 Not part of the move, and possible after it:
 
