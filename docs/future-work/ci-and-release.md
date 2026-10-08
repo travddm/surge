@@ -5,7 +5,7 @@ Part of the [surge](../architecture.md) design.
 ## What
 
 - **No version backstop.** Nothing checks, at compile time or at run time,
-  that a consumer's two `github:` refs match (Runtime API 6.2 in
+  that the two packages a consumer installs are the same release (Runtime API 6.2 in
   [specs/runtime-api.md](../specs/runtime-api.md)); keeping them matched is
   release-process discipline. The transformer already reads
   `@rbxts/surge`'s `package.json` (`nearestPackageName` in `detect.ts`)
@@ -34,14 +34,17 @@ backstop is the only one that touches the transformer, and it should land
 with the first tagged release it would protect. The documentation site
 publishes a release, so it lands with the first one too. The Windows job
 has no such dependency, and [README.md](README.md) lists it as work that can
-land at any time.
+land at any time. The first release follows
+[single-repository.md](single-repository.md), which sets where a release is
+cut from and how users and developers install it.
 
 ## How, briefly
 
 - Emit a diagnostic from the transformer when the resolved `@rbxts/surge`
   version does not equal the transformer's own; document a release
-  procedure that bumps both `package.json` versions and tags both
-  repositories together, with a `CHANGELOG.md` entry, and state the
+  procedure that bumps both `package.json` versions together and cuts the
+  tags and the npm publish that [single-repository.md](single-repository.md)
+  describes, with a `CHANGELOG.md` entry, and state the
   targeted roblox-ts and `@rbxts/types` versions in
   [getting-started.md](../getting-started.md).
 - Publish the documentation to GitHub Pages with each release: a
