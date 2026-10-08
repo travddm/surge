@@ -71,6 +71,8 @@ code the transformer generates runs. What has been measured is under
   it.
 - [tuple-reservations.md](../research/tuple-reservations.md) — a tuple's
   fixed-size elements in one reservation, and a tuple of them fixed-size.
+- [array-of-arrays-loop.md](../research/array-of-arrays-loop.md) — an array
+  of arrays sized by a loop over its rows.
 
 This document holds what is still open.
 
@@ -90,9 +92,11 @@ Both halves are within the band on the tagged union
 ([tuple-reservations.md](../research/tuple-reservations.md)), the
 leaderboard
 ([object-array-loop-sizing.md](../research/object-array-loop-sizing.md)), the
-tree ([recursion-write-cursor.md](../research/recursion-write-cursor.md)) and
-the instance references
-([blob-store-by-index.md](../research/blob-store-by-index.md)) as well. What
+tree ([recursion-write-cursor.md](../research/recursion-write-cursor.md)), the
+instance references
+([blob-store-by-index.md](../research/blob-store-by-index.md)) and the nested
+arrays ([array-of-arrays-loop.md](../research/array-of-arrays-loop.md)) as
+well. What
 the other rows pay against hand-written Luau is not measured.
 
 **What is left per call.** A shape that keeps the scratch buffer still has
@@ -109,17 +113,17 @@ surge owns and reuses, which removes the allocation as well as the copy. It
 would have to be an opt-in API, since a reused buffer is dead the moment
 anything calls `serialize()` again, and what it is worth is unmeasured.
 
-**Kinds exact sizing leaves out.** An array of unions, and an array of
-objects whose size varies, are sized by a loop ahead of the result
-(Transformer 5.20); the loop paid on both
-([exact-sizing-with-loops.md](../research/exact-sizing-with-loops.md) and
-[object-array-loop-sizing.md](../research/object-array-loop-sizing.md)). The
+**Kinds exact sizing leaves out.** An array of unions, of objects whose size
+varies, and of arrays, is sized by a loop ahead of the result (Transformer
+5.20); the loop paid on each
+([exact-sizing-with-loops.md](../research/exact-sizing-with-loops.md),
+[object-array-loop-sizing.md](../research/object-array-loop-sizing.md) and
+[array-of-arrays-loop.md](../research/array-of-arrays-loop.md)). The
 same loop measured slower than the scratch buffer over an array of strings,
 twice, and over a dictionary, then as no change
 ([string-and-dict-loops-again.md](../research/string-and-dict-loops-again.md)),
-so those keep it, and so does an array of arrays, which was not measured either
-way. Why the loop pays on unions and objects and not on strings was not
-probed; the number of reservations an element makes does not account for it. A
+so those keep it. Why the loop pays on unions, objects and arrays and not on
+strings was not probed; the number of reservations an element makes does not account for it. A
 recursive type is not sized, and a walk that counts it ahead of the write cost
 more than the scratch buffer on the tree
 ([recursion-write-cursor.md](../research/recursion-write-cursor.md)). A
@@ -226,7 +230,7 @@ its own full catalog run against a reference taken in the same session, read
 as medians over many cells against the untouched libraries as controls. The
 per-call gap is closed on the flat struct, the nested object, the `CFrame`
 array, the packed toggles, the leaderboard, the tree and the instance
-references, the tagged union and the tuples.
+references, the tagged union, the tuples and the nested arrays.
 Everything else is small, or needs a fixture before anything can measure it.
 
 ## How, briefly
