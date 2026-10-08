@@ -229,7 +229,7 @@ Every item here is measurement-driven, and the method is settled: a change is
 its own full catalog run against a reference taken in the same session, read
 as medians over many cells against the untouched libraries as controls. The
 per-call gap is closed on the flat struct, the nested object, the `CFrame`
-array, the packed toggles, the leaderboard, the tree and the instance
+array, the packed toggles, the leaderboard, the tree, the instance
 references, the tagged union, the tuples and the nested arrays.
 Everything else is small, or needs a fixture before anything can measure it.
 
