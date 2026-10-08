@@ -23,12 +23,13 @@
 	"license": "MIT",
 	"repository": {
 		"type": "git",
-		"url": "git+https://github.com/travddm/rbxts-transformer-surge.git"
+		"url": "git+https://github.com/travddm/surge.git",
+		"directory": "rbxts-transformer-surge"
 	},
 	"bugs": {
-		"url": "https://github.com/travddm/rbxts-transformer-surge/issues"
+		"url": "https://github.com/travddm/surge/issues"
 	},
-	"homepage": "https://github.com/travddm/rbxts-transformer-surge#readme",
+	"homepage": "https://github.com/travddm/surge/tree/master/rbxts-transformer-surge#readme",
 	"devDependencies": {
 		"@eslint/js": "^9.39.2",
 		"@rbxts/compiler-types": "^3.0.0-types.0",

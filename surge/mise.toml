@@ -1,5 +1,5 @@
+# Node comes from the repository root's mise.toml; these are the tools only this package uses.
 [tools]
-node = "24.21.0"
 "github:rojo-rbx/rojo" = "7.7.0-rc.1"
 # Runs the round-trip suite and the benchmark size tier headlessly (see testing.md) via the
 # fake-Instance shim in tests/scripts/lune-roblox-shim.luau -- Roblox Studio is reserved for the
@@ -111,10 +111,6 @@ run = "npm run spell"
 [tasks.test]
 description = "Run the golden-Luau invariant checks against tests/'s compiled output (plain Node, node:test)"
 run = "npm run test"
-
-[tasks."hooks:install"]
-description = "Install the project's git hooks (opt-in)"
-run = "git config core.hooksPath .githooks"
 
 [tasks.ci]
 description = "Run all CI checks in order (for agent verification)"

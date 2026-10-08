@@ -1,4 +1,4 @@
--- The size tier (section 5 of docs/specs/benchmark-harness.md): writes ../docs/benchmarks/size.md from the
+-- The size tier (section 5 of docs/specs/benchmark-harness.md): writes ../../docs/benchmarks/size.md from the
 -- bytes each fixture costs under each library, via `mise run bench:size`. It runs under Lune
 -- because a byte count is deterministic -- unlike a timing, which only the real engine can give
 -- (see section 6 of docs/specs/benchmark-harness.md), and which `mise run bench:speed` collects
@@ -18,7 +18,7 @@ local fs = require("@lune/fs")
 local process = require("@lune/process")
 local shim = require("./lune-roblox-shim")
 
-local OUTPUT_DIRECTORY = "../docs/benchmarks"
+local OUTPUT_DIRECTORY = "../../docs/benchmarks"
 local OUTPUT_PATH = OUTPUT_DIRECTORY .. "/size.md"
 local BASELINE = "surge"
 -- What a column reads where that library cannot express the row.

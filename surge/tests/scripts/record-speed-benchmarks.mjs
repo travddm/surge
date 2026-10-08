@@ -1,5 +1,5 @@
 // Runs the speed tier (section 6 of docs/specs/benchmark-harness.md) and writes
-// ../docs/benchmarks/speed.md from what it printed, via `mise run bench:speed`.
+// ../../docs/benchmarks/speed.md from what it printed, via `mise run bench:speed`.
 //
 // A Roblox process cannot write a file, so src/bench/speed.spec.ts prints one `BENCH_ROW:` line
 // per fixture, library, and half, carrying every trial's rate, and src/index.ts closes with
@@ -44,7 +44,7 @@ const ENVIRONMENT_PREFIX = "BENCH_ENV:";
 const ROW_PREFIX = "BENCH_ROW:";
 const RESULT_PREFIX = "BENCH_RESULT:";
 
-const OUTPUT_PATH = "../docs/benchmarks/speed.md";
+const OUTPUT_PATH = "../../docs/benchmarks/speed.md";
 /**
  * Every trial behind `OUTPUT_PATH`, one line each, under the facts of the run. That file carries a
  * median and a spread per cell and two drift figures for the whole table, which is what a reader
@@ -54,7 +54,7 @@ const OUTPUT_PATH = "../docs/benchmarks/speed.md";
  * compared with this one at trial level and not only at its medians, and so that `--render` can
  * write the table again.
  */
-const TRIALS_PATH = "../docs/benchmarks/speed-trials.tsv";
+const TRIALS_PATH = "../../docs/benchmarks/speed-trials.tsv";
 const BASELINE = "surge";
 /** What a column reads where that library has no entry for the row. */
 const EMPTY = "—";
@@ -378,17 +378,14 @@ function packageVersion(name) {
 	return JSON.parse(readFileSync(join("node_modules", name, "package.json"), "utf8")).version;
 }
 
-/** The commit a repository is at, marked when its tree carries changes that commit does not. */
-function commitOf(repository) {
-	const git = (...parameters) => execFileSync("git", ["-C", repository, ...parameters], { encoding: "utf8" }).trim();
+/**
+ * The commit the repository is at, marked when its tree carries changes that commit does not. One
+ * commit holds both packages, so it names the transformer's code as well as this package's.
+ */
+function currentCommit() {
+	const git = (...parameters) => execFileSync("git", parameters, { encoding: "utf8" }).trim();
 	const head = git("rev-parse", "--short", "HEAD");
 	return git("status", "--porcelain") === "" ? head : `${head} (uncommitted changes)`;
-}
-
-/** The transformer is a sibling checkout, so its path comes from the dependency that names it. */
-function transformerPath() {
-	const manifest = JSON.parse(readFileSync("package.json", "utf8"));
-	return manifest.dependencies["rbxts-transformer-surge"].replace(/^file:/, "");
 }
 
 /** Blink and Zap are pinned in mise.toml rather than in a manifest. */
@@ -404,8 +401,7 @@ function runFacts() {
 		["Roblox", environment.get("engine") ?? "unknown"],
 		["Machine", `${processor.model.trim()}, ${cpus().length} threads, ${platform()} ${release()}`],
 		["Runs", `${runs}, back to back`],
-		["surge", commitOf("..")],
-		["rbxts-transformer-surge", commitOf(transformerPath())],
+		["Commit", currentCommit()],
 		["roblox-ts", packageVersion("roblox-ts")],
 		["@rbxts/flamework-binary-serializer", packageVersion("@rbxts/flamework-binary-serializer")],
 		["@rbxts/serio", packageVersion("@rbxts/serio")],

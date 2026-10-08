@@ -1,0 +1,60 @@
+# The toolchain for the whole repository. mise merges this file with each package's own
+# mise.toml: a tool pinned here is pinned in both packages, and a package's file adds only the
+# tools that package alone uses. Inside a package's directory, that package's task overrides a
+# root task of the same name, so `mise run ci` there checks the one package; here it checks
+# everything. A root task runs in this directory wherever it is started.
+
+[tools]
+node = "24.21.0"
+
+[hooks]
+# Keeps the root project's node_modules in sync whenever `mise install` runs here.
+postinstall = "npm install"
+
+[tasks.setup]
+description = "Install every tool and npm project: the root's, then each package's (`mise install` here installs only the root's)"
+# The transformer installs before surge: surge's tests/ builds a copy of it with its own
+# devDependencies (see testing.md).
+run = ["mise install", "cd rbxts-transformer-surge && mise install", "cd surge && mise install"]
+
+[tasks."lint:check"]
+description = "Lint the root files and both packages with ESLint and markdownlint"
+run = [
+	"npm run lint:check",
+	"cd rbxts-transformer-surge && mise run lint:check",
+	"cd surge && mise run lint:check",
+]
+
+[tasks."lint:fix"]
+description = "Lint the root files and both packages, and apply fixes"
+run = ["npm run lint:fix", "cd rbxts-transformer-surge && mise run lint:fix", "cd surge && mise run lint:fix"]
+
+[tasks."format:check"]
+description = "Check the formatting of the root files and both packages with Prettier"
+run = [
+	"npm run format:check",
+	"cd rbxts-transformer-surge && mise run format:check",
+	"cd surge && mise run format:check",
+]
+
+[tasks."format:fix"]
+description = "Format the root files and both packages with Prettier and apply fixes"
+run = ["npm run format:fix", "cd rbxts-transformer-surge && mise run format:fix", "cd surge && mise run format:fix"]
+
+[tasks.spell]
+description = "Spell check the root files, docs/, the last commit message and both packages with cspell"
+run = ["npm run spell", "cd rbxts-transformer-surge && mise run spell", "cd surge && mise run spell"]
+
+[tasks."hooks:install"]
+description = "Install the repository's git hooks (opt-in)"
+run = "git config core.hooksPath .githooks"
+
+[tasks.ci]
+description = "Run every check in order: the root files', then the transformer's, then surge's"
+run = [
+	"npm run lint:check",
+	"npm run format:check",
+	"npm run spell",
+	"cd rbxts-transformer-surge && mise run ci",
+	"cd surge && mise run ci",
+]

@@ -1,6 +1,6 @@
 # rbxts-transformer-surge
 
-[![CI](https://github.com/travddm/rbxts-transformer-surge/actions/workflows/ci.yml/badge.svg)](https://github.com/travddm/rbxts-transformer-surge/actions/workflows/ci.yml)
+[![CI](https://github.com/travddm/surge/actions/workflows/ci.yml/badge.svg)](https://github.com/travddm/surge/actions/workflows/ci.yml)
 
 The TypeScript transformer for [`@rbxts/surge`](https://github.com/travddm/surge).
 It finds each `createCodec<T>()`, `createSerializer<T>()` and
@@ -18,13 +18,14 @@ Register it in a roblox-ts project's `tsconfig.json`:
 }
 ```
 
-Install it beside `@rbxts/surge`, pinned to the same release; surge's
+Install it beside `@rbxts/surge`, at the same version;
 [getting-started.md](https://github.com/travddm/surge/blob/master/docs/getting-started.md)
 has the steps.
 
 ## Documentation
 
-Both repositories' documentation lives in surge. What this transformer
+The documentation for both packages is in the
+[surge repository](https://github.com/travddm/surge). What this transformer
 guarantees is
 [docs/specs/transformer.md](https://github.com/travddm/surge/blob/master/docs/specs/transformer.md),
 and the bytes its code writes are
@@ -32,14 +33,15 @@ and the bytes its code writes are
 
 ## Contributing
 
-Start with [AGENTS.md](AGENTS.md). Check this repository out beside surge,
-then:
+This package is the `rbxts-transformer-surge/` directory of the
+[surge repository](https://github.com/travddm/surge). Start with its
+[AGENTS.md](https://github.com/travddm/surge/blob/master/rbxts-transformer-surge/AGENTS.md),
+then, in this directory:
 
 ```sh
-mise install
 mise run ci   # lint, format, spell, compile, and the Jest suites
 ```
 
 VS Code users can run the `transformer: ci` task instead. What the generated
-code does when it runs is tested in surge, whose `mise run ci` compiles its
-tests through this transformer.
+code does when it runs is tested by surge's round-trip suite, which compiles
+through this transformer; `mise run ci` at the repository root runs both.

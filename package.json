@@ -1,0 +1,20 @@
+{
+	"name": "surge-repository",
+	"version": "0.0.0",
+	"private": true,
+	"description": "The tools that check the files at the repository root: the documentation, the workflow, and the root Markdown. Each package checks its own files.",
+	"license": "MIT",
+	"scripts": {
+		"lint:check": "npm run lint:md",
+		"lint:fix": "npm run lint:md -- --fix",
+		"lint:md": "markdownlint-cli2 \"**/*.md\" \"!**/node_modules/**\" \"!surge/**\" \"!rbxts-transformer-surge/**\"",
+		"format:check": "prettier --check .",
+		"format:fix": "prettier --write .",
+		"spell": "cspell --no-progress"
+	},
+	"devDependencies": {
+		"cspell": "^8.19.4",
+		"markdownlint-cli2": "^0.23.3",
+		"prettier": "^3.9.6"
+	}
+}
