@@ -304,9 +304,10 @@ test("a deserialize that reaches no recursion helper holds its input and cursor 
 });
 
 // Regression check for the boundary of sizing by a loop. What it was measured
-// as worth is in docs/research/exact-sizing-with-loops.md, and on an array of
-// objects in docs/research/object-array-loop-sizing.md.
-test("an array of unions or of objects is sized by a loop, and an array of anything else that varies is not", () => {
+// as worth is in docs/research/exact-sizing-with-loops.md, on an array of
+// objects in docs/research/object-array-loop-sizing.md, and on an array of
+// arrays in docs/research/array-of-arrays-loop.md.
+test("an array of unions, objects or arrays is sized by a loop, and an array of anything else that varies is not", () => {
 	const unions = readCompiledLuau("tests/unions.spec.luau");
 	// `WithUnionArrays.scalars` is an array of a guarded union.
 	assert.match(
@@ -320,12 +321,18 @@ test("an array of unions or of objects is sized by a loop, and an array of anyth
 		strings,
 		/local namedEntriesSerializer = [(]function[(][)]\n[^]*?for _, (item[0-9]+) in arr[0-9]+ do\n\s+size[0-9]+ [+]= #\1[.]name [+] /,
 	);
-	// `Grid` is a `number[][]`, whose rows vary in length: it keeps the
-	// scratch buffer, where a loop measured slower.
+	// `Grid` is a `number[][]`, whose rows vary in length: a loop over its rows
+	// adds each row's elements, with the rows' counts added ahead of it.
 	const collections = readCompiledLuau("tests/collections.spec.luau");
 	assert.match(
 		collections,
-		/local gridSerializer = [(]function[(][)]\n\s+local __surge_scratch = buffer[.]create[(]64[)]$/m,
+		/local gridSerializer = [(]function[(][)]\n[^]*?local (size[0-9]+) = #(arr[0-9]+) [*] 4 [+] 4\n\s+for _, (item[0-9]+) in \2 do\n\s+\1 [+]= #\3 [*] 8\n\s+end$/m,
+	);
+	// `WithGuardedUnions.who` can hold an array of strings, where a loop
+	// measured slower: it keeps the scratch buffer.
+	assert.match(
+		unions,
+		/local guardedSerializer = [(]function[(][)]\n\s+local __surge_scratch = buffer[.]create[(]64[)]$/m,
 	);
 });
 

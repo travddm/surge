@@ -13,8 +13,8 @@ import { difference, hex } from "../support";
 // release 0.736, and Lune 0.10.5 bundles Luau 0.709, where the yield raises.
 //
 // Runtime API 5.9: a `serialize` sized ahead of its write iterates an array
-// of unions, or of objects whose size varies, twice, once for the size and
-// once for the write.
+// of unions, of objects whose size varies, or of arrays, twice, once for the
+// size and once for the write.
 
 interface Readings {
 	values: number[];
@@ -33,10 +33,15 @@ interface Labels {
 	values: Label[];
 }
 
+interface Rows {
+	values: number[][];
+}
+
 const readings = createCodec<Readings>();
 const label = createCodec<Label>();
 const mixed = createCodec<Mixed>();
 const labels = createCodec<Labels>();
+const rows = createCodec<Rows>();
 
 const VALUES: ReadonlyArray<number> = [1, 2.5, -3];
 const LABEL: Label = { name: "inner", id: 7 };
@@ -99,6 +104,16 @@ class OverlapTest {
 
 		Assert.equal(2, iterations);
 		Assert.equal(undefined, difference({ values: [...items] }, labels.deserialize(written)));
+	}
+
+	@Fact
+	public iteratesAnArrayOfArraysOnceForItsSizeAndOnceForItsWrite(): void {
+		const items: ReadonlyArray<number[]> = [[1, 2.5], [], [-3]];
+		let iterations = 0;
+		const written = rows.serialize({ values: countingIterations(items, () => iterations++) });
+
+		Assert.equal(2, iterations);
+		Assert.equal(undefined, difference({ values: [...items] }, rows.deserialize(written)));
 	}
 
 	@Fact
