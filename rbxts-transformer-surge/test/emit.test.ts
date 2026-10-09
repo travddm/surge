@@ -579,8 +579,12 @@ describe("Emitter enum guards", () => {
 			"// read",
 		)[0];
 		expect(write).not.toContain("EnumType");
-		expect(write).toMatch(/if \(typeIs\(value, "EnumItem"\) && surge_HumanoidRigType_\d+_index\.has\(value\)\) \{/);
-		expect(write).toMatch(/else if \(typeIs\(value, "EnumItem"\) && surge_SortOrder_\d+_index\.has\(value\)\) \{/);
+		expect(write).toMatch(
+			/if \(typeIs\(value, "EnumItem"\) && surge_HumanoidRigType_\d+_index\.has\(value as unknown as EnumItem\)\) \{/,
+		);
+		expect(write).toMatch(
+			/else if \(typeIs\(value, "EnumItem"\) && surge_SortOrder_\d+_index\.has\(value as unknown as EnumItem\)\) \{/,
+		);
 	});
 
 	const r15: Field = { kind: "literalConst", value: { enumName: "HumanoidRigType", member: "R15" } };

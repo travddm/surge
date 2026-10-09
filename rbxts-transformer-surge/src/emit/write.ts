@@ -1514,6 +1514,9 @@ export function guardFor(ctx: EmitContext, field: Field, value: ts.Expression, b
 		case "numberSequence":
 			return typeIs("NumberSequence");
 		case "enum":
+			// The argument of `has` is cast, because the `typeIs` before it
+			// does not narrow a value read through a cast, as a tagged union
+			// variant's property is.
 			return byEnumType
 				? f.createLogicalAnd(
 						typeIs("EnumItem"),
@@ -1523,7 +1526,7 @@ export function guardFor(ctx: EmitContext, field: Field, value: ts.Expression, b
 								"has",
 							),
 							undefined,
-							[value],
+							[ctx.castTo(value, f.createTypeReferenceNode("EnumItem"))],
 						),
 					)
 				: typeIs("EnumItem");

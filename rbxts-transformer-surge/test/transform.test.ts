@@ -453,6 +453,10 @@ describe("transform generated code", () => {
 			"a union of six items of one enum",
 			`interface T { m: Enum.Material.Air | Enum.Material.Brick | Enum.Material.Glass | Enum.Material.Grass | Enum.Material.Ice | Enum.Material.Wood; }`,
 		],
+		[
+			"a union of two enums and a string in a tagged union's variant",
+			`interface T { u: { kind: "a"; k: Enum.SortOrder | Enum.Material | string } | { kind: "b" }; }`,
+		],
 	])("the generated code for %s passes the type check", (_name, declarations) => {
 		const errors = typeErrorsOfGeneratedCode(
 			`import { createCodec } from "@rbxts/surge";
