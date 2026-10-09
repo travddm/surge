@@ -23,17 +23,17 @@ export interface Encoded {
 }
 
 /**
- * A column of the size table: the four comparison libraries, surge itself,
+ * A column of the size table: the five comparison libraries, surge itself,
  * and the hand-written baseline, which is not a library at all but is driven
  * through the same interface (see section 4.5 of docs/specs/benchmark-harness.md).
  */
-export type Library = "surge" | "fbs" | "serio" | "blink" | "zap" | "baseline";
+export type Library = "surge" | "fbs" | "serio" | "flamework2" | "blink" | "zap" | "baseline";
 
 /**
  * Column order of `docs/benchmarks/size.md`. surge comes first: the other
  * columns carry their ratio against it.
  */
-export const LIBRARIES: ReadonlyArray<Library> = ["surge", "fbs", "serio", "blink", "zap", "baseline"];
+export const LIBRARIES: ReadonlyArray<Library> = ["surge", "fbs", "serio", "flamework2", "blink", "zap", "baseline"];
 
 /**
  * Libraries the speed suite skips. Zap has no callable encoder: its bytes

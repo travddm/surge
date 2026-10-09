@@ -4,8 +4,10 @@ import { Rng } from "../../support";
 import type { Fixture } from "../adapter";
 import { defineEntry } from "../adapter";
 import { baselineAdapter } from "../adapters/baseline";
+import { flamework2Adapter } from "../adapters/flamework2";
 import { surgeAdapter } from "../adapters/surge";
 import { tree as baselineCodec } from "../baseline/codecs";
+import { flamework2Serializer } from "../codecs/tree/flamework2";
 import type { TreeNode } from "../codecs/tree/shapes";
 import { serializer } from "../codecs/tree/surge";
 
@@ -31,6 +33,7 @@ export const tree: Fixture = {
 	note: `85 nodes of a u16, ${BRANCHING} children each to a depth of ${DEPTH}, through a recursion helper`,
 	entries: [
 		defineEntry<TreeNode>("surge", value, surgeAdapter(serializer)),
+		defineEntry<TreeNode>("flamework2", value, flamework2Adapter(flamework2Serializer)),
 		defineEntry("baseline", value, baselineAdapter(baselineCodec)),
 	],
 };

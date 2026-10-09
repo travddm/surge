@@ -39,19 +39,19 @@ and these tasks are added. Both packages:
 
 surge only:
 
-| Task                                                    | Does                                                          |
-| ------------------------------------------------------- | ------------------------------------------------------------- |
-| `mise run tests:install`                                | reinstall `tests/` with fresh copies of both packages         |
-| `mise run tests:compile`, `mise run tests:test`         | build the test place, and run the round-trip suite under Lune |
-| `mise run bench:size`, `mise run bench:speed`           | record the size and speed tables ([testing.md](testing.md))   |
-| `mise run bench:code`                                   | record the size of each codec module's bytecode               |
-| `mise run bench:size:only`, `mise run bench:speed:only` | measure only the rows a pattern selects, and record nothing   |
-| `mise run bench:speed:render`                           | rewrite the speed table from its trials, without a run        |
-| `mise run bench:definitions`                            | recompile the Blink and Zap definitions the benchmark drives  |
-| `mise run dev:tests`                                    | watch-compile the test place and serve it to Studio with Rojo |
-| `mise run tests:compile:watch`, `mise run tests:serve`  | the two halves of `dev:tests`, one at a time                  |
-| `mise run tests:sourcemap`                              | write the test place's Rojo sourcemap                         |
-| `mise run tests:build`                                  | build the test place into a `.rbxl`                           |
+| Task                                                    | Does                                                                                         |
+| ------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| `mise run tests:install`                                | reinstall `tests/` with fresh copies of both packages                                        |
+| `mise run tests:compile`, `mise run tests:test`         | build the test place, and run the round-trip suite under Lune                                |
+| `mise run bench:size`, `mise run bench:speed`           | record the size and speed tables ([testing.md](testing.md))                                  |
+| `mise run bench:code`                                   | record the size of each codec module's bytecode                                              |
+| `mise run bench:size:only`, `mise run bench:speed:only` | measure only the rows a pattern selects, and record nothing                                  |
+| `mise run bench:speed:render`                           | rewrite the speed table from its trials, without a run                                       |
+| `mise run bench:definitions`                            | recompile the Blink and Zap definitions and the Flamework 2 serializers the benchmark drives |
+| `mise run dev:tests`                                    | watch-compile the test place and serve it to Studio with Rojo                                |
+| `mise run tests:compile:watch`, `mise run tests:serve`  | the two halves of `dev:tests`, one at a time                                                 |
+| `mise run tests:sourcemap`                              | write the test place's Rojo sourcemap                                                        |
+| `mise run tests:build`                                  | build the test place into a `.rbxl`                                                          |
 
 ## Working across both packages
 

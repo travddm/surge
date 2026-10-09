@@ -5,12 +5,15 @@ import type { Fixture } from "../adapter";
 import { defineEntry } from "../adapter";
 import { blinkAdapter } from "../adapters/blink";
 import { fbsAdapter } from "../adapters/fbs";
+import { flamework2Adapter } from "../adapters/flamework2";
 import { serioAdapter } from "../adapters/serio";
 import { surgeAdapter } from "../adapters/surge";
 import { zapAdapter } from "../adapters/zap";
 import { Booleans as blinkBooleansCodec, Entities as blinkEntitiesCodec } from "../blink/server";
 import { fbsBooleansSerializer } from "../codecs/blink-benches/fbs-booleans";
 import { fbsEntitiesSerializer } from "../codecs/blink-benches/fbs-entities";
+import { flamework2Serializer as flamework2BooleansSerializer } from "../codecs/blink-benches/flamework2-booleans";
+import { flamework2Serializer as flamework2EntitiesSerializer } from "../codecs/blink-benches/flamework2-entities";
 import { serioBooleansSerializer } from "../codecs/blink-benches/serio-booleans";
 import { serioEntitiesSerializer } from "../codecs/blink-benches/serio-entities";
 import type { Booleans, Entities, Entity, FbsEntities, SerioEntities } from "../codecs/blink-benches/shapes";
@@ -46,6 +49,7 @@ export const blinkBooleans: Fixture = {
 		defineEntry<Booleans>("surge", { values }, surgeAdapter(booleansSerializer)),
 		defineEntry<Booleans>("fbs", { values }, fbsAdapter(fbsBooleansSerializer)),
 		defineEntry<Booleans>("serio", { values }, serioAdapter(serioBooleansSerializer)),
+		defineEntry<Booleans>("flamework2", { values }, flamework2Adapter(flamework2BooleansSerializer)),
 		defineEntry("blink", { values }, blinkAdapter(blinkBooleansCodec)),
 		defineEntry(
 			"zap",
@@ -62,6 +66,7 @@ export const blinkEntities: Fixture = {
 		defineEntry<Entities>("surge", { entities }, surgeAdapter(entitiesSerializer)),
 		defineEntry<FbsEntities>("fbs", { entities }, fbsAdapter(fbsEntitiesSerializer)),
 		defineEntry<SerioEntities>("serio", { entities }, serioAdapter(serioEntitiesSerializer)),
+		defineEntry<Entities>("flamework2", { entities }, flamework2Adapter(flamework2EntitiesSerializer)),
 		defineEntry("blink", { entities }, blinkAdapter(blinkEntitiesCodec)),
 		defineEntry(
 			"zap",

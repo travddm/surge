@@ -1,0 +1,22 @@
+{
+	"compilerOptions": {
+		"allowSyntheticDefaultImports": true,
+		"downlevelIteration": true,
+		"module": "commonjs",
+		"moduleResolution": "Node",
+		"noLib": true,
+		"noEmit": false,
+		"resolveJsonModule": true,
+		"forceConsistentCasingInFileNames": true,
+		"moduleDetection": "force",
+		"strict": true,
+		"target": "ESNext",
+		"typeRoots": ["node_modules/@rbxts", "node_modules/@flamework-experimental"],
+		"plugins": [{ "transform": "@flamework-experimental/transformer" }],
+
+		"rootDir": "src",
+		"outDir": "out",
+		"baseUrl": "src"
+	},
+	"include": ["src/**/*"]
+}

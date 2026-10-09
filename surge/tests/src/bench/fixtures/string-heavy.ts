@@ -5,11 +5,13 @@ import type { Fixture } from "../adapter";
 import { defineEntry } from "../adapter";
 import { blinkAdapter } from "../adapters/blink";
 import { fbsAdapter } from "../adapters/fbs";
+import { flamework2Adapter } from "../adapters/flamework2";
 import { serioAdapter } from "../adapters/serio";
 import { surgeAdapter } from "../adapters/surge";
 import { zapAdapter } from "../adapters/zap";
 import { StringHeavy as blinkCodec } from "../blink/server";
 import { fbsSerializer } from "../codecs/string-heavy/fbs";
+import { flamework2Serializer } from "../codecs/string-heavy/flamework2";
 import { serioSerializer } from "../codecs/string-heavy/serio";
 import type { StringHeavy } from "../codecs/string-heavy/shapes";
 import { serializer } from "../codecs/string-heavy/surge";
@@ -31,6 +33,7 @@ export const stringHeavy: Fixture = {
 		defineEntry<StringHeavy>("surge", value, surgeAdapter(serializer)),
 		defineEntry<StringHeavy>("fbs", value, fbsAdapter(fbsSerializer)),
 		defineEntry<StringHeavy>("serio", value, serioAdapter(serioSerializer)),
+		defineEntry<StringHeavy>("flamework2", value, flamework2Adapter(flamework2Serializer)),
 		defineEntry("blink", value, blinkAdapter(blinkCodec)),
 		defineEntry(
 			"zap",

@@ -52,7 +52,7 @@ description = "Run the @rbxts/runit round-trip suite headlessly under Lune (see 
 run = "npm run tests:test"
 
 [tasks."bench:definitions"]
-description = "Recompile the benchmark's Blink and Zap definitions into tests/src/bench/blink/ and tests/src/bench/zap/ (the generated modules are checked in, so this only runs when a definition changes)"
+description = "Recompile the benchmark's Blink and Zap definitions into tests/src/bench/blink/ and tests/src/bench/zap/, and its Flamework 2 serializers in tests/flamework2/ into tests/src/bench/codecs/ (the generated modules are checked in, so this only runs when a definition changes)"
 run = "npm run bench:definitions"
 
 [tasks."bench:size"]

@@ -1,0 +1,20 @@
+{
+	"name": "surge-tests-flamework2",
+	"version": "0.0.0",
+	"private": true,
+	"description": "Builds the benchmark's Flamework 2 serializers; `mise run bench:definitions` copies the Luau they compile to into ../src/bench/codecs/.",
+	"license": "MIT",
+	"scripts": {
+		"compile": "rbxtsc -p tsconfig.json --rojo default.project.json"
+	},
+	"dependencies": {
+		"@flamework-experimental/core": "2.0.0-alpha.8"
+	},
+	"devDependencies": {
+		"@flamework-experimental/transformer": "2.0.0-alpha.8",
+		"@rbxts/compiler-types": "3.0.0-types.0",
+		"@rbxts/types": "1.0.952",
+		"roblox-ts": "3.0.0",
+		"typescript": "5.5.3"
+	}
+}

@@ -5,11 +5,13 @@ import type { Fixture } from "../adapter";
 import { defineEntry } from "../adapter";
 import { blinkAdapter } from "../adapters/blink";
 import { fbsAdapter } from "../adapters/fbs";
+import { flamework2Adapter } from "../adapters/flamework2";
 import { serioAdapter } from "../adapters/serio";
 import { surgeAdapter } from "../adapters/surge";
 import { zapAdapter } from "../adapters/zap";
 import { LargeRecord as blinkCodec } from "../blink/server";
 import { fbsSerializer } from "../codecs/large-record/fbs";
+import { flamework2Serializer } from "../codecs/large-record/flamework2";
 import { serioSerializer } from "../codecs/large-record/serio";
 import type { FbsLargeRecord, LargeRecord, SerioLargeRecord } from "../codecs/large-record/shapes";
 import { serializer } from "../codecs/large-record/surge";
@@ -32,6 +34,7 @@ export const largeRecord: Fixture = {
 		defineEntry<LargeRecord>("surge", { entries }, surgeAdapter(serializer)),
 		defineEntry<FbsLargeRecord>("fbs", { entries: mapEntries }, fbsAdapter(fbsSerializer)),
 		defineEntry<SerioLargeRecord>("serio", { entries: mapEntries }, serioAdapter(serioSerializer)),
+		defineEntry<LargeRecord>("flamework2", { entries }, flamework2Adapter(flamework2Serializer)),
 		defineEntry("blink", { entries }, blinkAdapter(blinkCodec)),
 		defineEntry(
 			"zap",

@@ -4,11 +4,13 @@ import type { Fixture } from "../adapter";
 import { defineEntry } from "../adapter";
 import { blinkAdapter } from "../adapters/blink";
 import { fbsAdapter } from "../adapters/fbs";
+import { flamework2Adapter } from "../adapters/flamework2";
 import { serioAdapter } from "../adapters/serio";
 import { surgeAdapter } from "../adapters/surge";
 import { zapAdapter } from "../adapters/zap";
 import { WideStruct as blinkCodec } from "../blink/server";
 import { fbsSerializer } from "../codecs/wide-struct/fbs";
+import { flamework2Serializer } from "../codecs/wide-struct/flamework2";
 import { serioSerializer } from "../codecs/wide-struct/serio";
 import type { FbsWideStruct, SerioWideStruct, WideStruct } from "../codecs/wide-struct/shapes";
 import { serializer } from "../codecs/wide-struct/surge";
@@ -73,6 +75,7 @@ export const wideStruct: Fixture = {
 		defineEntry<WideStruct>("surge", value, surgeAdapter(serializer)),
 		defineEntry<FbsWideStruct>("fbs", value, fbsAdapter(fbsSerializer)),
 		defineEntry<SerioWideStruct>("serio", value, serioAdapter(serioSerializer)),
+		defineEntry<WideStruct>("flamework2", value, flamework2Adapter(flamework2Serializer)),
 		defineEntry("blink", value, blinkAdapter(blinkCodec)),
 		defineEntry(
 			"zap",

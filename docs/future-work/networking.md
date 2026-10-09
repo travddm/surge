@@ -29,6 +29,12 @@ up.
   (Runtime API 3.15 in [specs/runtime-api.md](../specs/runtime-api.md)),
   which writes each event into one buffer the batch owns, where each
   `serialize` would cost a buffer of its own and a copy into the batch.
+- Its benchmark compares it with the networking layers a consumer would
+  weigh against it: Blink's, Zap's, and that of the experimental Flamework v2
+  (`@flamework-experimental/networking`), which packs payloads with the code
+  its `Flamework.createSerializer` generates. The wire-cost tier in
+  [benchmark-tooling.md](benchmark-tooling.md) is the measure that includes
+  batching.
 - Not designed further than this until picked up — gets its own design
   pass (detection/dispatch model, batching strategy, channel semantics,
   and whether it needs a transformer of its own, as `@rbxts/surge` does) at

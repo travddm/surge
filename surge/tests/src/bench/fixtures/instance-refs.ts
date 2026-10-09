@@ -5,10 +5,12 @@ import type { Fixture } from "../adapter";
 import { defineEntry } from "../adapter";
 import { baselineBlobAdapter } from "../adapters/baseline";
 import { fbsAdapter } from "../adapters/fbs";
+import { flamework2BlobAdapter } from "../adapters/flamework2";
 import { serioAdapter } from "../adapters/serio";
 import { surgeAdapter } from "../adapters/surge";
 import { instanceRefs as baselineCodec } from "../baseline/codecs";
 import { fbsSerializer } from "../codecs/instance-refs/fbs";
+import { flamework2Serializer } from "../codecs/instance-refs/flamework2";
 import { serioSerializer } from "../codecs/instance-refs/serio";
 import type { FbsInstanceRefs, InstanceRef, InstanceRefs, SerioInstanceRefs } from "../codecs/instance-refs/shapes";
 import { serializer } from "../codecs/instance-refs/surge";
@@ -28,6 +30,7 @@ export const instanceRefs: Fixture = {
 		defineEntry<InstanceRefs>("surge", { entries }, surgeAdapter(serializer)),
 		defineEntry<FbsInstanceRefs>("fbs", { entries }, fbsAdapter(fbsSerializer)),
 		defineEntry<SerioInstanceRefs>("serio", { entries }, serioAdapter(serioSerializer)),
+		defineEntry<InstanceRefs>("flamework2", { entries }, flamework2BlobAdapter(flamework2Serializer)),
 		defineEntry("baseline", { entries }, baselineBlobAdapter(baselineCodec)),
 	],
 };
