@@ -1185,30 +1185,6 @@ export abstract class EmitContext {
 	}
 
 	/**
-	 * Writes `count` at `pos`: at `width`, or, where `width` is `undefined`, as
-	 * a variable-length count, one byte inline and a longer one through
-	 * `writeLongCount`. `count` is read more than once, so it is a local.
-	 */
-	public writeCountAt(
-		width: LengthWidth | undefined,
-		buf: ts.Expression,
-		pos: ts.Expression,
-		count: ts.Expression,
-	): ts.Statement[] {
-		if (width !== undefined) {
-			return this.writeNumberAt(width, buf, pos, count);
-		}
-		const f = this.factory;
-		return [
-			f.createIfStatement(
-				f.createBinaryExpression(count, this.ts_.SyntaxKind.LessThanToken, this.num(LONG_COUNT_MARKER)),
-				f.createBlock([f.createExpressionStatement(this.bufferCall("writeu8", [buf, pos, count]))], true),
-				f.createBlock([f.createExpressionStatement(this.call("writeLongCount", [buf, pos, count]))], true),
-			),
-		];
-	}
-
-	/**
 	 * Reads the rest of a variable-length count whose first byte, at `pos`, is
 	 * in `count`: when that byte is a marker, `count` and `end` take the long
 	 * form's count and the position after it from `readLongCount`. Under

@@ -868,8 +868,10 @@ describe("Emitter counted bytes", () => {
 		["buffer", { kind: "buffer" } as Field],
 	])("a %s reserves its count and its bytes at once", (_label, field) => {
 		const output = emitSnapshot(field);
+		// One reservation in each of the count's two forms (Transformer 5.28).
 		expect(cursorMoves(output, "write", "__surge_cursor")).toEqual([
-			expect.stringMatching(/^__surge_cursor = pos\d+ \+ \(len\d+ \+ head\d+\);$/),
+			expect.stringMatching(/^\s*__surge_cursor = pos\d+ \+ \(len\d+ \+ 1\);$/),
+			expect.stringMatching(/^\s*__surge_cursor = pos\d+ \+ \(len\d+ \+ \(len\d+ <= 65535 \? 3 : 5\)\);$/),
 		]);
 		expect(cursorMoves(output, "read", "__surge_readCursor")).toEqual([
 			expect.stringMatching(/^__surge_readCursor = at\d+ \+ len\d+;$/),
@@ -1255,7 +1257,8 @@ describe("Emitter exact sizing", () => {
 		expect(output).toMatch(
 			new RegExp(
 				String.raw`^const (arr\d+) = value;\nconst (len\d+) = \1\.size\(\);\nlet (size\d+) = ${countBytes(String.raw`\2`)} \+ \2;\n` +
-					String.raw`for \(const (item\d+) of \1\) \{\n\s+\3 \+= \(typeIs\(\4, "number"\) \? 8 : `,
+					String.raw`for \(const (item\d+) of \1\) \{\n\s+if \(typeIs\(\4, "number"\)\) \{\n\s+\3 \+= 8;\n\s+\}\n` +
+					String.raw`\s+else \{\n\s+const (len\d+) = \(\4 as unknown as string\)\.size\(\);\n\s+\3 \+= ${countBytes(String.raw`\5`)} \+ \5;`,
 			),
 		);
 		expect(output).toMatch(/\nconst __surge_scratch = buffer\.create\(size\d+\);/);
@@ -1276,7 +1279,8 @@ describe("Emitter exact sizing", () => {
 		expect(output).toMatch(
 			new RegExp(
 				String.raw`^const (arr\d+) = value;\nconst (len\d+) = \1\.size\(\);\nlet (size\d+) = ${countBytes(String.raw`\2`)} \+ \2 \* 4;\n` +
-					String.raw`for \(const (item\d+) of \1\) \{\n\s+\3 \+= ${countBytes(String.raw`\4\.name\.size\(\)`)} \+ \4\.name\.size\(\);\n\}\n` +
+					String.raw`for \(const (item\d+) of \1\) \{\n\s+const (len\d+) = \4\.name\.size\(\);\n` +
+					String.raw`\s+\3 \+= ${countBytes(String.raw`\5`)} \+ \5;\n\}\n` +
 					String.raw`const __surge_scratch = buffer\.create\(\3\);`,
 			),
 		);
@@ -1291,7 +1295,8 @@ describe("Emitter exact sizing", () => {
 		expect(output).toMatch(
 			new RegExp(
 				String.raw`^const (arr\d+) = value;\nconst (len\d+) = \1\.size\(\);\nlet (size\d+) = ${countBytes(String.raw`\2`)};\n` +
-					String.raw`for \(const (item\d+) of \1\) \{\n\s+\3 \+= ${countBytes(String.raw`\4\.size\(\)`)} \+ \4\.size\(\) \* 2;\n\}\n` +
+					String.raw`for \(const (item\d+) of \1\) \{\n\s+const (len\d+) = \4\.size\(\);\n` +
+					String.raw`\s+\3 \+= ${countBytes(String.raw`\5`)} \+ \5 \* 2;\n\}\n` +
 					String.raw`const __surge_scratch = buffer\.create\(\3\);`,
 			),
 		);
@@ -1373,7 +1378,9 @@ describe("Emitter exact sizing", () => {
 	test("a size that compares a tag more than once reads it into a local once, in a loop and out of one", () => {
 		const array = serializeBody({ kind: "array", element: threeTags() });
 		expect(array).toMatch(
-			/for \(const (item\d+) of arr\d+\) \{\n\s+const (tag\d+) = \1\.kind;\n\s+size\d+ \+= \(\2 === "a" \? 1 : \2 === "b" \? [^]*?\.s\.size\(\) : 0\);\n\}/,
+			// In a loop's body, the variant that holds a string reads its length
+			// into a local of its own, so the union is an if chain.
+			/for \(const (item\d+) of arr\d+\) \{\n\s+const (tag\d+) = \1\.kind;\n\s+if \(\2 === "a"\) \{\n\s+size\d+ \+= 1;\n\s+\}\n\s+else if \(\2 === "b"\) \{\n\s+const len\d+ = [^]*?\.s\.size\(\);/,
 		);
 		// The write reads the tag again inside its own loop.
 		expect(array.match(/\.kind;/g)).toHaveLength(2);
@@ -1636,7 +1643,10 @@ describe("Emitter count widths", () => {
 	// Wire format 6.9: one byte inline, and the long form through the package.
 	test.each(counted)("a %s with no branded width writes and reads a variable-length count", (_label, build) => {
 		const output = emitSnapshot(build());
-		expect(output).toMatch(/if \(\w+ < 254\) \{\s+buffer\.writeu8\(/);
+		// One comparison, and each form in a branch of its own.
+		expect(output).toMatch(
+			/if \(\w+ < 254\) \{[^]*?buffer\.writeu8\([^]*?\}\s*else \{[^]*?__surge_writeLongCount\(/,
+		);
 		expect(output).toContain("__surge_writeLongCount(");
 		expect(output).toMatch(/if \(\w+ >= 254\) \{\s+\[\w+, \w+\] = __surge_readLongCount\(/);
 		expect(output).not.toContain("buffer.writeu32");

@@ -167,9 +167,17 @@ const countBytes = (count) => `[(]if ${count} < 254 then 1 elseif ${count} <= 65
 
 test("a string reserves its count and its bytes at once", () => {
 	const luau = readCompiledLuau("tests/basic.spec.luau");
-	// `Basic.name` is a string: one reservation of its length and the bytes its
-	// count takes, and one move of the read cursor past both.
-	assert.match(luau, /__surge_cursor = pos[0-9]+ [+] [(]len[0-9]+ [+] head[0-9]+[)]$/m);
+	// `Basic.name` is a string: in each of its count's two forms, one
+	// reservation of its length and the bytes its count takes, and one move of
+	// the read cursor past both.
+	assert.match(
+		luau,
+		/^\s+if (len[0-9]+) < 254 then\n\s+local (pos[0-9]+) = __surge_cursor\n\s+__surge_cursor = \2 [+] [(]\1 [+] 1[)]$/m,
+	);
+	assert.match(
+		luau,
+		/__surge_cursor = pos[0-9]+ [+] [(]len[0-9]+ [+] [(]if len[0-9]+ <= 65535 then 3 else 5[)][)]$/m,
+	);
 	assert.match(luau, /__surge_readCursor = at[0-9]+ [+] len[0-9]+$/m);
 });
 
@@ -187,7 +195,8 @@ test("a union is sized by the variant its write picks, with the write's own test
 			String.raw`local (arr[0-9]+) = value[.]readings\n\s+local (len[0-9]+) = #\1\n[^]*?` +
 				String.raw`local (size[0-9]+) = ${countBytes(String.raw`\2`)} [+] \2 [+] [^\n]*\n` +
 				String.raw`\s+for _, (item[0-9]+) in \1 do\n` +
-				String.raw`\s+\3 [+]= [(]if \4[.]kind == "level" then 1 else ${countBytes(String.raw`#\4[.]text`)} [+] #\4[.]text[)]\n\s+end$`,
+				String.raw`\s+if \4[.]kind == "level" then\n\s+\3 [+]= 1\n\s+else\n` +
+				String.raw`\s+local (len[0-9]+) = #\4[.]text\n\s+\3 [+]= ${countBytes(String.raw`\5`)} [+] \5\n\s+end\n\s+end$`,
 			"m",
 		),
 	);
@@ -218,8 +227,8 @@ test("a size that compares a tag more than once reads it once", () => {
 		luau,
 		new RegExp(
 			String.raw`for _, (item[0-9]+) in arr[0-9]+ do\n\s+local (tag[0-9]+) = \1[.]kind\n` +
-				String.raw`\s+size[0-9]+ [+]= [(]if \2 == "level" then 1 elseif \2 == "on" then 0 else ` +
-				String.raw`${countBytes(String.raw`#\1[.]text`)} [+] #\1[.]text[)]\n\s+end$`,
+				String.raw`\s+if \2 == "level" then\n\s+size[0-9]+ [+]= 1\n\s+elseif \2 == "on" then\n\s+else\n` +
+				String.raw`\s+local (len[0-9]+) = #\1[.]text\n\s+size[0-9]+ [+]= ${countBytes(String.raw`\3`)} [+] \3\n\s+end\n\s+end$`,
 			"m",
 		),
 	);
@@ -280,8 +289,8 @@ test("a size binds the locals its write reads, ahead of the result", () => {
 		new RegExp(
 			String.raw`local (obj[0-9]+) = value[.]settings\n[^]*?local (s[0-9]+) = \1[.]label\n\s+local (len[0-9]+) = #\2\n` +
 				String.raw`\s+local __surge_scratch = buffer[.]create[(]${countBytes(String.raw`\3`)} [+] \3 [+] 11[)]\n[^]*?` +
-				String.raw`__surge_cursor = pos[0-9]+ [+] [(]\3 [+] (head[0-9]+)[)]\n[^]*?` +
-				String.raw`buffer[.]writestring[(]__surge_scratch, pos[0-9]+ [+] \4, \2[)]$`,
+				String.raw`if \3 < 254 then\n[^]*?__surge_cursor = pos[0-9]+ [+] [(]\3 [+] 1[)]\n[^]*?` +
+				String.raw`buffer[.]writestring[(]__surge_scratch, pos[0-9]+ [+] 1, \2[)]$`,
 			"m",
 		),
 	);
@@ -340,10 +349,11 @@ test("a deserialize that reaches no recursion helper holds its input and cursor 
 // arrays in docs/research/array-of-arrays-loop.md.
 test("an array of unions, objects or arrays is sized by a loop, and an array of anything else that varies is not", () => {
 	const unions = readCompiledLuau("tests/unions.spec.luau");
-	// `WithUnionArrays.scalars` is an array of a guarded union.
+	// `WithUnionArrays.scalars` is an array of a guarded union, whose string
+	// variant reads its length into a local, so the union is an if chain.
 	assert.match(
 		unions,
-		/local (arr[0-9]+) = value[.]scalars\n[^]*?for _, (item[0-9]+) in \1 do\n\s+size[0-9]+ [+]= [(]if \2 == false then 0 /,
+		/local (arr[0-9]+) = value[.]scalars\n[^]*?for _, (item[0-9]+) in \1 do\n\s+if \2 == false then\n\s+elseif \2 == true then\n/,
 	);
 	assert.match(unions, /\n\s+local __surge_scratch = buffer[.]create[(]size[0-9]+[)]$/m);
 	// `WithNamedEntries.entries` is an array of objects that hold a string.
@@ -352,7 +362,7 @@ test("an array of unions, objects or arrays is sized by a loop, and an array of 
 		strings,
 		new RegExp(
 			String.raw`local namedEntriesSerializer = [(]function[(][)]\n[^]*?for _, (item[0-9]+) in arr[0-9]+ do\n` +
-				String.raw`\s+size[0-9]+ [+]= ${countBytes(String.raw`#\1[.]name`)} [+] #\1[.]name [+] `,
+				String.raw`\s+local (len[0-9]+) = #\1[.]name\n[^]*?size[0-9]+ [+]= ${countBytes(String.raw`\2`)} [+] \2\n`,
 		),
 	);
 	// `Grid` is a `number[][]`, whose rows vary in length: a loop over its rows
@@ -363,7 +373,7 @@ test("an array of unions, objects or arrays is sized by a loop, and an array of 
 		new RegExp(
 			String.raw`local gridSerializer = [(]function[(][)]\n[^]*?local (len[0-9]+) = #(arr[0-9]+)\n` +
 				String.raw`\s+local (size[0-9]+) = ${countBytes(String.raw`\1`)}\n\s+for _, (item[0-9]+) in \2 do\n` +
-				String.raw`\s+\3 [+]= ${countBytes(String.raw`#\4`)} [+] #\4 [*] 8\n\s+end$`,
+				String.raw`\s+local (len[0-9]+) = #\4\n\s+\3 [+]= ${countBytes(String.raw`\5`)} [+] \5 [*] 8\n\s+end$`,
 			"m",
 		),
 	);

@@ -262,33 +262,93 @@ function writeCount(
 		return count;
 	}
 	const n = isLocal(ctx, count) ? count : bindLocal(ctx, "count", count, out);
-	const { buf, pos, statements } = ctx.destructureAlloc("alloc", ctx.variableCountBytes(n));
-	out.push(...statements, ...ctx.writeCountAt(undefined, buf, pos, n));
+	out.push(
+		eachCountForm(ctx, n, (statements, head, short) => {
+			const { buf, pos, statements: reserve } = ctx.destructureAlloc("alloc", head());
+			statements.push(...reserve, writeCountForm(ctx, buf, pos, n, short));
+		}),
+	);
 	return n;
 }
 
 /**
  * Reserves the count a `str` or a `buffer` writes and the `len` bytes after
- * it at once, writes the count, and returns where the bytes go. A
- * variable-length count's bytes depend on `len`, so they are bound to a local.
+ * it at once, writes the count, and has `writeBytes` write the bytes where
+ * they go.
  */
 function writeCountedBytes(
 	ctx: EmitContext,
 	length: CountSpec | undefined,
 	len: ts.Identifier,
+	writeBytes: (buf: ts.Identifier, at: ts.Expression) => ts.Statement,
 	out: ts.Statement[],
-): { buf: ts.Identifier; at: ts.Expression } {
+): void {
 	const f = ctx.factory;
+	const plus = (a: ts.Expression, b: ts.Expression) => f.createBinaryExpression(a, ctx.ts_.SyntaxKind.PlusToken, b);
 	const width = countWidth(length);
 	checkCountFits(ctx, width, len, out);
-	const countBytes =
-		width === undefined ? bindLocal(ctx, "head", ctx.variableCountBytes(len), out) : ctx.num(WIDTH_BYTES[width]);
-	const { buf, pos, statements } = ctx.destructureAlloc(
-		"alloc",
-		f.createBinaryExpression(len, ctx.ts_.SyntaxKind.PlusToken, countBytes),
+	if (width !== undefined) {
+		const countBytes = ctx.num(WIDTH_BYTES[width]);
+		const { buf, pos, statements } = ctx.destructureAlloc("alloc", plus(len, countBytes));
+		out.push(...statements, ...ctx.writeNumberAt(width, buf, pos, len), writeBytes(buf, plus(pos, countBytes)));
+		return;
+	}
+	out.push(
+		eachCountForm(ctx, len, (statements, head, short) => {
+			const { buf, pos, statements: reserve } = ctx.destructureAlloc("alloc", plus(len, head()));
+			statements.push(...reserve, writeCountForm(ctx, buf, pos, len, short), writeBytes(buf, plus(pos, head())));
+		}),
 	);
-	out.push(...statements, ...ctx.writeCountAt(width, buf, pos, len));
-	return { buf, at: f.createBinaryExpression(pos, ctx.ts_.SyntaxKind.PlusToken, countBytes) };
+}
+
+/**
+ * `if (count < 254) { <one byte> } else { <long form> }`, with each branch's
+ * statements from `branch`, given the bytes that branch's count takes, built
+ * anew for each use, and whether it is the one-byte form: the write compares
+ * a variable-length count once (Transformer 5.28).
+ */
+function eachCountForm(
+	ctx: EmitContext,
+	count: ts.Expression,
+	branch: (statements: ts.Statement[], head: () => ts.Expression, short: boolean) => void,
+): ts.Statement {
+	const f = ctx.factory;
+	const syntax = ctx.ts_.SyntaxKind;
+	const short: ts.Statement[] = [];
+	branch(short, () => ctx.num(1), true);
+	const long: ts.Statement[] = [];
+	branch(
+		long,
+		() =>
+			f.createParenthesizedExpression(
+				f.createConditionalExpression(
+					f.createBinaryExpression(count, syntax.LessThanEqualsToken, ctx.num(U16_COUNT_MAX)),
+					undefined,
+					ctx.num(3),
+					undefined,
+					ctx.num(5),
+				),
+			),
+		false,
+	);
+	return f.createIfStatement(
+		f.createBinaryExpression(count, syntax.LessThanToken, ctx.num(LONG_COUNT_MARKER)),
+		f.createBlock(short, true),
+		f.createBlock(long, true),
+	);
+}
+
+/** Writes `count` at `pos` in one byte, or in the long form through the package. */
+function writeCountForm(
+	ctx: EmitContext,
+	buf: ts.Expression,
+	pos: ts.Expression,
+	count: ts.Expression,
+	short: boolean,
+): ts.Statement {
+	return ctx.factory.createExpressionStatement(
+		short ? ctx.bufferCall("writeu8", [buf, pos, count]) : ctx.call("writeLongCount", [buf, pos, count]),
+	);
 }
 
 function writeStr(
@@ -312,8 +372,13 @@ function writeStr(
 		return;
 	}
 	const len = bound?.len ?? bindLocal(ctx, "len", lenExpr, out);
-	const bytes = writeCountedBytes(ctx, field.length, len, out);
-	out.push(f.createExpressionStatement(ctx.bufferCall("writestring", [bytes.buf, bytes.at, s])));
+	writeCountedBytes(
+		ctx,
+		field.length,
+		len,
+		(buf, at) => f.createExpressionStatement(ctx.bufferCall("writestring", [buf, at, s])),
+		out,
+	);
 }
 
 function writeBuffer(
@@ -336,8 +401,13 @@ function writeBuffer(
 		return;
 	}
 	const len = bound?.len ?? bindLocal(ctx, "len", ctx.bufferCall("len", [source]), out);
-	const bytes = writeCountedBytes(ctx, field.length, len, out);
-	out.push(f.createExpressionStatement(ctx.bufferCall("copy", [bytes.buf, bytes.at, source, ctx.num(0), len])));
+	writeCountedBytes(
+		ctx,
+		field.length,
+		len,
+		(buf, at) => f.createExpressionStatement(ctx.bufferCall("copy", [buf, at, source, ctx.num(0), len])),
+		out,
+	);
 }
 
 function writeVector3(
