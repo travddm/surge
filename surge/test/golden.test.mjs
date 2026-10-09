@@ -120,6 +120,17 @@ test("an unpacked CFrame reads its Position once for its three components", () =
 	assert.doesNotMatch(luau, /buffer[.]write[a-z0-9]+[(]__surge_scratch, .*[.]Position[.][XYZ]/);
 });
 
+// Regression check for the single constructor of a CFrame's read (Transformer 5.27). What it was
+// measured as worth is in docs/research/enum-and-cframe-rows.md.
+test("an unpacked CFrame is read into one constructor from a quaternion", () => {
+	const luau = readCompiledLuau("tests/coverage.spec.luau");
+	assert.match(
+		luau,
+		/CFrame[.]new[(]buffer[.]readf32[(]__surge_input, pos[0-9]+[)], .*, math[.]cos[(]angle[0-9]+ [*] 0[.]5[)][)]$/m,
+	);
+	assert.doesNotMatch(luau, /CFrame[.]fromAxisAngle[(]/);
+});
+
 // Regression check for the shared reservation. What it was measured as worth is in
 // docs/research/generated-code-against-hand-written.md.
 test("consecutive fixed-size fields share one reservation", () => {

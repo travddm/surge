@@ -247,11 +247,9 @@ export function runLocals(field: Field): number {
 			// is read into one table constructor.
 			return field.fixed.reduce((total, element) => total + runLocals(element), 0);
 		case "cframe":
-			// The read's `rv`, `angle` and `scale`; the write declares its own
-			// in a block. A quantized rotation's write declares `position`,
-			// `axis`, `angle` and `rv`, and a local roblox-ts hoists out of its
-			// product.
-			return field.quantized ? 6 : 4;
+			// `position`, `axis`, `angle` and `rv` on the write side, and a local
+			// roblox-ts hoists out of a quantized rotation's product.
+			return field.quantized ? 6 : 5;
 		case "bitSet":
 			// The read's set, and one local for each byte it reads.
 			return 2 + bitSetBytes(field);

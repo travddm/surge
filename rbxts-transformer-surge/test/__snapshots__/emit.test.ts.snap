@@ -47,55 +47,23 @@ if (__surge_cursor > __surge_capacity) {
     __surge_scratch = __surge_grow(__surge_scratch, pos1, __surge_cursor);
     __surge_capacity = buffer.len(__surge_scratch);
 }
-{
-    const [x2, y3, z4, r005, r016, r027, r108, r119, r1210, r2011, r2112, r2213] = value.GetComponents();
-    buffer.writei16(__surge_scratch, pos1, x2);
-    buffer.writei16(__surge_scratch, pos1 + 2, y3);
-    buffer.writei16(__surge_scratch, pos1 + 4, z4);
-    const trace14 = r005 + r119 + r2213;
-    let qw15: number, qx16: number, qy17: number, qz18: number;
-    if (trace14 > 0) {
-        const s19 = math.sqrt(trace14 + 1) * 2;
-        qw15 = s19 * 0.25;
-        qx16 = (r2112 - r1210) / s19;
-        qy17 = (r027 - r2011) / s19;
-        qz18 = (r108 - r016) / s19;
-    }
-    else if (r005 > r119 && r005 > r2213) {
-        const s20 = math.sqrt(1 + r005 - r119 - r2213) * 2;
-        qx16 = s20 * 0.25;
-        qw15 = (r2112 - r1210) / s20;
-        qy17 = (r016 + r108) / s20;
-        qz18 = (r027 + r2011) / s20;
-    }
-    else if (r119 > r2213) {
-        const s21 = math.sqrt(1 + r119 - r005 - r2213) * 2;
-        qy17 = s21 * 0.25;
-        qw15 = (r027 - r2011) / s21;
-        qx16 = (r016 + r108) / s21;
-        qz18 = (r1210 + r2112) / s21;
-    }
-    else {
-        const s22 = math.sqrt(1 + r2213 - r005 - r119) * 2;
-        qz18 = s22 * 0.25;
-        qw15 = (r108 - r016) / s22;
-        qx16 = (r027 + r2011) / s22;
-        qy17 = (r1210 + r2112) / s22;
-    }
-    const sinHalf23 = math.sqrt(qx16 * qx16 + qy17 * qy17 + qz18 * qz18);
-    const scale24 = sinHalf23 > 0 ? (qw15 < 0 ? -2 : 2) * math.atan2(sinHalf23, math.abs(qw15)) / sinHalf23 : 0;
-    buffer.writef32(__surge_scratch, pos1 + 6, qx16 * scale24);
-    buffer.writef32(__surge_scratch, pos1 + 10, qy17 * scale24);
-    buffer.writef32(__surge_scratch, pos1 + 14, qz18 * scale24);
-}
+const position2 = value.Position;
+buffer.writei16(__surge_scratch, pos1, position2.X);
+buffer.writei16(__surge_scratch, pos1 + 2, position2.Y);
+buffer.writei16(__surge_scratch, pos1 + 4, position2.Z);
+const [axis3, angle4] = value.ToAxisAngle();
+const rv5 = axis3.mul(angle4);
+buffer.writef32(__surge_scratch, pos1 + 6, rv5.X);
+buffer.writef32(__surge_scratch, pos1 + 10, rv5.Y);
+buffer.writef32(__surge_scratch, pos1 + 14, rv5.Z);
 
 // read
-const pos25 = __surge_readCursor;
-__surge_readCursor = pos25 + 18;
-const rv26 = new Vector3(buffer.readf32(__surge_input, pos25 + 6), buffer.readf32(__surge_input, pos25 + 10), buffer.readf32(__surge_input, pos25 + 14));
-const angle27 = math.sqrt(rv26.X * rv26.X + rv26.Y * rv26.Y + rv26.Z * rv26.Z);
-const scale28 = angle27 > 1e-6 ? math.sin(angle27 * 0.5) / angle27 : 0.5;
-return new CFrame(buffer.readi16(__surge_input, pos25), buffer.readi16(__surge_input, pos25 + 2), buffer.readi16(__surge_input, pos25 + 4), rv26.X * scale28, rv26.Y * scale28, rv26.Z * scale28, math.cos(angle27 * 0.5));"
+const pos6 = __surge_readCursor;
+__surge_readCursor = pos6 + 18;
+const rv7 = new Vector3(buffer.readf32(__surge_input, pos6 + 6), buffer.readf32(__surge_input, pos6 + 10), buffer.readf32(__surge_input, pos6 + 14));
+const angle8 = math.sqrt(rv7.X * rv7.X + rv7.Y * rv7.Y + rv7.Z * rv7.Z);
+const scale9 = angle8 > 1e-6 ? math.sin(angle8 * 0.5) / angle8 : 0.5;
+return new CFrame(buffer.readi16(__surge_input, pos6), buffer.readi16(__surge_input, pos6 + 2), buffer.readi16(__surge_input, pos6 + 4), rv7.X * scale9, rv7.Y * scale9, rv7.Z * scale9, math.cos(angle8 * 0.5));"
 `;
 
 exports[`Emitter component widths a Vector3 writes each component at its own width, at cumulative offsets 1`] = `
@@ -519,55 +487,23 @@ if (__surge_cursor > __surge_capacity) {
     __surge_scratch = __surge_grow(__surge_scratch, pos1, __surge_cursor);
     __surge_capacity = buffer.len(__surge_scratch);
 }
-{
-    const [x2, y3, z4, r005, r016, r027, r108, r119, r1210, r2011, r2112, r2213] = value.GetComponents();
-    buffer.writef32(__surge_scratch, pos1, x2);
-    buffer.writef32(__surge_scratch, pos1 + 4, y3);
-    buffer.writef32(__surge_scratch, pos1 + 8, z4);
-    const trace14 = r005 + r119 + r2213;
-    let qw15: number, qx16: number, qy17: number, qz18: number;
-    if (trace14 > 0) {
-        const s19 = math.sqrt(trace14 + 1) * 2;
-        qw15 = s19 * 0.25;
-        qx16 = (r2112 - r1210) / s19;
-        qy17 = (r027 - r2011) / s19;
-        qz18 = (r108 - r016) / s19;
-    }
-    else if (r005 > r119 && r005 > r2213) {
-        const s20 = math.sqrt(1 + r005 - r119 - r2213) * 2;
-        qx16 = s20 * 0.25;
-        qw15 = (r2112 - r1210) / s20;
-        qy17 = (r016 + r108) / s20;
-        qz18 = (r027 + r2011) / s20;
-    }
-    else if (r119 > r2213) {
-        const s21 = math.sqrt(1 + r119 - r005 - r2213) * 2;
-        qy17 = s21 * 0.25;
-        qw15 = (r027 - r2011) / s21;
-        qx16 = (r016 + r108) / s21;
-        qz18 = (r1210 + r2112) / s21;
-    }
-    else {
-        const s22 = math.sqrt(1 + r2213 - r005 - r119) * 2;
-        qz18 = s22 * 0.25;
-        qw15 = (r108 - r016) / s22;
-        qx16 = (r027 + r2011) / s22;
-        qy17 = (r1210 + r2112) / s22;
-    }
-    const sinHalf23 = math.sqrt(qx16 * qx16 + qy17 * qy17 + qz18 * qz18);
-    const scale24 = sinHalf23 > 0 ? (qw15 < 0 ? -2 : 2) * math.atan2(sinHalf23, math.abs(qw15)) / sinHalf23 : 0;
-    buffer.writef32(__surge_scratch, pos1 + 12, qx16 * scale24);
-    buffer.writef32(__surge_scratch, pos1 + 16, qy17 * scale24);
-    buffer.writef32(__surge_scratch, pos1 + 20, qz18 * scale24);
-}
+const position2 = value.Position;
+buffer.writef32(__surge_scratch, pos1, position2.X);
+buffer.writef32(__surge_scratch, pos1 + 4, position2.Y);
+buffer.writef32(__surge_scratch, pos1 + 8, position2.Z);
+const [axis3, angle4] = value.ToAxisAngle();
+const rv5 = axis3.mul(angle4);
+buffer.writef32(__surge_scratch, pos1 + 12, rv5.X);
+buffer.writef32(__surge_scratch, pos1 + 16, rv5.Y);
+buffer.writef32(__surge_scratch, pos1 + 20, rv5.Z);
 
 // read
-const pos25 = __surge_readCursor;
-__surge_readCursor = pos25 + 24;
-const rv26 = new Vector3(buffer.readf32(__surge_input, pos25 + 12), buffer.readf32(__surge_input, pos25 + 16), buffer.readf32(__surge_input, pos25 + 20));
-const angle27 = math.sqrt(rv26.X * rv26.X + rv26.Y * rv26.Y + rv26.Z * rv26.Z);
-const scale28 = angle27 > 1e-6 ? math.sin(angle27 * 0.5) / angle27 : 0.5;
-return new CFrame(buffer.readf32(__surge_input, pos25), buffer.readf32(__surge_input, pos25 + 4), buffer.readf32(__surge_input, pos25 + 8), rv26.X * scale28, rv26.Y * scale28, rv26.Z * scale28, math.cos(angle27 * 0.5));"
+const pos6 = __surge_readCursor;
+__surge_readCursor = pos6 + 24;
+const rv7 = new Vector3(buffer.readf32(__surge_input, pos6 + 12), buffer.readf32(__surge_input, pos6 + 16), buffer.readf32(__surge_input, pos6 + 20));
+const angle8 = math.sqrt(rv7.X * rv7.X + rv7.Y * rv7.Y + rv7.Z * rv7.Z);
+const scale9 = angle8 > 1e-6 ? math.sin(angle8 * 0.5) / angle8 : 0.5;
+return new CFrame(buffer.readf32(__surge_input, pos6), buffer.readf32(__surge_input, pos6 + 4), buffer.readf32(__surge_input, pos6 + 8), rv7.X * scale9, rv7.Y * scale9, rv7.Z * scale9, math.cos(angle8 * 0.5));"
 `;
 
 exports[`Emitter per-kind write/read snapshots cframe inside Packed 1`] = `

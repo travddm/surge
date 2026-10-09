@@ -789,17 +789,6 @@ export abstract class EmitContext {
 		flush();
 	}
 
-	/**
-	 * A block of what `emit` returns. Luau frees a block's locals at its
-	 * `end`, so the locals `emit` declares are not counted past it (5.8).
-	 */
-	public block(emit: () => ts.Statement[]): ts.Block {
-		const liveLocals = this.liveLocals;
-		const statements = emit();
-		this.liveLocals = liveLocals;
-		return this.factory.createBlock(statements, true);
-	}
-
 	public num(n: number): ts.Expression {
 		// `createNumericLiteral` asserts on a negative number: the minus sign is an operator.
 		return n < 0
