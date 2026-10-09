@@ -192,7 +192,7 @@ class CursorTest {
 		const cursor = cursorOf(32);
 		countedChecked.write(cursor, { list: [1, 2] });
 		countedChecked.write(cursor, { list: [3] });
-		buffer.writeu32(cursor.buffer, 0, 3);
+		buffer.writeu8(cursor.buffer, 0, 3);
 		const back = reading(cursor);
 		Assert.equal(undefined, difference({ list: [1, 2, 1] }, countedChecked.read(back)));
 	}

@@ -2,7 +2,7 @@
 import type ts from "typescript";
 
 import { FIXED_DATATYPES } from "../datatypes";
-import type { ComponentWidths, CountSpec, Field, FieldKey, ObjectFieldEntry } from "../field";
+import type { ComponentWidths, CountSpec, Field, FieldKey, LengthWidth, ObjectFieldEntry } from "../field";
 import {
 	DEFAULT_COMPONENTS,
 	LOCALS_PER_BLOCK,
@@ -21,10 +21,10 @@ import {
 	cframeBytes,
 	componentBytes,
 	componentsOf,
+	countWidth,
 	elementBytes,
 	exactCount,
 	fixedBytes,
-	lengthWidth,
 	minBytes,
 	packedBits,
 	tagKeyOf,
@@ -107,7 +107,7 @@ function readStr(ctx: EmitContext, field: Extract<Field, { kind: "str" }>, out: 
 		out.push(...statements);
 		return ctx.bufferCall("readstring", [buf, pos, ctx.num(exact)]);
 	}
-	const { len, bytes } = ctx.readCountedBytes(lengthWidth(field.length), out);
+	const { len, bytes } = ctx.readCountedBytes(countWidth(field.length), out);
 	return ctx.bufferCall("readstring", [bytes.buf, ctx.at(bytes, 0), len]);
 }
 
@@ -129,7 +129,7 @@ function readBuffer(ctx: EmitContext, field: Extract<Field, { kind: "buffer" }>,
 		);
 		return exactResult;
 	}
-	const { len, bytes } = ctx.readCountedBytes(lengthWidth(field.length), out);
+	const { len, bytes } = ctx.readCountedBytes(countWidth(field.length), out);
 	// A copy: the input buffer holds the whole payload, and the caller owns the result.
 	const result = ctx.fresh("bytes");
 	out.push(ctx.constStatement(result, ctx.bufferCall("create", [len])));
@@ -254,12 +254,28 @@ function readCount(
 	if (exact !== undefined) {
 		return ctx.num(exact);
 	}
-	const width = lengthWidth(length);
-	const { buf, pos, statements } = ctx.destructureAlloc("readAlloc", WIDTH_BYTES[width]);
+	const count = readCountValue(ctx, countWidth(length), out);
+	checkCount(ctx, count, element, out);
+	return count;
+}
+
+/**
+ * Reserves and reads a count ahead of a loop: at its width, or a
+ * variable-length count's first byte, then the rest of a long form, which
+ * moves the read cursor on past it.
+ */
+function readCountValue(ctx: EmitContext, width: LengthWidth | undefined, out: ts.Statement[]): ts.Identifier {
+	const { buf, pos, statements } = ctx.destructureAlloc("readAlloc", width === undefined ? 1 : WIDTH_BYTES[width]);
 	out.push(...statements);
 	const count = ctx.fresh("count");
-	out.push(ctx.constStatement(count, ctx.readNumberAt(width, buf, pos)));
-	checkCount(ctx, count, element, out);
+	if (width !== undefined) {
+		out.push(ctx.constStatement(count, ctx.readNumberAt(width, buf, pos)));
+		return count;
+	}
+	out.push(
+		ctx.letLocal(count, ctx.bufferCall("readu8", [buf, pos])),
+		ctx.readLongCountInto(pos, count, ctx.factory.createIdentifier(READ_CURSOR)),
+	);
 	return count;
 }
 
@@ -468,13 +484,6 @@ function readCFrame(ctx: EmitContext, field: Extract<Field, { kind: "cframe" }>,
 	const { buf, pos, statements } = ctx.destructureAlloc("readAlloc", cframeBytes(field));
 	out.push(...statements);
 	const [px, py, pz] = readNum3(ctx, widths, { buf, pos, offset: 0 });
-	const positionValue = ctx.fresh("pos");
-	out.push(
-		ctx.constStatement(
-			positionValue,
-			f.createNewExpression(f.createIdentifier("Vector3"), undefined, [px, py, pz]),
-		),
-	);
 	const rotationSlot = { buf, pos, offset: positionBytes };
 	const rotationWidths: ComponentWidths = field.quantized ? QUANTIZED_COMPONENTS : DEFAULT_COMPONENTS;
 	let [rx, ry, rz] = readNum3(ctx, rotationWidths, rotationSlot);
@@ -487,29 +496,53 @@ function readCFrame(ctx: EmitContext, field: Extract<Field, { kind: "cframe" }>,
 			),
 		);
 	}
+	// The axis-angle becomes a unit quaternion, so that one constructor builds
+	// the result (Transformer 5.27). sin(angle / 2) / angle tends to 1/2 as the
+	// angle tends to 0, which is what a rotation of no angle takes.
+	const syntax = ctx.ts_.SyntaxKind;
+	const math = (name: string, args: ts.Expression[]) =>
+		f.createCallExpression(f.createPropertyAccessExpression(f.createIdentifier("math"), name), undefined, args);
 	const rv = ctx.fresh("rv");
 	out.push(ctx.constStatement(rv, f.createNewExpression(f.createIdentifier("Vector3"), undefined, [rx, ry, rz])));
+	const component = (name: string) => f.createPropertyAccessExpression(rv, name);
+	const square = (name: string) => f.createBinaryExpression(component(name), syntax.AsteriskToken, component(name));
 	const angle = ctx.fresh("angle");
-	out.push(ctx.constStatement(angle, f.createPropertyAccessExpression(rv, "Magnitude")));
-	const rotation = ctx.fresh("rotation");
-	const axisExpr = f.createConditionalExpression(
-		f.createBinaryExpression(angle, ctx.ts_.SyntaxKind.GreaterThanToken, f.createNumericLiteral("1e-6")),
-		undefined,
-		f.createPropertyAccessExpression(rv, "Unit"),
-		undefined,
-		f.createPropertyAccessExpression(f.createIdentifier("Vector3"), "zAxis"),
-	);
 	out.push(
 		ctx.constStatement(
-			rotation,
-			f.createCallExpression(
-				f.createPropertyAccessExpression(f.createIdentifier("CFrame"), "fromAxisAngle"),
+			angle,
+			math("sqrt", [
+				f.createBinaryExpression(
+					f.createBinaryExpression(square("X"), syntax.PlusToken, square("Y")),
+					syntax.PlusToken,
+					square("Z"),
+				),
+			]),
+		),
+	);
+	const half = () => f.createBinaryExpression(angle, syntax.AsteriskToken, ctx.num(0.5));
+	const scale = ctx.fresh("scale");
+	out.push(
+		ctx.constStatement(
+			scale,
+			f.createConditionalExpression(
+				f.createBinaryExpression(angle, syntax.GreaterThanToken, f.createNumericLiteral("1e-6")),
 				undefined,
-				[axisExpr, angle],
+				f.createBinaryExpression(math("sin", [half()]), syntax.SlashToken, angle),
+				undefined,
+				ctx.num(0.5),
 			),
 		),
 	);
-	return f.createCallExpression(f.createPropertyAccessExpression(rotation, "add"), undefined, [positionValue]);
+	const scaled = (name: string) => f.createBinaryExpression(component(name), syntax.AsteriskToken, scale);
+	return f.createNewExpression(f.createIdentifier("CFrame"), undefined, [
+		px,
+		py,
+		pz,
+		scaled("X"),
+		scaled("Y"),
+		scaled("Z"),
+		math("cos", [half()]),
+	]);
 }
 
 /**
@@ -749,11 +782,7 @@ function literalFromIndexExpr(
 function readDict(ctx: EmitContext, field: Extract<Field, { kind: "dict" }>, out: ts.Statement[]): ts.Expression {
 	const f = ctx.factory;
 	const isSet = field.value === undefined;
-	const countWidth = lengthWidth(field.length);
-	const { buf, pos, statements } = ctx.destructureAlloc("readAlloc", WIDTH_BYTES[countWidth]);
-	out.push(...statements);
-	const count = ctx.fresh("count");
-	out.push(ctx.constStatement(count, ctx.readNumberAt(countWidth, buf, pos)));
+	const count = readCountValue(ctx, countWidth(field.length), out);
 	checkEntryCount(ctx, count, field, out);
 	const result = ctx.fresh("result");
 	// Reconstructed as a `Map` or `Set` whatever `field.source` is, because

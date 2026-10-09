@@ -31,6 +31,14 @@
 // injected, so a scoped run injects a copy of scripts/run-in-roblox-benchmarks.luau that carries
 // them.
 //
+// Before its trials, the suite decodes every cell once and prints its round trip on a
+// `BENCH_CHECK:` line. This compares each with the round trip the size table records for the
+// cell, from a Lune run, and writes nothing if a cell decodes worse in Roblox: a codec that
+// decodes wrongly there must not be timed as if it were right. A cell may differ from its input
+// by up to `CHECK_SLACK` times what the size table records, since Lune's Roblox types are
+// reimplementations of the engine's; exact is zero, and a difference no number describes allows
+// any.
+//
 // `--render` writes speed.md again from the trials file, with no run (`mise run
 // bench:speed:render`). The trials file carries every trial and every fact of the run it came
 // from, so a change to how this file summarizes or lays out a table is read without ten minutes of
@@ -43,6 +51,7 @@ import { dirname, join } from "node:path";
 const ENVIRONMENT_PREFIX = "BENCH_ENV:";
 const ROW_PREFIX = "BENCH_ROW:";
 const RESULT_PREFIX = "BENCH_RESULT:";
+const CHECK_PREFIX = "BENCH_CHECK:";
 
 const OUTPUT_PATH = "../../docs/benchmarks/speed.md";
 /**
@@ -55,6 +64,10 @@ const OUTPUT_PATH = "../../docs/benchmarks/speed.md";
  * write the table again.
  */
 const TRIALS_PATH = "../../docs/benchmarks/speed-trials.tsv";
+/** The size table, whose round-trip column the suite's checks are compared with. */
+const SIZE_PATH = "../../docs/benchmarks/size.md";
+/** How many times the size table's difference a cell's round trip may reach in Roblox. */
+const CHECK_SLACK = 10;
 const BASELINE = "surge";
 /** What a column reads where that library has no entry for the row. */
 const EMPTY = "—";
@@ -119,6 +132,13 @@ const environment = new Map();
 let run = 0;
 let result;
 
+/** `fixture -> library -> runs checked`, from the suite's `BENCH_CHECK:` lines. */
+const checked = new Map();
+/** The cells whose round trip in Roblox the size table does not allow, as messages. */
+const mismatches = [];
+/** `fixture -> library -> largest difference`, read from the size table on the first check. */
+let recorded;
+
 function addTrials(name, library, half, runIndex, rates) {
 	if (!libraries.includes(library)) libraries.push(library);
 	if (!fixtures.has(name)) fixtures.set(name, new Map());
@@ -143,6 +163,67 @@ function readRow(line) {
 	addTrials(name, library, half, run, rates);
 }
 
+/**
+ * The size table's round-trip column: per row, the largest difference of each library it names,
+ * `Infinity` where no number describes it. A library it does not name round-trips exactly.
+ */
+function recordedRoundTrips() {
+	const byFixture = new Map();
+	let columns;
+	for (const line of readFileSync(SIZE_PATH, "utf8").split(/\r?\n/)) {
+		if (!line.startsWith("|")) continue;
+		const cells = line
+			.split("|")
+			.slice(1, -1)
+			.map((cell) => cell.trim());
+		if (columns === undefined) {
+			columns = cells;
+			continue;
+		}
+		if (cells[0].startsWith("-")) continue;
+		const byLibrary = new Map();
+		const roundTrip = cells[columns.indexOf("Round trip")];
+		if (roundTrip.startsWith("inexact: ")) {
+			for (const named of roundTrip.slice("inexact: ".length).split(", ")) {
+				const [library, error] = named.split(" ");
+				byLibrary.set(library, error === undefined ? Infinity : Number(error));
+			}
+		}
+		byFixture.set(cells[0], byLibrary);
+	}
+	return byFixture;
+}
+
+/** Compares one cell's round trip in Roblox with the size table's, and keeps a mismatch. */
+function readCheck(line) {
+	const [name, library, roundTrip, ...detail] = line.split("|").map((field) => field.trim());
+	if (roundTrip === undefined) {
+		console.error(`\nMalformed check: ${line}`);
+		process.exit(1);
+	}
+	recorded ??= recordedRoundTrips();
+	if (!recorded.has(name)) {
+		console.error(`\n${SIZE_PATH} has no row "${name}"; run \`mise run bench:size\` first.`);
+		process.exit(1);
+	}
+
+	const allowed = recorded.get(name).get(library) ?? 0;
+	const [verdict, error] = roundTrip.split(" ");
+	// Luau prints an infinite difference as `inf`, which `Number` does not read. A cell recorded as
+	// exact fails on any difference, which includes `-0` for `0`, whose difference is 0.
+	const parsed = error === undefined ? Infinity : Number(error);
+	const actual = verdict === "exact" ? 0 : Number.isNaN(parsed) ? Infinity : parsed;
+	if (actual > CHECK_SLACK * allowed || (allowed === 0 && verdict !== "exact")) {
+		const message = `${name} (${library}) round-trips as "${roundTrip}" in Roblox, where the size table records ${allowed === 0 ? "exact" : allowed}: ${detail.join(" | ")}`;
+		console.error(`\nCHECK FAILED: ${message}\nThis run will not be recorded.`);
+		mismatches.push(message);
+	}
+
+	if (!checked.has(name)) checked.set(name, new Map());
+	const byLibrary = checked.get(name);
+	byLibrary.set(library, (byLibrary.get(library) ?? 0) + 1);
+}
+
 let buffered = "";
 
 function forward(chunk, stream) {
@@ -155,6 +236,11 @@ function forward(chunk, stream) {
 		const row = line.indexOf(ROW_PREFIX);
 		if (row !== -1) {
 			readRow(line.slice(row + ROW_PREFIX.length));
+			continue;
+		}
+		const roundTrip = line.indexOf(CHECK_PREFIX);
+		if (roundTrip !== -1) {
+			readCheck(line.slice(roundTrip + CHECK_PREFIX.length));
 			continue;
 		}
 		const setting = line.indexOf(ENVIRONMENT_PREFIX);
@@ -228,6 +314,12 @@ function runOnce(script) {
 				console.error(`\nThe benchmark suite did not pass: ${result}`);
 				process.exit(1);
 			}
+			if (mismatches.length > 0) {
+				console.error(
+					`\nThese cells decode worse in Roblox than ${SIZE_PATH} records:\n${mismatches.join("\n")}`,
+				);
+				process.exit(1);
+			}
 			resolve();
 		});
 	});
@@ -284,6 +376,7 @@ if (rendering) {
 		process.exit(1);
 	}
 	requireEveryCell();
+	requireEveryCheck();
 	if (scoped) {
 		report();
 	} else {
@@ -306,6 +399,18 @@ function requireEveryCell() {
 						process.exit(1);
 					}
 				}
+			}
+		}
+	}
+}
+
+/** A round-trip check of every reported cell in every run, or a cell could be timed unchecked. */
+function requireEveryCheck() {
+	for (const [name, byLibrary] of fixtures) {
+		for (const library of byLibrary.keys()) {
+			if ((checked.get(name)?.get(library) ?? 0) < runs) {
+				console.error(`\n${name} (${library}) printed no round-trip check in some run.`);
+				process.exit(1);
 			}
 		}
 	}

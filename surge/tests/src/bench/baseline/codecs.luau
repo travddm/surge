@@ -19,6 +19,29 @@
 -- lives, and marking this codec the same way keeps the distance between the two columns a fact
 -- about code rather than about compilation mode. What the directives are worth on the generated
 -- code is in docs/research/file-directives-on-generated-code.md.
+--
+-- Every count is surge's variable-length one (Wire format 6.9): one byte below 254, or the marker
+-- 254 and a u16, or 255 and a u32. Each codec writes and reads the one-byte case inline, as
+-- surge's generated code does, and the long forms through these two, which only a count of 254
+-- or more reaches.
+
+local function writeLongCount(buf, offset, count)
+	if count <= 65535 then
+		buffer.writeu8(buf, offset, 254)
+		buffer.writeu16(buf, offset + 1, count)
+	else
+		buffer.writeu8(buf, offset, 255)
+		buffer.writeu32(buf, offset + 1, count)
+	end
+end
+
+-- The count whose marker is at `offset`, and the offset after it.
+local function readLongCount(buf, offset, marker)
+	if marker == 254 then
+		return buffer.readu16(buf, offset + 1), offset + 3
+	end
+	return buffer.readu32(buf, offset + 1), offset + 5
+end
 
 local function writeSmallFlatStruct(value)
 	-- One allocation, because every field of this shape is fixed width.
@@ -47,33 +70,55 @@ local function writeNestedObject(value)
 	local third = second.inner
 	local leaf = third.leaf
 	local name, label = leaf.name, root.label
+	local nameLength, labelLength = #name, #label
+	local nameHead = if nameLength < 254 then 1 elseif nameLength <= 65535 then 3 else 5
+	local labelHead = if labelLength < 254 then 1 elseif labelLength <= 65535 then 3 else 5
 
-	-- 16 fixed bytes: a u16, two u8, an f32, and a u32 length for each of the two strings.
-	local buf = buffer.create(16 + #name + #label)
+	-- 8 fixed bytes: a u16, two u8 and an f32. Then each string's count and bytes.
+	local buf = buffer.create(8 + nameHead + nameLength + labelHead + labelLength)
 	buffer.writeu16(buf, 0, second.count)
 	buffer.writeu8(buf, 2, if third.flag then 1 else 0)
-	buffer.writeu32(buf, 3, #name)
-	buffer.writestring(buf, 7, name)
-
-	local offset = 7 + #name
+	if nameLength < 254 then
+		buffer.writeu8(buf, 3, nameLength)
+	else
+		writeLongCount(buf, 3, nameLength)
+	end
+	local offset = 3 + nameHead
+	buffer.writestring(buf, offset, name)
+	offset += nameLength
 	buffer.writef32(buf, offset, leaf.weight)
-	buffer.writeu32(buf, offset + 4, #label)
-	buffer.writestring(buf, offset + 8, label)
-	buffer.writeu8(buf, offset + 8 + #label, value.version)
+	offset += 4
+	if labelLength < 254 then
+		buffer.writeu8(buf, offset, labelLength)
+	else
+		writeLongCount(buf, offset, labelLength)
+	end
+	offset += labelHead
+	buffer.writestring(buf, offset, label)
+	buffer.writeu8(buf, offset + labelLength, value.version)
 	return buf
 end
 
 local function readNestedObject(buf)
 	local count = buffer.readu16(buf, 0)
 	local flag = buffer.readu8(buf, 2) ~= 0
-	local nameLength = buffer.readu32(buf, 3)
-	local name = buffer.readstring(buf, 7, nameLength)
+	local nameLength = buffer.readu8(buf, 3)
+	local offset = 4
+	if nameLength >= 254 then
+		nameLength, offset = readLongCount(buf, 3, nameLength)
+	end
+	local name = buffer.readstring(buf, offset, nameLength)
+	offset += nameLength
 
-	local offset = 7 + nameLength
 	local weight = buffer.readf32(buf, offset)
-	local labelLength = buffer.readu32(buf, offset + 4)
-	local label = buffer.readstring(buf, offset + 8, labelLength)
-	local version = buffer.readu8(buf, offset + 8 + labelLength)
+	local labelLength = buffer.readu8(buf, offset + 4)
+	if labelLength >= 254 then
+		labelLength, offset = readLongCount(buf, offset + 4, labelLength)
+	else
+		offset += 5
+	end
+	local label = buffer.readstring(buf, offset, labelLength)
+	local version = buffer.readu8(buf, offset + labelLength)
 
 	return {
 		root = {
@@ -89,10 +134,15 @@ local CFRAME_BYTES = 24
 local function writeTransforms(value)
 	local list = value.list
 	local count = #list
-	local buf = buffer.create(4 + count * CFRAME_BYTES)
-	buffer.writeu32(buf, 0, count)
+	local head = if count < 254 then 1 elseif count <= 65535 then 3 else 5
+	local buf = buffer.create(head + count * CFRAME_BYTES)
+	if count < 254 then
+		buffer.writeu8(buf, 0, count)
+	else
+		writeLongCount(buf, 0, count)
+	end
 
-	local offset = 4
+	local offset = head
 	for index = 1, count do
 		local cframe = list[index]
 		local position = cframe.Position
@@ -112,24 +162,32 @@ local function writeTransforms(value)
 end
 
 local function readTransforms(buf)
-	local count = buffer.readu32(buf, 0)
+	local count = buffer.readu8(buf, 0)
+	local offset = 1
+	if count >= 254 then
+		count, offset = readLongCount(buf, 0, count)
+	end
 	-- Sized up front: the count is on the wire, so a person writing this by hand would use it. surge's
 	-- reader does the same (Transformer 5.21 in docs/specs/transformer.md).
 	local list = table.create(count)
 
-	local offset = 4
 	for index = 1, count do
-		local position =
-			Vector3.new(buffer.readf32(buf, offset), buffer.readf32(buf, offset + 4), buffer.readf32(buf, offset + 8))
-		local scaled = Vector3.new(
-			buffer.readf32(buf, offset + 12),
-			buffer.readf32(buf, offset + 16),
-			buffer.readf32(buf, offset + 20)
+		local x = buffer.readf32(buf, offset + 12)
+		local y = buffer.readf32(buf, offset + 16)
+		local z = buffer.readf32(buf, offset + 20)
+		-- The axis scaled by the angle becomes a unit quaternion, so that one constructor builds the
+		-- CFrame. sin(angle / 2) / angle tends to 1/2 as the angle tends to 0.
+		local angle = math.sqrt(x * x + y * y + z * z)
+		local scale = if angle > 1e-6 then math.sin(angle * 0.5) / angle else 0.5
+		list[index] = CFrame.new(
+			buffer.readf32(buf, offset),
+			buffer.readf32(buf, offset + 4),
+			buffer.readf32(buf, offset + 8),
+			x * scale,
+			y * scale,
+			z * scale,
+			math.cos(angle * 0.5)
 		)
-		local angle = scaled.Magnitude
-		-- surge's rule, which this has to match to decode what it wrote: a zero rotation leaves no
-		-- axis to recover, so the axis is arbitrary.
-		list[index] = CFrame.fromAxisAngle(if angle > 1e-6 then scaled.Unit else Vector3.zAxis, angle) + position
 		offset += CFRAME_BYTES
 	end
 	return { list = list }
@@ -143,12 +201,14 @@ end
 local function writeTaggedUnion(value)
 	local events = value.events
 	local count = #events
+	local head = if count < 254 then 1 elseif count <= 65535 then 3 else 5
 	-- The count, and one variant byte per event.
-	local size = 4 + count
+	local size = head + count
 	for _, event in events do
 		local kind = event.kind
 		if kind == "chat" then
-			size += 8 + #event.text
+			local length = #event.text
+			size += 4 + length + (if length < 254 then 1 elseif length <= 65535 then 3 else 5)
 		elseif kind == "damage" then
 			size += 6
 		elseif kind == "despawn" then
@@ -159,8 +219,12 @@ local function writeTaggedUnion(value)
 	end
 
 	local buf = buffer.create(size)
-	buffer.writeu32(buf, 0, count)
-	local offset = 4
+	if count < 254 then
+		buffer.writeu8(buf, 0, count)
+	else
+		writeLongCount(buf, 0, count)
+	end
+	local offset = head
 	for _, event in events do
 		local kind = event.kind
 		if kind == "chat" then
@@ -168,9 +232,15 @@ local function writeTaggedUnion(value)
 			local length = #text
 			buffer.writeu8(buf, offset, 0)
 			buffer.writeu32(buf, offset + 1, event.id)
-			buffer.writeu32(buf, offset + 5, length)
-			buffer.writestring(buf, offset + 9, text)
-			offset += 9 + length
+			if length < 254 then
+				buffer.writeu8(buf, offset + 5, length)
+				offset += 6
+			else
+				writeLongCount(buf, offset + 5, length)
+				offset += if length <= 65535 then 8 else 10
+			end
+			buffer.writestring(buf, offset, text)
+			offset += length
 		elseif kind == "damage" then
 			buffer.writeu8(buf, offset, 1)
 			buffer.writeu16(buf, offset + 1, event.amount)
@@ -194,20 +264,25 @@ local function writeTaggedUnion(value)
 end
 
 local function readTaggedUnion(buf)
-	local count = buffer.readu32(buf, 0)
+	local count = buffer.readu8(buf, 0)
+	local offset = 1
+	if count >= 254 then
+		count, offset = readLongCount(buf, 0, count)
+	end
 	local events = table.create(count)
 
-	local offset = 4
 	for index = 1, count do
 		local variant = buffer.readu8(buf, offset)
 		if variant == 0 then
-			local length = buffer.readu32(buf, offset + 5)
-			events[index] = {
-				kind = "chat",
-				id = buffer.readu32(buf, offset + 1),
-				text = buffer.readstring(buf, offset + 9, length),
-			}
-			offset += 9 + length
+			local id = buffer.readu32(buf, offset + 1)
+			local length = buffer.readu8(buf, offset + 5)
+			if length >= 254 then
+				length, offset = readLongCount(buf, offset + 5, length)
+			else
+				offset += 6
+			end
+			events[index] = { kind = "chat", id = id, text = buffer.readstring(buf, offset, length) }
+			offset += length
 		elseif variant == 1 then
 			events[index] = {
 				kind = "damage",
@@ -241,7 +316,8 @@ local function writePackedToggles(value)
 	-- The two bytes of bits, and `level`.
 	local size = 3
 	if label ~= nil then
-		size += 4 + #label
+		local length = #label
+		size += length + (if length < 254 then 1 elseif length <= 65535 then 3 else 5)
 	end
 	if offsetField ~= nil then
 		size += 2
@@ -272,9 +348,15 @@ local function writePackedToggles(value)
 	local offset = 2
 	if label ~= nil then
 		local length = #label
-		buffer.writeu32(buf, offset, length)
-		buffer.writestring(buf, offset + 4, label)
-		offset += 4 + length
+		if length < 254 then
+			buffer.writeu8(buf, offset, length)
+			offset += 1
+		else
+			writeLongCount(buf, offset, length)
+			offset += if length <= 65535 then 3 else 5
+		end
+		buffer.writestring(buf, offset, label)
+		offset += length
 	end
 	buffer.writeu8(buf, offset, value.level)
 	if offsetField ~= nil then
@@ -291,9 +373,14 @@ local function readPackedToggles(buf)
 	local offset = 2
 	local label
 	if bit32.btest(high, 4) then
-		local length = buffer.readu32(buf, offset)
-		label = buffer.readstring(buf, offset + 4, length)
-		offset += 4 + length
+		local length = buffer.readu8(buf, offset)
+		if length >= 254 then
+			length, offset = readLongCount(buf, offset, length)
+		else
+			offset += 1
+		end
+		label = buffer.readstring(buf, offset, length)
+		offset += length
 	end
 	local level = buffer.readu8(buf, offset)
 	local offsetField
@@ -323,21 +410,33 @@ end
 local function writeLeaderboard(value)
 	local entries = value.entries
 	local count = #entries
-	-- The count, and each entry's name length, score and user id.
-	local size = 4 + 16 * count
+	local head = if count < 254 then 1 elseif count <= 65535 then 3 else 5
+	-- The count, and each entry's name, score and user id.
+	local size = head + 12 * count
 	for _, entry in entries do
-		size += #entry.name
+		local length = #entry.name
+		size += length + (if length < 254 then 1 elseif length <= 65535 then 3 else 5)
 	end
 
 	local buf = buffer.create(size)
-	buffer.writeu32(buf, 0, count)
-	local offset = 4
+	if count < 254 then
+		buffer.writeu8(buf, 0, count)
+	else
+		writeLongCount(buf, 0, count)
+	end
+	local offset = head
 	for _, entry in entries do
 		local name = entry.name
 		local length = #name
-		buffer.writeu32(buf, offset, length)
-		buffer.writestring(buf, offset + 4, name)
-		offset += 4 + length
+		if length < 254 then
+			buffer.writeu8(buf, offset, length)
+			offset += 1
+		else
+			writeLongCount(buf, offset, length)
+			offset += if length <= 65535 then 3 else 5
+		end
+		buffer.writestring(buf, offset, name)
+		offset += length
 		buffer.writeu32(buf, offset, entry.score)
 		buffer.writef64(buf, offset + 4, entry.userId)
 		offset += 12
@@ -346,13 +445,21 @@ local function writeLeaderboard(value)
 end
 
 local function readLeaderboard(buf)
-	local count = buffer.readu32(buf, 0)
+	local count = buffer.readu8(buf, 0)
+	local offset = 1
+	if count >= 254 then
+		count, offset = readLongCount(buf, 0, count)
+	end
 	local entries = table.create(count)
-	local offset = 4
 	for index = 1, count do
-		local length = buffer.readu32(buf, offset)
-		local name = buffer.readstring(buf, offset + 4, length)
-		offset += 4 + length
+		local length = buffer.readu8(buf, offset)
+		if length >= 254 then
+			length, offset = readLongCount(buf, offset, length)
+		else
+			offset += 1
+		end
+		local name = buffer.readstring(buf, offset, length)
+		offset += length
 		entries[index] = {
 			name = name,
 			score = buffer.readu32(buf, offset),
@@ -365,7 +472,7 @@ end
 
 -- A tree's size is not known without walking it, so it is written in one walk into a buffer
 -- kept between calls, and copied out at its length, rather than walked once to count the nodes
--- and again to write them. Every node is a u32 child count and a u16 id.
+-- and again to write them. Every node is its child count and a u16 id.
 local treeScratch = buffer.create(64)
 local treeCapacity = 64
 
@@ -378,11 +485,18 @@ end
 
 local function writeTreeNode(offset, node)
 	local children = node.children
-	if offset + 4 > treeCapacity then
-		growTree(offset + 4)
+	local count = #children
+	-- Room for the longest form of the count.
+	if offset + 5 > treeCapacity then
+		growTree(offset + 5)
 	end
-	buffer.writeu32(treeScratch, offset, #children)
-	offset += 4
+	if count < 254 then
+		buffer.writeu8(treeScratch, offset, count)
+		offset += 1
+	else
+		writeLongCount(treeScratch, offset, count)
+		offset += if count <= 65535 then 3 else 5
+	end
 	for _, child in children do
 		offset = writeTreeNode(offset, child)
 	end
@@ -401,8 +515,12 @@ local function writeTree(value)
 end
 
 local function readTreeNode(buf, offset)
-	local count = buffer.readu32(buf, offset)
-	offset += 4
+	local count = buffer.readu8(buf, offset)
+	if count >= 254 then
+		count, offset = readLongCount(buf, offset, count)
+	else
+		offset += 1
+	end
 	local children = table.create(count)
 	for index = 1, count do
 		children[index], offset = readTreeNode(buf, offset)
@@ -417,10 +535,15 @@ end
 local function writeTuples(value)
 	local samples = value.samples
 	local count = #samples
+	local head = if count < 254 then 1 elseif count <= 65535 then 3 else 5
 	-- One allocation: every tuple is a u16 and two f32.
-	local buf = buffer.create(4 + 10 * count)
-	buffer.writeu32(buf, 0, count)
-	local offset = 4
+	local buf = buffer.create(head + 10 * count)
+	if count < 254 then
+		buffer.writeu8(buf, 0, count)
+	else
+		writeLongCount(buf, 0, count)
+	end
+	local offset = head
 	for _, sample in samples do
 		buffer.writeu16(buf, offset, sample[1])
 		buffer.writef32(buf, offset + 2, sample[2])
@@ -431,9 +554,12 @@ local function writeTuples(value)
 end
 
 local function readTuples(buf)
-	local count = buffer.readu32(buf, 0)
+	local count = buffer.readu8(buf, 0)
+	local offset = 1
+	if count >= 254 then
+		count, offset = readLongCount(buf, 0, count)
+	end
 	local samples = table.create(count)
-	local offset = 4
 	for index = 1, count do
 		samples[index] = { buffer.readu16(buf, offset), buffer.readf32(buf, offset + 2), buffer.readf32(buf, offset + 6) }
 		offset += 10
@@ -444,18 +570,30 @@ end
 local function writeNestedArrays(value)
 	local rows = value.rows
 	local count = #rows
+	local head = if count < 254 then 1 elseif count <= 65535 then 3 else 5
 	-- The count, and each row's count and two bytes an element.
-	local size = 4 + 4 * count
+	local size = head
 	for _, row in rows do
-		size += 2 * #row
+		local length = #row
+		size += 2 * length + (if length < 254 then 1 elseif length <= 65535 then 3 else 5)
 	end
 
 	local buf = buffer.create(size)
-	buffer.writeu32(buf, 0, count)
-	local offset = 4
+	if count < 254 then
+		buffer.writeu8(buf, 0, count)
+	else
+		writeLongCount(buf, 0, count)
+	end
+	local offset = head
 	for _, row in rows do
-		buffer.writeu32(buf, offset, #row)
-		offset += 4
+		local length = #row
+		if length < 254 then
+			buffer.writeu8(buf, offset, length)
+			offset += 1
+		else
+			writeLongCount(buf, offset, length)
+			offset += if length <= 65535 then 3 else 5
+		end
 		for _, element in row do
 			buffer.writeu16(buf, offset, element)
 			offset += 2
@@ -465,12 +603,19 @@ local function writeNestedArrays(value)
 end
 
 local function readNestedArrays(buf)
-	local count = buffer.readu32(buf, 0)
+	local count = buffer.readu8(buf, 0)
+	local offset = 1
+	if count >= 254 then
+		count, offset = readLongCount(buf, 0, count)
+	end
 	local rows = table.create(count)
-	local offset = 4
 	for index = 1, count do
-		local length = buffer.readu32(buf, offset)
-		offset += 4
+		local length = buffer.readu8(buf, offset)
+		if length >= 254 then
+			length, offset = readLongCount(buf, offset, length)
+		else
+			offset += 1
+		end
 		local row = table.create(length)
 		for element = 1, length do
 			row[element] = buffer.readu16(buf, offset)
@@ -484,11 +629,16 @@ end
 local function writeInstanceRefs(value)
 	local entries = value.entries
 	local count = #entries
-	local buf = buffer.create(4 + 2 * count)
+	local head = if count < 254 then 1 elseif count <= 65535 then 3 else 5
+	local buf = buffer.create(head + 2 * count)
 	local blobs = table.create(count)
-	buffer.writeu32(buf, 0, count)
+	if count < 254 then
+		buffer.writeu8(buf, 0, count)
+	else
+		writeLongCount(buf, 0, count)
+	end
 	for index, entry in entries do
-		buffer.writeu16(buf, 2 + 2 * index, entry.health)
+		buffer.writeu16(buf, head - 2 + 2 * index, entry.health)
 		blobs[index] = entry.model
 	end
 	return { buffer = buf, blobs = blobs }
@@ -497,10 +647,14 @@ end
 local function readInstanceRefs(payload)
 	local buf = payload.buffer
 	local blobs = payload.blobs
-	local count = buffer.readu32(buf, 0)
+	local count = buffer.readu8(buf, 0)
+	local head = 1
+	if count >= 254 then
+		count, head = readLongCount(buf, 0, count)
+	end
 	local entries = table.create(count)
 	for index = 1, count do
-		entries[index] = { health = buffer.readu16(buf, 2 + 2 * index), model = blobs[index] }
+		entries[index] = { health = buffer.readu16(buf, head - 2 + 2 * index), model = blobs[index] }
 	end
 	return { entries = entries }
 end

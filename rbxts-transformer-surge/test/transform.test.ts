@@ -251,9 +251,14 @@ describe("transform (end-to-end)", () => {
 		try {
 			// No blob field, so nothing from the blob side channel is imported. A
 			// recursive type, written through a helper, keeps the scratch buffer
-			// (Transformer 5.20), which imports both of its helpers.
+			// (Transformer 5.20), which imports both of its helpers, and the
+			// string array's variable-length counts import the long forms of
+			// the array's count, of each string, and of the read.
 			expect(printed).toContain(
-				'import { finishWrite as __surge_finishWrite, grow as __surge_grow } from "@rbxts/surge/out/abi";',
+				"import { finishWrite as __surge_finishWrite, grow as __surge_grow, " +
+					"growLongCount as __surge_growLongCount, growLongString as __surge_growLongString, " +
+					"readLongCount as __surge_readLongCount } " +
+					'from "@rbxts/surge/out/abi";',
 			);
 			expect(printed).toContain("const s = function () {");
 			expect(printed).toContain("serialize:");
@@ -442,6 +447,16 @@ describe("transform generated code", () => {
 		["a tuple holding an array of itself", `type T = [number, T[]];`],
 		["properties of type undefined and void", `interface T { a: undefined; b: void; c: number; }`],
 		["an optional property of type unknown", `interface T { anything?: unknown; list: unknown[]; }`],
+		// More than five items, so the item list is filled from a string of names.
+		["an enum of many items", `interface T { material: Enum.Material; materials: Enum.Material[]; }`],
+		[
+			"a union of six items of one enum",
+			`interface T { m: Enum.Material.Air | Enum.Material.Brick | Enum.Material.Glass | Enum.Material.Grass | Enum.Material.Ice | Enum.Material.Wood; }`,
+		],
+		[
+			"a union of two enums and a string in a tagged union's variant",
+			`interface T { u: { kind: "a"; k: Enum.SortOrder | Enum.Material | string } | { kind: "b" }; }`,
+		],
 	])("the generated code for %s passes the type check", (_name, declarations) => {
 		const errors = typeErrorsOfGeneratedCode(
 			`import { createCodec } from "@rbxts/surge";
@@ -643,6 +658,9 @@ describe("transform generated code", () => {
 		["an array", "{ x: number }[]"],
 		["an exact array", "DataType.Length<{ x: number }[], 3>"],
 		["a tuple's rest", "[string, ...{ x: number }[]]"],
+		["an enum of three items", "Enum.SortOrder"],
+		["an enum of five items", "Enum.ScaleType"],
+		["an enum of more than five items", "Enum.Material"],
 	])("the generated code for %s passes the type check under a consumer's noUncheckedIndexedAccess", (_name, type) => {
 		const errors = typeErrorsOfGeneratedCode(
 			`import { DataType, createCodec } from "@rbxts/surge";

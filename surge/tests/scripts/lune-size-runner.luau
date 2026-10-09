@@ -99,9 +99,9 @@ paragraph(
 )
 
 paragraph(
-	"Blink and Zap are smaller than surge only where a length prefix appears:",
-	"they default to a u16 count where surge writes u32, and `DataType.Length`",
-	"narrows surge's."
+	"Blink and Zap are smaller than surge only on a count of 254 or more, which",
+	"surge writes in three bytes and they in the two of their default `u16` count.",
+	"Below 254, surge's count is one byte."
 )
 
 paragraph(

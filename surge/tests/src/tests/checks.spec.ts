@@ -232,20 +232,26 @@ class ChecksTest {
 		Assert.undefined(rejection(() => flat.deserialize(unhex(full))));
 	}
 
-	// The count says a billion f64s; the payload has four bytes left.
+	// The count says a billion f64s, and then ten; the payload has no bytes
+	// left, and then eight.
 	@Fact
 	public rejectsACountTheInputCannotHold(): void {
-		assertRejected(() => list.deserialize(unhex("ffffffff")));
-		assertRejected(() => list.deserialize(unhex("0a000000" + "0000000000000000")));
+		assertRejected(() => list.deserialize(unhex("ff" + "00ca9a3b")));
+		assertRejected(() => list.deserialize(unhex("0a" + "0000000000000000")));
 	}
 
 	@Fact
 	public rejectsAStringCutInItsCountOrItsBytes(): void {
-		const full = "05000000" + "68656c6c6f";
-		// Two bytes of the count, then the count and three bytes of the string.
-		assertRejected(() => withText.deserialize(unhex(full.sub(1, 4))));
-		assertRejected(() => withText.deserialize(unhex(full.sub(1, 14))));
+		const full = "05" + "68656c6c6f";
+		// No count, then the count and three bytes of the string.
+		assertRejected(() => withText.deserialize(unhex("")));
+		assertRejected(() => withText.deserialize(unhex(full.sub(1, 8))));
 		Assert.equal("hello", withText.deserialize(unhex(full)).text);
+		// A long form cut after its marker, and after one of its two bytes.
+		assertRejected(() => withText.deserialize(unhex("fe")));
+		assertRejected(() => withText.deserialize(unhex("fe" + "05")));
+		// A long form of a count below 254 reads as that count (Wire format 6.9).
+		Assert.equal("hello", withText.deserialize(unhex("fe" + "0500" + "68656c6c6f")).text);
 	}
 
 	@Fact
@@ -257,10 +263,10 @@ class ChecksTest {
 	// Nothing in the payload grows with the count, so only the cap stops it.
 	@Fact
 	public rejectsACountOfElementsThatReadNoBytes(): void {
-		assertRejected(() => constants.deserialize(unhex("ffffffff")));
-		// Just past the cap of 2^24, and just inside it.
-		assertRejected(() => constants.deserialize(unhex("01000001")));
-		Assert.equal(3, constants.deserialize(unhex("03000000")).marks.size());
+		assertRejected(() => constants.deserialize(unhex("ff" + "ffffffff")));
+		// Just past the cap of 2^24, and well inside it.
+		assertRejected(() => constants.deserialize(unhex("ff" + "01000001")));
+		Assert.equal(3, constants.deserialize(unhex("03")).marks.size());
 	}
 
 	@Fact

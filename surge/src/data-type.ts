@@ -22,15 +22,15 @@ export namespace DataType {
 	/**
 	 * Sets how `T`'s encoding says how much follows. Applies to a `string`,
 	 * an array, a `Map`, a `Set`, a `Record`, a `buffer`, and a tuple's rest
-	 * element; on anything else the transformer reports a diagnostic.
+	 * element; on anything else the transformer reports a diagnostic. Without
+	 * it, the count is variable-length: one byte below 254, three up to 65535,
+	 * and five above (Wire format 6.9 in docs/specs/wire-format.md).
 	 *
 	 * With a width — {@link u8}, {@link u16}, {@link u24}, or {@link u32} —
-	 * a count of that width is written ahead of the contents. The default is
-	 * `u32`, which is what an unbranded container writes, so `Length<T>` and
-	 * `T` encode identically. A narrower width saves the difference on every
-	 * value, and above what it can count the count wraps unless `writeChecks`
-	 * is on, which raises instead (Wire format 6.8), so it states a bound the
-	 * shape is known to keep.
+	 * a count of that width is written ahead of the contents. Above what it
+	 * can count, the count wraps unless `writeChecks` is on, which raises
+	 * instead (Wire format 6.8), so a width states a bound the shape is known
+	 * to keep.
 	 *
 	 * With a whole number literal (`Length<string, 8>`) no count is written
 	 * at all and both sides use exactly that many bytes or elements. The
@@ -55,9 +55,10 @@ export namespace DataType {
 	 *
 	 * Unlike {@link Packed}, this applies to the container it wraps and not
 	 * to the subtree under it: in `Length<Array<Array<string>>, u16>` the
-	 * outer array takes the u16 count and the inner ones keep `u32`.
+	 * outer array takes the u16 count and the inner ones keep the
+	 * variable-length count.
 	 */
-	export type Length<T, L extends u8 | u16 | u24 | u32 = u32> = T & { readonly _surge_length?: [T, L] };
+	export type Length<T, L extends u8 | u16 | u24 | u32> = T & { readonly _surge_length?: [T, L] };
 
 	/** Every width brand above, and the constraint a per-component width takes. */
 	type Width = f32 | f64 | u8 | u16 | u24 | u32 | i8 | i16 | i24 | i32;

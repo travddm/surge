@@ -44,6 +44,19 @@ export const ALLOC_RUN_LOCALS = LOCALS_PER_BLOCK - 1;
 // to compile. A size sums at most this many terms in one chain, and adds the
 // chains in pairs (`sum` in size.ts).
 export const TERMS_PER_SUM = 32;
+// An enum's index is filled by a loop over its item list (`ensureEnumTable`
+// in context.ts). Luau's compiler unrolls a loop with a literal bound of up to
+// a few dozen iterations, which for this body costs bytecode for each item:
+// at 24 items the unrolled loop was about 400 bytes larger than one bounded by
+// `#items`, which it does not unroll (Lune's `luau.compile` at level 2). Up to
+// this many items, the unrolled loop is the smaller of the two.
+export const ENUM_UNROLLED_ITEMS = 3;
+// An enum of more items than this holds its items' names in one string, which
+// fills its item list as the module loads. Each item of a list of `Enum.X.Y`
+// costs about 25 bytes of bytecode and each name in the string about 8, and
+// the loop over the string about 80 more than the loop over a list, so the
+// string is the smaller from six items (Lune's `luau.compile` at level 2).
+export const ENUM_LISTED_ITEMS = 5;
 
 /**
  * The module of `@rbxts/surge` that holds the helpers generated code calls
@@ -109,3 +122,10 @@ export const ERROR_PREFIX = "@rbxts/surge: ";
  * or constant elements says so with a wider `DataType.Length`.
  */
 export const ZERO_SIZE_COUNT_CAP = 1 << 24;
+/**
+ * A variable-length count below this is one byte (Wire format 6.9 in
+ * docs/specs/wire-format.md). From it up to `U16_COUNT_MAX` it is this
+ * marker and a `u16`, and above that the marker after it and a `u32`.
+ */
+export const LONG_COUNT_MARKER = 254;
+export const U16_COUNT_MAX = 65535;

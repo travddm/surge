@@ -79,6 +79,13 @@ import { matching, scopedPatterns } from "./selection";
  * run to settle before it returns, or the injected script would hand
  * control back -- closing Studio under `run-in-roblox` -- before the last
  * row was measured.
+ *
+ * Before any row is timed, every cell decodes its buffer once and prints its
+ * round trip. The size tier checks round trips under Lune, whose Roblox
+ * types are reimplementations of the engine's, so a codec can round-trip
+ * there and not in Roblox. The recorder compares each cell with
+ * `docs/benchmarks/size.md`, so a codec that decodes wrongly in Roblox is
+ * not timed as if it were right.
  */
 /** Seconds of measured calls each library gets before a row's trials begin. */
 const WARM_UP_SECONDS = 0.1;
@@ -114,7 +121,7 @@ const ENVIRONMENT_PREFIX = "BENCH_ENV:";
 // the suite rather than any one test, and it is what keeps the generated file from
 // restating these constants from memory.
 print(
-	`${ENVIRONMENT_PREFIX} method=${TRIALS} trials per cell, each at least ${TRIAL_SECONDS} seconds of calls after ${WARM_UP_SECONDS} seconds of warm-up calls, timed in chunks of ${CHUNK} calls so that the yields between chunks are not in the time; within a row the libraries take turns, one trial each, and ${SETTLE_FRAMES} idle frames separate one row from the next`,
+	`${ENVIRONMENT_PREFIX} method=${TRIALS} trials per cell, each at least ${TRIAL_SECONDS} seconds of calls after ${WARM_UP_SECONDS} seconds of warm-up calls, timed in chunks of ${CHUNK} calls so that the yields between chunks are not in the time; within a row the libraries take turns, one trial each, and ${SETTLE_FRAMES} idle frames separate one row from the next; before any trial, every cell decodes its buffer once, and a run in which a cell round-trips worse than the size table records is not recorded`,
 );
 
 /** Measured seconds since the loop last yielded; shared by every row, since the budget is. */
@@ -164,6 +171,23 @@ function trial(run: () => void): number {
 
 /** The prefix scripts/record-speed-benchmarks.mjs reads a row out of. */
 const ROW_PREFIX = "BENCH_ROW:";
+/** The prefix one cell's round trip leaves by, for the recorder to compare with the size table. */
+const CHECK_PREFIX = "BENCH_CHECK:";
+
+/**
+ * Prints one cell's round trip as the size table words it: `exact`, or
+ * `inexact` with the largest difference in any component when a number
+ * describes it, and the first difference after it.
+ */
+function check(fixture: Fixture, entry: Entry): void {
+	const measurement = entry.measure();
+	let roundTrip = "exact";
+	if (measurement.roundTrip !== undefined) {
+		const worst = measurement.maxError === undefined ? "" : string.format(" %.3e", measurement.maxError);
+		roundTrip = `inexact${worst} | ${measurement.roundTrip}`;
+	}
+	print(string.format("%s %s | %s | %s", CHECK_PREFIX, fixture.name, entry.library, roundTrip));
+}
 
 function report(half: string, fixture: Fixture, entry: Entry, rates: ReadonlyArray<number>): void {
 	// Printed as each row is measured rather than collected for the end, so a
@@ -181,12 +205,25 @@ function report(half: string, fixture: Fixture, entry: Entry, rates: ReadonlyArr
 	);
 }
 
+/** The entries of a row the suite times: every one but a size-only library's. */
+function timed(fixture: Fixture): Array<Entry> {
+	return fixture.entries.filter((entry) => !SIZE_ONLY.includes(entry.library));
+}
+
 class SpeedBench {
 	@Fact
 	public throughput(): void {
+		const fixtures = matching(CATALOG, scopedPatterns());
+		for (const fixture of fixtures) {
+			for (const entry of timed(fixture)) {
+				check(fixture, entry);
+			}
+		}
+		settle();
+
 		for (const half of ["encode", "decode"] as const) {
-			for (const fixture of matching(CATALOG, scopedPatterns())) {
-				const entries = fixture.entries.filter((entry) => !SIZE_ONLY.includes(entry.library));
+			for (const fixture of fixtures) {
+				const entries = timed(fixture);
 				const rates = entries.map(() => new Array<number>());
 
 				for (const entry of entries) {

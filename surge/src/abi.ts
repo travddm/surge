@@ -6,3 +6,12 @@
 // re-exports.
 export { finishWrite, grow } from "./alloc";
 export { readPackedCFrame, writePackedCFrame } from "./cframe";
+export {
+	growLongBuffer,
+	growLongCount,
+	growLongString,
+	readLongCount,
+	writeLongBuffer,
+	writeLongCount,
+	writeLongString,
+} from "./count";

@@ -1,7 +1,7 @@
 # Benchmark harness specification
 
 Status: current
-Applies to: commit `0201459` (no tagged release yet)
+Applies to: commit `362a52a` (no tagged release yet)
 
 ## 1. Scope
 
@@ -182,11 +182,19 @@ idle frames between one row and the next.
 `runBenchmarks` returns only after runit's verdict, because `run-in-roblox`
 ends the run when the injected script returns.
 
+**6.6** Before any warm-up, the suite decodes each cell's buffer once and
+compares the result with the row's sample value, as the size tier does
+(5.2). A cell passes if its largest difference is at most ten times the one
+`docs/benchmarks/size.md` records for it. A cell the size table records as
+exact must round-trip exactly, and a difference no number describes passes
+only where the size table records one.
+
 ## 7. Sentinel lines
 
 **7.1** The speed suite prints one `BENCH_ENV: method=…` line describing its
-method as its module loads, and one `BENCH_ROW:` line per row, library and
-half, carrying every trial's rate.
+method as its module loads, one `BENCH_CHECK:` line per row and library with
+its round trip (6.6), and one `BENCH_ROW:` line per row, library and half,
+carrying every trial's rate.
 
 **7.2** `runBenchmarks` prints one `BENCH_RESULT:` line with runit's verdict:
 `PASSED`, `FAILED`, or `ERROR (<reason>)` when the report cannot be parsed,
@@ -200,8 +208,9 @@ engine version, before the suite runs.
 **8.1** `tests/scripts/record-speed-benchmarks.mjs` wraps `run-in-roblox`,
 forwards every line, and writes `docs/benchmarks/speed.md` and
 `docs/benchmarks/speed-trials.tsv` only if every run printed
-`BENCH_RESULT: PASSED` and returned every row in both halves. An interrupted
-invocation leaves both files as they were.
+`BENCH_RESULT: PASSED`, returned every row in both halves, and passed the
+round-trip check of 6.6 on every cell. An interrupted invocation leaves both
+files as they were.
 
 **8.2** Both files record the date, the machine, the engine version the
 process reports, and the commit or version of everything measured. A
@@ -280,13 +289,14 @@ version, since another compiler version can give another count.
 | 4.3       | Source: `tests/src/bench/adapters/zap.ts`, `tests/src/bench/definitions/catalog.zap`, `SendEvents` in `tests/src/bench/zap/server.luau`, and `newRemote` in `tests/scripts/lune-roblox-shim.luau`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 | 4.4       | Source: `tests/src/bench/definitions/`; `mise run bench:definitions` in `mise.toml`; the empty Blink and Zap cells of `docs/benchmarks/size.md`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 | 4.5       | `docs/benchmarks/size.md` shows equal byte counts for the baseline and surge on its ten rows, and the same side count on the instance references. Unverified: that the bytes are equal byte for byte. Source: `tests/src/bench/baseline/codecs.luau`                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
-| 4.6       | Source: the first lines of `tests/src/bench/fixtures/*.ts` and of each codec module under `tests/src/bench/codecs/`, `tests/src/bench/baseline/codecs.luau`, `tests/src/bench/blink/server.luau`, and `@rbxts/flamework-binary-serializer` 0.7.0's `out/serialization/createSerializer.lua` and `createDeserializer.lua`; `@rbxts/serio` 1.2.7's `out/` carries no directive. `test/golden.test.mjs` pins `--!native` and `--!optimize 2` on surge's `alloc`, `blobs` and `cframe` modules, and pins that `--!optimize 2` survives the transformer's injected imports on three modules of the tests place, none of them a fixture. No test checks a directive on a fixture, on the baseline, or in fbs or Blink |
+| 4.6       | Source: the first lines of `tests/src/bench/fixtures/*.ts` and of each codec module under `tests/src/bench/codecs/`, `tests/src/bench/baseline/codecs.luau`, `tests/src/bench/blink/server.luau`, and `@rbxts/flamework-binary-serializer` 0.7.0's `out/serialization/createSerializer.lua` and `createDeserializer.lua`; `@rbxts/serio` 1.2.7's `out/` carries no directive. `test/golden.test.mjs` pins `--!native` and `--!optimize 2` on surge's `alloc`, `cframe` and `count` modules, and pins that `--!optimize 2` survives the transformer's injected imports on three modules of the tests place, none of them a fixture. No test checks a directive on a fixture, on the baseline, or in fbs or Blink |
 | 4.7       | Source: the first lines of `tests/src/bench/speed.spec.ts`, `adapter.ts` and `adapters/*.ts`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 | 4.8       | Source: `tests/src/bench/adapters/`. The documentation each follows: `docs/getting-started.md` for surge; the README of `@rbxts/flamework-binary-serializer` 0.7.0 and the comments on its `Serializer<T>`; the README of `@rbxts/serio` 1.2.7                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | 4.10–4.12 | Source: `tests/flamework2/`, `tests/scripts/copy-flamework2-codecs.mjs` and the `bench:definitions` script in `tests/package.json`; the `flamework2.luau` modules under `tests/src/bench/codecs/`; `docs/benchmarks/size.md`, where every Flamework 2 cell round-trips and the packed rows have none                                                                                                                                                                                                                                                                                                                                                                                                            |
 | 5.1–5.3   | Source: `tests/scripts/lune-size-runner.luau` and `tests/src/bench/size.ts`; a regenerated `size.md` with no diff                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 | 6.1       | Source: `RUNS` and `runOnce` in `tests/scripts/record-speed-benchmarks.mjs`, and the `bench:speed` scripts in `package.json` and `tests/package.json`; `main()` in `tests/src/index.ts` runs only `tests` ([test-harness.md](test-harness.md) 3.4)                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | 6.2–6.5   | Source: the constants and comment block of `tests/src/bench/speed.spec.ts`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| 6.6       | Source: `check` and `timed` in `tests/src/bench/speed.spec.ts`, and `readCheck`, `recordedRoundTrips` and `requireEveryCheck` in `tests/scripts/record-speed-benchmarks.mjs`. No test runs the comparison; a full or scoped `bench:speed` run exercises it                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | 7.1–7.3   | Source: `tests/src/bench/speed.spec.ts`, and `run` and `runBenchmarks` in `tests/src/index.ts`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | 8.1–8.7   | Source: `tests/scripts/record-speed-benchmarks.mjs` (`RUNS`, `NOISY`, `summarize`, `summaryTable`)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | 9.1–9.3   | Source: `tests/src/bench/selection.ts`, the recorder, and `tests/scripts/lune-size-runner.luau`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
@@ -295,6 +305,11 @@ version, since another compiler version can give another count.
 
 ## Changes
 
+- `362a52a`: adds 6.6 (each cell's round trip is checked in Roblox before
+  its trials); 7.1 and 8.1 follow it.
+- `ca5e2ba`: no statement changes. The 4.6 row names the `count` module among
+  those whose pragmas are pinned, and no longer names `blobs`, which is not a
+  module.
 - `0201459`: adds the Flamework 2 column: 4.10 to 4.12, and 3.5, 3.6, 4.1, 4.6, 4.8, 11.2 and 11.3
   name it.
 - `5136e41` / `72a4887`: 3.1 adds a row of nested arrays, and 4.5 gives the

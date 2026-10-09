@@ -28,7 +28,7 @@ const value: StringHeavy = { title: "a chapter", author: "someone", lines };
 
 export const stringHeavy: Fixture = {
 	name: "string-heavy",
-	note: `two short strings and ${COUNT} of up to 40 bytes, each with a u32 length prefix`,
+	note: `two short strings and ${COUNT} of up to 40 bytes, each with a count of its bytes`,
 	entries: [
 		defineEntry<StringHeavy>("surge", value, surgeAdapter(serializer)),
 		defineEntry<StringHeavy>("fbs", value, fbsAdapter(fbsSerializer)),

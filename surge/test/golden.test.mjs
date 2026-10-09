@@ -56,10 +56,35 @@ test("a recursive discriminated union (Expr) compiles to its own recursion helpe
 	assert.match(luau, /surge_Expr_\d+_(?:write|read)/);
 });
 
-test("an enum index is an O(1) table lookup, not a chain of .Name comparisons", () => {
+test("an enum index is an O(1) table lookup keyed by the item, filled from the item list", () => {
 	const luau = readCompiledLuau("tests/coverage.spec.luau");
 	assert.doesNotMatch(luau, /\.Name\s*==/);
-	assert.match(luau, /_index\[/); // roblox-ts lowers `Map.get`/indexing on a compiled Map to a plain table index
+	// roblox-ts lowers `Map.set` and `Map.get` on a compiled Map to plain table indexing.
+	assert.match(
+		luau,
+		/local (surge_HumanoidRigType_[0-9]+)_index = \{\}\n\s+for (i[0-9]+) = 1, 2 do\n\s+local (_arg0) = \1_items\[\2\]\n\s+local (_arg1) = \2 - 1\n\s+\1_index\[\3\] = \4\n\s+end$/m,
+	);
+	assert.match(
+		luau,
+		/local (_rig) = value[.]rig\n\s+buffer[.]writeu8[(]__surge_scratch, pos[0-9]+, surge_HumanoidRigType_[0-9]+_index\[\1\][)]$/m,
+	);
+});
+
+test("an enum of more than five items fills its item list and its index from one string of names", () => {
+	const luau = readCompiledLuau("tests/checks.spec.luau");
+	assert.match(
+		luau,
+		/local (surge_Material_[0-9]+)_items = \{\}\n\s+local \1_index = \{\}\n\s+for (name[0-9]+) in string[.]gmatch[(]"Air Asphalt [A-Za-z ]+ WoodPlanks", "%S[+]"[)] do\n\s+local (item[0-9]+) = [(]Enum[.]Material[)]\[\2\]\n\s+local (_arg1) = #\1_items\n\s+\1_index\[\3\] = \4\n\s+table[.]insert[(]\1_items, \3[)]\n\s+end$/m,
+	);
+});
+
+test("a reservation past the capacity grows the buffer and takes its capacity in one assignment", () => {
+	const luau = readCompiledLuau("tests/bytes.spec.luau");
+	assert.match(
+		luau,
+		/if __surge_cursor > __surge_capacity then\n\s+__surge_scratch, __surge_capacity = __surge_grow[(]__surge_scratch, pos[0-9]+, __surge_cursor[)]\n\s+end$/m,
+	);
+	assert.doesNotMatch(luau, /__surge_grow[(][^\n]*\n\s+__surge_capacity = buffer[.]len/);
 });
 
 test("a packed region is written and read inline, with no per-bit helper", () => {
@@ -120,6 +145,17 @@ test("an unpacked CFrame reads its Position once for its three components", () =
 	assert.doesNotMatch(luau, /buffer[.]write[a-z0-9]+[(]__surge_scratch, .*[.]Position[.][XYZ]/);
 });
 
+// Regression check for the single constructor of a CFrame's read (Transformer 5.27). What it was
+// measured as worth is in docs/research/enum-and-cframe-rows.md.
+test("an unpacked CFrame is read into one constructor from a quaternion", () => {
+	const luau = readCompiledLuau("tests/coverage.spec.luau");
+	assert.match(
+		luau,
+		/CFrame[.]new[(]buffer[.]readf32[(]__surge_input, pos[0-9]+[)], .*, math[.]cos[(]angle[0-9]+ [*] 0[.]5[)][)]$/m,
+	);
+	assert.doesNotMatch(luau, /CFrame[.]fromAxisAngle[(]/);
+});
+
 // Regression check for the shared reservation. What it was measured as worth is in
 // docs/research/generated-code-against-hand-written.md.
 test("consecutive fixed-size fields share one reservation", () => {
@@ -151,12 +187,23 @@ test("an array of fixed-size elements reserves them all once, ahead of its loop"
 	assert.match(luau, /element[0-9]+ [+]= 2$/m);
 });
 
+/** The pattern of the bytes a variable-length count of `count`, a pattern itself, takes (Wire format 6.9). */
+const countBytes = (count) => `[(]if ${count} < 254 then 1 elseif ${count} <= 65535 then 3 else 5[)]`;
+
 test("a string reserves its count and its bytes at once", () => {
 	const luau = readCompiledLuau("tests/basic.spec.luau");
-	// `Basic.name` is a string: one reservation of its length and a u32
-	// count, and one move of the read cursor past both.
-	assert.match(luau, /__surge_cursor = pos[0-9]+ [+] [(]len[0-9]+ [+] 4[)]$/m);
-	assert.match(luau, /__surge_readCursor = pos[0-9]+ [+] 4 [+] len[0-9]+$/m);
+	// `Basic.name` is a string: in its count's one-byte form, one reservation
+	// of its length and the count's byte, in its long form one call that
+	// reserves and writes both, and one move of the read cursor past both.
+	assert.match(
+		luau,
+		/^\s+if (len[0-9]+) < 254 then\n\s+local (pos[0-9]+) = __surge_cursor\n\s+__surge_cursor = \2 [+] [(]\1 [+] 1[)]$/m,
+	);
+	assert.match(
+		luau,
+		/^\s+else\n\s+__surge_cursor = __surge_writeLongString[(]__surge_scratch, __surge_cursor, (s[0-9]+), (len[0-9]+)[)]$/m,
+	);
+	assert.match(luau, /__surge_readCursor = at[0-9]+ [+] len[0-9]+$/m);
 });
 
 // Regression check for sizing a union. What it was measured as worth is in
@@ -169,7 +216,14 @@ test("a union is sized by the variant its write picks, with the write's own test
 	// docs/research/tagged-union-closed.md measured.
 	assert.match(
 		luau,
-		/local (arr[0-9]+) = value[.]readings\n[^]*?local (size[0-9]+) = #\1 [+] #arr[0-9]+ [+] 8\n\s+for _, (item[0-9]+) in \1 do\n\s+\2 [+]= [(]if \3[.]kind == "level" then 1 else #\3[.]text [+] 4[)]\n\s+end$/m,
+		new RegExp(
+			String.raw`local (arr[0-9]+) = value[.]readings\n\s+local (len[0-9]+) = #\1\n[^]*?` +
+				String.raw`local (size[0-9]+) = ${countBytes(String.raw`\2`)} [+] \2 [+] [^\n]*\n` +
+				String.raw`\s+for _, (item[0-9]+) in \1 do\n` +
+				String.raw`\s+if \4[.]kind == "level" then\n\s+\3 [+]= 1\n\s+else\n` +
+				String.raw`\s+local (len[0-9]+) = #\4[.]text\n\s+\3 [+]= ${countBytes(String.raw`\5`)} [+] \5\n\s+end\n\s+end$`,
+			"m",
+		),
 	);
 	// The write reads the tag once and tests it once, and the branch it takes
 	// writes the variant's index in one reservation with the `u8` after it.
@@ -196,7 +250,12 @@ test("a size that compares a tag more than once reads it once", () => {
 	// into a local of its own.
 	assert.match(
 		luau,
-		/for _, (item[0-9]+) in arr[0-9]+ do\n\s+local (tag[0-9]+) = \1[.]kind\n\s+size[0-9]+ [+]= [(]if \2 == "level" then 1 elseif \2 == "on" then 0 else #\1[.]text [+] 4[)]\n\s+end$/m,
+		new RegExp(
+			String.raw`for _, (item[0-9]+) in arr[0-9]+ do\n\s+local (tag[0-9]+) = \1[.]kind\n` +
+				String.raw`\s+if \2 == "level" then\n\s+size[0-9]+ [+]= 1\n\s+elseif \2 == "on" then\n\s+else\n` +
+				String.raw`\s+local (len[0-9]+) = #\1[.]text\n\s+size[0-9]+ [+]= ${countBytes(String.raw`\3`)} [+] \3\n\s+end\n\s+end$`,
+			"m",
+		),
 	);
 });
 
@@ -252,7 +311,13 @@ test("a size binds the locals its write reads, ahead of the result", () => {
 	// the write reads the same two and takes no length again.
 	assert.match(
 		luau,
-		/local (obj[0-9]+) = value[.]settings\n[^]*?local (s[0-9]+) = \1[.]label\n\s+local (len[0-9]+) = #\2\n\s+local __surge_scratch = buffer[.]create[(]\3 [+] 15[)]\n[^]*?__surge_cursor = pos[0-9]+ [+] [(]\3 [+] 4[)]\n[^]*?buffer[.]writestring[(]__surge_scratch, pos[0-9]+ [+] 4, \2[)]$/m,
+		new RegExp(
+			String.raw`local (obj[0-9]+) = value[.]settings\n[^]*?local (s[0-9]+) = \1[.]label\n\s+local (len[0-9]+) = #\2\n` +
+				String.raw`\s+local __surge_scratch = buffer[.]create[(]${countBytes(String.raw`\3`)} [+] \3 [+] 11[)]\n[^]*?` +
+				String.raw`if \3 < 254 then\n[^]*?__surge_cursor = pos[0-9]+ [+] [(]\3 [+] 1[)]\n[^]*?` +
+				String.raw`buffer[.]writestring[(]__surge_scratch, pos[0-9]+ [+] 1, \2[)]$`,
+			"m",
+		),
 	);
 	assert.equal(luau.match(/[.]label$/gm).length, 1);
 });
@@ -275,7 +340,7 @@ test("a read creates its table at its size and stores each element at its index"
 test("a shape sized exactly creates its result at that size and checks no capacity", () => {
 	// Every shape in `basic.spec` can be sized without a loop.
 	const luau = readCompiledLuau("tests/basic.spec.luau");
-	assert.match(luau, /local __surge_scratch = buffer[.]create[(]len[0-9]+ [+] /);
+	assert.match(luau, /local __surge_scratch = buffer[.]create[(][(]if len[0-9]+ < 254 then 1 /);
 	assert.match(luau, /local __surge_scratch = buffer[.]create[(]15[)]$/m);
 	assert.doesNotMatch(luau, /__surge_capacity|__surge_grow|__surge_finishWrite[(]/);
 	// A positive control: a recursive type is written through a helper, and
@@ -309,24 +374,33 @@ test("a deserialize that reaches no recursion helper holds its input and cursor 
 // arrays in docs/research/array-of-arrays-loop.md.
 test("an array of unions, objects or arrays is sized by a loop, and an array of anything else that varies is not", () => {
 	const unions = readCompiledLuau("tests/unions.spec.luau");
-	// `WithUnionArrays.scalars` is an array of a guarded union.
+	// `WithUnionArrays.scalars` is an array of a guarded union, whose string
+	// variant reads its length into a local, so the union is an if chain.
 	assert.match(
 		unions,
-		/local (arr[0-9]+) = value[.]scalars\n[^]*?for _, (item[0-9]+) in \1 do\n\s+size[0-9]+ [+]= [(]if \2 == false then 0 /,
+		/local (arr[0-9]+) = value[.]scalars\n[^]*?for _, (item[0-9]+) in \1 do\n\s+if \2 == false then\n\s+elseif \2 == true then\n/,
 	);
 	assert.match(unions, /\n\s+local __surge_scratch = buffer[.]create[(]size[0-9]+[)]$/m);
 	// `WithNamedEntries.entries` is an array of objects that hold a string.
 	const strings = readCompiledLuau("tests/strings.spec.luau");
 	assert.match(
 		strings,
-		/local namedEntriesSerializer = [(]function[(][)]\n[^]*?for _, (item[0-9]+) in arr[0-9]+ do\n\s+size[0-9]+ [+]= #\1[.]name [+] /,
+		new RegExp(
+			String.raw`local namedEntriesSerializer = [(]function[(][)]\n[^]*?for _, (item[0-9]+) in arr[0-9]+ do\n` +
+				String.raw`\s+local (len[0-9]+) = #\1[.]name\n[^]*?size[0-9]+ [+]= ${countBytes(String.raw`\2`)} [+] \2\n`,
+		),
 	);
 	// `Grid` is a `number[][]`, whose rows vary in length: a loop over its rows
-	// adds each row's elements, with the rows' counts added ahead of it.
+	// adds each row's count and elements, with the grid's count ahead of it.
 	const collections = readCompiledLuau("tests/collections.spec.luau");
 	assert.match(
 		collections,
-		/local gridSerializer = [(]function[(][)]\n[^]*?local (size[0-9]+) = #(arr[0-9]+) [*] 4 [+] 4\n\s+for _, (item[0-9]+) in \2 do\n\s+\1 [+]= #\3 [*] 8\n\s+end$/m,
+		new RegExp(
+			String.raw`local gridSerializer = [(]function[(][)]\n[^]*?local (len[0-9]+) = #(arr[0-9]+)\n` +
+				String.raw`\s+local (size[0-9]+) = ${countBytes(String.raw`\1`)}\n\s+for _, (item[0-9]+) in \2 do\n` +
+				String.raw`\s+local (len[0-9]+) = #\4\n\s+\3 [+]= ${countBytes(String.raw`\5`)} [+] \5 [*] 8\n\s+end$`,
+			"m",
+		),
 	);
 	// `WithGuardedUnions.who` can hold an array of strings, where a loop
 	// measured slower: it keeps the scratch buffer.
@@ -344,7 +418,11 @@ test("an array of objects that hold a blob is sized by its count", () => {
 	// `WithBlobArray.entries` holds an Instance and a u16 in each element.
 	assert.match(
 		luau,
-		/local blobArraySerializer = [(]function[(][)]\n[^]*?local (arr[0-9]+) = value[.]entries\n\s+local __surge_scratch = buffer[.]create[(]#\1 [*] 2 [+] 4[)]$/m,
+		new RegExp(
+			String.raw`local blobArraySerializer = [(]function[(][)]\n[^]*?local (arr[0-9]+) = value[.]entries\n` +
+				String.raw`\s+local (len[0-9]+) = #\1\n\s+local __surge_scratch = buffer[.]create[(]${countBytes(String.raw`\2`)} [+] \2 [*] 2[)]$`,
+			"m",
+		),
 	);
 });
 
@@ -399,14 +477,15 @@ test("a cursor codec writes into the caller's buffer and gives its state back", 
 // measured as worth is in docs/research/blob-list-length.md.
 test("a blob list is created at the most blobs its value appends", () => {
 	const luau = readCompiledLuau("tests/roblox.spec.luau");
-	// `WithBlobArray.entries` holds one Instance in each element.
+	// `WithBlobArray.entries` holds one Instance in each element, and the size
+	// has bound the array's length.
 	assert.match(
 		luau,
-		/local blobArraySerializer = [(]function[(][)]\n[^]*?local __surge_writeBlobs = table[.]create[(]#arr[0-9]+[)]$/m,
+		/local blobArraySerializer = [(]function[(][)]\n[^]*?local __surge_writeBlobs = table[.]create[(]len[0-9]+[)]$/m,
 	);
 	// `WithAbsentUnknowns` has three optional blobs and an array of them, each
 	// counted as present.
-	assert.match(luau, /local __surge_writeBlobs = table[.]create[(]#arr[0-9]+ [+] 3[)]$/m);
+	assert.match(luau, /local __surge_writeBlobs = table[.]create[(]len[0-9]+ [+] 3[)]$/m);
 });
 
 // What the tables around a result cost is in docs/research/tables-around-serialize.md.
@@ -451,13 +530,13 @@ test("generated code imports its helpers from the package's abi module", () => {
 test("every compiled module of the package opens with its Luau file pragmas", () => {
 	// A hot comment is honoured anywhere ahead of the first line of code, so
 	// what this pins is that each one survives a header edit: `--!native` on
-	// the two modules with hot runtime code, and `--!optimize 2` everywhere,
+	// the three modules with hot runtime code, and `--!optimize 2` everywhere,
 	// because a published place compiles at that level and Studio does not.
 	const head = (name) =>
 		readFileSync(join(here, "..", "out", name), "utf8")
 			.split(/\r?\n/)
 			.map((line) => line.trimEnd());
-	for (const name of ["alloc", "cframe"]) {
+	for (const name of ["alloc", "cframe", "count"]) {
 		const lines = head(`${name}.luau`);
 		assert.equal(lines[0], "--!native", `${name}.luau line 1`);
 		assert.equal(lines[1], "--!optimize 2", `${name}.luau line 2`);

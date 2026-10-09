@@ -165,7 +165,7 @@ class RobloxTest {
 	public writesAnOpaqueUnionMemberAsTheLastVariantAndABlob(): void {
 		// Variants: str, then the one opaque variant.
 		const text = targetSerializer.serialize("hi");
-		Assert.equal(1 + 4 + 2, buffer.len(text.buffer));
+		Assert.equal(1 + 1 + 2, buffer.len(text.buffer));
 		Assert.equal(0, buffer.readu8(text.buffer, 0));
 		Assert.equal(0, text.blobs.size());
 		Assert.equal("hi", targetSerializer.deserialize(text));
@@ -188,8 +188,8 @@ class RobloxTest {
 	public keepsLaterBlobsInPlaceWhenAnUnknownIsUndefined(): void {
 		const value: WithAbsentUnknowns = { second: undefined, third: "third", list: ["a", 2] };
 		const { buffer: buf, blobs } = absentUnknownsSerializer.serialize(value);
-		// Three presence bytes, then the u32 count and one presence byte per element of `list`.
-		Assert.equal(3 + 4 + 2, buffer.len(buf));
+		// Three presence bytes, then the one-byte count and one presence byte per element of `list`.
+		Assert.equal(3 + 1 + 2, buffer.len(buf));
 		Assert.equal(3, blobs.size());
 		Assert.equal(undefined, difference(value, absentUnknownsSerializer.deserialize({ buffer: buf, blobs })));
 	}
@@ -247,8 +247,8 @@ class RobloxTest {
 			],
 		};
 		const { buffer: buf, blobs } = blobArraySerializer.serialize(value);
-		// The u32 count and each element's u16.
-		Assert.equal(4 + 2 + 2, buffer.len(buf));
+		// The one-byte count and each element's u16.
+		Assert.equal(1 + 2 + 2, buffer.len(buf));
 		Assert.equal(2, blobs.size());
 		const result = blobArraySerializer.deserialize({ buffer: buf, blobs });
 		Assert.equal(part, result.entries[0].model);

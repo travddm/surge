@@ -4,16 +4,20 @@ import type { ConstValue, Field, FieldKey, LengthWidth, NumWidth } from "../fiel
 import {
 	CAPACITY,
 	CURSOR,
+	ENUM_LISTED_ITEMS,
+	ENUM_UNROLLED_ITEMS,
 	ERROR_PREFIX,
 	INITIAL_CAPACITY,
 	LOCALS_BUDGET,
 	LOCALS_PER_BLOCK,
+	LONG_COUNT_MARKER,
 	READ_BLOBS,
 	READ_BLOB_INDEX,
 	READ_BUFFER,
 	READ_CURSOR,
 	READ_LENGTH,
 	SCRATCH,
+	U16_COUNT_MAX,
 	WIDTH_BYTES,
 	WRITE_BLOBS,
 	WRITE_BLOB_COUNT,
@@ -925,49 +929,64 @@ export abstract class EmitContext {
 	 * Reads the count a `str` or a `buffer` writes ahead of its bytes, and
 	 * reserves the count and the bytes with one move of the read cursor. The
 	 * count is read before the cursor moves, so under `readChecks` it is
-	 * bounded first, and the bytes after the move. Returns the count and where
-	 * the bytes start.
+	 * bounded first, and the bytes after the move. A variable-length count
+	 * (`width` `undefined`) reads its first byte, and the rest of a long form
+	 * where that byte is a marker. Returns the count and where the bytes start.
 	 */
-	public readCountedBytes(width: LengthWidth, out: ts.Statement[]): { len: ts.Identifier; bytes: Slot } {
+	public readCountedBytes(width: LengthWidth | undefined, out: ts.Statement[]): { len: ts.Identifier; bytes: Slot } {
 		if (this.run !== undefined) {
 			throw new Error("surge: a field inside an alloc run reserved on its own");
 		}
 		this.usesReadBytes = true;
 		const f = this.factory;
 		const syntax = this.ts_.SyntaxKind;
-		const countBytes = WIDTH_BYTES[width];
+		const countBytes = width === undefined ? 1 : WIDTH_BYTES[width];
 		const pos = this.fresh("pos");
 		out.push(this.constStatement(pos, f.createIdentifier(READ_CURSOR)));
-		if (this.readChecks) {
-			out.push(
-				this.throwIf(
-					f.createBinaryExpression(
-						this.offsetFrom(pos, countBytes),
-						syntax.GreaterThanToken,
-						f.createIdentifier(READ_LENGTH),
-					),
-					"deserialize read past the end of the input buffer",
-				),
+		const pastEnd = (end: ts.Expression) =>
+			this.throwIf(
+				f.createBinaryExpression(end, syntax.GreaterThanToken, f.createIdentifier(READ_LENGTH)),
+				"deserialize read past the end of the input buffer",
 			);
+		if (this.readChecks) {
+			out.push(pastEnd(this.offsetFrom(pos, countBytes)));
 		}
 		const len = this.fresh("len");
-		out.push(this.constStatement(len, this.readNumberAt(width, f.createIdentifier(READ_BUFFER), pos)));
-		out.push(
-			this.assign(READ_CURSOR, f.createBinaryExpression(this.offsetFrom(pos, countBytes), syntax.PlusToken, len)),
-		);
-		if (this.readChecks) {
+		let bytes: Slot;
+		if (width === undefined) {
+			const at = this.fresh("at");
 			out.push(
-				this.throwIf(
-					f.createBinaryExpression(
-						f.createIdentifier(READ_CURSOR),
-						syntax.GreaterThanToken,
-						f.createIdentifier(READ_LENGTH),
-					),
-					"deserialize read past the end of the input buffer",
+				this.letLocal(len, this.bufferCall("readu8", [f.createIdentifier(READ_BUFFER), pos])),
+				this.letLocal(at, this.offsetFrom(pos, 1)),
+				this.readLongCountInto(pos, len, at),
+				this.assign(READ_CURSOR, f.createBinaryExpression(at, syntax.PlusToken, len)),
+			);
+			bytes = { buf: f.createIdentifier(READ_BUFFER), pos: at, offset: 0 };
+		} else {
+			out.push(
+				this.constStatement(len, this.readNumberAt(width, f.createIdentifier(READ_BUFFER), pos)),
+				this.assign(
+					READ_CURSOR,
+					f.createBinaryExpression(this.offsetFrom(pos, countBytes), syntax.PlusToken, len),
 				),
 			);
+			bytes = { buf: f.createIdentifier(READ_BUFFER), pos, offset: countBytes };
 		}
-		return { len, bytes: { buf: f.createIdentifier(READ_BUFFER), pos, offset: countBytes } };
+		if (this.readChecks) {
+			out.push(pastEnd(f.createIdentifier(READ_CURSOR)));
+		}
+		return { len, bytes };
+	}
+
+	/** `let <name> = <initializer>`, for a local a later statement assigns. */
+	public letLocal(name: ts.Identifier, initializer: ts.Expression): ts.Statement {
+		return this.factory.createVariableStatement(
+			undefined,
+			this.factory.createVariableDeclarationList(
+				[this.factory.createVariableDeclaration(name, undefined, undefined, initializer)],
+				this.ts_.NodeFlags.Let,
+			),
+		);
 	}
 
 	/**
@@ -1035,11 +1054,10 @@ export abstract class EmitContext {
 					),
 					f.createBlock(
 						[
-							this.assign(
-								SCRATCH,
+							this.assignAll(
+								[SCRATCH, CAPACITY],
 								this.call("grow", [f.createIdentifier(SCRATCH), pos, f.createIdentifier(CURSOR)]),
 							),
-							this.assign(CAPACITY, this.bufferCall("len", [f.createIdentifier(SCRATCH)])),
 						],
 						true,
 					),
@@ -1056,6 +1074,40 @@ export abstract class EmitContext {
 				this.ts_.SyntaxKind.EqualsToken,
 				value,
 			),
+		);
+	}
+
+	/** `[a, b] = value;`, which roblox-ts lowers to one assignment of a call's `LuaTuple`. */
+	private assignAll(names: ReadonlyArray<string>, value: ts.Expression): ts.Statement {
+		const f = this.factory;
+		return f.createExpressionStatement(
+			f.createBinaryExpression(
+				f.createArrayLiteralExpression(names.map((name) => f.createIdentifier(name))),
+				this.ts_.SyntaxKind.EqualsToken,
+				value,
+			),
+		);
+	}
+
+	/**
+	 * Writes a variable-length count of 254 or more (Wire format 6.9), and the
+	 * bytes of a `str` or a `buffer` after it, with one call into the package
+	 * that reserves them and returns the write cursor after them (Transformer
+	 * 5.28). Into a buffer sized for the whole value it is `writeLong<kind>`;
+	 * into a scratch buffer it is `growLong<kind>`, which grows the buffer
+	 * where they do not fit and returns it with its capacity.
+	 */
+	public writeLongForm(kind: "Count" | "String" | "Buffer", args: ts.Expression[]): ts.Statement {
+		const f = this.factory;
+		this.usesWriteBytes = true;
+		const cursor = f.createIdentifier(CURSOR);
+		const scratch = f.createIdentifier(SCRATCH);
+		if (this.writeSize !== undefined) {
+			return this.assign(CURSOR, this.call(`writeLong${kind}`, [scratch, cursor, ...args]));
+		}
+		return this.assignAll(
+			[SCRATCH, CAPACITY, CURSOR],
+			this.call(`growLong${kind}`, [scratch, f.createIdentifier(CAPACITY), cursor, ...args]),
 		);
 	}
 
@@ -1140,6 +1192,76 @@ export abstract class EmitContext {
 			f.createExpressionStatement(this.bufferCall("writeu16", [buf, pos, low])),
 			f.createExpressionStatement(this.bufferCall("writeu8", [buf, this.offsetFrom(pos, 2), high])),
 		];
+	}
+
+	/**
+	 * The bytes a variable-length count of `count` takes (Wire format 6.9 in
+	 * docs/specs/wire-format.md): one below `LONG_COUNT_MARKER`, three up to
+	 * `U16_COUNT_MAX`, and five above. Parenthesized, as a term of a sum.
+	 */
+	public variableCountBytes(count: ts.Expression): ts.Expression {
+		const f = this.factory;
+		const syntax = this.ts_.SyntaxKind;
+		return f.createParenthesizedExpression(
+			f.createConditionalExpression(
+				f.createBinaryExpression(count, syntax.LessThanToken, this.num(LONG_COUNT_MARKER)),
+				undefined,
+				this.num(1),
+				undefined,
+				f.createConditionalExpression(
+					f.createBinaryExpression(count, syntax.LessThanEqualsToken, this.num(U16_COUNT_MAX)),
+					undefined,
+					this.num(3),
+					undefined,
+					this.num(5),
+				),
+			),
+		);
+	}
+
+	/**
+	 * Reads the rest of a variable-length count whose first byte, at `pos`, is
+	 * in `count`: when that byte is a marker, `count` and `end` take the long
+	 * form's count and the position after it from `readLongCount`. Under
+	 * `readChecks`, the long form is bounded before it is read.
+	 */
+	public readLongCountInto(pos: ts.Expression, count: ts.Identifier, end: ts.Expression): ts.Statement {
+		const f = this.factory;
+		const syntax = this.ts_.SyntaxKind;
+		const body: ts.Statement[] = [];
+		if (this.readChecks) {
+			const longBytes = f.createParenthesizedExpression(
+				f.createConditionalExpression(
+					f.createBinaryExpression(count, syntax.EqualsEqualsEqualsToken, this.num(LONG_COUNT_MARKER)),
+					undefined,
+					this.num(3),
+					undefined,
+					this.num(5),
+				),
+			);
+			body.push(
+				this.throwIf(
+					f.createBinaryExpression(
+						f.createBinaryExpression(pos, syntax.PlusToken, longBytes),
+						syntax.GreaterThanToken,
+						f.createIdentifier(READ_LENGTH),
+					),
+					"deserialize read past the end of the input buffer",
+				),
+			);
+		}
+		body.push(
+			f.createExpressionStatement(
+				f.createAssignment(
+					f.createArrayLiteralExpression([count, end]),
+					this.call("readLongCount", [f.createIdentifier(READ_BUFFER), pos, count]),
+				),
+			),
+		);
+		return f.createIfStatement(
+			f.createBinaryExpression(count, syntax.GreaterThanEqualsToken, this.num(LONG_COUNT_MARKER)),
+			f.createBlock(body, true),
+		);
 	}
 
 	public readNumberAt(width: NumWidth, buf: ts.Expression, pos: ts.Expression): ts.Expression {
@@ -1266,27 +1388,30 @@ export abstract class EmitContext {
 	}
 
 	/**
-	 * Declares the write-side `{[name]: index}` map and read-side
-	 * `EnumItem[]` for one enum field (an O(1) lookup, not the linear ternary
-	 * chain this replaced -- see the enum-encoding finding in
-	 * docs/research/september-2026-review.md; the index they
-	 * hold is Wire format 4.12 in docs/specs/wire-format.md there), and
-	 * returns their names, generating the
+	 * Declares the read side's `EnumItem[]` and the write side's map from
+	 * each item to its index for one enum field (an O(1) lookup, not the
+	 * linear ternary chain this replaced -- see the enum-encoding finding in
+	 * docs/research/september-2026-review.md; the index is Wire format 4.12
+	 * in docs/specs/wire-format.md), and returns their names, generating the
 	 * declarations only the first time this exact member list is seen.
 	 * Keyed by the full member list rather than `enumName`: a field using
 	 * only a subset of an enum's members (still classified with that enum's
 	 * `enumName`) needs its own table, indexed 0..subset.length-1, not the
 	 * full enum's table.
 	 *
-	 * The index side is keyed by `value.Name` (a plain string), not the
-	 * `EnumItem` value itself: confirmed by execution under Lune (the
-	 * headless round-trip harness in `tests/`) that `Enum.<X>.<Y>` there
-	 * does not return the same object on repeated access -- `a == b` is
-	 * `true` (Lune gives `EnumItem` a custom equality), but raw Luau table
-	 * indexing doesn't consult that, so `t[a]` after `t[b] = ...` misses.
-	 * Real Roblox's `EnumItem`s are true engine singletons and wouldn't hit
-	 * this, but nothing about `{[EnumItem]: index}` guarantees it, and a
-	 * string key sidesteps the question entirely at no extra cost.
+	 * The map is keyed by the `EnumItem` itself, so a write reads no property
+	 * of the item, and is filled from the item list as the module loads, so
+	 * the index of each item stays fixed at compile time. An enum of more
+	 * than `ENUM_LISTED_ITEMS` items fills both from one string of its items'
+	 * names, which is smaller than a list of `Enum.<X>.<Y>`. The key finds the
+	 * item because Roblox gives each item one object. Lune does not: there
+	 * `Enum.<X>.<Y>` is a new object on each access, and a table keyed by one
+	 * misses the next, so the round-trip suite runs under a stand-in `Enum`
+	 * that gives each item one object (`tests/scripts/lune-roblox-shim.luau`),
+	 * and the speed tier checks each round trip in Roblox. A key of the
+	 * item's `Name`, which reads a property of each item, wrote at 0.27x
+	 * the throughput (docs/research/enum-index-by-item.md), and one of its
+	 * `Value` slower than that (docs/research/enum-and-cframe-rows.md).
 	 */
 	public ensureEnumTable(enumName: string, members: ReadonlyArray<string>): { itemsName: string; indexName: string } {
 		const key = `${enumName}|${members.join("|")}`;
@@ -1300,27 +1425,89 @@ export abstract class EmitContext {
 		this.enumTables.set(key, entry);
 
 		const f = this.factory;
-		const enumMember = (name: string) =>
-			f.createPropertyAccessExpression(
-				f.createPropertyAccessExpression(f.createIdentifier("Enum"), enumName),
-				name,
+		const enumExpr = f.createPropertyAccessExpression(f.createIdentifier("Enum"), enumName);
+		const items = f.createIdentifier(entry.itemsName);
+		const index = f.createIdentifier(entry.indexName);
+		const method = (target: ts.Expression, name: string, args: ts.Expression[]) =>
+			f.createCallExpression(f.createPropertyAccessExpression(target, name), undefined, args);
+		const newIndex = this.constStatement(
+			index,
+			f.createNewExpression(
+				f.createIdentifier("Map"),
+				[f.createTypeReferenceNode("EnumItem"), f.createKeywordTypeNode(this.ts_.SyntaxKind.NumberKeyword)],
+				[],
+			),
+		);
+
+		if (members.length > ENUM_LISTED_ITEMS) {
+			// The items' names, in index order, in one string. `Enum.<X>[name]`
+			// is typed through a cast: `@rbxts/types` declares each item, not a
+			// lookup by name.
+			const enumType = f.createTypeReferenceNode(f.createQualifiedName(f.createIdentifier("Enum"), enumName));
+			const byName = f.createParenthesizedExpression(
+				f.createAsExpression(
+					f.createAsExpression(enumExpr, f.createKeywordTypeNode(this.ts_.SyntaxKind.UnknownKeyword)),
+					f.createTypeReferenceNode("Record", [
+						f.createKeywordTypeNode(this.ts_.SyntaxKind.StringKeyword),
+						enumType,
+					]),
+				),
 			);
+			const name = this.fresh("name");
+			const item = this.fresh("item");
+			this.helperDecls.push(
+				this.constStatement(items, f.createNewExpression(f.createIdentifier("Array"), [enumType], [])),
+				newIndex,
+				f.createForOfStatement(
+					undefined,
+					f.createVariableDeclarationList(
+						[
+							f.createVariableDeclaration(
+								f.createArrayBindingPattern([f.createBindingElement(undefined, undefined, name)]),
+							),
+						],
+						this.ts_.NodeFlags.Const,
+					),
+					method(f.createStringLiteral(members.join(" ")), "gmatch", [f.createStringLiteral("%S+")]),
+					f.createBlock(
+						[
+							// Asserted, because the name and the item are typed with
+							// `undefined` under a consumer's `noUncheckedIndexedAccess`.
+							this.constStatement(
+								item,
+								f.createNonNullExpression(
+									f.createElementAccessExpression(byName, f.createNonNullExpression(name)),
+								),
+							),
+							f.createExpressionStatement(method(index, "set", [item, method(items, "size", [])])),
+							f.createExpressionStatement(method(items, "push", [item])),
+						],
+						true,
+					),
+				),
+			);
+			return entry;
+		}
+
+		const enumMember = (name: string) => f.createPropertyAccessExpression(enumExpr, name);
+		this.helperDecls.push(this.constStatement(items, f.createArrayLiteralExpression(members.map(enumMember))));
+		this.helperDecls.push(newIndex);
+		const i = this.fresh("i");
+		const position = f.createBinaryExpression(i, this.ts_.SyntaxKind.MinusToken, this.num(1));
+		const count =
+			members.length <= ENUM_UNROLLED_ITEMS
+				? this.num(members.length)
+				: f.createCallExpression(f.createPropertyAccessExpression(items, "size"), undefined, []);
+		// The item is asserted, for the reason the string of names asserts its own.
 		this.helperDecls.push(
-			this.constStatement(
-				f.createIdentifier(entry.itemsName),
-				f.createArrayLiteralExpression(members.map(enumMember)),
-			),
-		);
-		const indexEntries = members.map((name, i) =>
-			f.createArrayLiteralExpression([f.createStringLiteral(name), this.num(i)]),
-		);
-		this.helperDecls.push(
-			this.constStatement(
-				f.createIdentifier(entry.indexName),
-				f.createNewExpression(f.createIdentifier("Map"), undefined, [
-					f.createArrayLiteralExpression(indexEntries),
-				]),
-			),
+			this.countedLoop(i, count, [
+				f.createExpressionStatement(
+					f.createCallExpression(f.createPropertyAccessExpression(index, "set"), undefined, [
+						f.createNonNullExpression(f.createElementAccessExpression(items, position)),
+						position,
+					]),
+				),
+			]),
 		);
 		return entry;
 	}

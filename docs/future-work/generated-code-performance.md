@@ -73,6 +73,22 @@ code the transformer generates runs. What has been measured is under
   fixed-size elements in one reservation, and a tuple of them fixed-size.
 - [array-of-arrays-loop.md](../research/array-of-arrays-loop.md) — an array
   of arrays sized by a loop over its rows.
+- [enum-and-cframe-rows.md](../research/enum-and-cframe-rows.md) — a
+  `CFrame` read into one constructor from a quaternion, and an enum write
+  by `Value` and a `CFrame` write from `GetComponents`, which measured
+  slower.
+- [baseline-cframe-read.md](../research/baseline-cframe-read.md) — the
+  hand-written codec's `CFrame` read through a quaternion, which leaves it
+  ahead of surge's on decode.
+- [variable-length-counts.md](../research/variable-length-counts.md) — a
+  variable-length count by default, and the encode it slowed where the
+  generated code reads a length or compares a count twice.
+- [count-read-once.md](../research/count-read-once.md) — a count's length
+  read once in a size loop, and a count compared once in its write.
+- [enum-index-by-item.md](../research/enum-index-by-item.md) — an enum's
+  index keyed by the item itself, with no read of its `Name`.
+- [cold-paths-in-one-call.md](../research/cold-paths-in-one-call.md) — the
+  generated code made smaller where it runs rarely or once.
 
 This document holds what is still open.
 
@@ -81,7 +97,12 @@ This document holds what is still open.
 **The per-call gap to hand-written Luau.** On the flat struct, the nested
 object and the `CFrame` array, surge's encode and decode are within the band
 that two runs of unchanged code disagree by
-([size-and-read-locals.md](../research/size-and-read-locals.md)). The gap had
+([size-and-read-locals.md](../research/size-and-read-locals.md)), except the
+`CFrame` array's decode, where the hand-written codec is ahead
+([baseline-cframe-read.md](../research/baseline-cframe-read.md)). The one
+difference left in that read is the `Vector3` surge reads the rotation
+into, where the hand-written codec holds three numbers; three numbers
+would take two more locals than 5.5 counts for a `cframe`. The gap had
 a part paid once per call and a part paid per element
 ([generated-code-against-hand-written.md](../research/generated-code-against-hand-written.md)
 and its correction), and the papers listed above measured each change that
@@ -104,9 +125,9 @@ the three candidates a shape sized exactly (Transformer 5.20 in
 [specs/transformer.md](../specs/transformer.md)) does not:
 `finishWrite`'s copy, the scratch state in the closure, and the capacity
 check. A nested object inside a run of Transformer 5.5 still reads its path
-once per property. A sized write reads an array's length twice, and what its
-size reads inside a loop or a branch, such as an optional's or a union's
-bytes, its write reads again.
+once per property. A sized write reads twice the length of an array whose
+count has a fixed width, and what its size reads inside a loop or a branch,
+such as an optional's or a union's bytes, its write reads again.
 
 One design the `finishWrite` probe did not reach: handing the caller a buffer
 surge owns and reuses, which removes the allocation as well as the copy. It

@@ -60,13 +60,14 @@ range, with or without `readChecks`.
 ## Counts: `Length<T, L>`
 
 A string, a buffer, an array, a tuple's rest, a `Map`, a `Set` and a
-`Record` write a 4-byte count ahead of their contents. `Length<T, L>` changes
-it:
+`Record` write a count ahead of their contents: 1 byte below 254, 3 bytes up
+to 65535, and 5 above. `Length<T, L>` changes it:
 
-- `DataType.Length<T, DataType.u8>`, `u16` or `u24` writes a narrower count.
-  A count too large for it wraps, so 256 elements under a `u8` count read back
-  as none. Set `writeChecks: true` on the factory to have `serialize` raise
-  instead ([errors-and-guarantees.md](errors-and-guarantees.md)).
+- `DataType.Length<T, DataType.u8>`, `u16`, `u24` or `u32` writes a count of
+  that fixed width. A count too large for it wraps, so 256 elements under a
+  `u8` count read back as none. Set `writeChecks: true` on the factory to have
+  `serialize` raise instead
+  ([errors-and-guarantees.md](errors-and-guarantees.md)).
 - `DataType.Length<T, 8>`, with a whole number, writes no count: both sides
   use exactly that many bytes or elements. A value of any other length is
   truncated, padded, or raises, depending on its element type, unless
@@ -74,9 +75,11 @@ it:
   or of a literal union that includes `undefined`, may be shorter: the missing
   elements read back as absent.
 
-A `Map`, `Set` or `Record` takes a narrower count but not an exact one. A
+A `Map`, `Set` or `Record` takes a fixed width but not an exact count. A
 tuple with no rest element takes neither, since it has no count. `Length`
-applies to the container it wraps, not to containers inside it.
+applies to the container it wraps, not to containers inside it, and always
+takes its second argument: only a container without it writes the count that
+depends on its value.
 
 ## Vector and CFrame widths
 
@@ -123,7 +126,7 @@ packed. Pack a `CFrame` when its size matters more than its encode time.
 ## Combining brands
 
 Brands nest: `Packed<{ list: Length<Array<DataType.u8>, DataType.u16> }>`
-packs the object and narrows the list's count. A brand applies to the type it
+packs the object and gives the list a `u16` count. A brand applies to the type it
 wraps and to nothing that type contains, except `Packed<T>`, which covers
 every object, `Set` and `CFrame` inside it. A brand on a type it cannot apply
 to, such as `Length<number>`, is a build error.

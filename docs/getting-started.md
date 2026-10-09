@@ -72,7 +72,8 @@ with code written for `PlayerState` alone. There is no schema at run time.
   met. `deserialize` takes whichever `serialize` returned, so send it as it
   is. `PlayerState` holds none, so `serialize` returns its buffer alone.
 - `DataType.u8` and `DataType.Length` choose how many bytes a value takes.
-  Without them a `number` takes 8 bytes and a container's count takes 4. See
+  Without them a `number` takes 8 bytes, and a container's count takes 1
+  byte below 254, 3 bytes up to 65535, and 5 above. See
   [data-types.md](data-types.md).
 - The `//!native` and `//!optimize 2` lines are the module shape
   [performance.md](performance.md) recommends.

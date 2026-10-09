@@ -90,6 +90,12 @@ holds whole numbers. To have `serialize` check a number, give it a `Range`.
 type with no narrowed or exact `Length` and no `Range` gets no check from it,
 so turning it on costs such a type nothing.
 
+An enum item's write finds the item's index by the item itself, which works
+because Roblox gives each item one object. Outside Roblox, such as under
+Lune, where `Enum.X.Y` returns a new object on each access, `serialize`
+finds no index for an enum item. It raises, or, in a union of more than one
+enum, writes the item as the union's last variant.
+
 ## What the bytes do not carry
 
 - **No type or version.** The bytes do not say which type wrote them. Reading

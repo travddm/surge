@@ -7,7 +7,7 @@ builds.
 ```ts
 interface Example {
 	id: DataType.u32; // 4 bytes
-	name: string; // a 4-byte count, then the string's bytes
+	name: string; // a count, 1 byte below 254, then the string's bytes
 	spawn?: CFrame; // 1 presence byte, then 24 bytes when present
 	model: Model; // no bytes: passed through in `blobs`
 	callback: () => void; // error TS surge: a function type can't be encoded
@@ -25,16 +25,16 @@ in the order the transformer applies it, is
 | ---------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
 | `number`                                                                                                   | 8 bytes, a double. A `DataType` width or `Range` chooses another ([data-types.md](data-types.md)) |
 | `boolean`                                                                                                  | 1 byte, or 1 bit inside `DataType.Packed<T>`                                                      |
-| `string`, `buffer`                                                                                         | a 4-byte count of bytes, then the bytes                                                           |
+| `string`, `buffer`                                                                                         | a count of bytes, then the bytes                                                                  |
 | a union of literals, such as `"idle" \| "running"` or `1 \| 2 \| 3`                                        | an index into the values: 1 byte for up to 256 values, 2 beyond                                   |
 | one literal, such as `kind: "move"`, one enum item, such as `Enum.Material.Air`, and `undefined` or `void` | nothing: both sides know the value                                                                |
 | an enum type, such as `Enum.Material`, or a union of one enum's items                                      | an index into the items the type admits: 1 byte for up to 256, 2 beyond                           |
 | `T \| undefined`, or an optional property                                                                  | 1 presence byte, then `T` when present; 1 bit inside `Packed<T>`                                  |
 | an interface or object type                                                                                | its properties, sorted by name                                                                    |
-| `T[]`, `ReadonlyArray<T>`                                                                                  | a 4-byte count, then each element                                                                 |
-| a tuple, with its rest element last if it has one                                                          | each fixed element, then a 4-byte count and each rest element                                     |
-| `Map<K, V>`, `ReadonlyMap<K, V>`, `Record<string, V>`, `{ [k: string]: V }`                                | a 4-byte count, then each key and value                                                           |
-| `Set<K>`, `ReadonlySet<K>`                                                                                 | a 4-byte count, then each key; 1 bit per value inside `Packed<T>` when `K` is literal values      |
+| `T[]`, `ReadonlyArray<T>`                                                                                  | a count, then each element                                                                        |
+| a tuple, with its rest element last if it has one                                                          | each fixed element, then a count and each rest element                                            |
+| `Map<K, V>`, `ReadonlyMap<K, V>`, `Record<string, V>`, `{ [k: string]: V }`                                | a count, then each key and value                                                                  |
+| `Set<K>`, `ReadonlySet<K>`                                                                                 | a count, then each key; 1 bit per value inside `Packed<T>` when `K` is literal values             |
 | `Record<"a" \| "b", V>`                                                                                    | an object with the properties `a` and `b`                                                         |
 | a union of object types that share a literal tag, such as `kind`                                           | an index into the variants, then the variant's other properties                                   |
 | any other union the code can tell apart at run time (below)                                                | a 1-byte index into the variants, 2 beyond 256, then the variant                                  |
@@ -45,8 +45,9 @@ in the order the transformer applies it, is
 | `ColorSequence`, `NumberSequence`                                                                          | a 1-byte keypoint count, then each keypoint                                                       |
 | `Vector3int16`, `UDim`, `UDim2`, `BrickColor`, `NumberRange`, `Rect`, `DateTime`                           | a fixed number of bytes each ([specs/wire-format.md](specs/wire-format.md) 4.10)                  |
 
-`DataType.Length` changes the 4-byte count of a string, buffer, array, tuple
-rest or dictionary ([data-types.md](data-types.md)).
+A count is 1 byte below 254, 3 bytes up to 65535, and 5 above.
+`DataType.Length` gives a string, buffer, array, tuple rest or dictionary a
+count of a fixed width instead, or none ([data-types.md](data-types.md)).
 
 A dictionary's key can be any supported type, including a `Vector3`, an enum
 item or an object. The order of its entries in the bytes is Luau's iteration

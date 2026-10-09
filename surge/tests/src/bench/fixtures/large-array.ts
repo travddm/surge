@@ -26,7 +26,7 @@ for (const _ of $range(1, COUNT)) {
 
 export const largeArray: Fixture = {
 	name: "large array",
-	note: `${COUNT} u16 elements behind one u32 length prefix`,
+	note: `${COUNT} u16 elements behind one count`,
 	entries: [
 		defineEntry<LargeArray>("surge", { values }, surgeAdapter(serializer)),
 		defineEntry<FbsLargeArray>("fbs", { values }, fbsAdapter(fbsSerializer)),

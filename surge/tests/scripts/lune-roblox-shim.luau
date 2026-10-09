@@ -335,8 +335,51 @@ ColorSequence = (roblox :: any).ColorSequence
 ColorSequenceKeypoint = (roblox :: any).ColorSequenceKeypoint
 NumberSequence = (roblox :: any).NumberSequence
 NumberSequenceKeypoint = (roblox :: any).NumberSequenceKeypoint
-Enum = (roblox :: any).Enum
 task = luneTask
+
+-- @lune/roblox 0.10.5 returns a new object for `Enum.X.Y` on each access. The objects compare
+-- equal with `==`, but a table keyed by one misses the next. Roblox gives each item one object,
+-- and the generated code keys an enum's index by the item (`ensureEnumTable` in
+-- rbxts-transformer-surge's src/emit/context.ts), so this stand-in reads every enum's items once,
+-- here, and returns those objects from each access. An unknown enum or item errors as Lune's own
+-- `Enum` does, which is what keeps a module of an item Lune's database lacks from loading.
+--
+-- An enum here is a table, so `typeof` reports it as "table", and an item's `EnumType` is Lune's
+-- own enum object, which equals no stand-in. The generated code compares neither: it tells two
+-- enums apart by their indexes.
+local function unknownEnum(_, name)
+	error(`The enum '{name}' does not exist`, 2)
+end
+
+local enums = {}
+for _, enum in (roblox :: any).Enum:GetEnums() do
+	local enumName = string.sub(tostring(enum), #"Enum." + 1)
+	local items = enum:GetEnumItems()
+	local standIn = {
+		GetEnumItems = function()
+			return table.clone(items)
+		end,
+	}
+	for _, item in items do
+		standIn[item.Name] = item
+	end
+	enums[enumName] = setmetatable(standIn, {
+		__index = function(_, itemName)
+			error(`The enum item '{itemName}' does not exist for enum '{enumName}'`, 2)
+		end,
+		__tostring = function()
+			return `Enum.{enumName}`
+		end,
+	})
+end
+local enumList = {}
+for _, enum in enums do
+	table.insert(enumList, enum)
+end
+enums.GetEnums = function()
+	return table.clone(enumList)
+end
+Enum = setmetatable(enums, { __index = unknownEnum })
 
 -- @lune/roblox 0.10.5 has no DateTime, so this is a stand-in with the two members the generated
 -- code uses (`UnixTimestampMillis` and `DateTime.fromUnixTimestampMillis`). It tests the generated

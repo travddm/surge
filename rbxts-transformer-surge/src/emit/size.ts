@@ -18,7 +18,7 @@ import type ts from "typescript";
 import type { CountSpec, Field, ObjectFieldEntry } from "../field";
 import { LOCALS_PER_BLOCK, TERMS_PER_SUM, WIDTH_BYTES } from "./constants";
 import type { EmitContext, SizeBinding } from "./context";
-import { exactCount, fixedBytes, holdsBlob, isAllPackedBits, lengthWidth, packedBits, tagKeyOf } from "./layout";
+import { countWidth, exactCount, fixedBytes, holdsBlob, isAllPackedBits, packedBits, tagKeyOf } from "./layout";
 import { fieldToTypeNode, objectShapeTypeNode } from "./types";
 import { guardFor, isLocal, literalCheck, severalEnums } from "./write";
 
@@ -52,6 +52,24 @@ interface Bindings {
 	readonly statements: ts.Statement[];
 	readonly byPath: Map<string, SizeBinding>;
 	locals: number;
+}
+
+/**
+ * A loop's body, and a branch inside one. A size there binds nothing ahead of
+ * the result, as in any loop or branch, but reads a variable-length count's
+ * length into a local of the loop's own (`countOnce`).
+ */
+interface LoopBody {
+	readonly loopBody: true;
+}
+const LOOP_BODY: LoopBody = { loopBody: true };
+
+/** Where a size is read: ahead of the result, in a loop's body, or in a branch outside any loop. */
+type Scope = Bindings | LoopBody | undefined;
+
+/** The scope of a branch inside `scope`: still a loop's body inside one, and otherwise no bindings. */
+function branchOf(scope: Scope): LoopBody | undefined {
+	return scope !== undefined && "loopBody" in scope ? LOOP_BODY : undefined;
 }
 
 /**
@@ -152,7 +170,8 @@ function countBlobs(ctx: EmitContext, field: Field, value: ts.Expression): Size 
 			if (exact !== undefined) {
 				return constant(exact * each.constant);
 			}
-			const count = ctx.sizeOf(ctx.boundBySize(value)?.value ?? value);
+			const bound = ctx.boundBySize(value);
+			const count = bound?.len ?? ctx.sizeOf(bound?.value ?? value);
 			return {
 				constant: 0,
 				terms: [
@@ -176,14 +195,19 @@ function countBlobs(ctx: EmitContext, field: Field, value: ts.Expression): Size 
  */
 function bind(
 	ctx: EmitContext,
-	bindings: Bindings | undefined,
+	bindings: Scope,
 	base: string,
 	value: ts.Expression,
 	len?: (local: ts.Identifier) => ts.Expression,
 ): SizeBinding | undefined {
 	const key = ctx.pathKey(value);
 	const locals = len === undefined ? 1 : 2;
-	if (bindings === undefined || key === undefined || bindings.locals + locals > LOCALS_PER_BLOCK) {
+	if (
+		bindings === undefined ||
+		"loopBody" in bindings ||
+		key === undefined ||
+		bindings.locals + locals > LOCALS_PER_BLOCK
+	) {
 		return undefined;
 	}
 	const local = ctx.fresh(base);
@@ -204,7 +228,7 @@ function measure(
 	field: Field,
 	value: ts.Expression,
 	total: Total,
-	bindings: Bindings | undefined,
+	bindings: Scope,
 ): Size | undefined {
 	const fixed = fixedBytes(field);
 	if (fixed !== undefined) {
@@ -223,7 +247,7 @@ function measure(
 				: undefined;
 		case "optional": {
 			// A flag byte, and the value's own bytes when it is there.
-			const present = whenPresent(ctx, field.inner, value, total);
+			const present = whenPresent(ctx, field.inner, value, total, bindings);
 			return present === undefined ? undefined : add(constant(1), present);
 		}
 		case "array":
@@ -256,7 +280,7 @@ function measure(
 				ctx.ts_.SyntaxKind.MinusToken,
 				ctx.num(field.fixed.length),
 			);
-			return add(size, elements(ctx, field.length, count, bytes));
+			return add(size, elements(ctx, bindings, field.length, count, bytes));
 		}
 		case "taggedUnion": {
 			const sizes = field.variants.map((variant) =>
@@ -265,7 +289,7 @@ function measure(
 					variant.fields,
 					ctx.castTo(value, objectShapeTypeNode(ctx, variant.fields)),
 					total,
-					undefined,
+					branchOf(bindings),
 				),
 			);
 			const tag = readTag(ctx, bindings, ctx.propertyAccess(value, tagKeyOf(field)), sizes);
@@ -284,7 +308,13 @@ function measure(
 				ctx,
 				field.variants.map((variant) => ({
 					check: () => guardFor(ctx, variant, value, severalEnums(field.variants)),
-					size: measure(ctx, variant, ctx.castTo(value, fieldToTypeNode(ctx, variant)), total, undefined),
+					size: measure(
+						ctx,
+						variant,
+						ctx.castTo(value, fieldToTypeNode(ctx, variant)),
+						total,
+						branchOf(bindings),
+					),
 				})),
 				total,
 			);
@@ -351,7 +381,7 @@ function oneConstant(sizes: ReadonlyArray<Size>): boolean {
  */
 function readTag(
 	ctx: EmitContext,
-	bindings: Bindings | undefined,
+	bindings: Scope,
 	tag: ts.Expression,
 	sizes: ReadonlyArray<Size | undefined>,
 ): { readonly value: ts.Expression; readonly size: Size } {
@@ -361,7 +391,7 @@ function readTag(
 	if (sizes.length < 3 || known.length < sizes.length || oneConstant(known)) {
 		return { value: tag, size: EMPTY };
 	}
-	if (bindings !== undefined) {
+	if (bindings !== undefined && !("loopBody" in bindings)) {
 		return { value: bind(ctx, bindings, "tag", tag)?.value ?? tag, size: EMPTY };
 	}
 	const local = ctx.fresh("tag");
@@ -382,24 +412,34 @@ function measureArray(
 	field: Extract<Field, { kind: "array" }>,
 	value: ts.Expression,
 	total: Total,
-	bindings: Bindings | undefined,
+	bindings: Scope,
 ): Size | undefined {
 	if (exactCount(field.length) !== undefined) {
 		const bytes = constantBytes(ctx, field.element, total);
-		return bytes === undefined ? undefined : elements(ctx, field.length, ctx.sizeOf(value), bytes);
+		return bytes === undefined ? undefined : elements(ctx, bindings, field.length, ctx.sizeOf(value), bytes);
 	}
-	const arr = bind(ctx, bindings, "arr", value)?.value ?? value;
+	// A variable-length count reads the array's length more than once, so the
+	// length is bound with the array, and the write reads both.
+	const bound = bind(
+		ctx,
+		bindings,
+		"arr",
+		value,
+		countWidth(field.length) === undefined ? (local) => ctx.sizeOf(local) : undefined,
+	);
+	const arr = bound?.value ?? value;
+	const count = bound?.len ?? ctx.sizeOf(arr);
 	const bytes = fixedBytes(field.element);
 	if (bytes !== undefined) {
-		return elements(ctx, field.length, ctx.sizeOf(arr), bytes);
+		return elements(ctx, bindings, field.length, count, bytes);
 	}
 	const item = ctx.fresh("item");
-	const element = measure(ctx, field.element, item, total, undefined);
+	const element = measure(ctx, field.element, item, total, LOOP_BODY);
 	if (element === undefined) {
 		return undefined;
 	}
 	if (!readsValue(element)) {
-		return elements(ctx, field.length, ctx.sizeOf(arr), element.constant);
+		return elements(ctx, bindings, field.length, count, element.constant);
 	}
 	if (
 		field.element.kind !== "taggedUnion" &&
@@ -411,7 +451,7 @@ function measureArray(
 	}
 	// The bytes every element writes, such as a union's index, are added once
 	// for all of them, ahead of the loop, which adds only what varies.
-	return add(elements(ctx, field.length, ctx.sizeOf(arr), element.constant), {
+	return add(elements(ctx, bindings, field.length, count, element.constant), {
 		constant: 0,
 		terms: [],
 		loops: [loopOver(ctx, total, item, arr, { ...element, constant: 0 })],
@@ -430,7 +470,7 @@ function measureObject(
 	fields: ReadonlyArray<ObjectFieldEntry>,
 	value: ts.Expression,
 	total: Total,
-	bindings: Bindings | undefined,
+	bindings: Scope,
 ): Size | undefined {
 	if (!isLocal(ctx, value) && fields.length > 1) {
 		value = bind(ctx, bindings, "obj", value)?.value ?? value;
@@ -447,7 +487,7 @@ function measureObject(
 		if (roles.includes("tag")) {
 			return undefined;
 		} else if (roles.includes("present") && entry.field.kind === "optional") {
-			one = whenPresent(ctx, entry.field.inner, property, total);
+			one = whenPresent(ctx, entry.field.inner, property, total, bindings);
 		} else {
 			one = measure(ctx, entry.field, property, total, bindings);
 		}
@@ -463,9 +503,15 @@ function measureObject(
  * An optional's value: `value !== undefined ? <inner's bytes> : 0`, or,
  * where its bytes take a loop, that loop inside `if (value !== undefined)`.
  */
-function whenPresent(ctx: EmitContext, inner: Field, value: ts.Expression, total: Total): Size | undefined {
+function whenPresent(
+	ctx: EmitContext,
+	inner: Field,
+	value: ts.Expression,
+	total: Total,
+	scope: Scope,
+): Size | undefined {
 	const f = ctx.factory;
-	const size = measure(ctx, inner, f.createNonNullExpression(value), total, undefined);
+	const size = measure(ctx, inner, f.createNonNullExpression(value), total, branchOf(scope));
 	if (size === undefined) {
 		return undefined;
 	}
@@ -546,12 +592,12 @@ function constant(bytes: number): Size {
 }
 
 /**
- * A `str`'s or a `buffer`'s bytes: its count's width and its length, which
- * `len` takes from its value, or its exact length alone.
+ * A `str`'s or a `buffer`'s bytes: its count's and its length, which `len`
+ * takes from its value, or its exact length alone.
  */
 function counted(
 	ctx: EmitContext,
-	bindings: Bindings | undefined,
+	bindings: Scope,
 	length: CountSpec | undefined,
 	value: ts.Expression,
 	base: string,
@@ -562,24 +608,65 @@ function counted(
 		return constant(exact);
 	}
 	const bound = bind(ctx, bindings, base, value, len);
-	return { constant: WIDTH_BYTES[lengthWidth(length)], terms: [bound?.len ?? len(value)], loops: [] };
+	const once = countOnce(ctx, bindings, length, bound?.len ?? len(value));
+	return add(once.size, add(countSize(ctx, length, once.value), { constant: 0, terms: [once.value], loops: [] }));
+}
+
+/**
+ * `count`, where a variable-length count's bytes read it more than once. In
+ * a loop's body, it is read into a local declared ahead of the terms that
+ * read it, as a tag is (`readTag`). Ahead of the result, the size's
+ * `bindings` bind it, or past them it is read for each term, and so it is in
+ * a branch outside any loop, which keeps its size one expression.
+ */
+function countOnce(
+	ctx: EmitContext,
+	bindings: Scope,
+	length: CountSpec | undefined,
+	count: ts.Expression,
+): { readonly value: ts.Expression; readonly size: Size } {
+	if (
+		countWidth(length) !== undefined ||
+		bindings === undefined ||
+		!("loopBody" in bindings) ||
+		ctx.ts_.isIdentifier(count)
+	) {
+		return { value: count, size: EMPTY };
+	}
+	const local = ctx.fresh("len");
+	return { value: local, size: { constant: 0, terms: [], loops: [ctx.constStatement(local, count)] } };
+}
+
+/** The bytes the count of `count` takes: its width's, or a variable-length count's, which depend on it. */
+function countSize(ctx: EmitContext, length: CountSpec | undefined, count: ts.Expression): Size {
+	const width = countWidth(length);
+	return width === undefined
+		? { constant: 0, terms: [ctx.variableCountBytes(count)], loops: [] }
+		: constant(WIDTH_BYTES[width]);
 }
 
 /** `count` elements of `bytes` each, after the count itself unless the count is exact. */
-function elements(ctx: EmitContext, length: CountSpec | undefined, count: ts.Expression, bytes: number): Size {
+function elements(
+	ctx: EmitContext,
+	bindings: Scope,
+	length: CountSpec | undefined,
+	count: ts.Expression,
+	bytes: number,
+): Size {
 	const exact = exactCount(length);
 	if (exact !== undefined) {
 		return constant(exact * bytes);
 	}
-	const width = WIDTH_BYTES[lengthWidth(length)];
+	const once = countOnce(ctx, bindings, length, count);
+	const head = add(once.size, countSize(ctx, length, once.value));
 	if (bytes === 0) {
-		return constant(width);
+		return head;
 	}
 	const term =
 		bytes === 1
-			? count
-			: ctx.factory.createBinaryExpression(count, ctx.ts_.SyntaxKind.AsteriskToken, ctx.num(bytes));
-	return { constant: width, terms: [term], loops: [] };
+			? once.value
+			: ctx.factory.createBinaryExpression(once.value, ctx.ts_.SyntaxKind.AsteriskToken, ctx.num(bytes));
+	return add(head, { constant: 0, terms: [term], loops: [] });
 }
 
 function add(left: Size, right: Size): Size {
