@@ -33,6 +33,9 @@ time:
 - In [benchmark-tooling.md](benchmark-tooling.md): Zap's output, which
   changes order from one run to the next, and two stale statements about the
   benchmark files.
+- [enum-item-keys.md](enum-item-keys.md): an enum's write keyed by the item
+  itself, as an option or the default. It needs a round trip check that runs
+  in Roblox, since Lune cannot run it.
 
 ## After the first release
 

@@ -75,15 +75,18 @@ measured in
   them. The numbers are in [benchmarks/speed.md](benchmarks/speed.md) and
   [benchmarks/size.md](benchmarks/size.md).
 - **Against hand-written Luau** that writes the same bytes, surge's encode
-  and decode run within the speed tier's noise of it on a flat struct, a
-  nested object, a `CFrame` array and a `Packed<T>` object
-  ([research/size-and-read-locals.md](research/size-and-read-locals.md),
-  [research/packed-bits-read-in-place.md](research/packed-bits-read-in-place.md)),
-  except a `CFrame` array's decode, where surge is faster: it builds each
-  `CFrame` with one constructor, where the hand-written codec takes two
+  and decode run within the speed tier's noise of it on each of the ten
+  shapes of the benchmark catalog that have a hand-written codec: a flat
+  struct, a nested object, nested arrays, tuples, a leaderboard, a tagged
+  union, a tree, instance references, a `Packed<T>` object and a `CFrame`
+  array
+  ([research/tagged-union-closed.md](research/tagged-union-closed.md),
+  [research/tuple-reservations.md](research/tuple-reservations.md),
+  [research/array-of-arrays-loop.md](research/array-of-arrays-loop.md)).
+  The exception is a `CFrame` array's decode, where surge is faster: it
+  builds each `CFrame` with one constructor, where the hand-written codec
+  takes two
   ([research/enum-and-cframe-rows.md](research/enum-and-cframe-rows.md)).
-  It is slower at a tagged union's encode
-  ([research/datatype-values.md](research/datatype-values.md)).
   A shape that surge cannot size ahead of its write pays a cost once per
   call
   ([research/exact-sizing.md](research/exact-sizing.md),
