@@ -1,7 +1,7 @@
 # Transformer specification
 
 Status: current
-Applies to: commit `c5d568b` (no tagged release yet)
+Applies to: commit `766cb9a` (no tagged release yet)
 
 ## 1. Scope
 
@@ -346,8 +346,9 @@ reservation's bound (5.10) replaces one per element. A tuple's rest element
 reserves each element on its own.
 
 **5.19** A `str` or a `buffer` that writes a count takes the value's length once
-and reserves the count and the bytes at once, in each of a variable-length
-count's two forms (5.28). The read side reads the count, then moves the read
+and reserves the count and the bytes at once, in a variable-length count's
+one-byte form inline and in its long form in the call that writes it
+(5.28). The read side reads the count, then moves the read
 cursor past the count and the bytes in one step. The exact form, which writes
 no count, reserves its bytes alone.
 
@@ -459,14 +460,17 @@ scaled by `sin(angle / 2) / angle`, or by `0.5` at an angle of at most
 **5.28** A variable-length count (Wire format 6.9) is written and read with
 its one-byte form inline. The write compares the count with 254 once. Below
 it, it reserves one byte, and a `str`'s or a `buffer`'s bytes after it, and
-writes the count in that byte; otherwise it reserves the long form's bytes,
-and those after them, and calls `writeLongCount`. The read reads one byte
-and, at 254 or more, calls `readLongCount` for the count and the position
-after it; under `readChecks: true`, it bounds the long form before the call.
-Where a size, or the long form's reservation, needs the bytes the count
-takes, they are a conditional expression of the count. The count of an
-`array` or a tuple's rest is bound to a local first where it is not one,
-since the write reads it more than once.
+writes the count in that byte. Otherwise one call writes the long form, and
+a `str`'s or a `buffer`'s bytes after it, and sets the write cursor past
+them: `writeLongCount`, `writeLongString` or `writeLongBuffer` into a buffer
+sized by 5.20, and `growLongCount`, `growLongString` or `growLongBuffer`
+into the scratch buffer, which also set the buffer and its capacity. A
+`dict` writes its long form as 5.6 states. The read reads one byte and, at
+254 or more, calls `readLongCount` for the count and the position after it;
+under `readChecks: true`, it bounds the long form before the call. Where a
+size needs the bytes the count takes, they are a conditional expression of
+the count. The count of an `array` or a tuple's rest is bound to a local
+first where it is not one, since the write reads it more than once.
 
 **5.29** An `enum`'s write finds the item's index in a table keyed by the
 `EnumItem` itself, and reads no property of the item. The table is filled
@@ -474,7 +478,10 @@ as the module loads, from the list of items in index order that the read
 indexes, so each item's index is fixed when the module is compiled (Wire
 format 4.12). The key finds an item because Roblox gives each item one
 object. The loop that fills it runs to the list's length where the enum
-admits more than three items, and to the number of items otherwise.
+admits more than three items, and to the number of items otherwise. Where
+the enum admits more than five items, the list is not written out: one
+string holds the items' names in index order, and the loop over its words
+looks up each item by its name and fills both the list and the table.
 
 ## 6. Injected imports
 
@@ -601,8 +608,8 @@ of `rbxts-transformer-surge`, cited by `describe` block. Source paths are in
 | 5.25      | `emit`: `Emitter union writes`, `Emitter packed tag bit`, `Emitter exact sizing` (the write reads the tag the size bound); `test/golden.test.mjs`: a union is sized by the variant its write picks, with the write's own tests, and a size that compares a tag more than once reads it once; every round trip in `tests/src/tests/unions.spec.ts` and `tests/src/tests/bytes.spec.ts`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 | 5.26      | `emit`: `Emitter datatype values`, `Emitter local-register ceiling` (runLocals counts at least what one more `vector2`, `vector3`, `color3` or datatype declares), and the snapshots of `Emitter shared reservations` and `Emitter exact sizing`; `test/golden.test.mjs`: a datatype reads its value once, not once per component, inside a run; every round trip in `tests/src/tests/bytes.spec.ts`, `tests/src/tests/roblox.spec.ts` and `tests/src/tests/coverage.spec.ts`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 | 5.27      | `emit`: `Emitter cframe reads`; `test/golden.test.mjs`: an unpacked CFrame is read into one constructor from a quaternion; `tests/src/tests/roblox.spec.ts`: `roundTripsACFrameRotationWithinF32Precision`, `roundTripsAQuantizedRotationWithinItsStep`; `tests/src/tests/bytes.spec.ts`: `pinsACFrameWithNoRotation`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
-| 5.28      | `emit`: `Emitter count widths` (a variable-length count with no branded width, and a four-byte one at `u32`), `Emitter counted bytes`; `test/golden.test.mjs`: a string reserves its count and its bytes at once; `Emitter element reservations` (the long form's bound under `readChecks`); `transform`: `transform (end-to-end)` (the two imports); `tests/src/tests/counts.spec.ts`: `roundTripsEachKindAtTheEdgesOfTheLongForms`; `tests/src/tests/checks.spec.ts`: `rejectsAStringCutInItsCountOrItsBytes`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
-| 5.29      | `emit`: `Emitter enum index width and lookup table` (the table keyed by the item, filled from the items; the bound of an enum of more than three items), `Emitter enum guards` (the index of each enum guards it); `test/golden.test.mjs`: an enum index is an O(1) table lookup keyed by the item; under Lune, through the stand-in `Enum` of Test harness 4.3, `tests/src/tests/bytes.spec.ts`: `pinsLiteralAndEnumIndexes`, `pinsItemsOfTwoEnums`; in Roblox, the round-trip check of Benchmark harness 6.6 on the `enum-heavy` row                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| 5.28      | `emit`: `Emitter count widths` (a variable-length count with no branded width, and a four-byte one at `u32`), `Emitter counted bytes`; `test/golden.test.mjs`: a string reserves its count and its bytes at once; `Emitter element reservations` (the long form's bound under `readChecks`); `transform`: `transform (end-to-end)` (the two imports); `tests/src/tests/counts.spec.ts`: `roundTripsEachKindAtTheEdgesOfTheLongForms`; `tests/src/tests/checks.spec.ts`: `rejectsAStringCutInItsCountOrItsBytes`; the long form's one call: `emit`: `Emitter counted bytes`, `test/golden.test.mjs`: a string reserves its count and its bytes at once                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| 5.29      | `emit`: `Emitter enum index width and lookup table` (the table keyed by the item, filled from the items; the bound of an enum of more than three items), `Emitter enum guards` (the index of each enum guards it); `test/golden.test.mjs`: an enum index is an O(1) table lookup keyed by the item; under Lune, through the stand-in `Enum` of Test harness 4.3, `tests/src/tests/bytes.spec.ts`: `pinsLiteralAndEnumIndexes`, `pinsItemsOfTwoEnums`; in Roblox, the round-trip check of Benchmark harness 6.6 on the `enum-heavy` row; the string of names: `emit`: `Emitter enum index width and lookup table` (more than five items), `test/golden.test.mjs`: an enum of more than five items fills its item list and its index from one string of names, `transform`: the type checks of an enum of many items and of a union of six items of one enum, and under Lune `tests/src/tests/checks.spec.ts`: `rejectsAnEnumIndexPastItsItems`, which round-trips an `Enum.Material`                                                                                               |
 | 6.1, 6.2  | `transform`: `transform injected imports`, and in `transform (end-to-end)` the single shared import and the same-named local function; `tests/src/tests/coverage.spec.ts`: `leavesAUserDeclarationNamedAfterAnInjectedImportAlone`; `test/golden.test.mjs`: generated code imports its helpers from the package's abi module                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | 6.3       | `test/golden.test.mjs`: a file directive survives the transformer's injected imports; `transform`: `transform generated code` (the three directive tests)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
 | 6.4       | `transform`: `transform injected imports` (a `createDeserializer` call site)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
@@ -615,6 +622,10 @@ of `rbxts-transformer-surge`, cited by `describe` block. Source paths are in
 
 ## Changes
 
+- `766cb9a`: 5.28 writes a variable-length count's long form, and a `str`'s
+  or a `buffer`'s bytes after it, with one call, and 5.19 follows it; 5.29
+  fills the item list of an enum of more than five items from one string of
+  names.
 - `c5d568b`: 5.29 bounds the loop that fills an enum's index by the list's
   length where the enum admits more than three items.
 - `a89553b`: adds 5.29 (an `enum`'s write finds its index in a table keyed by

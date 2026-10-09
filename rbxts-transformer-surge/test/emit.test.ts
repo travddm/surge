@@ -402,6 +402,22 @@ describe("Emitter enum index width and lookup table", () => {
 			/for \(const (i\d+) of \$range\(1, (\w+_items)\.size\(\)\)\) \{\n\s+\w+_index\.set\(\2\[\1 - 1\], \1 - 1\);/,
 		);
 	});
+
+	test("an enum of more than five items fills its item list and its index from one string of names", () => {
+		const members = ["Back", "Bottom", "Front", "Left", "Right", "Top"];
+		const output = emitSnapshot({ kind: "enum", enumName: "NormalId", members });
+		expect(output).not.toContain("Enum.NormalId.");
+		expect(output).toMatch(
+			new RegExp(
+				String.raw`const (\w+_items) = new Array<Enum\.NormalId>\(\);\n` +
+					String.raw`const (\w+_index) = new Map<EnumItem, number>\(\);\n` +
+					String.raw`for \(const \[(name\d+)\] of "Back Bottom Front Left Right Top"\.gmatch\("%S\+"\)\) \{\n` +
+					String.raw`\s+const (item\d+) = \(Enum\.NormalId as unknown as Record<string, Enum\.NormalId>\)\[\3\];\n` +
+					String.raw`\s+\2\.set\(\4, \1\.size\(\)\);\n` +
+					String.raw`\s+\1\.push\(\4\);\n\}`,
+			),
+		);
+	});
 });
 
 describe("Emitter cframe reads", () => {
@@ -881,13 +897,19 @@ describe("Emitter counted bytes", () => {
 	test.each([
 		["str", { kind: "str" } as Field],
 		["buffer", { kind: "buffer" } as Field],
-	])("a %s reserves its count and its bytes at once", (_label, field) => {
+	])("a %s reserves its count and its bytes at once", (label, field) => {
 		const output = emitSnapshot(field);
-		// One reservation in each of the count's two forms (Transformer 5.28).
+		// One reservation in the count's one-byte form, and the long form's in
+		// the one call that writes it (Transformer 5.28).
 		expect(cursorMoves(output, "write", "__surge_cursor")).toEqual([
 			expect.stringMatching(/^\s*__surge_cursor = pos\d+ \+ \(len\d+ \+ 1\);$/),
-			expect.stringMatching(/^\s*__surge_cursor = pos\d+ \+ \(len\d+ \+ \(len\d+ <= 65535 \? 3 : 5\)\);$/),
 		]);
+		const kind = label === "str" ? "String" : "Buffer";
+		expect(output).toMatch(
+			new RegExp(
+				String.raw`\[__surge_scratch, __surge_capacity, __surge_cursor\] = __surge_growLong${kind}\(__surge_scratch, __surge_capacity, __surge_cursor, \w+, len\d+\);`,
+			),
+		);
 		expect(cursorMoves(output, "read", "__surge_readCursor")).toEqual([
 			expect.stringMatching(/^__surge_readCursor = at\d+ \+ len\d+;$/),
 		]);
@@ -1655,14 +1677,21 @@ describe("Emitter count widths", () => {
 		expect(output).not.toContain("buffer.readu32");
 	});
 
-	// Wire format 6.9: one byte inline, and the long form through the package.
-	test.each(counted)("a %s with no branded width writes and reads a variable-length count", (_label, build) => {
+	// Wire format 6.9: one byte inline, and the long form through the package:
+	// one call that writes the count, and a `str`'s or a `buffer`'s bytes after
+	// it, into the scratch buffer it grows, or a `dict`'s count where it widens.
+	const longForm: Record<string, string> = {
+		str: "__surge_growLongString(",
+		buffer: "__surge_growLongBuffer(",
+		array: "__surge_growLongCount(",
+		dict: "__surge_writeLongCount(",
+		"tuple rest": "__surge_growLongCount(",
+	};
+	test.each(counted)("a %s with no branded width writes and reads a variable-length count", (label, build) => {
 		const output = emitSnapshot(build());
 		// One comparison, and each form in a branch of its own.
-		expect(output).toMatch(
-			/if \(\w+ < 254\) \{[^]*?buffer\.writeu8\([^]*?\}\s*else \{[^]*?__surge_writeLongCount\(/,
-		);
-		expect(output).toContain("__surge_writeLongCount(");
+		expect(output).toMatch(/if \(\w+ < 254\) \{[^]*?buffer\.writeu8\([^]*?\}\s*else \{/);
+		expect(output).toContain(longForm[label]);
 		expect(output).toMatch(/if \(\w+ >= 254\) \{\s+\[\w+, \w+\] = __surge_readLongCount\(/);
 		expect(output).not.toContain("buffer.writeu32");
 		expect(output).not.toContain("buffer.readu32");

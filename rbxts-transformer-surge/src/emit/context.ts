@@ -4,6 +4,7 @@ import type { ConstValue, Field, FieldKey, LengthWidth, NumWidth } from "../fiel
 import {
 	CAPACITY,
 	CURSOR,
+	ENUM_LISTED_ITEMS,
 	ENUM_UNROLLED_ITEMS,
 	ERROR_PREFIX,
 	INITIAL_CAPACITY,
@@ -1053,11 +1054,10 @@ export abstract class EmitContext {
 					),
 					f.createBlock(
 						[
-							this.assign(
-								SCRATCH,
+							this.assignAll(
+								[SCRATCH, CAPACITY],
 								this.call("grow", [f.createIdentifier(SCRATCH), pos, f.createIdentifier(CURSOR)]),
 							),
-							this.assign(CAPACITY, this.bufferCall("len", [f.createIdentifier(SCRATCH)])),
 						],
 						true,
 					),
@@ -1074,6 +1074,40 @@ export abstract class EmitContext {
 				this.ts_.SyntaxKind.EqualsToken,
 				value,
 			),
+		);
+	}
+
+	/** `[a, b] = value;`, which roblox-ts lowers to one assignment of a call's `LuaTuple`. */
+	private assignAll(names: ReadonlyArray<string>, value: ts.Expression): ts.Statement {
+		const f = this.factory;
+		return f.createExpressionStatement(
+			f.createBinaryExpression(
+				f.createArrayLiteralExpression(names.map((name) => f.createIdentifier(name))),
+				this.ts_.SyntaxKind.EqualsToken,
+				value,
+			),
+		);
+	}
+
+	/**
+	 * Writes a variable-length count of 254 or more (Wire format 6.9), and the
+	 * bytes of a `str` or a `buffer` after it, with one call into the package
+	 * that reserves them and returns the write cursor after them (Transformer
+	 * 5.28). Into a buffer sized for the whole value it is `writeLong<kind>`;
+	 * into a scratch buffer it is `growLong<kind>`, which grows the buffer
+	 * where they do not fit and returns it with its capacity.
+	 */
+	public writeLongForm(kind: "Count" | "String" | "Buffer", args: ts.Expression[]): ts.Statement {
+		const f = this.factory;
+		this.usesWriteBytes = true;
+		const cursor = f.createIdentifier(CURSOR);
+		const scratch = f.createIdentifier(SCRATCH);
+		if (this.writeSize !== undefined) {
+			return this.assign(CURSOR, this.call(`writeLong${kind}`, [scratch, cursor, ...args]));
+		}
+		return this.assignAll(
+			[SCRATCH, CAPACITY, CURSOR],
+			this.call(`growLong${kind}`, [scratch, f.createIdentifier(CAPACITY), cursor, ...args]),
 		);
 	}
 
@@ -1367,7 +1401,9 @@ export abstract class EmitContext {
 	 *
 	 * The map is keyed by the `EnumItem` itself, so a write reads no property
 	 * of the item, and is filled from the item list as the module loads, so
-	 * the index of each item stays fixed at compile time. The key finds the
+	 * the index of each item stays fixed at compile time. An enum of more
+	 * than `ENUM_LISTED_ITEMS` items fills both from one string of its items'
+	 * names, which is smaller than a list of `Enum.<X>.<Y>`. The key finds the
 	 * item because Roblox gives each item one object. Lune does not: there
 	 * `Enum.<X>.<Y>` is a new object on each access, and a table keyed by one
 	 * misses the next, so the round-trip suite runs under a stand-in `Enum`
@@ -1389,24 +1425,66 @@ export abstract class EmitContext {
 		this.enumTables.set(key, entry);
 
 		const f = this.factory;
-		const enumMember = (name: string) =>
-			f.createPropertyAccessExpression(
-				f.createPropertyAccessExpression(f.createIdentifier("Enum"), enumName),
-				name,
-			);
+		const enumExpr = f.createPropertyAccessExpression(f.createIdentifier("Enum"), enumName);
 		const items = f.createIdentifier(entry.itemsName);
 		const index = f.createIdentifier(entry.indexName);
-		this.helperDecls.push(this.constStatement(items, f.createArrayLiteralExpression(members.map(enumMember))));
-		this.helperDecls.push(
-			this.constStatement(
-				index,
-				f.createNewExpression(
-					f.createIdentifier("Map"),
-					[f.createTypeReferenceNode("EnumItem"), f.createKeywordTypeNode(this.ts_.SyntaxKind.NumberKeyword)],
-					[],
-				),
+		const method = (target: ts.Expression, name: string, args: ts.Expression[]) =>
+			f.createCallExpression(f.createPropertyAccessExpression(target, name), undefined, args);
+		const newIndex = this.constStatement(
+			index,
+			f.createNewExpression(
+				f.createIdentifier("Map"),
+				[f.createTypeReferenceNode("EnumItem"), f.createKeywordTypeNode(this.ts_.SyntaxKind.NumberKeyword)],
+				[],
 			),
 		);
+
+		if (members.length > ENUM_LISTED_ITEMS) {
+			// The items' names, in index order, in one string. `Enum.<X>[name]`
+			// is typed through a cast: `@rbxts/types` declares each item, not a
+			// lookup by name.
+			const enumType = f.createTypeReferenceNode(f.createQualifiedName(f.createIdentifier("Enum"), enumName));
+			const byName = f.createParenthesizedExpression(
+				f.createAsExpression(
+					f.createAsExpression(enumExpr, f.createKeywordTypeNode(this.ts_.SyntaxKind.UnknownKeyword)),
+					f.createTypeReferenceNode("Record", [
+						f.createKeywordTypeNode(this.ts_.SyntaxKind.StringKeyword),
+						enumType,
+					]),
+				),
+			);
+			const name = this.fresh("name");
+			const item = this.fresh("item");
+			this.helperDecls.push(
+				this.constStatement(items, f.createNewExpression(f.createIdentifier("Array"), [enumType], [])),
+				newIndex,
+				f.createForOfStatement(
+					undefined,
+					f.createVariableDeclarationList(
+						[
+							f.createVariableDeclaration(
+								f.createArrayBindingPattern([f.createBindingElement(undefined, undefined, name)]),
+							),
+						],
+						this.ts_.NodeFlags.Const,
+					),
+					method(f.createStringLiteral(members.join(" ")), "gmatch", [f.createStringLiteral("%S+")]),
+					f.createBlock(
+						[
+							this.constStatement(item, f.createElementAccessExpression(byName, name)),
+							f.createExpressionStatement(method(index, "set", [item, method(items, "size", [])])),
+							f.createExpressionStatement(method(items, "push", [item])),
+						],
+						true,
+					),
+				),
+			);
+			return entry;
+		}
+
+		const enumMember = (name: string) => f.createPropertyAccessExpression(enumExpr, name);
+		this.helperDecls.push(this.constStatement(items, f.createArrayLiteralExpression(members.map(enumMember))));
+		this.helperDecls.push(newIndex);
 		const i = this.fresh("i");
 		const position = f.createBinaryExpression(i, this.ts_.SyntaxKind.MinusToken, this.num(1));
 		const count =

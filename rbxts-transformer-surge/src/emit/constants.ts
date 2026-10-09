@@ -51,6 +51,12 @@ export const TERMS_PER_SUM = 32;
 // `#items`, which it does not unroll (Lune's `luau.compile` at level 2). Up to
 // this many items, the unrolled loop is the smaller of the two.
 export const ENUM_UNROLLED_ITEMS = 3;
+// An enum of more items than this holds its items' names in one string, which
+// fills its item list as the module loads. Each item of a list of `Enum.X.Y`
+// costs about 25 bytes of bytecode and each name in the string about 8, and
+// the loop over the string about 80 more than the loop over a list, so the
+// string is the smaller from six items (Lune's `luau.compile` at level 2).
+export const ENUM_LISTED_ITEMS = 5;
 
 /**
  * The module of `@rbxts/surge` that holds the helpers generated code calls

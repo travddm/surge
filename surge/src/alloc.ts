@@ -22,18 +22,19 @@
  * the end of its buffer, which is once per doubling. A buffer of no bytes,
  * which a cursor's may be, grows from one, since nothing doubles from zero.
  *
- * Returns the new buffer; the caller re-reads `buffer.len` for its own
- * capacity rather than taking a second return value, because this is the cold
- * path and the caller's hot path is what the shape of this API is for.
+ * Returns the new buffer and its length, the caller's new capacity, so that
+ * each reservation's growth is one call and one assignment in the caller.
  */
-export function grow(current: buffer, live: number, needed: number): buffer {
+// eslint-disable-next-line roblox-ts/no-user-defined-lua-tuple -- a real Luau multi-return, not a stored value.
+export function grow(current: buffer, live: number, needed: number): LuaTuple<[grown: buffer, capacity: number]> {
 	let capacity = math.max(buffer.len(current), 1);
 	while (capacity < needed) {
 		capacity *= 2;
 	}
 	const grown = buffer.create(capacity);
 	buffer.copy(grown, 0, current, 0, live);
-	return grown;
+	// eslint-disable-next-line roblox-ts/no-user-defined-lua-tuple -- the sanctioned way to return one.
+	return $tuple(grown, capacity);
 }
 
 /**

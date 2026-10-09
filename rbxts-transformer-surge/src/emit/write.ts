@@ -262,11 +262,14 @@ function writeCount(
 		return count;
 	}
 	const n = isLocal(ctx, count) ? count : bindLocal(ctx, "count", count, out);
+	const { buf, pos, statements } = ctx.destructureAlloc("alloc", 1);
 	out.push(
-		eachCountForm(ctx, n, (statements, head, short) => {
-			const { buf, pos, statements: reserve } = ctx.destructureAlloc("alloc", head());
-			statements.push(...reserve, writeCountForm(ctx, buf, pos, n, short));
-		}),
+		countForms(
+			ctx,
+			n,
+			[...statements, ctx.factory.createExpressionStatement(ctx.bufferCall("writeu8", [buf, pos, n]))],
+			ctx.writeLongForm("Count", [n]),
+		),
 	);
 	return n;
 }
@@ -274,13 +277,15 @@ function writeCount(
 /**
  * Reserves the count a `str` or a `buffer` writes and the `len` bytes after
  * it at once, writes the count, and has `writeBytes` write the bytes where
- * they go.
+ * they go. A variable-length count's long form writes `source` itself, as
+ * the `kind` the call names.
  */
 function writeCountedBytes(
 	ctx: EmitContext,
 	length: CountSpec | undefined,
 	len: ts.Identifier,
 	writeBytes: (buf: ts.Identifier, at: ts.Expression) => ts.Statement,
+	long: { kind: "String" | "Buffer"; source: ts.Expression },
 	out: ts.Statement[],
 ): void {
 	const f = ctx.factory;
@@ -293,61 +298,32 @@ function writeCountedBytes(
 		out.push(...statements, ...ctx.writeNumberAt(width, buf, pos, len), writeBytes(buf, plus(pos, countBytes)));
 		return;
 	}
+	const { buf, pos, statements } = ctx.destructureAlloc("alloc", plus(len, ctx.num(1)));
 	out.push(
-		eachCountForm(ctx, len, (statements, head, short) => {
-			const { buf, pos, statements: reserve } = ctx.destructureAlloc("alloc", plus(len, head()));
-			statements.push(...reserve, writeCountForm(ctx, buf, pos, len, short), writeBytes(buf, plus(pos, head())));
-		}),
+		countForms(
+			ctx,
+			len,
+			[
+				...statements,
+				f.createExpressionStatement(ctx.bufferCall("writeu8", [buf, pos, len])),
+				writeBytes(buf, plus(pos, ctx.num(1))),
+			],
+			ctx.writeLongForm(long.kind, [long.source, len]),
+		),
 	);
 }
 
 /**
- * `if (count < 254) { <one byte> } else { <long form> }`, with each branch's
- * statements from `branch`, given the bytes that branch's count takes, built
- * anew for each use, and whether it is the one-byte form: the write compares
- * a variable-length count once (Transformer 5.28).
+ * `if (count < 254) { <short> } else { <long> }`: the write compares a
+ * variable-length count once (Transformer 5.28), writes its one-byte form
+ * inline, and its long form with one call into the package.
  */
-function eachCountForm(
-	ctx: EmitContext,
-	count: ts.Expression,
-	branch: (statements: ts.Statement[], head: () => ts.Expression, short: boolean) => void,
-): ts.Statement {
+function countForms(ctx: EmitContext, count: ts.Expression, short: ts.Statement[], long: ts.Statement): ts.Statement {
 	const f = ctx.factory;
-	const syntax = ctx.ts_.SyntaxKind;
-	const short: ts.Statement[] = [];
-	branch(short, () => ctx.num(1), true);
-	const long: ts.Statement[] = [];
-	branch(
-		long,
-		() =>
-			f.createParenthesizedExpression(
-				f.createConditionalExpression(
-					f.createBinaryExpression(count, syntax.LessThanEqualsToken, ctx.num(U16_COUNT_MAX)),
-					undefined,
-					ctx.num(3),
-					undefined,
-					ctx.num(5),
-				),
-			),
-		false,
-	);
 	return f.createIfStatement(
-		f.createBinaryExpression(count, syntax.LessThanToken, ctx.num(LONG_COUNT_MARKER)),
+		f.createBinaryExpression(count, ctx.ts_.SyntaxKind.LessThanToken, ctx.num(LONG_COUNT_MARKER)),
 		f.createBlock(short, true),
-		f.createBlock(long, true),
-	);
-}
-
-/** Writes `count` at `pos` in one byte, or in the long form through the package. */
-function writeCountForm(
-	ctx: EmitContext,
-	buf: ts.Expression,
-	pos: ts.Expression,
-	count: ts.Expression,
-	short: boolean,
-): ts.Statement {
-	return ctx.factory.createExpressionStatement(
-		short ? ctx.bufferCall("writeu8", [buf, pos, count]) : ctx.call("writeLongCount", [buf, pos, count]),
+		f.createBlock([long], true),
 	);
 }
 
@@ -377,6 +353,7 @@ function writeStr(
 		field.length,
 		len,
 		(buf, at) => f.createExpressionStatement(ctx.bufferCall("writestring", [buf, at, s])),
+		{ kind: "String", source: s },
 		out,
 	);
 }
@@ -406,6 +383,7 @@ function writeBuffer(
 		field.length,
 		len,
 		(buf, at) => f.createExpressionStatement(ctx.bufferCall("copy", [buf, at, source, ctx.num(0), len])),
+		{ kind: "Buffer", source },
 		out,
 	);
 }

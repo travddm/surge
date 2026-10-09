@@ -70,6 +70,23 @@ test("an enum index is an O(1) table lookup keyed by the item, filled from the i
 	);
 });
 
+test("an enum of more than five items fills its item list and its index from one string of names", () => {
+	const luau = readCompiledLuau("tests/checks.spec.luau");
+	assert.match(
+		luau,
+		/local (surge_Material_[0-9]+)_items = \{\}\n\s+local \1_index = \{\}\n\s+for (name[0-9]+) in string[.]gmatch[(]"Air Asphalt [A-Za-z ]+ WoodPlanks", "%S[+]"[)] do\n\s+local (item[0-9]+) = [(]Enum[.]Material[)]\[\2\]\n\s+local (_arg1) = #\1_items\n\s+\1_index\[\3\] = \4\n\s+table[.]insert[(]\1_items, \3[)]\n\s+end$/m,
+	);
+});
+
+test("a reservation past the capacity grows the buffer and takes its capacity in one assignment", () => {
+	const luau = readCompiledLuau("tests/bytes.spec.luau");
+	assert.match(
+		luau,
+		/if __surge_cursor > __surge_capacity then\n\s+__surge_scratch, __surge_capacity = __surge_grow[(]__surge_scratch, pos[0-9]+, __surge_cursor[)]\n\s+end$/m,
+	);
+	assert.doesNotMatch(luau, /__surge_grow[(][^\n]*\n\s+__surge_capacity = buffer[.]len/);
+});
+
 test("a packed region is written and read inline, with no per-bit helper", () => {
 	const luau = readCompiledLuau("tests/coverage.spec.luau");
 	assert.doesNotMatch(luau, /packBit\(/i);
@@ -175,16 +192,16 @@ const countBytes = (count) => `[(]if ${count} < 254 then 1 elseif ${count} <= 65
 
 test("a string reserves its count and its bytes at once", () => {
 	const luau = readCompiledLuau("tests/basic.spec.luau");
-	// `Basic.name` is a string: in each of its count's two forms, one
-	// reservation of its length and the bytes its count takes, and one move of
-	// the read cursor past both.
+	// `Basic.name` is a string: in its count's one-byte form, one reservation
+	// of its length and the count's byte, in its long form one call that
+	// reserves and writes both, and one move of the read cursor past both.
 	assert.match(
 		luau,
 		/^\s+if (len[0-9]+) < 254 then\n\s+local (pos[0-9]+) = __surge_cursor\n\s+__surge_cursor = \2 [+] [(]\1 [+] 1[)]$/m,
 	);
 	assert.match(
 		luau,
-		/__surge_cursor = pos[0-9]+ [+] [(]len[0-9]+ [+] [(]if len[0-9]+ <= 65535 then 3 else 5[)][)]$/m,
+		/^\s+else\n\s+__surge_cursor = __surge_writeLongString[(]__surge_scratch, __surge_cursor, (s[0-9]+), (len[0-9]+)[)]$/m,
 	);
 	assert.match(luau, /__surge_readCursor = at[0-9]+ [+] len[0-9]+$/m);
 });
