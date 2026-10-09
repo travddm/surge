@@ -630,17 +630,21 @@ function writeNum3(
 	slot: Slot,
 	out: ts.Statement[],
 ): void {
-	const f = ctx.factory;
+	const components = [a, b, c].map((component) => ctx.factory.createPropertyAccessExpression(value, component));
+	writeComponents(ctx, components, widths, slot, out);
+}
+
+/** Writes three numbers at `slot`, each at its width, one after the other. */
+function writeComponents(
+	ctx: EmitContext,
+	components: ReadonlyArray<ts.Expression>,
+	widths: ComponentWidths,
+	slot: Slot,
+	out: ts.Statement[],
+): void {
 	let offset = 0;
-	[a, b, c].forEach((component, i) => {
-		out.push(
-			...ctx.writeNumberAt(
-				widths[i],
-				slot.buf,
-				ctx.at(slot, offset),
-				f.createPropertyAccessExpression(value, component),
-			),
-		);
+	components.forEach((component, i) => {
+		out.push(...ctx.writeNumberAt(widths[i], slot.buf, ctx.at(slot, offset), component));
 		offset += WIDTH_BYTES[widths[i]];
 	});
 }
@@ -683,12 +687,15 @@ function writeCFrame(
 	const f = ctx.factory;
 	const widths = componentsOf(field.position);
 	const positionBytes = componentBytes(widths);
-	// One reservation for both halves. `ToAxisAngle` and `Vector3.mul`
-	// sit between the two writes, and neither can grow the scratch
-	// buffer, so `buf` is still the buffer `alloc` handed back when the
-	// rotation is written.
+	// One reservation for both halves. Nothing between the two writes can
+	// grow the scratch buffer, so `buf` is still the buffer `alloc` handed
+	// back when the rotation is written.
 	const { buf, pos, statements } = ctx.destructureAlloc("alloc", cframeBytes(field));
 	out.push(...statements);
+	if (!field.quantized) {
+		out.push(ctx.block(() => writeCFrameComponents(ctx, value, widths, { buf, pos, offset: 0 }, positionBytes)));
+		return;
+	}
 	// Read once rather than once per component: `Position` is a property of
 	// a Roblox userdata, which the engine answers on every read.
 	const position = ctx.fresh("position");
@@ -717,16 +724,6 @@ function writeCFrame(
 	);
 	const rv = ctx.fresh("rv");
 	const rotationSlot = { buf, pos, offset: positionBytes };
-	if (!field.quantized) {
-		out.push(
-			ctx.constStatement(
-				rv,
-				f.createCallExpression(f.createPropertyAccessExpression(axis, "mul"), undefined, [angle]),
-			),
-		);
-		writeNum3(ctx, rv, "X", "Y", "Z", DEFAULT_COMPONENTS, rotationSlot, out);
-		return;
-	}
 	// The angle is folded into [-pi, pi], which turns the same rotation the
 	// other way round the axis, so that no component is larger than pi and the
 	// scale maps each onto an i16. Rounded, not truncated, which halves the error.
@@ -757,6 +754,160 @@ function writeCFrame(
 	["X", "Y", "Z"].forEach((component, i) => {
 		out.push(...ctx.writeNumberAt("i16", buf, ctx.at(rotationSlot, i * 2), rounded(component)));
 	});
+}
+
+/**
+ * The statements of a `cframe` write that reads its value once, with
+ * `GetComponents` (Transformer 5.28): the position, then the axis-angle of the
+ * rotation matrix. The matrix becomes a unit quaternion through the largest of
+ * its four components, so that no division is by a value near zero, and the
+ * quaternion's sign is taken so that its scalar part is not negative, which
+ * keeps the angle at most pi.
+ */
+function writeCFrameComponents(
+	ctx: EmitContext,
+	value: ts.Expression,
+	widths: ComponentWidths,
+	slot: Slot,
+	positionBytes: number,
+): ts.Statement[] {
+	const f = ctx.factory;
+	const syntax = ctx.ts_.SyntaxKind;
+	const add = (a: ts.Expression, b: ts.Expression) => f.createBinaryExpression(a, syntax.PlusToken, b);
+	const sub = (a: ts.Expression, b: ts.Expression) => f.createBinaryExpression(a, syntax.MinusToken, b);
+	const mul = (a: ts.Expression, b: ts.Expression) => f.createBinaryExpression(a, syntax.AsteriskToken, b);
+	const div = (a: ts.Expression, b: ts.Expression) => f.createBinaryExpression(a, syntax.SlashToken, b);
+	const math = (name: string, args: ts.Expression[]) =>
+		f.createCallExpression(f.createPropertyAccessExpression(f.createIdentifier("math"), name), undefined, args);
+	const assign = (name: ts.Identifier, expr: ts.Expression) =>
+		f.createExpressionStatement(f.createAssignment(name, expr));
+	const statements: ts.Statement[] = [];
+
+	const components = ["x", "y", "z", "r00", "r01", "r02", "r10", "r11", "r12", "r20", "r21", "r22"].map((name) =>
+		ctx.fresh(name),
+	);
+	const [x, y, z, r00, r01, r02, r10, r11, r12, r20, r21, r22] = components;
+	statements.push(
+		f.createVariableStatement(
+			undefined,
+			f.createVariableDeclarationList(
+				[
+					f.createVariableDeclaration(
+						f.createArrayBindingPattern(
+							components.map((name) => f.createBindingElement(undefined, undefined, name)),
+						),
+						undefined,
+						undefined,
+						f.createCallExpression(f.createPropertyAccessExpression(value, "GetComponents"), undefined, []),
+					),
+				],
+				ctx.ts_.NodeFlags.Const,
+			),
+		),
+	);
+	writeComponents(ctx, [x, y, z], widths, slot, statements);
+
+	const trace = ctx.fresh("trace");
+	statements.push(ctx.constStatement(trace, add(add(r00, r11), r22)));
+	const quaternion = ["qw", "qx", "qy", "qz"].map((name) => ctx.fresh(name));
+	const [qw, qx, qy, qz] = quaternion;
+	statements.push(
+		f.createVariableStatement(
+			undefined,
+			f.createVariableDeclarationList(
+				quaternion.map((name) =>
+					f.createVariableDeclaration(name, undefined, f.createKeywordTypeNode(syntax.NumberKeyword)),
+				),
+				ctx.ts_.NodeFlags.Let,
+			),
+		),
+	);
+	// `diagonal` is 4 * largest^2, and each other component is its numerator
+	// over 4 * largest.
+	const branch = (
+		diagonal: ts.Expression,
+		largest: ts.Identifier,
+		others: ReadonlyArray<[ts.Identifier, ts.Expression]>,
+	): ts.Block => {
+		const s = ctx.fresh("s");
+		return f.createBlock(
+			[
+				ctx.constStatement(s, mul(math("sqrt", [diagonal]), ctx.num(2))),
+				assign(largest, mul(s, ctx.num(0.25))),
+				...others.map(([name, numerator]) => assign(name, div(numerator, s))),
+			],
+			true,
+		);
+	};
+	const greater = (a: ts.Expression, b: ts.Expression) => f.createBinaryExpression(a, syntax.GreaterThanToken, b);
+	statements.push(
+		f.createIfStatement(
+			greater(trace, ctx.num(0)),
+			branch(add(trace, ctx.num(1)), qw, [
+				[qx, sub(r21, r12)],
+				[qy, sub(r02, r20)],
+				[qz, sub(r10, r01)],
+			]),
+			f.createIfStatement(
+				f.createBinaryExpression(greater(r00, r11), syntax.AmpersandAmpersandToken, greater(r00, r22)),
+				branch(sub(sub(add(ctx.num(1), r00), r11), r22), qx, [
+					[qw, sub(r21, r12)],
+					[qy, add(r01, r10)],
+					[qz, add(r02, r20)],
+				]),
+				f.createIfStatement(
+					greater(r11, r22),
+					branch(sub(sub(add(ctx.num(1), r11), r00), r22), qy, [
+						[qw, sub(r02, r20)],
+						[qx, add(r01, r10)],
+						[qz, add(r12, r21)],
+					]),
+					branch(sub(sub(add(ctx.num(1), r22), r00), r11), qz, [
+						[qw, sub(r10, r01)],
+						[qx, add(r02, r20)],
+						[qy, add(r12, r21)],
+					]),
+				),
+			),
+		),
+	);
+
+	// The angle is 2 * atan2(sinHalf, |qw|), and the axis the vector part over
+	// sinHalf, negated where qw is negative. With no rotation, every component
+	// of the vector part is 0, and so is what is written.
+	const sinHalf = ctx.fresh("sinHalf");
+	statements.push(ctx.constStatement(sinHalf, math("sqrt", [add(add(mul(qx, qx), mul(qy, qy)), mul(qz, qz))])));
+	const scale = ctx.fresh("scale");
+	const signedTwo = f.createConditionalExpression(
+		f.createBinaryExpression(qw, syntax.LessThanToken, ctx.num(0)),
+		undefined,
+		ctx.num(-2),
+		undefined,
+		ctx.num(2),
+	);
+	statements.push(
+		ctx.constStatement(
+			scale,
+			f.createConditionalExpression(
+				greater(sinHalf, ctx.num(0)),
+				undefined,
+				div(
+					mul(f.createParenthesizedExpression(signedTwo), math("atan2", [sinHalf, math("abs", [qw])])),
+					sinHalf,
+				),
+				undefined,
+				ctx.num(0),
+			),
+		),
+	);
+	writeComponents(
+		ctx,
+		[mul(qx, scale), mul(qy, scale), mul(qz, scale)],
+		DEFAULT_COMPONENTS,
+		{ ...slot, offset: slot.offset + positionBytes },
+		statements,
+	);
+	return statements;
 }
 
 /**
@@ -860,7 +1011,7 @@ function enumIndexExpr(
 	const f = ctx.factory;
 	return f.createNonNullExpression(
 		f.createCallExpression(f.createPropertyAccessExpression(f.createIdentifier(indexName), "get"), undefined, [
-			f.createPropertyAccessExpression(value, "Value"),
+			f.createPropertyAccessExpression(value, "Name"),
 		]),
 	);
 }

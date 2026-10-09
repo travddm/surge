@@ -481,7 +481,7 @@ function readCFrame(ctx: EmitContext, field: Extract<Field, { kind: "cframe" }>,
 		);
 	}
 	// The axis-angle becomes a unit quaternion, so that one constructor builds
-	// the result (Transformer 5.28). sin(angle / 2) / angle tends to 1/2 as the
+	// the result (Transformer 5.27). sin(angle / 2) / angle tends to 1/2 as the
 	// angle tends to 0, which is what a rotation of no angle takes.
 	const syntax = ctx.ts_.SyntaxKind;
 	const math = (name: string, args: ts.Expression[]) =>

@@ -72,11 +72,9 @@ describe("Emitter per-kind write/read snapshots", () => {
 		expect(emitSnapshot({ kind: "cframe" })).toMatchSnapshot();
 	});
 
-	test("a cframe reads its Position once for its three components", () => {
-		for (const field of [{ kind: "cframe" }, { kind: "cframe", quantized: true }] as Field[]) {
-			const write = emitSnapshot(field).split("// read\n")[0];
-			expect(write.match(/\.Position\b/g)).toHaveLength(1);
-		}
+	test("a quantized cframe reads its Position once for its three components", () => {
+		const write = emitSnapshot({ kind: "cframe", quantized: true }).split("// read\n")[0];
+		expect(write.match(/\.Position\b/g)).toHaveLength(1);
 	});
 
 	test("bitSet", () => {
@@ -378,16 +376,15 @@ describe("Emitter enum index width and lookup table", () => {
 		expect(output).not.toContain("writeu8");
 	});
 
-	test("an enum index is an O(1) table lookup by the item's Value, filled from its items", () => {
+	test("an enum index is an O(1) table lookup, not a chain of Name comparisons", () => {
 		const output = emitSnapshot({
 			kind: "enum",
 			enumName: "SortOrder",
 			members: ["Custom", "LayoutOrder", "Name"],
 		});
 		expect(output).not.toMatch(/\.Name ===/);
-		expect(output).toMatch(/_index\.get\(value\.Value\)/);
+		expect(output).toMatch(/_index\.get\(value\.Name\)/);
 		expect(output).toMatch(/_items\[idx\d+\]/);
-		expect(output).toMatch(/for \(let i = 0; i < 3; i\+\+\) \{\s*(\w+)_index\.set\(\1_items\[i\]\.Value, i\);/);
 	});
 });
 
@@ -401,6 +398,26 @@ describe("Emitter cframe reads", () => {
 		expect(read).toMatch(/math\.cos\(angle\d+ \* 0\.5\)\);/);
 		expect(read).not.toContain("fromAxisAngle");
 		expect(read).not.toContain(".add(");
+	});
+});
+
+describe("Emitter cframe writes", () => {
+	function writeSection(field: Field): string {
+		return emitSnapshot(field).split("// read\n")[0];
+	}
+
+	test("a cframe is written from one GetComponents call, in a block of its own", () => {
+		const write = writeSection({ kind: "cframe" });
+		expect(write.match(/\.GetComponents\(\)/g)).toHaveLength(1);
+		expect(write).toMatch(/^\{\n\s+const \[x\d+, /m);
+		expect(write).not.toContain("ToAxisAngle");
+		expect(write).not.toContain(".Position");
+	});
+
+	test("a quantized cframe takes its rotation from ToAxisAngle", () => {
+		const write = writeSection({ kind: "cframe", quantized: true });
+		expect(write).toContain(".ToAxisAngle()");
+		expect(write).not.toContain("GetComponents");
 	});
 });
 
@@ -1510,16 +1527,20 @@ describe("Emitter local-register ceiling", () => {
 	});
 
 	test("a run of CFrame properties ends before its locals would pass 31", () => {
-		// Five locals a CFrame, so six to a run: 31 CFrames are six runs.
+		// Four locals a CFrame, so seven to a run: 31 CFrames are five runs.
 		const output = emitSnapshot({
 			kind: "object",
 			fields: Array.from({ length: 31 }, (_, i) => ({ name: `c${i}`, field: { kind: "cframe" } as Field })),
 		});
-		expect(reservations(output, "write")).toEqual([144, 144, 144, 144, 144, 24]);
-		expect(reservations(output, "read")).toEqual([144, 144, 144, 144, 144, 24]);
+		expect(reservations(output, "write")).toEqual([168, 168, 168, 168, 72]);
+		expect(reservations(output, "read")).toEqual([168, 168, 168, 168, 72]);
 	});
 
-	/** The names the `const` and `let` statements of one side of `field` declare, each name of a destructuring counted. */
+	/**
+	 * The names the `const` and `let` statements of one side of `field` declare, each name of a
+	 * destructuring counted. A statement inside a block is not counted: Luau frees its locals at the
+	 * block's `end`, so they do not stay live in the run.
+	 */
 	function declaredLocals(field: Field, side: "write" | "read", options: EmitOptions): number {
 		const emitter = new Emitter(ts, ts.factory, new Map(), options);
 		const out: ts.Statement[] = [];
@@ -1530,7 +1551,7 @@ describe("Emitter local-register ceiling", () => {
 		}
 		let count = 0;
 		for (const line of printNodes(out).split("\n")) {
-			const declaration = /^\s*(?:const|let) (\[[^\]]*\]|\w+)/.exec(line);
+			const declaration = /^(?:const|let) (\[[^\]]*\]|\w+)/.exec(line);
 			if (declaration !== null) {
 				count += declaration[1].split(",").length;
 			}

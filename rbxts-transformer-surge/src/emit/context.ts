@@ -789,6 +789,17 @@ export abstract class EmitContext {
 		flush();
 	}
 
+	/**
+	 * A block of what `emit` returns. Luau frees a block's locals at its
+	 * `end`, so the locals `emit` declares are not counted past it (5.8).
+	 */
+	public block(emit: () => ts.Statement[]): ts.Block {
+		const liveLocals = this.liveLocals;
+		const statements = emit();
+		this.liveLocals = liveLocals;
+		return this.factory.createBlock(statements, true);
+	}
+
 	public num(n: number): ts.Expression {
 		// `createNumericLiteral` asserts on a negative number: the minus sign is an operator.
 		return n < 0
@@ -1266,7 +1277,7 @@ export abstract class EmitContext {
 	}
 
 	/**
-	 * Declares the write-side `{[value]: index}` map and read-side
+	 * Declares the write-side `{[name]: index}` map and read-side
 	 * `EnumItem[]` for one enum field (an O(1) lookup, not the linear ternary
 	 * chain this replaced -- see the enum-encoding finding in
 	 * docs/research/september-2026-review.md; the index they
@@ -1278,15 +1289,17 @@ export abstract class EmitContext {
 	 * `enumName`) needs its own table, indexed 0..subset.length-1, not the
 	 * full enum's table.
 	 *
-	 * The index side is keyed by `value.Value`, a number, rather than by
-	 * `Name`, a string (Transformer 5.27). It is filled from the items when
-	 * the module loads, so the two tables cannot disagree, and no two items
-	 * of one enum `@rbxts/types` declares share a value. It is not keyed by the
-	 * `EnumItem` itself: confirmed by execution under Lune (the headless
-	 * round-trip harness in `tests/`) that `Enum.<X>.<Y>` there does not
-	 * return the same object on repeated access -- `a == b` is `true` (Lune
-	 * gives `EnumItem` a custom equality), but raw Luau table indexing doesn't
-	 * consult that, so `t[a]` after `t[b] = ...` misses.
+	 * The index side is keyed by `value.Name` (a plain string), not the
+	 * `EnumItem` value itself: confirmed by execution under Lune (the
+	 * headless round-trip harness in `tests/`) that `Enum.<X>.<Y>` there
+	 * does not return the same object on repeated access -- `a == b` is
+	 * `true` (Lune gives `EnumItem` a custom equality), but raw Luau table
+	 * indexing doesn't consult that, so `t[a]` after `t[b] = ...` misses.
+	 * Real Roblox's `EnumItem`s are true engine singletons and wouldn't hit
+	 * this, but nothing about `{[EnumItem]: index}` guarantees it, and a
+	 * string key sidesteps the question entirely. A key of the item's `Value`,
+	 * a number, wrote slower than the name
+	 * (docs/research/enum-and-cframe-rows.md).
 	 */
 	public ensureEnumTable(enumName: string, members: ReadonlyArray<string>): { itemsName: string; indexName: string } {
 		const key = `${enumName}|${members.join("|")}`;
@@ -1311,30 +1324,16 @@ export abstract class EmitContext {
 				f.createArrayLiteralExpression(members.map(enumMember)),
 			),
 		);
-		const numberType = () => f.createKeywordTypeNode(this.ts_.SyntaxKind.NumberKeyword);
+		const indexEntries = members.map((name, i) =>
+			f.createArrayLiteralExpression([f.createStringLiteral(name), this.num(i)]),
+		);
 		this.helperDecls.push(
 			this.constStatement(
 				f.createIdentifier(entry.indexName),
-				f.createNewExpression(f.createIdentifier("Map"), [numberType(), numberType()], []),
+				f.createNewExpression(f.createIdentifier("Map"), undefined, [
+					f.createArrayLiteralExpression(indexEntries),
+				]),
 			),
-		);
-		const i = f.createIdentifier("i");
-		this.helperDecls.push(
-			this.indexedLoop(i, 0, this.num(members.length), [
-				f.createExpressionStatement(
-					f.createCallExpression(
-						f.createPropertyAccessExpression(f.createIdentifier(entry.indexName), "set"),
-						undefined,
-						[
-							f.createPropertyAccessExpression(
-								f.createElementAccessExpression(f.createIdentifier(entry.itemsName), i),
-								"Value",
-							),
-							i,
-						],
-					),
-				),
-			]),
 		);
 		return entry;
 	}
