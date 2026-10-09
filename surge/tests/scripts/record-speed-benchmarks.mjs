@@ -209,8 +209,11 @@ function readCheck(line) {
 
 	const allowed = recorded.get(name).get(library) ?? 0;
 	const [verdict, error] = roundTrip.split(" ");
-	const actual = verdict === "exact" ? 0 : error === undefined ? Infinity : Number(error);
-	if (actual > CHECK_SLACK * allowed) {
+	// Luau prints an infinite difference as `inf`, which `Number` does not read. A cell recorded as
+	// exact fails on any difference, which includes `-0` for `0`, whose difference is 0.
+	const parsed = error === undefined ? Infinity : Number(error);
+	const actual = verdict === "exact" ? 0 : Number.isNaN(parsed) ? Infinity : parsed;
+	if (actual > CHECK_SLACK * allowed || (allowed === 0 && verdict !== "exact")) {
 		const message = `${name} (${library}) round-trips as "${roundTrip}" in Roblox, where the size table records ${allowed === 0 ? "exact" : allowed}: ${detail.join(" | ")}`;
 		console.error(`\nCHECK FAILED: ${message}\nThis run will not be recorded.`);
 		mismatches.push(message);

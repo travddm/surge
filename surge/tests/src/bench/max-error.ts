@@ -35,10 +35,22 @@ function cframeComponents(value: CFrame): Array<number> {
 	return [x, y, z, r00, r01, r02, r10, r11, r12, r20, r21, r22];
 }
 
-function maxOverComponents(expected: ReadonlyArray<number>, actual: ReadonlyArray<number>): number {
-	let worst = 0;
+/**
+ * `undefined` for a NaN on one side only, which no number describes. Not left
+ * to `math.max`, which drops a NaN that is not its first argument.
+ */
+function componentError(expected: number, actual: number): number | undefined {
+	if (expected === actual || (expected !== expected && actual !== actual)) {
+		return 0;
+	}
+	const moved = math.abs(expected - actual);
+	return moved === moved ? moved : undefined;
+}
+
+function maxOverComponents(expected: ReadonlyArray<number>, actual: ReadonlyArray<number>): number | undefined {
+	let worst: number | undefined = 0;
 	for (const index of $range(0, expected.size() - 1)) {
-		worst = math.max(worst, math.abs(expected[index] - actual[index]));
+		worst = worse(worst, componentError(expected[index], actual[index]));
 	}
 	return worst;
 }
@@ -51,7 +63,7 @@ function maxOverComponents(expected: ReadonlyArray<number>, actual: ReadonlyArra
  */
 export function maxComponentError(expected: unknown, actual: unknown): number | undefined {
 	if (typeIs(expected, "number") && typeIs(actual, "number")) {
-		return math.abs(expected - actual);
+		return componentError(expected, actual);
 	}
 	if (typeIs(expected, "CFrame") && typeIs(actual, "CFrame")) {
 		return maxOverComponents(cframeComponents(expected), cframeComponents(actual));
