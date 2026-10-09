@@ -80,6 +80,9 @@ code the transformer generates runs. What has been measured is under
 - [baseline-cframe-read.md](../research/baseline-cframe-read.md) — the
   hand-written codec's `CFrame` read through a quaternion, which leaves it
   ahead of surge's on decode.
+- [variable-length-counts.md](../research/variable-length-counts.md) — a
+  variable-length count by default, and the encode it slowed where the
+  generated code reads a length or compares a count twice.
 
 This document holds what is still open.
 
@@ -110,6 +113,18 @@ instance references
 arrays ([array-of-arrays-loop.md](../research/array-of-arrays-loop.md)) as
 well. What
 the other rows pay against hand-written Luau is not measured.
+
+**The variable-length count's encode.** With the count of Wire format 6.9,
+the hand-written codec is ahead on the encode of the nested arrays, the
+leaderboard, the tagged union and the tree
+([variable-length-counts.md](../research/variable-length-counts.md)). A size
+computed by a loop reads each element's length twice, once to compare it
+with 254 and once to add it, and the hand-written codec reads it into a
+local once. A write compares a count with 254 twice, for the bytes it takes
+and for its form, and the hand-written codec once. Which of the two the time
+is in was not probed. A local in the size loop's body would read the length
+once, as Transformer 5.20 reads a tag once; a write that branches once would
+reserve and write the count in each branch.
 
 **What is left per call.** A shape that keeps the scratch buffer still has
 the three candidates a shape sized exactly (Transformer 5.20 in
