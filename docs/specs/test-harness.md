@@ -1,8 +1,7 @@
 # Test harness specification
 
 Status: current
-Applies to: `@rbxts/surge` at commit `a564714`, `rbxts-transformer-surge` at
-commit `642062d` (no tagged release yet)
+Applies to: commit `a89553b` (no tagged release yet)
 
 ## 1. Scope
 
@@ -75,6 +74,9 @@ from `@lune/roblox`, and `task`, from `@lune/task`. It provides stand-ins for
 what Lune lacks:
 
 - a `DateTime` with `UnixTimestampMillis` and `fromUnixTimestampMillis`;
+- an `Enum` that returns one object for each item, as Roblox does, where
+  Lune's returns a new one on each access, with `GetEnums` and each enum's
+  `GetEnumItems`; an unknown enum or item errors, as it does in Lune's;
 - a `RunService` that answers `true` to `IsRunning` and `IsServer`, and
   `false` to `IsClient` and `IsStudio`, with a `Heartbeat` that never fires;
 - a `Players` with no `LocalPlayer`, whose `PlayerRemoving` never fires;
@@ -93,9 +95,10 @@ resolved against that package's directory.
 table, no fixture uses a `DateTime` as a union member, and because Lune's
 enum database lacks members of every enum above 256 members, no fixture uses
 one; the wide enum index is pinned at the transformer level instead. Lune
-returns a new `EnumItem` or `Vector3` value on every access, equal by `==`
-but not the same table key, so no round trip keys a `Map` or `Set` by either;
-the transformer's type check of the generated code covers those keys.
+returns a new `Vector3` value on every access, equal by `==` but not the
+same table key, so no round trip keys a `Map` or `Set` by one. No round trip
+keys one by an enum item either, though the `Enum` of 4.3 would allow it.
+The transformer's type check of the generated code covers both keys.
 
 **4.6** The shim creates, in `ReplicatedStorage`, the remotes the generated
 Blink and Zap server modules look up when they are required:
@@ -163,6 +166,8 @@ file in its `lib/` for the snapshot to copy.
 
 ## Changes
 
+- `a89553b`: 4.3 adds the `Enum` stand-in, and 4.5 no longer gives Lune's
+  `EnumItem` as a reason no round trip keys a table by one.
 - `a564714` / `642062d`: 3.2 counts the golden check that reads the
   package's `out/index.d.ts`.
 - `f0d9639` / `fd89bf5`: 4.5 (no round trip keys a table by an `EnumItem` or

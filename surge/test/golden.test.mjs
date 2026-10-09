@@ -56,10 +56,18 @@ test("a recursive discriminated union (Expr) compiles to its own recursion helpe
 	assert.match(luau, /surge_Expr_\d+_(?:write|read)/);
 });
 
-test("an enum index is an O(1) table lookup, not a chain of .Name comparisons", () => {
+test("an enum index is an O(1) table lookup keyed by the item, filled from the item list", () => {
 	const luau = readCompiledLuau("tests/coverage.spec.luau");
 	assert.doesNotMatch(luau, /\.Name\s*==/);
-	assert.match(luau, /_index\[/); // roblox-ts lowers `Map.get`/indexing on a compiled Map to a plain table index
+	// roblox-ts lowers `Map.set` and `Map.get` on a compiled Map to plain table indexing.
+	assert.match(
+		luau,
+		/local (surge_HumanoidRigType_[0-9]+)_index = \{\}\n\s+for (i[0-9]+) = 1, 2 do\n\s+local (_arg0) = \1_items\[\2\]\n\s+local (_arg1) = \2 - 1\n\s+\1_index\[\3\] = \4\n\s+end$/m,
+	);
+	assert.match(
+		luau,
+		/local (_rig) = value[.]rig\n\s+buffer[.]writeu8[(]__surge_scratch, pos[0-9]+, surge_HumanoidRigType_[0-9]+_index\[\1\][)]$/m,
+	);
 });
 
 test("a packed region is written and read inline, with no per-bit helper", () => {

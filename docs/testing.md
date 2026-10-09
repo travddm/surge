@@ -78,9 +78,14 @@ file the new version would reorder.
   expected string out by hand from [specs/wire-format.md](specs/wire-format.md),
   so the fact checks the specification as well as the code.
 - Lune cannot run every shape: no enum with more than 256 items, no
-  `DateTime` as a union member, and no `Map` or `Set` keyed by an enum item or
-  a `Vector3`. Pin those at the transformer level instead
+  `DateTime` as a union member, and no `Map` or `Set` keyed by a `Vector3`.
+  Pin those at the transformer level instead
   ([specs/test-harness.md](specs/test-harness.md) 4.5).
+- Lune gives an enum item a new object on each access, where Roblox gives it
+  one. The shim's stand-in `Enum` gives it one, so the generated code, which
+  keys an enum's index by the item, round-trips under Lune; the speed tier
+  checks the same round trips in Roblox
+  ([specs/benchmark-harness.md](specs/benchmark-harness.md) 6.6).
 - A transformer change that could break the generated code's types gets a
   `typeErrorsOfGeneratedCode` case in `transform.test.ts`, and one that
   changes what a caller can assign gets a case that assigns the result.

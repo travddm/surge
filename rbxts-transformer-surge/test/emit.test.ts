@@ -378,15 +378,18 @@ describe("Emitter enum index width and lookup table", () => {
 		expect(output).not.toContain("writeu8");
 	});
 
-	test("an enum index is an O(1) table lookup, not a chain of Name comparisons", () => {
+	test("an enum index is an O(1) table lookup keyed by the item, filled from the items", () => {
 		const output = emitSnapshot({
 			kind: "enum",
 			enumName: "SortOrder",
 			members: ["Custom", "LayoutOrder", "Name"],
 		});
-		expect(output).not.toMatch(/\.Name ===/);
-		expect(output).toMatch(/_index\.get\(value\.Name\)/);
+		expect(output).not.toContain("value.Name");
+		expect(output).toMatch(/_index\.get\(value\)/);
 		expect(output).toMatch(/_items\[idx\d+\]/);
+		expect(output).toMatch(
+			/const (\w+_index) = new Map<EnumItem, number>\(\);\nfor \(const (i\d+) of \$range\(1, 3\)\) \{\n\s+\1\.set\((\w+_items)\[\2 - 1\], \2 - 1\);\n\}/,
+		);
 	});
 });
 
@@ -544,12 +547,13 @@ describe("Emitter enum guards", () => {
 		expect(output).not.toContain("EnumType");
 	});
 
-	test("two enums in a union are each guarded by the enum that declares their items", () => {
+	test("two enums in a union are each guarded by membership in their own items' index", () => {
 		const write = emitSnapshot({ kind: "guardedUnion", variants: [rig, order, { kind: "str" }] }).split(
 			"// read",
 		)[0];
-		expect(write).toContain('if (typeIs(value, "EnumItem") && value.EnumType === Enum.HumanoidRigType) {');
-		expect(write).toContain('else if (typeIs(value, "EnumItem") && value.EnumType === Enum.SortOrder) {');
+		expect(write).not.toContain("EnumType");
+		expect(write).toMatch(/if \(typeIs\(value, "EnumItem"\) && surge_HumanoidRigType_\d+_index\.has\(value\)\) \{/);
+		expect(write).toMatch(/else if \(typeIs\(value, "EnumItem"\) && surge_SortOrder_\d+_index\.has\(value\)\) \{/);
 	});
 
 	const r15: Field = { kind: "literalConst", value: { enumName: "HumanoidRigType", member: "R15" } };

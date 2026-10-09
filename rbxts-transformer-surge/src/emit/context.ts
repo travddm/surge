@@ -1353,28 +1353,26 @@ export abstract class EmitContext {
 	}
 
 	/**
-	 * Declares the write-side `{[name]: index}` map and read-side
-	 * `EnumItem[]` for one enum field (an O(1) lookup, not the linear ternary
-	 * chain this replaced -- see the enum-encoding finding in
-	 * docs/research/september-2026-review.md; the index they
-	 * hold is Wire format 4.12 in docs/specs/wire-format.md there), and
-	 * returns their names, generating the
+	 * Declares the read side's `EnumItem[]` and the write side's map from
+	 * each item to its index for one enum field (an O(1) lookup, not the
+	 * linear ternary chain this replaced -- see the enum-encoding finding in
+	 * docs/research/september-2026-review.md; the index is Wire format 4.12
+	 * in docs/specs/wire-format.md), and returns their names, generating the
 	 * declarations only the first time this exact member list is seen.
 	 * Keyed by the full member list rather than `enumName`: a field using
 	 * only a subset of an enum's members (still classified with that enum's
 	 * `enumName`) needs its own table, indexed 0..subset.length-1, not the
 	 * full enum's table.
 	 *
-	 * The index side is keyed by `value.Name` (a plain string), not the
-	 * `EnumItem` value itself: confirmed by execution under Lune (the
-	 * headless round-trip harness in `tests/`) that `Enum.<X>.<Y>` there
-	 * does not return the same object on repeated access -- `a == b` is
-	 * `true` (Lune gives `EnumItem` a custom equality), but raw Luau table
-	 * indexing doesn't consult that, so `t[a]` after `t[b] = ...` misses.
-	 * Real Roblox's `EnumItem`s are true engine singletons and wouldn't hit
-	 * this, but nothing about `{[EnumItem]: index}` guarantees it, and a
-	 * string key sidesteps the question entirely. A key of the item's `Value`,
-	 * a number, wrote slower than the name
+	 * The map is keyed by the `EnumItem` itself, so a write reads no property
+	 * of the item, and is filled from the item list as the module loads, so
+	 * the index of each item stays fixed at compile time. The key finds the
+	 * item because Roblox gives each item one object. Lune does not: there
+	 * `Enum.<X>.<Y>` is a new object on each access, and a table keyed by one
+	 * misses the next, so the round-trip suite runs under a stand-in `Enum`
+	 * that gives each item one object (`tests/scripts/lune-roblox-shim.luau`),
+	 * and the speed tier checks each round trip in Roblox. A key of the
+	 * item's `Value` wrote slower than one of its `Name`
 	 * (docs/research/enum-and-cframe-rows.md).
 	 */
 	public ensureEnumTable(enumName: string, members: ReadonlyArray<string>): { itemsName: string; indexName: string } {
@@ -1394,22 +1392,30 @@ export abstract class EmitContext {
 				f.createPropertyAccessExpression(f.createIdentifier("Enum"), enumName),
 				name,
 			);
+		const items = f.createIdentifier(entry.itemsName);
+		const index = f.createIdentifier(entry.indexName);
+		this.helperDecls.push(this.constStatement(items, f.createArrayLiteralExpression(members.map(enumMember))));
 		this.helperDecls.push(
 			this.constStatement(
-				f.createIdentifier(entry.itemsName),
-				f.createArrayLiteralExpression(members.map(enumMember)),
+				index,
+				f.createNewExpression(
+					f.createIdentifier("Map"),
+					[f.createTypeReferenceNode("EnumItem"), f.createKeywordTypeNode(this.ts_.SyntaxKind.NumberKeyword)],
+					[],
+				),
 			),
 		);
-		const indexEntries = members.map((name, i) =>
-			f.createArrayLiteralExpression([f.createStringLiteral(name), this.num(i)]),
-		);
+		const i = this.fresh("i");
+		const position = f.createBinaryExpression(i, this.ts_.SyntaxKind.MinusToken, this.num(1));
 		this.helperDecls.push(
-			this.constStatement(
-				f.createIdentifier(entry.indexName),
-				f.createNewExpression(f.createIdentifier("Map"), undefined, [
-					f.createArrayLiteralExpression(indexEntries),
-				]),
-			),
+			this.countedLoop(i, this.num(members.length), [
+				f.createExpressionStatement(
+					f.createCallExpression(f.createPropertyAccessExpression(index, "set"), undefined, [
+						f.createElementAccessExpression(items, position),
+						position,
+					]),
+				),
+			]),
 		);
 		return entry;
 	}

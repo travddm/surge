@@ -956,7 +956,7 @@ function enumIndexExpr(
 	const f = ctx.factory;
 	return f.createNonNullExpression(
 		f.createCallExpression(f.createPropertyAccessExpression(f.createIdentifier(indexName), "get"), undefined, [
-			f.createPropertyAccessExpression(value, "Name"),
+			value,
 		]),
 	);
 }
@@ -1489,7 +1489,9 @@ export function severalEnums(variants: ReadonlyArray<Field>): boolean {
 /**
  * The test that picks `field` among a guarded union's variants. Where the
  * union holds more than one enum (`byEnumType`), an `enum` variant is also
- * tested by the enum that declares its items.
+ * tested by membership in its own items' index, which holds only the items
+ * it admits. The index is keyed by the item itself (`ensureEnumTable` in
+ * context.ts), so the test reads no property of the item.
  */
 export function guardFor(ctx: EmitContext, field: Field, value: ts.Expression, byEnumType = false): ts.Expression {
 	const f = ctx.factory;
@@ -1537,10 +1539,13 @@ export function guardFor(ctx: EmitContext, field: Field, value: ts.Expression, b
 			return byEnumType
 				? f.createLogicalAnd(
 						typeIs("EnumItem"),
-						f.createBinaryExpression(
-							f.createPropertyAccessExpression(value, "EnumType"),
-							ctx.ts_.SyntaxKind.EqualsEqualsEqualsToken,
-							f.createPropertyAccessExpression(f.createIdentifier("Enum"), field.enumName),
+						f.createCallExpression(
+							f.createPropertyAccessExpression(
+								f.createIdentifier(ctx.ensureEnumTable(field.enumName, field.members).indexName),
+								"has",
+							),
+							undefined,
+							[value],
 						),
 					)
 				: typeIs("EnumItem");

@@ -953,17 +953,20 @@ if (__surge_cursor > __surge_capacity) {
     __surge_scratch = __surge_grow(__surge_scratch, pos1, __surge_cursor);
     __surge_capacity = buffer.len(__surge_scratch);
 }
-buffer.writeu8(__surge_scratch, pos1, surge_SortOrder_1_index.get(value.Name)!);
+buffer.writeu8(__surge_scratch, pos1, surge_SortOrder_1_index.get(value)!);
 
 // read
-const pos2 = __surge_readCursor;
-__surge_readCursor = pos2 + 1;
-const idx3 = buffer.readu8(__surge_input, pos2);
-return surge_SortOrder_1_items[idx3];
+const pos3 = __surge_readCursor;
+__surge_readCursor = pos3 + 1;
+const idx4 = buffer.readu8(__surge_input, pos3);
+return surge_SortOrder_1_items[idx4];
 
 // helpers
 const surge_SortOrder_1_items = [Enum.SortOrder.Custom, Enum.SortOrder.LayoutOrder, Enum.SortOrder.Name];
-const surge_SortOrder_1_index = new Map([["Custom", 0], ["LayoutOrder", 1], ["Name", 2]]);"
+const surge_SortOrder_1_index = new Map<EnumItem, number>();
+for (const i2 of $range(1, 3)) {
+    surge_SortOrder_1_index.set(surge_SortOrder_1_items[i2 - 1], i2 - 1);
+}"
 `;
 
 exports[`Emitter per-kind write/read snapshots guardedUnion 1`] = `
