@@ -87,6 +87,8 @@ code the transformer generates runs. What has been measured is under
   read once in a size loop, and a count compared once in its write.
 - [enum-index-by-item.md](../research/enum-index-by-item.md) — an enum's
   index keyed by the item itself, with no read of its `Name`.
+- [cold-paths-in-one-call.md](../research/cold-paths-in-one-call.md) — the
+  generated code made smaller where it runs rarely or once.
 
 This document holds what is still open.
 
