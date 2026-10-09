@@ -255,7 +255,7 @@ export function runLocals(field: Field): number {
 			return 2 + bitSetBytes(field);
 		case "enum":
 		case "literal":
-			// The read's index, and the item name roblox-ts hoists out of an
+			// The read's index, and the item value roblox-ts hoists out of an
 			// enum's write.
 			return 2;
 		case "num":

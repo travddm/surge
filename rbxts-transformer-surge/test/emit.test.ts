@@ -378,15 +378,29 @@ describe("Emitter enum index width and lookup table", () => {
 		expect(output).not.toContain("writeu8");
 	});
 
-	test("an enum index is an O(1) table lookup, not a chain of Name comparisons", () => {
+	test("an enum index is an O(1) table lookup by the item's Value, filled from its items", () => {
 		const output = emitSnapshot({
 			kind: "enum",
 			enumName: "SortOrder",
 			members: ["Custom", "LayoutOrder", "Name"],
 		});
 		expect(output).not.toMatch(/\.Name ===/);
-		expect(output).toMatch(/_index\.get\(value\.Name\)/);
+		expect(output).toMatch(/_index\.get\(value\.Value\)/);
 		expect(output).toMatch(/_items\[idx\d+\]/);
+		expect(output).toMatch(/for \(let i = 0; i < 3; i\+\+\) \{\s*(\w+)_index\.set\(\1_items\[i\]\.Value, i\);/);
+	});
+});
+
+describe("Emitter cframe reads", () => {
+	test.each([
+		["cframe", { kind: "cframe" } as Field],
+		["quantized cframe", { kind: "cframe", quantized: true } as Field],
+	])("a %s is read into one CFrame constructor of its position and a quaternion", (_label, field) => {
+		const read = emitSnapshot(field).split("// read\n")[1];
+		expect(read.match(/new CFrame\(/g)).toHaveLength(1);
+		expect(read).toMatch(/math\.cos\(angle\d+ \* 0\.5\)\);/);
+		expect(read).not.toContain("fromAxisAngle");
+		expect(read).not.toContain(".add(");
 	});
 });
 

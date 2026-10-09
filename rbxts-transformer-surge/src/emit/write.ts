@@ -860,7 +860,7 @@ function enumIndexExpr(
 	const f = ctx.factory;
 	return f.createNonNullExpression(
 		f.createCallExpression(f.createPropertyAccessExpression(f.createIdentifier(indexName), "get"), undefined, [
-			f.createPropertyAccessExpression(value, "Name"),
+			f.createPropertyAccessExpression(value, "Value"),
 		]),
 	);
 }

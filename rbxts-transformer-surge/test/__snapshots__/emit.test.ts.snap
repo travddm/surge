@@ -60,11 +60,10 @@ buffer.writef32(__surge_scratch, pos1 + 14, rv5.Z);
 // read
 const pos6 = __surge_readCursor;
 __surge_readCursor = pos6 + 18;
-const pos7 = new Vector3(buffer.readi16(__surge_input, pos6), buffer.readi16(__surge_input, pos6 + 2), buffer.readi16(__surge_input, pos6 + 4));
-const rv8 = new Vector3(buffer.readf32(__surge_input, pos6 + 6), buffer.readf32(__surge_input, pos6 + 10), buffer.readf32(__surge_input, pos6 + 14));
-const angle9 = rv8.Magnitude;
-const rotation10 = CFrame.fromAxisAngle(angle9 > 1e-6 ? rv8.Unit : Vector3.zAxis, angle9);
-return rotation10.add(pos7);"
+const rv7 = new Vector3(buffer.readf32(__surge_input, pos6 + 6), buffer.readf32(__surge_input, pos6 + 10), buffer.readf32(__surge_input, pos6 + 14));
+const angle8 = math.sqrt(rv7.X * rv7.X + rv7.Y * rv7.Y + rv7.Z * rv7.Z);
+const scale9 = angle8 > 1e-6 ? math.sin(angle8 * 0.5) / angle8 : 0.5;
+return new CFrame(buffer.readi16(__surge_input, pos6), buffer.readi16(__surge_input, pos6 + 2), buffer.readi16(__surge_input, pos6 + 4), rv7.X * scale9, rv7.Y * scale9, rv7.Z * scale9, math.cos(angle8 * 0.5));"
 `;
 
 exports[`Emitter component widths a Vector3 writes each component at its own width, at cumulative offsets 1`] = `
@@ -107,11 +106,10 @@ buffer.writei16(__surge_scratch, pos1 + 16, math.round(rv5.Z));
 // read
 const pos6 = __surge_readCursor;
 __surge_readCursor = pos6 + 18;
-const pos7 = new Vector3(buffer.readf32(__surge_input, pos6), buffer.readf32(__surge_input, pos6 + 4), buffer.readf32(__surge_input, pos6 + 8));
-const rv8 = new Vector3(buffer.readi16(__surge_input, pos6 + 12) * 0.00009587672516830327, buffer.readi16(__surge_input, pos6 + 14) * 0.00009587672516830327, buffer.readi16(__surge_input, pos6 + 16) * 0.00009587672516830327);
-const angle9 = rv8.Magnitude;
-const rotation10 = CFrame.fromAxisAngle(angle9 > 1e-6 ? rv8.Unit : Vector3.zAxis, angle9);
-return rotation10.add(pos7);"
+const rv7 = new Vector3(buffer.readi16(__surge_input, pos6 + 12) * 0.00009587672516830327, buffer.readi16(__surge_input, pos6 + 14) * 0.00009587672516830327, buffer.readi16(__surge_input, pos6 + 16) * 0.00009587672516830327);
+const angle8 = math.sqrt(rv7.X * rv7.X + rv7.Y * rv7.Y + rv7.Z * rv7.Z);
+const scale9 = angle8 > 1e-6 ? math.sin(angle8 * 0.5) / angle8 : 0.5;
+return new CFrame(buffer.readf32(__surge_input, pos6), buffer.readf32(__surge_input, pos6 + 4), buffer.readf32(__surge_input, pos6 + 8), rv7.X * scale9, rv7.Y * scale9, rv7.Z * scale9, math.cos(angle8 * 0.5));"
 `;
 
 exports[`Emitter element reservations an element of several fields reads and writes each at its offset from the element 1`] = `
@@ -502,11 +500,10 @@ buffer.writef32(__surge_scratch, pos1 + 20, rv5.Z);
 // read
 const pos6 = __surge_readCursor;
 __surge_readCursor = pos6 + 24;
-const pos7 = new Vector3(buffer.readf32(__surge_input, pos6), buffer.readf32(__surge_input, pos6 + 4), buffer.readf32(__surge_input, pos6 + 8));
-const rv8 = new Vector3(buffer.readf32(__surge_input, pos6 + 12), buffer.readf32(__surge_input, pos6 + 16), buffer.readf32(__surge_input, pos6 + 20));
-const angle9 = rv8.Magnitude;
-const rotation10 = CFrame.fromAxisAngle(angle9 > 1e-6 ? rv8.Unit : Vector3.zAxis, angle9);
-return rotation10.add(pos7);"
+const rv7 = new Vector3(buffer.readf32(__surge_input, pos6 + 12), buffer.readf32(__surge_input, pos6 + 16), buffer.readf32(__surge_input, pos6 + 20));
+const angle8 = math.sqrt(rv7.X * rv7.X + rv7.Y * rv7.Y + rv7.Z * rv7.Z);
+const scale9 = angle8 > 1e-6 ? math.sin(angle8 * 0.5) / angle8 : 0.5;
+return new CFrame(buffer.readf32(__surge_input, pos6), buffer.readf32(__surge_input, pos6 + 4), buffer.readf32(__surge_input, pos6 + 8), rv7.X * scale9, rv7.Y * scale9, rv7.Z * scale9, math.cos(angle8 * 0.5));"
 `;
 
 exports[`Emitter per-kind write/read snapshots cframe inside Packed 1`] = `
@@ -806,7 +803,7 @@ if (__surge_cursor > __surge_capacity) {
     __surge_scratch = __surge_grow(__surge_scratch, pos1, __surge_cursor);
     __surge_capacity = buffer.len(__surge_scratch);
 }
-buffer.writeu8(__surge_scratch, pos1, surge_SortOrder_1_index.get(value.Name)!);
+buffer.writeu8(__surge_scratch, pos1, surge_SortOrder_1_index.get(value.Value)!);
 
 // read
 const pos2 = __surge_readCursor;
@@ -816,7 +813,10 @@ return surge_SortOrder_1_items[idx3];
 
 // helpers
 const surge_SortOrder_1_items = [Enum.SortOrder.Custom, Enum.SortOrder.LayoutOrder, Enum.SortOrder.Name];
-const surge_SortOrder_1_index = new Map([["Custom", 0], ["LayoutOrder", 1], ["Name", 2]]);"
+const surge_SortOrder_1_index = new Map<number, number>();
+for (let i = 0; i < 3; i++) {
+    surge_SortOrder_1_index.set(surge_SortOrder_1_items[i].Value, i);
+}"
 `;
 
 exports[`Emitter per-kind write/read snapshots guardedUnion 1`] = `

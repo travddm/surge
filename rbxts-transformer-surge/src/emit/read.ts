@@ -468,13 +468,6 @@ function readCFrame(ctx: EmitContext, field: Extract<Field, { kind: "cframe" }>,
 	const { buf, pos, statements } = ctx.destructureAlloc("readAlloc", cframeBytes(field));
 	out.push(...statements);
 	const [px, py, pz] = readNum3(ctx, widths, { buf, pos, offset: 0 });
-	const positionValue = ctx.fresh("pos");
-	out.push(
-		ctx.constStatement(
-			positionValue,
-			f.createNewExpression(f.createIdentifier("Vector3"), undefined, [px, py, pz]),
-		),
-	);
 	const rotationSlot = { buf, pos, offset: positionBytes };
 	const rotationWidths: ComponentWidths = field.quantized ? QUANTIZED_COMPONENTS : DEFAULT_COMPONENTS;
 	let [rx, ry, rz] = readNum3(ctx, rotationWidths, rotationSlot);
@@ -487,29 +480,53 @@ function readCFrame(ctx: EmitContext, field: Extract<Field, { kind: "cframe" }>,
 			),
 		);
 	}
+	// The axis-angle becomes a unit quaternion, so that one constructor builds
+	// the result (Transformer 5.28). sin(angle / 2) / angle tends to 1/2 as the
+	// angle tends to 0, which is what a rotation of no angle takes.
+	const syntax = ctx.ts_.SyntaxKind;
+	const math = (name: string, args: ts.Expression[]) =>
+		f.createCallExpression(f.createPropertyAccessExpression(f.createIdentifier("math"), name), undefined, args);
 	const rv = ctx.fresh("rv");
 	out.push(ctx.constStatement(rv, f.createNewExpression(f.createIdentifier("Vector3"), undefined, [rx, ry, rz])));
+	const component = (name: string) => f.createPropertyAccessExpression(rv, name);
+	const square = (name: string) => f.createBinaryExpression(component(name), syntax.AsteriskToken, component(name));
 	const angle = ctx.fresh("angle");
-	out.push(ctx.constStatement(angle, f.createPropertyAccessExpression(rv, "Magnitude")));
-	const rotation = ctx.fresh("rotation");
-	const axisExpr = f.createConditionalExpression(
-		f.createBinaryExpression(angle, ctx.ts_.SyntaxKind.GreaterThanToken, f.createNumericLiteral("1e-6")),
-		undefined,
-		f.createPropertyAccessExpression(rv, "Unit"),
-		undefined,
-		f.createPropertyAccessExpression(f.createIdentifier("Vector3"), "zAxis"),
-	);
 	out.push(
 		ctx.constStatement(
-			rotation,
-			f.createCallExpression(
-				f.createPropertyAccessExpression(f.createIdentifier("CFrame"), "fromAxisAngle"),
+			angle,
+			math("sqrt", [
+				f.createBinaryExpression(
+					f.createBinaryExpression(square("X"), syntax.PlusToken, square("Y")),
+					syntax.PlusToken,
+					square("Z"),
+				),
+			]),
+		),
+	);
+	const half = () => f.createBinaryExpression(angle, syntax.AsteriskToken, ctx.num(0.5));
+	const scale = ctx.fresh("scale");
+	out.push(
+		ctx.constStatement(
+			scale,
+			f.createConditionalExpression(
+				f.createBinaryExpression(angle, syntax.GreaterThanToken, f.createNumericLiteral("1e-6")),
 				undefined,
-				[axisExpr, angle],
+				f.createBinaryExpression(math("sin", [half()]), syntax.SlashToken, angle),
+				undefined,
+				ctx.num(0.5),
 			),
 		),
 	);
-	return f.createCallExpression(f.createPropertyAccessExpression(rotation, "add"), undefined, [positionValue]);
+	const scaled = (name: string) => f.createBinaryExpression(component(name), syntax.AsteriskToken, scale);
+	return f.createNewExpression(f.createIdentifier("CFrame"), undefined, [
+		px,
+		py,
+		pz,
+		scaled("X"),
+		scaled("Y"),
+		scaled("Z"),
+		math("cos", [half()]),
+	]);
 }
 
 /**
