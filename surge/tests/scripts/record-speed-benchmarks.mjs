@@ -388,6 +388,16 @@ function currentCommit() {
 	return git("status", "--porcelain") === "" ? head : `${head} (uncommitted changes)`;
 }
 
+/**
+ * The flamework2 column's modules are generated in flamework2/, which pins the version, and are
+ * checked in, so the place runs them without that project installed.
+ */
+function flamework2Version() {
+	return JSON.parse(readFileSync(join("flamework2", "package.json"), "utf8")).dependencies[
+		"@flamework-experimental/core"
+	];
+}
+
 /** Blink and Zap are pinned in mise.toml rather than in a manifest. */
 function toolVersion(tool) {
 	const [, version] = readFileSync("../mise.toml", "utf8").match(new RegExp(`"github:${tool}" = "([^"]+)"`));
@@ -405,6 +415,7 @@ function runFacts() {
 		["roblox-ts", packageVersion("roblox-ts")],
 		["@rbxts/flamework-binary-serializer", packageVersion("@rbxts/flamework-binary-serializer")],
 		["@rbxts/serio", packageVersion("@rbxts/serio")],
+		["@flamework-experimental/core", flamework2Version()],
 		["Blink", toolVersion("1Axen/blink")],
 	];
 }
@@ -640,6 +651,11 @@ function write(facts) {
 		"five rows, so its ratio is what surge's generated code costs against",
 		"hand-written Luau. Zap exposes no encoder to call and has no column.",
 		"Every column but serio runs with `--!native` and `--!optimize 2`.",
+		"",
+		"`flamework2` is the experimental Flamework 2's `Flamework.createSerializer`.",
+		"On every call, its `deserialize` checks each count against the bytes left,",
+		"raises on a union tag it does not know, and raises unless it read the whole",
+		"buffer; surge's examines its input only under `readChecks`.",
 		"",
 		"Each number is one shape in a warm loop, on one machine on one day, not",
 		"an application profile; compare columns within this file only.",

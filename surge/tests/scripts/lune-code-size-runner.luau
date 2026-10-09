@@ -16,7 +16,7 @@ local process = require("@lune/process")
 
 local CODECS_DIRECTORY = "out/bench/codecs"
 local OUTPUT_PATH = "../../docs/benchmarks/code-size.md"
-local LIBRARIES = { "surge", "fbs", "serio" }
+local LIBRARIES = { "surge", "fbs", "serio", "flamework2" }
 local BASELINE = "surge"
 local EMPTY = "—"
 -- The level a published place compiles at, which the modules' own `--!optimize 2` asks for as
@@ -101,7 +101,9 @@ paragraph(
 	"library's serializer for one shape, with its ratio against surge. surge's",
 	"module holds the code the transformer generates for the shape. fbs's and",
 	"serio's hold the schema their transformer generates and one call: the code",
-	"that reads the schema is in the library, and is the same for every shape."
+	"that reads the schema is in the library, and is the same for every shape.",
+	"flamework2's holds the code Flamework 2's transformer generates for the shape,",
+	"with the varint helpers and lookup tables it declares in each module."
 )
 
 paragraph(

@@ -5,10 +5,12 @@ import type { Fixture } from "../adapter";
 import { defineEntry } from "../adapter";
 import { baselineAdapter } from "../adapters/baseline";
 import { fbsAdapter } from "../adapters/fbs";
+import { flamework2Adapter } from "../adapters/flamework2";
 import { serioAdapter } from "../adapters/serio";
 import { surgeAdapter } from "../adapters/surge";
 import { tuples as baselineCodec } from "../baseline/codecs";
 import { fbsSerializer } from "../codecs/tuples/fbs";
+import { flamework2Serializer } from "../codecs/tuples/flamework2";
 import { serioSerializer } from "../codecs/tuples/serio";
 import type { FbsSamples, Sample, Samples, SerioSamples } from "../codecs/tuples/shapes";
 import { serializer } from "../codecs/tuples/surge";
@@ -28,6 +30,7 @@ export const tuples: Fixture = {
 		defineEntry<Samples>("surge", { samples }, surgeAdapter(serializer)),
 		defineEntry<FbsSamples>("fbs", { samples }, fbsAdapter(fbsSerializer)),
 		defineEntry<SerioSamples>("serio", { samples }, serioAdapter(serioSerializer)),
+		defineEntry<Samples>("flamework2", { samples }, flamework2Adapter(flamework2Serializer)),
 		defineEntry("baseline", { samples }, baselineAdapter(baselineCodec)),
 	],
 };

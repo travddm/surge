@@ -4,9 +4,11 @@ import { Rng } from "../../support";
 import type { Fixture } from "../adapter";
 import { defineEntry } from "../adapter";
 import { fbsAdapter } from "../adapters/fbs";
+import { flamework2Adapter } from "../adapters/flamework2";
 import { serioAdapter } from "../adapters/serio";
 import { surgeAdapter } from "../adapters/surge";
 import { fbsSerializer } from "../codecs/enum-heavy/fbs";
+import { flamework2Serializer } from "../codecs/enum-heavy/flamework2";
 import { serioSerializer } from "../codecs/enum-heavy/serio";
 import type { EnumHeavy } from "../codecs/enum-heavy/shapes";
 import { serializer } from "../codecs/enum-heavy/surge";
@@ -33,5 +35,6 @@ export const enumHeavy: Fixture = {
 		defineEntry<EnumHeavy>("surge", value, surgeAdapter(serializer)),
 		defineEntry<EnumHeavy>("fbs", value, fbsAdapter(fbsSerializer)),
 		defineEntry<EnumHeavy>("serio", value, serioAdapter(serioSerializer)),
+		defineEntry<EnumHeavy>("flamework2", value, flamework2Adapter(flamework2Serializer)),
 	],
 };

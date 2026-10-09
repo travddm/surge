@@ -10,7 +10,7 @@
 		"serve": "rojo serve default.project.json",
 		"build": "node scripts/ensure-dist.mjs && rojo build default.project.json -o dist/tests.rbxl",
 		"test": "node scripts/check-test-output.mjs lune run scripts/lune-test-runner.luau",
-		"bench:definitions": "blink src/bench/definitions/catalog.blink -y && zap src/bench/definitions/catalog.zap",
+		"bench:definitions": "blink src/bench/definitions/catalog.blink -y && zap src/bench/definitions/catalog.zap && npm ci --prefix flamework2 && npm run compile --prefix flamework2 && node scripts/copy-flamework2-codecs.mjs",
 		"bench:size": "lune run scripts/lune-size-runner.luau",
 		"bench:size:only": "npm run bench:size -- --only",
 		"bench:code": "lune run scripts/lune-code-size-runner.luau",

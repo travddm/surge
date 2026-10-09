@@ -128,9 +128,10 @@ Never edit these by hand; regenerate them:
 | `tests/out/`, `tests/include/`                                                                                    | `mise run tests:compile`     |
 | `tests/dist/`                                                                                                     | `mise run tests:build`       |
 | `server.luau` and `client.luau` under `tests/src/bench/blink/` and `tests/src/bench/zap/`, and `zap/tooling.luau` | `mise run bench:definitions` |
+| `flamework2*.luau` under `tests/src/bench/codecs/`                                                                | `mise run bench:definitions` |
 | `docs/benchmarks/size.md`                                                                                         | `mise run bench:size`        |
 | `docs/benchmarks/speed.md`, `docs/benchmarks/speed-trials.tsv`                                                    | `mise run bench:speed`       |
 
-The `.d.ts` files beside the Blink and Zap modules, and `zap/deferred.luau`,
-are written by hand: neither compiler's own TypeScript output describes the
-calls the benchmark adapters make.
+The `.d.ts` files beside the Blink, Zap and Flamework 2 modules, and
+`zap/deferred.luau`, are written by hand: no compiler's own TypeScript output
+describes the calls the benchmark adapters make.

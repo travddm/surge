@@ -4,10 +4,12 @@ import { Rng } from "../../support";
 import type { Fixture } from "../adapter";
 import { defineEntry } from "../adapter";
 import { fbsAdapter } from "../adapters/fbs";
+import { flamework2Adapter } from "../adapters/flamework2";
 import { serioAdapter } from "../adapters/serio";
 import { surgeAdapter } from "../adapters/surge";
 import { zapAdapter } from "../adapters/zap";
 import { fbsSerializer } from "../codecs/guarded-union/fbs";
+import { flamework2Serializer } from "../codecs/guarded-union/flamework2";
 import { serioSerializer } from "../codecs/guarded-union/serio";
 import type { GuardedUnion, SerioGuardedUnion } from "../codecs/guarded-union/shapes";
 import { serializer } from "../codecs/guarded-union/surge";
@@ -34,6 +36,7 @@ export const guardedUnion: Fixture = {
 		defineEntry<GuardedUnion>("surge", { values }, surgeAdapter(serializer)),
 		defineEntry<GuardedUnion>("fbs", { values }, fbsAdapter(fbsSerializer)),
 		defineEntry<SerioGuardedUnion>("serio", { values }, serioAdapter(serioSerializer)),
+		defineEntry<GuardedUnion>("flamework2", { values }, flamework2Adapter(flamework2Serializer)),
 		defineEntry(
 			"zap",
 			{ values },

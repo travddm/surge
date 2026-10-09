@@ -10,6 +10,7 @@ import { defineEntry } from "../adapter";
 import { baselineAdapter } from "../adapters/baseline";
 import { blinkAdapter } from "../adapters/blink";
 import { fbsAdapter } from "../adapters/fbs";
+import { flamework2Adapter } from "../adapters/flamework2";
 import { serioAdapter } from "../adapters/serio";
 import { surgeAdapter } from "../adapters/surge";
 import { zapAdapter } from "../adapters/zap";
@@ -17,6 +18,7 @@ import { transforms as baselineCodec } from "../baseline/codecs";
 import { Transforms as blinkCodec } from "../blink/server";
 import { fbsSerializer } from "../codecs/cframes/fbs";
 import { fbsPackedSerializer } from "../codecs/cframes/fbs-packed";
+import { flamework2Serializer } from "../codecs/cframes/flamework2";
 import { serioSerializer } from "../codecs/cframes/serio";
 import { serioPackedSerializer } from "../codecs/cframes/serio-packed";
 import type { Transforms } from "../codecs/cframes/shapes";
@@ -64,6 +66,7 @@ export const cframeArray: Fixture = {
 		defineEntry<Transforms>("surge", { list: arbitrary }, surgeAdapter(serializer)),
 		defineEntry<Transforms>("fbs", { list: arbitrary }, fbsAdapter(fbsSerializer)),
 		defineEntry<Transforms>("serio", { list: arbitrary }, serioAdapter(serioSerializer)),
+		defineEntry<Transforms>("flamework2", { list: arbitrary }, flamework2Adapter(flamework2Serializer)),
 		defineEntry("blink", { list: arbitrary }, blinkAdapter(blinkCodec)),
 		defineEntry(
 			"zap",

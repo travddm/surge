@@ -6,12 +6,14 @@ import { defineEntry } from "../adapter";
 import { baselineAdapter } from "../adapters/baseline";
 import { blinkAdapter } from "../adapters/blink";
 import { fbsAdapter } from "../adapters/fbs";
+import { flamework2Adapter } from "../adapters/flamework2";
 import { serioAdapter } from "../adapters/serio";
 import { surgeAdapter } from "../adapters/surge";
 import { zapAdapter } from "../adapters/zap";
 import { leaderboard as baselineCodec } from "../baseline/codecs";
 import { Leaderboard as blinkCodec } from "../blink/server";
 import { fbsSerializer } from "../codecs/leaderboard/fbs";
+import { flamework2Serializer } from "../codecs/leaderboard/flamework2";
 import { serioSerializer } from "../codecs/leaderboard/serio";
 import type { FbsLeaderboard, Leaderboard, LeaderboardEntry, SerioLeaderboard } from "../codecs/leaderboard/shapes";
 import { serializer } from "../codecs/leaderboard/surge";
@@ -31,6 +33,7 @@ export const leaderboard: Fixture = {
 		defineEntry<Leaderboard>("surge", { entries }, surgeAdapter(serializer)),
 		defineEntry<FbsLeaderboard>("fbs", { entries }, fbsAdapter(fbsSerializer)),
 		defineEntry<SerioLeaderboard>("serio", { entries }, serioAdapter(serioSerializer)),
+		defineEntry<Leaderboard>("flamework2", { entries }, flamework2Adapter(flamework2Serializer)),
 		defineEntry("blink", { entries }, blinkAdapter(blinkCodec)),
 		defineEntry(
 			"zap",

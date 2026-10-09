@@ -8,12 +8,14 @@ import { defineEntry } from "../adapter";
 import { baselineAdapter } from "../adapters/baseline";
 import { blinkAdapter } from "../adapters/blink";
 import { fbsAdapter } from "../adapters/fbs";
+import { flamework2Adapter } from "../adapters/flamework2";
 import { serioAdapter } from "../adapters/serio";
 import { surgeAdapter } from "../adapters/surge";
 import { zapAdapter } from "../adapters/zap";
 import { taggedUnion as baselineCodec } from "../baseline/codecs";
 import { TaggedUnion as blinkCodec } from "../blink/server";
 import { fbsSerializer } from "../codecs/tagged-union/fbs";
+import { flamework2Serializer } from "../codecs/tagged-union/flamework2";
 import { serioSerializer } from "../codecs/tagged-union/serio";
 import type { Event, FbsTaggedUnion, SerioTaggedUnion, TaggedUnion } from "../codecs/tagged-union/shapes";
 import { serializer } from "../codecs/tagged-union/surge";
@@ -62,6 +64,7 @@ export const taggedUnion: Fixture = {
 		defineEntry<TaggedUnion>("surge", { events }, surgeAdapter(serializer)),
 		defineEntry<FbsTaggedUnion>("fbs", { events }, fbsAdapter(fbsSerializer)),
 		defineEntry<SerioTaggedUnion>("serio", { events }, serioAdapter(serioSerializer)),
+		defineEntry<TaggedUnion>("flamework2", { events }, flamework2Adapter(flamework2Serializer)),
 		defineEntry("blink", { events }, blinkAdapter(blinkCodec)),
 		defineEntry(
 			"zap",

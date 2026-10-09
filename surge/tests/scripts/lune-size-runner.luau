@@ -16,11 +16,15 @@
 -- Markdown file has to pass `mise run format:check`.
 local fs = require("@lune/fs")
 local process = require("@lune/process")
+local serde = require("@lune/serde")
 local shim = require("./lune-roblox-shim")
 
 local OUTPUT_DIRECTORY = "../../docs/benchmarks"
 local OUTPUT_PATH = OUTPUT_DIRECTORY .. "/size.md"
 local BASELINE = "surge"
+-- The version the flamework2 column's modules were generated with, which tests/flamework2/ pins.
+local FLAMEWORK2_VERSION =
+	serde.decode("json", fs.readFile("flamework2/package.json")).dependencies["@flamework-experimental/core"]
 -- What a column reads where that library cannot express the row.
 local EMPTY = "—"
 
@@ -80,8 +84,8 @@ paragraph(
 if sideChannelUsed then
 	paragraph(
 		"`+N side` means N values travel outside the buffer (the blob array in surge,",
-		"fbs, and serio; the instance table in Zap), which costs bandwidth the byte",
-		"count does not show."
+		"fbs, serio and flamework2; the instance table in Zap), which costs bandwidth",
+		"the byte count does not show."
 	)
 end
 
@@ -98,6 +102,15 @@ paragraph(
 	"Blink and Zap are smaller than surge only where a length prefix appears:",
 	"they default to a u16 count where surge writes u32, and `DataType.Length`",
 	"narrows surge's."
+)
+
+paragraph(
+	("`flamework2` is `Flamework.createSerializer` of `@flamework-experimental/core` %s,"):format(
+		FLAMEWORK2_VERSION
+	),
+	"an experimental Flamework 2. It writes each count and length as a varint, one",
+	"byte below 128, an enum item as a u16 of its `Value`, a `CFrame` as its twelve",
+	"components, and a blob's index into the buffer as a u32. It has no `Packed`."
 )
 
 paragraph(

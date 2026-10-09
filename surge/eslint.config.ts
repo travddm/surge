@@ -12,7 +12,16 @@ export default [
 	importXConfigs.recommended,
 	importXConfigs.typescript,
 	{
-		ignores: ["**/out/**", "**/node_modules/**", "**/include/**", "**/dist/**", "eslint.config.ts"],
+		ignores: [
+			"**/out/**",
+			"**/node_modules/**",
+			"**/include/**",
+			"**/dist/**",
+			"eslint.config.ts",
+			// Imports packages that only `mise run bench:definitions` installs, so its imports
+			// cannot be resolved anywhere else, CI included.
+			"tests/flamework2/**",
+		],
 	},
 	{
 		files: ["**/*.ts", "**/*.tsx"],

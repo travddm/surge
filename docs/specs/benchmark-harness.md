@@ -1,8 +1,7 @@
 # Benchmark harness specification
 
 Status: current
-Applies to: `@rbxts/surge` at commit `5136e41`, `rbxts-transformer-surge` at
-commit `72a4887` (no tagged release yet)
+Applies to: commit `0201459` (no tagged release yet)
 
 ## 1. Scope
 
@@ -52,21 +51,24 @@ tables show that cell empty.
 **3.5** A row declares its shape for surge, fbs and serio with each library's
 own width brands. Libraries whose declarations would be identical share one
 declaration. Blink's and Zap's declarations are in their definition files
-(4.4).
+(4.4), and Flamework 2's in the modules of `tests/flamework2/src/` (4.10).
 
 **3.6** Each `createCodec`, fbs and serio factory call of the catalog is the
 one statement of a module of its own, under
 `tests/src/bench/codecs/<fixture>/`: `surge.ts`, `fbs.ts` and `serio.ts`, with
-a suffix where a fixture has more than one shape, such as `surge-packed.ts`. A
-fixture's shapes are in the `shapes.ts` beside them, which holds types only.
+a suffix where a fixture has more than one shape, such as `surge-packed.ts`.
+Flamework 2's module for a row is the `flamework2.luau` there, with the same
+suffixes, that 4.11 generates. A fixture's shapes are in the `shapes.ts`
+beside them, which holds types only.
 The fixture module under `tests/src/bench/fixtures/` holds the sample values
 and the rows.
 
 ## 4. The columns
 
 **4.1** surge is driven through `createCodec<T>()`, fbs through its
-`createBinarySerializer<T>()`, and serio through its default-exported
-`createSerializer<T>()`.
+`createBinarySerializer<T>()`, serio through its default-exported
+`createSerializer<T>()`, and Flamework 2 through `Flamework.createSerializer<T>()`
+(4.10).
 
 **4.2** Blink is driven through the `Write` and `Read` its compiler generates
 for each exported struct, from `tests/src/bench/definitions/catalog.blink`.
@@ -99,8 +101,9 @@ so that its timing measures code rather than format.
 **4.6** Every column but serio's runs its codec in modules that carry
 `--!native` and `--!optimize 2`: surge's fixtures and the runtime modules its
 generated code calls, the baseline's `codecs.luau`, the fbs modules that
-build its serialize and deserialize functions, as fbs ships them, and Blink's
-generated modules, as its compiler emits them. serio's modules carry neither.
+build its serialize and deserialize functions, as fbs ships them, Blink's
+generated modules, as its compiler emits them, and Flamework 2's modules, whose
+sources in `tests/flamework2/src/` carry both. serio's modules carry neither.
 
 **4.7** A timed call also runs harness code in
 `tests/src/bench/speed.spec.ts`, `adapter.ts` and `adapters/`, which carry
@@ -114,7 +117,32 @@ returns and passes its `buffer` and `blobs` to `deserialize`. serio's keeps the 
 `serialize` returns and passes it to `deserialize`. Blink's and the
 baseline's keep what their write function returns: the buffer, or for the
 baseline's instance references, the table of the buffer and the blobs, which
-its read function takes back.
+its read function takes back. Flamework 2's keeps the buffer `serialize`
+returns and passes it to `deserialize`. On the instance references, where
+`serialize` returns the buffer and the blob list as two values, its adapter
+creates a table of the two to carry them to `decode`: the one table an
+adapter creates in a timed call.
+
+**4.10** Flamework 2 is the experimental `@flamework-experimental/core` and
+`@flamework-experimental/transformer`, at the exact version that
+`tests/flamework2/package.json` pins. `tests/` cannot build its serializers:
+its transformer and Flamework 1's, which fbs, serio and runit need, write the
+same `flamework.build` and `include/flamework/`. `tests/flamework2/` is a
+project of its own, with one module for each row Flamework 2 can express, at
+the path 3.6 gives that row's module.
+
+**4.11** `mise run bench:definitions` builds `tests/flamework2/` and copies
+each compiled module to `tests/src/bench/codecs/`, beside a declaration of its
+type that is written by hand. The copy replaces the module's one import, of
+`@flamework-experimental/core`, with a table whose `createSerializer` returns
+its argument, as that package's does when it is given no options. The
+functions the tiers time are the ones the transformer generated.
+
+**4.12** Flamework 2 has no `Packed<T>`, so the packed rows have no
+Flamework 2 cell. On every call, its `deserialize` checks each count against
+the bytes left in the buffer, raises on a union tag it does not know, and
+raises unless it read the buffer to its end. surge's `deserialize` examines
+its input only under `readChecks`.
 
 ## 5. The size tier
 
@@ -228,12 +256,14 @@ for the reasons in section 6 of [test-harness.md](test-harness.md).
 **11.2** A cell is the length in bytes of the Luau bytecode that `luau.compile`
 of the pinned Lune returns for one compiled codec module of 3.6, at
 optimization level 2 and debug level 1. A row is one shape of one fixture, and
-the columns are surge, fbs and serio.
+the columns are surge, fbs, serio and Flamework 2.
 
 **11.3** A cell counts the module's imports of its factory as well as the
 factory call's code. For surge that code is what the transformer generates.
 For fbs and serio it is the schema their transformer generates and one call:
-the library code that reads the schema is counted in no cell.
+the library code that reads the schema is counted in no cell. For Flamework 2
+it is what its transformer generates, with the helpers and lookup tables it
+declares in each module, and the table of 4.11 in place of the import.
 
 **11.4** The baseline, Blink and Zap each hold every row they cover in one
 module, so the file gives each of those modules one figure and no cell.
@@ -253,6 +283,7 @@ version, since another compiler version can give another count.
 | 4.6       | Source: the first lines of `tests/src/bench/fixtures/*.ts` and of each codec module under `tests/src/bench/codecs/`, `tests/src/bench/baseline/codecs.luau`, `tests/src/bench/blink/server.luau`, and `@rbxts/flamework-binary-serializer` 0.7.0's `out/serialization/createSerializer.lua` and `createDeserializer.lua`; `@rbxts/serio` 1.2.7's `out/` carries no directive. `test/golden.test.mjs` pins `--!native` and `--!optimize 2` on surge's `alloc`, `blobs` and `cframe` modules, and pins that `--!optimize 2` survives the transformer's injected imports on three modules of the tests place, none of them a fixture. No test checks a directive on a fixture, on the baseline, or in fbs or Blink |
 | 4.7       | Source: the first lines of `tests/src/bench/speed.spec.ts`, `adapter.ts` and `adapters/*.ts`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 | 4.8       | Source: `tests/src/bench/adapters/`. The documentation each follows: `docs/getting-started.md` for surge; the README of `@rbxts/flamework-binary-serializer` 0.7.0 and the comments on its `Serializer<T>`; the README of `@rbxts/serio` 1.2.7                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| 4.10–4.12 | Source: `tests/flamework2/`, `tests/scripts/copy-flamework2-codecs.mjs` and the `bench:definitions` script in `tests/package.json`; the `flamework2.luau` modules under `tests/src/bench/codecs/`; `docs/benchmarks/size.md`, where every Flamework 2 cell round-trips and the packed rows have none                                                                                                                                                                                                                                                                                                                                                                                                            |
 | 5.1–5.3   | Source: `tests/scripts/lune-size-runner.luau` and `tests/src/bench/size.ts`; a regenerated `size.md` with no diff                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 | 6.1       | Source: `RUNS` and `runOnce` in `tests/scripts/record-speed-benchmarks.mjs`, and the `bench:speed` scripts in `package.json` and `tests/package.json`; `main()` in `tests/src/index.ts` runs only `tests` ([test-harness.md](test-harness.md) 3.4)                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | 6.2–6.5   | Source: the constants and comment block of `tests/src/bench/speed.spec.ts`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
@@ -264,6 +295,8 @@ version, since another compiler version can give another count.
 
 ## Changes
 
+- `0201459`: adds the Flamework 2 column: 4.10 to 4.12, and 3.5, 3.6, 4.1, 4.6, 4.8, 11.2 and 11.3
+  name it.
 - `5136e41` / `72a4887`: 3.1 adds a row of nested arrays, and 4.5 gives the
   baseline that row.
 - `75401db` / `a566bd2`: 3.1 adds a row of tuples, and 4.5 gives the baseline

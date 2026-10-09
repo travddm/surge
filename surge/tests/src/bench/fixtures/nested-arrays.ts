@@ -6,12 +6,14 @@ import { defineEntry } from "../adapter";
 import { baselineAdapter } from "../adapters/baseline";
 import { blinkAdapter } from "../adapters/blink";
 import { fbsAdapter } from "../adapters/fbs";
+import { flamework2Adapter } from "../adapters/flamework2";
 import { serioAdapter } from "../adapters/serio";
 import { surgeAdapter } from "../adapters/surge";
 import { zapAdapter } from "../adapters/zap";
 import { nestedArrays as baselineCodec } from "../baseline/codecs";
 import { NestedArrays as blinkCodec } from "../blink/server";
 import { fbsSerializer } from "../codecs/nested-arrays/fbs";
+import { flamework2Serializer } from "../codecs/nested-arrays/flamework2";
 import { serioSerializer } from "../codecs/nested-arrays/serio";
 import type { FbsNestedArrays, NestedArrays, SerioNestedArrays } from "../codecs/nested-arrays/shapes";
 import { serializer } from "../codecs/nested-arrays/surge";
@@ -36,6 +38,7 @@ export const nestedArrays: Fixture = {
 		defineEntry<NestedArrays>("surge", { rows }, surgeAdapter(serializer)),
 		defineEntry<FbsNestedArrays>("fbs", { rows }, fbsAdapter(fbsSerializer)),
 		defineEntry<SerioNestedArrays>("serio", { rows }, serioAdapter(serioSerializer)),
+		defineEntry<NestedArrays>("flamework2", { rows }, flamework2Adapter(flamework2Serializer)),
 		defineEntry("blink", { rows }, blinkAdapter(blinkCodec)),
 		defineEntry(
 			"zap",

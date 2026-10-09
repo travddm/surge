@@ -7,33 +7,35 @@ library's serializer for one shape, with its ratio against surge. surge's
 module holds the code the transformer generates for the shape. fbs's and
 serio's hold the schema their transformer generates and one call: the code
 that reads the schema is in the library, and is the same for every shape.
+flamework2's holds the code Flamework 2's transformer generates for the shape,
+with the varint helpers and lookup tables it declares in each module.
 
 Every module also carries the few lines that import its factory. The bytecode
 is what Lune 0.10.5's `luau.compile` returns at optimization level 2 and debug
 level 1; another compiler version can give another count.
 
-| Module                   | surge | fbs          | serio        |
-| ------------------------ | ----- | ------------ | ------------ |
-| blink-benches (booleans) | 852   | 648 (0.76×)  | 640 (0.75×)  |
-| blink-benches (entities) | 1501  | 991 (0.66×)  | 986 (0.66×)  |
-| cframes                  | 1588  | 637 (0.40×)  | 706 (0.44×)  |
-| cframes (packed)         | 1456  | 677 (0.46×)  | 746 (0.51×)  |
-| enum-heavy               | 3254  | 800 (0.25×)  | 795 (0.24×)  |
-| guarded-union            | 1640  | 1115 (0.68×) | 1135 (0.69×) |
-| instance-refs            | 1249  | 781 (0.63×)  | 776 (0.62×)  |
-| large-array              | 817   | 636 (0.78×)  | 631 (0.77×)  |
-| large-record             | 1725  | 668 (0.39×)  | 689 (0.40×)  |
-| leaderboard              | 1261  | 846 (0.67×)  | 860 (0.68×)  |
-| nested-arrays            | 1084  | 659 (0.61×)  | 679 (0.63×)  |
-| nested-object            | 1700  | 1229 (0.72×) | 1247 (0.73×) |
-| packed-struct (packed)   | 2414  | 1388 (0.57×) | 1381 (0.57×) |
-| packed-struct (unpacked) | 3179  | 1356 (0.43×) | 1349 (0.42×) |
-| small-flat-struct        | 1130  | 836 (0.74×)  | 798 (0.71×)  |
-| string-heavy             | 2103  | 755 (0.36×)  | 825 (0.39×)  |
-| tagged-union             | 2726  | 1399 (0.51×) | 1494 (0.55×) |
-| tree                     | 1721  | —            | —            |
-| tuples                   | 1091  | 751 (0.69×)  | 751 (0.69×)  |
-| wide-struct              | 6845  | 3363 (0.49×) | 3328 (0.49×) |
+| Module                   | surge | fbs          | serio        | flamework2   |
+| ------------------------ | ----- | ------------ | ------------ | ------------ |
+| blink-benches (booleans) | 852   | 648 (0.76×)  | 640 (0.75×)  | 2382 (2.80×) |
+| blink-benches (entities) | 1501  | 991 (0.66×)  | 986 (0.66×)  | 2933 (1.95×) |
+| cframes                  | 1588  | 637 (0.40×)  | 706 (0.44×)  | 3468 (2.18×) |
+| cframes (packed)         | 1456  | 677 (0.46×)  | 746 (0.51×)  | —            |
+| enum-heavy               | 3254  | 800 (0.25×)  | 795 (0.24×)  | 2901 (0.89×) |
+| guarded-union            | 1640  | 1115 (0.68×) | 1135 (0.69×) | 3875 (2.36×) |
+| instance-refs            | 1249  | 781 (0.63×)  | 776 (0.62×)  | 2681 (2.15×) |
+| large-array              | 817   | 636 (0.78×)  | 631 (0.77×)  | 2335 (2.86×) |
+| large-record             | 1725  | 668 (0.39×)  | 689 (0.40×)  | 2588 (1.50×) |
+| leaderboard              | 1261  | 846 (0.67×)  | 860 (0.68×)  | 3304 (2.62×) |
+| nested-arrays            | 1084  | 659 (0.61×)  | 679 (0.63×)  | 2855 (2.63×) |
+| nested-object            | 1700  | 1229 (0.72×) | 1247 (0.73×) | 4506 (2.65×) |
+| packed-struct (packed)   | 2414  | 1388 (0.57×) | 1381 (0.57×) | —            |
+| packed-struct (unpacked) | 3179  | 1356 (0.43×) | 1349 (0.42×) | 4803 (1.51×) |
+| small-flat-struct        | 1130  | 836 (0.74×)  | 798 (0.71×)  | 1361 (1.20×) |
+| string-heavy             | 2103  | 755 (0.36×)  | 825 (0.39×)  | 3160 (1.50×) |
+| tagged-union             | 2726  | 1399 (0.51×) | 1494 (0.55×) | 4834 (1.77×) |
+| tree                     | 1721  | —            | —            | 2531 (1.47×) |
+| tuples                   | 1091  | 751 (0.69×)  | 751 (0.69×)  | 2589 (2.37×) |
+| wide-struct              | 6845  | 3363 (0.49×) | 3328 (0.49×) | 6027 (0.88×) |
 
 The hand-written baseline, Blink and Zap each hold every row they cover in
 one module, so they have no cell above:
