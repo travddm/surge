@@ -61,3 +61,6 @@ above depends on them:
   gating on its numbers is a separate decision.
 - [agent-conventions.md](agent-conventions.md): a hook that blocks an agent's
   edits to generated files, and task skills. Each waits for a reason.
+- [raw-reads.md](raw-reads.md): an option to serialize a value without running
+  its metamethods. Plain tables and class instances read the same either way,
+  and a proxy would read wrong.
