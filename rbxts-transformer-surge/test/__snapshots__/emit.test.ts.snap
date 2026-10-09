@@ -878,7 +878,7 @@ return surge_SortOrder_1_items[idx4];
 const surge_SortOrder_1_items = [Enum.SortOrder.Custom, Enum.SortOrder.LayoutOrder, Enum.SortOrder.Name];
 const surge_SortOrder_1_index = new Map<EnumItem, number>();
 for (const i2 of $range(1, 3)) {
-    surge_SortOrder_1_index.set(surge_SortOrder_1_items[i2 - 1], i2 - 1);
+    surge_SortOrder_1_index.set(surge_SortOrder_1_items[i2 - 1]!, i2 - 1);
 }"
 `;
 

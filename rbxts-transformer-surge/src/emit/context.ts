@@ -1471,7 +1471,14 @@ export abstract class EmitContext {
 					method(f.createStringLiteral(members.join(" ")), "gmatch", [f.createStringLiteral("%S+")]),
 					f.createBlock(
 						[
-							this.constStatement(item, f.createElementAccessExpression(byName, name)),
+							// Asserted, because the name and the item are typed with
+							// `undefined` under a consumer's `noUncheckedIndexedAccess`.
+							this.constStatement(
+								item,
+								f.createNonNullExpression(
+									f.createElementAccessExpression(byName, f.createNonNullExpression(name)),
+								),
+							),
 							f.createExpressionStatement(method(index, "set", [item, method(items, "size", [])])),
 							f.createExpressionStatement(method(items, "push", [item])),
 						],
@@ -1491,11 +1498,12 @@ export abstract class EmitContext {
 			members.length <= ENUM_UNROLLED_ITEMS
 				? this.num(members.length)
 				: f.createCallExpression(f.createPropertyAccessExpression(items, "size"), undefined, []);
+		// The item is asserted, for the reason the string of names asserts its own.
 		this.helperDecls.push(
 			this.countedLoop(i, count, [
 				f.createExpressionStatement(
 					f.createCallExpression(f.createPropertyAccessExpression(index, "set"), undefined, [
-						f.createElementAccessExpression(items, position),
+						f.createNonNullExpression(f.createElementAccessExpression(items, position)),
 						position,
 					]),
 				),

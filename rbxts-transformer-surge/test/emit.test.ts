@@ -388,7 +388,7 @@ describe("Emitter enum index width and lookup table", () => {
 		expect(output).toMatch(/_index\.get\(value\)/);
 		expect(output).toMatch(/_items\[idx\d+\]/);
 		expect(output).toMatch(
-			/const (\w+_index) = new Map<EnumItem, number>\(\);\nfor \(const (i\d+) of \$range\(1, 3\)\) \{\n\s+\1\.set\((\w+_items)\[\2 - 1\], \2 - 1\);\n\}/,
+			/const (\w+_index) = new Map<EnumItem, number>\(\);\nfor \(const (i\d+) of \$range\(1, 3\)\) \{\n\s+\1\.set\((\w+_items)\[\2 - 1\]!, \2 - 1\);\n\}/,
 		);
 	});
 
@@ -399,7 +399,7 @@ describe("Emitter enum index width and lookup table", () => {
 			members: ["Back", "Bottom", "Front", "Left"],
 		});
 		expect(output).toMatch(
-			/for \(const (i\d+) of \$range\(1, (\w+_items)\.size\(\)\)\) \{\n\s+\w+_index\.set\(\2\[\1 - 1\], \1 - 1\);/,
+			/for \(const (i\d+) of \$range\(1, (\w+_items)\.size\(\)\)\) \{\n\s+\w+_index\.set\(\2\[\1 - 1\]!, \1 - 1\);/,
 		);
 	});
 
@@ -412,7 +412,7 @@ describe("Emitter enum index width and lookup table", () => {
 				String.raw`const (\w+_items) = new Array<Enum\.NormalId>\(\);\n` +
 					String.raw`const (\w+_index) = new Map<EnumItem, number>\(\);\n` +
 					String.raw`for \(const \[(name\d+)\] of "Back Bottom Front Left Right Top"\.gmatch\("%S\+"\)\) \{\n` +
-					String.raw`\s+const (item\d+) = \(Enum\.NormalId as unknown as Record<string, Enum\.NormalId>\)\[\3\];\n` +
+					String.raw`\s+const (item\d+) = \(Enum\.NormalId as unknown as Record<string, Enum\.NormalId>\)\[\3!\]!;\n` +
 					String.raw`\s+\2\.set\(\4, \1\.size\(\)\);\n` +
 					String.raw`\s+\1\.push\(\4\);\n\}`,
 			),

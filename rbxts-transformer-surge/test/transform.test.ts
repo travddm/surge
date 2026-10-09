@@ -654,6 +654,9 @@ describe("transform generated code", () => {
 		["an array", "{ x: number }[]"],
 		["an exact array", "DataType.Length<{ x: number }[], 3>"],
 		["a tuple's rest", "[string, ...{ x: number }[]]"],
+		["an enum of three items", "Enum.SortOrder"],
+		["an enum of five items", "Enum.ScaleType"],
+		["an enum of more than five items", "Enum.Material"],
 	])("the generated code for %s passes the type check under a consumer's noUncheckedIndexedAccess", (_name, type) => {
 		const errors = typeErrorsOfGeneratedCode(
 			`import { DataType, createCodec } from "@rbxts/surge";
