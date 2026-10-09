@@ -1,8 +1,7 @@
 # Runtime API specification
 
 Status: current
-Applies to: `@rbxts/surge` at commit `d3fd281`, `rbxts-transformer-surge` at
-commit `fbdc265` (no tagged release yet)
+Applies to: commit `dcf78f4` (no tagged release yet)
 
 ## 1. Scope
 
@@ -16,7 +15,8 @@ packages is in [../getting-started.md](../getting-started.md).
 
 ## 2. Terms
 
-- **Factory**: `createCodec`, `createSerializer`, or `createDeserializer`.
+- **Factory**: `createCodec`, `createSerializer`, `createDeserializer`, or
+  `createCursorCodec`.
 - **Call site**: one call of a factory with a type argument, which the
   transformer replaces with a serializer generated for that type.
 - **Generated code**: the Luau the transformer emits in place of a call site.
@@ -118,10 +118,10 @@ empty. A type that declares its own `_nominal_*` property is one such `T`. A
 call site whose `serialize` passes a blob where `Serialized<T>` is `buffer` is
 a diagnostic (Transformer 7.3).
 
-**3.13** The package's own exports are the four factories, the types
-`Codec`, `CheckedCodec`, `Serializer`, `Deserializer`, `CheckedDeserializer`,
-`Serialized`, `CodecOptions`, `Cursor` and `CursorCodec`, and `DataType`.
-The helper ABI is a module of its own (5.1).
+**3.13** The package's own exports are the four factories, `createCursor`,
+the types `Codec`, `CheckedCodec`, `Serializer`, `Deserializer`,
+`CheckedDeserializer`, `Serialized`, `CodecOptions`, `Cursor` and
+`CursorCodec`, and `DataType`. The helper ABI is a module of its own (5.1).
 
 **3.14** With checks, `createCodec` returns `CheckedCodec<T>` and
 `createDeserializer` returns `CheckedDeserializer<T>`, whose second call
@@ -171,6 +171,14 @@ itself, which the caller builds.
 **3.18** `size` is the number of bytes every value of `T` writes, where that
 does not depend on the value, and `undefined` otherwise: the size of
 Transformer 5.20 where it reads nothing of the value.
+
+**3.19** `createCursor(bytes?: buffer, blobs?: Array<defined>): Cursor`
+returns a new cursor whose `buffer` is `bytes`, whose `blobs` is `blobs`, and
+whose `offset` and `blobIndex` are 0. It holds `bytes` and `blobs`
+themselves, not copies. `bytes` defaults to a buffer of no bytes, which a
+`write` grows as 3.16 states, and `blobs` to a new empty list on each call.
+`createCursor` is not a factory: the transformer does not replace a call to
+it, and 3.4 does not apply.
 
 ## 4. What `deserialize` does with input it did not write
 
@@ -346,6 +354,7 @@ A test file named `*.spec.ts` is under `tests/src/tests/`. A path starting
 | 3.16                        | `cursor.spec.ts`: `writesTwoCodecsIntoOneCursorAndReadsThemBackInOrder` (the same bytes as `serialize`), `growsTheBufferAndKeepsTheBytesBeforeTheValue`, `appendsBlobsAfterTheOnesAlreadyInTheCursor`; `test/golden.test.mjs`: a cursor codec writes into the caller's buffer and gives its state back                                                                                                                                                    |
 | 3.17                        | `cursor.spec.ts`: `writesTwoCodecsIntoOneCursorAndReadsThemBackInOrder`, `appendsBlobsAfterTheOnesAlreadyInTheCursor`, `boundsAReadByTheBufferNotByTheValue`                                                                                                                                                                                                                                                                                              |
 | 3.18                        | `cursor.spec.ts`: `givesTheConstantSizeOfATypeThatHasOne`; `rbxts-transformer-surge` `test/transform.test.ts`: a cursor codec's generated code (`size: 5`, `size: undefined`)                                                                                                                                                                                                                                                                             |
+| 3.19                        | `cursor.spec.ts`: `createsACursorAtTheStartOfItsBufferAndBlobs`, and every other test, whose cursors `createCursor` makes                                                                                                                                                                                                                                                                                                                                 |
 | 4.1                         | Source only: the unchecked read path under `emit/`; a statement of what is not guaranteed has nothing to pin                                                                                                                                                                                                                                                                                                                                              |
 | 4.2–4.4                     | `checks.spec.ts`: `rejectsATruncatedPayload`, `rejectsATruncatedPackedCFrame`, `rejectsACountTheInputCannotHold`, `rejectsACountOfElementsThatReadNoBytes`                                                                                                                                                                                                                                                                                                |
 | 4.3 (no over-rejection)     | `checks.spec.ts`: `acceptsWhatSerializeWrote`, `acceptsEveryKindThatReadsACount`, `acceptsEmptyContainers`                                                                                                                                                                                                                                                                                                                                                |
@@ -370,6 +379,8 @@ A test file named `*.spec.ts` is under `tests/src/tests/`. A path starting
 
 ## Changes
 
+- `dcf78f4`: adds 3.19 (`createCursor`) and names it in 3.13, and section 2
+  names `createCursorCodec` among the factories.
 - `d3fd281` / `fbdc265`: 5.6 forbids overlapping calls into one cursor, and
   3.16 states that `write` does not check the cursor.
 - `c783929` / `fbdc265`: adds 3.15 to 3.18 (the cursor codec), names its exports in 3.13 and its

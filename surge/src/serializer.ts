@@ -212,6 +212,21 @@ export interface Cursor {
 }
 
 /**
+ * A {@link Cursor} at the start of `bytes` and of `blobs` (Runtime API 3.19 in
+ * docs/specs/runtime-api.md). It holds both themselves, not copies. Unlike the
+ * factories, it is plain code that the transformer leaves as it is.
+ *
+ * To write, call it with no arguments: the first write grows the empty buffer.
+ * To read, pass what was written: `createCursor(received, receivedBlobs)`.
+ *
+ * `bytes` and not `buffer`, which would hide the `buffer` library from the
+ * default.
+ */
+export function createCursor(bytes: buffer = buffer.create(0), blobs: Array<defined> = []): Cursor {
+	return { buffer: bytes, offset: 0, blobs, blobIndex: 0 };
+}
+
+/**
  * Writes values of `T` into a {@link Cursor} and reads them back from one
  * (Runtime API 3.15 to 3.18 in docs/specs/runtime-api.md).
  *

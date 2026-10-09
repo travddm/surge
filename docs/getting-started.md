@@ -106,20 +106,22 @@ cannot hold, and the index of the next of those to read.
 const moves = createCursorCodec<Move>();
 const chats = createCursorCodec<Chat>();
 
-const out: Cursor = { buffer: buffer.create(256), offset: 0, blobs: [], blobIndex: 0 };
+const out = createCursor();
 moves.write(out, move);
 chats.write(out, chat);
 // `out.buffer` holds both, up to `out.offset`; send them, and `out.blobs`.
 
-const input: Cursor = { buffer: received, offset: 0, blobs: receivedBlobs, blobIndex: 0 };
+const input = createCursor(received, receivedBlobs);
 const firstMove = moves.read(input);
 const firstChat = chats.read(input);
 ```
 
-A write that does not fit grows the buffer, so read `cursor.buffer` back
-after writing rather than keeping the buffer you started with. `size` is the
-bytes every value of a type writes, where that does not depend on the value,
-and `undefined` otherwise.
+`createCursor` starts a cursor at offset 0 of the buffer and the blob list it
+is given, or of new empty ones. A write that does not fit grows the buffer,
+so read `cursor.buffer` back after writing rather than keeping the buffer you
+started with; `createCursor(buffer.create(256))` starts with room for 256
+bytes. `size` is the bytes every value of a type writes, where that does not
+depend on the value, and `undefined` otherwise.
 
 ## Input from a client
 

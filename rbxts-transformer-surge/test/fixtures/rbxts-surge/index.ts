@@ -5,6 +5,7 @@ export {
 	Codec,
 	CodecOptions,
 	createCodec,
+	createCursor,
 	createCursorCodec,
 	createDeserializer,
 	createSerializer,
