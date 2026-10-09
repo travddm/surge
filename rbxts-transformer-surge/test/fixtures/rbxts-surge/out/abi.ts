@@ -5,7 +5,11 @@
 // Reserving bytes is not among them: a generated serializer keeps its own
 // buffer and cursors and does that inline, so the write-side exports left are
 // the cold ones: growth, the copy out, and the long forms of a count.
-export declare function grow(current: buffer, live: number, needed: number): buffer;
+export declare function grow(
+	current: buffer,
+	live: number,
+	needed: number,
+): LuaTuple<[grown: buffer, capacity: number]>;
 export declare function finishWrite(written: buffer, size: number): buffer;
 export declare function beginWriteBlobs(): void;
 export declare function pushBlob(value: defined): void;
