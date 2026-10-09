@@ -1,0 +1,2431 @@
+set	commit	run	started (UTC)	fixture	library	half	trial	rate
+1	766cb9a	1	12:53:11	large array	surge	encode	1	309315
+1	766cb9a	1	12:53:11	large array	surge	encode	2	287322
+1	766cb9a	1	12:53:11	large array	surge	encode	3	294413
+1	766cb9a	1	12:53:11	large array	surge	encode	4	311918
+1	766cb9a	1	12:53:11	large array	surge	encode	5	335668
+1	766cb9a	1	12:53:11	large array	surge	encode	6	332263
+1	766cb9a	1	12:53:11	large array	surge	encode	7	337711
+1	766cb9a	1	12:53:11	large array	surge	encode	8	327459
+1	766cb9a	1	12:53:11	large array	surge	encode	9	326302
+1	766cb9a	1	12:53:11	large array	fbs	encode	1	70760
+1	766cb9a	1	12:53:11	large array	fbs	encode	2	70223
+1	766cb9a	1	12:53:11	large array	fbs	encode	3	71592
+1	766cb9a	1	12:53:11	large array	fbs	encode	4	74520
+1	766cb9a	1	12:53:11	large array	fbs	encode	5	74762
+1	766cb9a	1	12:53:11	large array	fbs	encode	6	74591
+1	766cb9a	1	12:53:11	large array	fbs	encode	7	74749
+1	766cb9a	1	12:53:11	large array	fbs	encode	8	74208
+1	766cb9a	1	12:53:11	large array	fbs	encode	9	73945
+1	766cb9a	1	12:53:11	large array	serio	encode	1	8069
+1	766cb9a	1	12:53:11	large array	serio	encode	2	7913
+1	766cb9a	1	12:53:11	large array	serio	encode	3	8084
+1	766cb9a	1	12:53:11	large array	serio	encode	4	8035
+1	766cb9a	1	12:53:11	large array	serio	encode	5	8037
+1	766cb9a	1	12:53:11	large array	serio	encode	6	8040
+1	766cb9a	1	12:53:11	large array	serio	encode	7	8058
+1	766cb9a	1	12:53:11	large array	serio	encode	8	8114
+1	766cb9a	1	12:53:11	large array	serio	encode	9	8114
+1	766cb9a	1	12:53:11	large array	flamework2	encode	1	249169
+1	766cb9a	1	12:53:11	large array	flamework2	encode	2	253208
+1	766cb9a	1	12:53:11	large array	flamework2	encode	3	253523
+1	766cb9a	1	12:53:11	large array	flamework2	encode	4	273521
+1	766cb9a	1	12:53:11	large array	flamework2	encode	5	278745
+1	766cb9a	1	12:53:11	large array	flamework2	encode	6	274793
+1	766cb9a	1	12:53:11	large array	flamework2	encode	7	275029
+1	766cb9a	1	12:53:11	large array	flamework2	encode	8	274005
+1	766cb9a	1	12:53:11	large array	flamework2	encode	9	275456
+1	766cb9a	1	12:53:11	large array	blink	encode	1	133082
+1	766cb9a	1	12:53:11	large array	blink	encode	2	130093
+1	766cb9a	1	12:53:11	large array	blink	encode	3	128787
+1	766cb9a	1	12:53:11	large array	blink	encode	4	139783
+1	766cb9a	1	12:53:11	large array	blink	encode	5	140828
+1	766cb9a	1	12:53:11	large array	blink	encode	6	139867
+1	766cb9a	1	12:53:11	large array	blink	encode	7	139493
+1	766cb9a	1	12:53:11	large array	blink	encode	8	142918
+1	766cb9a	1	12:53:11	large array	blink	encode	9	142572
+1	766cb9a	1	12:53:11	string-heavy	surge	encode	1	333547
+1	766cb9a	1	12:53:11	string-heavy	surge	encode	2	333483
+1	766cb9a	1	12:53:11	string-heavy	surge	encode	3	328335
+1	766cb9a	1	12:53:11	string-heavy	surge	encode	4	333313
+1	766cb9a	1	12:53:11	string-heavy	surge	encode	5	336776
+1	766cb9a	1	12:53:11	string-heavy	surge	encode	6	332966
+1	766cb9a	1	12:53:11	string-heavy	surge	encode	7	333612
+1	766cb9a	1	12:53:11	string-heavy	surge	encode	8	338673
+1	766cb9a	1	12:53:11	string-heavy	surge	encode	9	327933
+1	766cb9a	1	12:53:11	string-heavy	fbs	encode	1	219381
+1	766cb9a	1	12:53:11	string-heavy	fbs	encode	2	216152
+1	766cb9a	1	12:53:11	string-heavy	fbs	encode	3	218694
+1	766cb9a	1	12:53:11	string-heavy	fbs	encode	4	221118
+1	766cb9a	1	12:53:11	string-heavy	fbs	encode	5	216685
+1	766cb9a	1	12:53:11	string-heavy	fbs	encode	6	219082
+1	766cb9a	1	12:53:11	string-heavy	fbs	encode	7	221223
+1	766cb9a	1	12:53:11	string-heavy	fbs	encode	8	214733
+1	766cb9a	1	12:53:11	string-heavy	fbs	encode	9	219878
+1	766cb9a	1	12:53:11	string-heavy	serio	encode	1	32461
+1	766cb9a	1	12:53:11	string-heavy	serio	encode	2	32858
+1	766cb9a	1	12:53:11	string-heavy	serio	encode	3	32427
+1	766cb9a	1	12:53:11	string-heavy	serio	encode	4	32450
+1	766cb9a	1	12:53:11	string-heavy	serio	encode	5	32837
+1	766cb9a	1	12:53:11	string-heavy	serio	encode	6	32611
+1	766cb9a	1	12:53:11	string-heavy	serio	encode	7	32513
+1	766cb9a	1	12:53:11	string-heavy	serio	encode	8	32902
+1	766cb9a	1	12:53:11	string-heavy	serio	encode	9	32671
+1	766cb9a	1	12:53:11	string-heavy	flamework2	encode	1	246140
+1	766cb9a	1	12:53:11	string-heavy	flamework2	encode	2	247451
+1	766cb9a	1	12:53:11	string-heavy	flamework2	encode	3	247426
+1	766cb9a	1	12:53:11	string-heavy	flamework2	encode	4	246582
+1	766cb9a	1	12:53:11	string-heavy	flamework2	encode	5	244521
+1	766cb9a	1	12:53:11	string-heavy	flamework2	encode	6	246573
+1	766cb9a	1	12:53:11	string-heavy	flamework2	encode	7	242667
+1	766cb9a	1	12:53:11	string-heavy	flamework2	encode	8	246740
+1	766cb9a	1	12:53:11	string-heavy	flamework2	encode	9	245860
+1	766cb9a	1	12:53:11	string-heavy	blink	encode	1	134610
+1	766cb9a	1	12:53:11	string-heavy	blink	encode	2	134560
+1	766cb9a	1	12:53:11	string-heavy	blink	encode	3	132227
+1	766cb9a	1	12:53:11	string-heavy	blink	encode	4	134420
+1	766cb9a	1	12:53:11	string-heavy	blink	encode	5	132882
+1	766cb9a	1	12:53:11	string-heavy	blink	encode	6	133273
+1	766cb9a	1	12:53:11	string-heavy	blink	encode	7	133296
+1	766cb9a	1	12:53:11	string-heavy	blink	encode	8	132992
+1	766cb9a	1	12:53:11	string-heavy	blink	encode	9	131634
+1	766cb9a	1	12:53:11	Blink: Booleans	surge	encode	1	211127
+1	766cb9a	1	12:53:11	Blink: Booleans	surge	encode	2	207631
+1	766cb9a	1	12:53:11	Blink: Booleans	surge	encode	3	209552
+1	766cb9a	1	12:53:11	Blink: Booleans	surge	encode	4	208838
+1	766cb9a	1	12:53:11	Blink: Booleans	surge	encode	5	211244
+1	766cb9a	1	12:53:11	Blink: Booleans	surge	encode	6	205264
+1	766cb9a	1	12:53:11	Blink: Booleans	surge	encode	7	212677
+1	766cb9a	1	12:53:11	Blink: Booleans	surge	encode	8	214516
+1	766cb9a	1	12:53:11	Blink: Booleans	surge	encode	9	212746
+1	766cb9a	1	12:53:11	Blink: Booleans	fbs	encode	1	54145
+1	766cb9a	1	12:53:11	Blink: Booleans	fbs	encode	2	53270
+1	766cb9a	1	12:53:11	Blink: Booleans	fbs	encode	3	53736
+1	766cb9a	1	12:53:11	Blink: Booleans	fbs	encode	4	53562
+1	766cb9a	1	12:53:11	Blink: Booleans	fbs	encode	5	53571
+1	766cb9a	1	12:53:11	Blink: Booleans	fbs	encode	6	53859
+1	766cb9a	1	12:53:11	Blink: Booleans	fbs	encode	7	53982
+1	766cb9a	1	12:53:11	Blink: Booleans	fbs	encode	8	54187
+1	766cb9a	1	12:53:11	Blink: Booleans	fbs	encode	9	54238
+1	766cb9a	1	12:53:11	Blink: Booleans	serio	encode	1	10439
+1	766cb9a	1	12:53:11	Blink: Booleans	serio	encode	2	10353
+1	766cb9a	1	12:53:11	Blink: Booleans	serio	encode	3	10397
+1	766cb9a	1	12:53:11	Blink: Booleans	serio	encode	4	10403
+1	766cb9a	1	12:53:11	Blink: Booleans	serio	encode	5	10348
+1	766cb9a	1	12:53:11	Blink: Booleans	serio	encode	6	10392
+1	766cb9a	1	12:53:11	Blink: Booleans	serio	encode	7	10341
+1	766cb9a	1	12:53:11	Blink: Booleans	serio	encode	8	10410
+1	766cb9a	1	12:53:11	Blink: Booleans	serio	encode	9	10454
+1	766cb9a	1	12:53:11	Blink: Booleans	flamework2	encode	1	126866
+1	766cb9a	1	12:53:11	Blink: Booleans	flamework2	encode	2	129517
+1	766cb9a	1	12:53:11	Blink: Booleans	flamework2	encode	3	127307
+1	766cb9a	1	12:53:11	Blink: Booleans	flamework2	encode	4	128291
+1	766cb9a	1	12:53:11	Blink: Booleans	flamework2	encode	5	125333
+1	766cb9a	1	12:53:11	Blink: Booleans	flamework2	encode	6	127101
+1	766cb9a	1	12:53:11	Blink: Booleans	flamework2	encode	7	128114
+1	766cb9a	1	12:53:11	Blink: Booleans	flamework2	encode	8	126735
+1	766cb9a	1	12:53:11	Blink: Booleans	flamework2	encode	9	127034
+1	766cb9a	1	12:53:11	Blink: Booleans	blink	encode	1	113883
+1	766cb9a	1	12:53:11	Blink: Booleans	blink	encode	2	114964
+1	766cb9a	1	12:53:11	Blink: Booleans	blink	encode	3	111415
+1	766cb9a	1	12:53:11	Blink: Booleans	blink	encode	4	111572
+1	766cb9a	1	12:53:11	Blink: Booleans	blink	encode	5	109955
+1	766cb9a	1	12:53:11	Blink: Booleans	blink	encode	6	111033
+1	766cb9a	1	12:53:11	Blink: Booleans	blink	encode	7	112272
+1	766cb9a	1	12:53:11	Blink: Booleans	blink	encode	8	113029
+1	766cb9a	1	12:53:11	Blink: Booleans	blink	encode	9	112427
+1	766cb9a	1	12:53:11	large array	surge	decode	1	111634
+1	766cb9a	1	12:53:11	large array	surge	decode	2	113169
+1	766cb9a	1	12:53:11	large array	surge	decode	3	114041
+1	766cb9a	1	12:53:11	large array	surge	decode	4	90991
+1	766cb9a	1	12:53:11	large array	surge	decode	5	114252
+1	766cb9a	1	12:53:11	large array	surge	decode	6	118225
+1	766cb9a	1	12:53:11	large array	surge	decode	7	121178
+1	766cb9a	1	12:53:11	large array	surge	decode	8	115771
+1	766cb9a	1	12:53:11	large array	surge	decode	9	118690
+1	766cb9a	1	12:53:11	large array	fbs	decode	1	43828
+1	766cb9a	1	12:53:11	large array	fbs	decode	2	43274
+1	766cb9a	1	12:53:11	large array	fbs	decode	3	43000
+1	766cb9a	1	12:53:11	large array	fbs	decode	4	42090
+1	766cb9a	1	12:53:11	large array	fbs	decode	5	42709
+1	766cb9a	1	12:53:11	large array	fbs	decode	6	42986
+1	766cb9a	1	12:53:11	large array	fbs	decode	7	43442
+1	766cb9a	1	12:53:11	large array	fbs	decode	8	43809
+1	766cb9a	1	12:53:11	large array	fbs	decode	9	43623
+1	766cb9a	1	12:53:11	large array	serio	decode	1	26018
+1	766cb9a	1	12:53:11	large array	serio	decode	2	25965
+1	766cb9a	1	12:53:11	large array	serio	decode	3	25743
+1	766cb9a	1	12:53:11	large array	serio	decode	4	25890
+1	766cb9a	1	12:53:11	large array	serio	decode	5	25960
+1	766cb9a	1	12:53:11	large array	serio	decode	6	25642
+1	766cb9a	1	12:53:11	large array	serio	decode	7	25957
+1	766cb9a	1	12:53:11	large array	serio	decode	8	25814
+1	766cb9a	1	12:53:11	large array	serio	decode	9	25781
+1	766cb9a	1	12:53:11	large array	flamework2	decode	1	113246
+1	766cb9a	1	12:53:11	large array	flamework2	decode	2	114695
+1	766cb9a	1	12:53:11	large array	flamework2	decode	3	112655
+1	766cb9a	1	12:53:11	large array	flamework2	decode	4	112404
+1	766cb9a	1	12:53:11	large array	flamework2	decode	5	116349
+1	766cb9a	1	12:53:11	large array	flamework2	decode	6	117370
+1	766cb9a	1	12:53:11	large array	flamework2	decode	7	118700
+1	766cb9a	1	12:53:11	large array	flamework2	decode	8	115952
+1	766cb9a	1	12:53:11	large array	flamework2	decode	9	113076
+1	766cb9a	1	12:53:11	large array	blink	decode	1	77439
+1	766cb9a	1	12:53:11	large array	blink	decode	2	74607
+1	766cb9a	1	12:53:11	large array	blink	decode	3	65469
+1	766cb9a	1	12:53:11	large array	blink	decode	4	79682
+1	766cb9a	1	12:53:11	large array	blink	decode	5	78916
+1	766cb9a	1	12:53:11	large array	blink	decode	6	78658
+1	766cb9a	1	12:53:11	large array	blink	decode	7	75994
+1	766cb9a	1	12:53:11	large array	blink	decode	8	78682
+1	766cb9a	1	12:53:11	large array	blink	decode	9	76235
+1	766cb9a	1	12:53:11	string-heavy	surge	decode	1	213426
+1	766cb9a	1	12:53:11	string-heavy	surge	decode	2	207484
+1	766cb9a	1	12:53:11	string-heavy	surge	decode	3	212798
+1	766cb9a	1	12:53:11	string-heavy	surge	decode	4	209066
+1	766cb9a	1	12:53:11	string-heavy	surge	decode	5	210144
+1	766cb9a	1	12:53:11	string-heavy	surge	decode	6	210379
+1	766cb9a	1	12:53:11	string-heavy	surge	decode	7	211257
+1	766cb9a	1	12:53:11	string-heavy	surge	decode	8	211436
+1	766cb9a	1	12:53:11	string-heavy	surge	decode	9	208112
+1	766cb9a	1	12:53:11	string-heavy	fbs	decode	1	166619
+1	766cb9a	1	12:53:11	string-heavy	fbs	decode	2	168957
+1	766cb9a	1	12:53:11	string-heavy	fbs	decode	3	167051
+1	766cb9a	1	12:53:11	string-heavy	fbs	decode	4	165620
+1	766cb9a	1	12:53:11	string-heavy	fbs	decode	5	166587
+1	766cb9a	1	12:53:11	string-heavy	fbs	decode	6	167814
+1	766cb9a	1	12:53:11	string-heavy	fbs	decode	7	166628
+1	766cb9a	1	12:53:11	string-heavy	fbs	decode	8	166248
+1	766cb9a	1	12:53:11	string-heavy	fbs	decode	9	166092
+1	766cb9a	1	12:53:11	string-heavy	serio	decode	1	57736
+1	766cb9a	1	12:53:11	string-heavy	serio	decode	2	56984
+1	766cb9a	1	12:53:11	string-heavy	serio	decode	3	56692
+1	766cb9a	1	12:53:11	string-heavy	serio	decode	4	57146
+1	766cb9a	1	12:53:11	string-heavy	serio	decode	5	56357
+1	766cb9a	1	12:53:11	string-heavy	serio	decode	6	57627
+1	766cb9a	1	12:53:11	string-heavy	serio	decode	7	56941
+1	766cb9a	1	12:53:11	string-heavy	serio	decode	8	56741
+1	766cb9a	1	12:53:11	string-heavy	serio	decode	9	57798
+1	766cb9a	1	12:53:11	string-heavy	flamework2	decode	1	151057
+1	766cb9a	1	12:53:11	string-heavy	flamework2	decode	2	149919
+1	766cb9a	1	12:53:11	string-heavy	flamework2	decode	3	151987
+1	766cb9a	1	12:53:11	string-heavy	flamework2	decode	4	150114
+1	766cb9a	1	12:53:11	string-heavy	flamework2	decode	5	154576
+1	766cb9a	1	12:53:11	string-heavy	flamework2	decode	6	152083
+1	766cb9a	1	12:53:11	string-heavy	flamework2	decode	7	151791
+1	766cb9a	1	12:53:11	string-heavy	flamework2	decode	8	151177
+1	766cb9a	1	12:53:11	string-heavy	flamework2	decode	9	150650
+1	766cb9a	1	12:53:11	string-heavy	blink	decode	1	217364
+1	766cb9a	1	12:53:11	string-heavy	blink	decode	2	220661
+1	766cb9a	1	12:53:11	string-heavy	blink	decode	3	219734
+1	766cb9a	1	12:53:11	string-heavy	blink	decode	4	222805
+1	766cb9a	1	12:53:11	string-heavy	blink	decode	5	217459
+1	766cb9a	1	12:53:11	string-heavy	blink	decode	6	221410
+1	766cb9a	1	12:53:11	string-heavy	blink	decode	7	217766
+1	766cb9a	1	12:53:11	string-heavy	blink	decode	8	222807
+1	766cb9a	1	12:53:11	string-heavy	blink	decode	9	221349
+1	766cb9a	1	12:53:11	Blink: Booleans	surge	decode	1	119943
+1	766cb9a	1	12:53:11	Blink: Booleans	surge	decode	2	118002
+1	766cb9a	1	12:53:11	Blink: Booleans	surge	decode	3	120568
+1	766cb9a	1	12:53:11	Blink: Booleans	surge	decode	4	116204
+1	766cb9a	1	12:53:11	Blink: Booleans	surge	decode	5	117371
+1	766cb9a	1	12:53:11	Blink: Booleans	surge	decode	6	112207
+1	766cb9a	1	12:53:11	Blink: Booleans	surge	decode	7	111467
+1	766cb9a	1	12:53:11	Blink: Booleans	surge	decode	8	100761
+1	766cb9a	1	12:53:11	Blink: Booleans	surge	decode	9	106896
+1	766cb9a	1	12:53:11	Blink: Booleans	fbs	decode	1	41256
+1	766cb9a	1	12:53:11	Blink: Booleans	fbs	decode	2	41200
+1	766cb9a	1	12:53:11	Blink: Booleans	fbs	decode	3	40680
+1	766cb9a	1	12:53:11	Blink: Booleans	fbs	decode	4	41053
+1	766cb9a	1	12:53:11	Blink: Booleans	fbs	decode	5	41362
+1	766cb9a	1	12:53:11	Blink: Booleans	fbs	decode	6	39728
+1	766cb9a	1	12:53:11	Blink: Booleans	fbs	decode	7	40282
+1	766cb9a	1	12:53:11	Blink: Booleans	fbs	decode	8	38674
+1	766cb9a	1	12:53:11	Blink: Booleans	fbs	decode	9	39979
+1	766cb9a	1	12:53:11	Blink: Booleans	serio	decode	1	12677
+1	766cb9a	1	12:53:11	Blink: Booleans	serio	decode	2	12723
+1	766cb9a	1	12:53:11	Blink: Booleans	serio	decode	3	12666
+1	766cb9a	1	12:53:11	Blink: Booleans	serio	decode	4	12745
+1	766cb9a	1	12:53:11	Blink: Booleans	serio	decode	5	12663
+1	766cb9a	1	12:53:11	Blink: Booleans	serio	decode	6	12516
+1	766cb9a	1	12:53:11	Blink: Booleans	serio	decode	7	12635
+1	766cb9a	1	12:53:11	Blink: Booleans	serio	decode	8	12381
+1	766cb9a	1	12:53:11	Blink: Booleans	serio	decode	9	12625
+1	766cb9a	1	12:53:11	Blink: Booleans	flamework2	decode	1	117307
+1	766cb9a	1	12:53:11	Blink: Booleans	flamework2	decode	2	118518
+1	766cb9a	1	12:53:11	Blink: Booleans	flamework2	decode	3	119163
+1	766cb9a	1	12:53:11	Blink: Booleans	flamework2	decode	4	116454
+1	766cb9a	1	12:53:11	Blink: Booleans	flamework2	decode	5	115758
+1	766cb9a	1	12:53:11	Blink: Booleans	flamework2	decode	6	114748
+1	766cb9a	1	12:53:11	Blink: Booleans	flamework2	decode	7	114789
+1	766cb9a	1	12:53:11	Blink: Booleans	flamework2	decode	8	100853
+1	766cb9a	1	12:53:11	Blink: Booleans	flamework2	decode	9	113355
+1	766cb9a	1	12:53:11	Blink: Booleans	blink	decode	1	75775
+1	766cb9a	1	12:53:11	Blink: Booleans	blink	decode	2	74908
+1	766cb9a	1	12:53:11	Blink: Booleans	blink	decode	3	76596
+1	766cb9a	1	12:53:11	Blink: Booleans	blink	decode	4	75685
+1	766cb9a	1	12:53:11	Blink: Booleans	blink	decode	5	76966
+1	766cb9a	1	12:53:11	Blink: Booleans	blink	decode	6	74295
+1	766cb9a	1	12:53:11	Blink: Booleans	blink	decode	7	73264
+1	766cb9a	1	12:53:11	Blink: Booleans	blink	decode	8	67243
+1	766cb9a	1	12:53:11	Blink: Booleans	blink	decode	9	75762
+1	dd1056e	2	12:54:40	large array	surge	encode	1	299600
+1	dd1056e	2	12:54:40	large array	surge	encode	2	292585
+1	dd1056e	2	12:54:40	large array	surge	encode	3	307048
+1	dd1056e	2	12:54:40	large array	surge	encode	4	312439
+1	dd1056e	2	12:54:40	large array	surge	encode	5	290578
+1	dd1056e	2	12:54:40	large array	surge	encode	6	303993
+1	dd1056e	2	12:54:40	large array	surge	encode	7	303471
+1	dd1056e	2	12:54:40	large array	surge	encode	8	306144
+1	dd1056e	2	12:54:40	large array	surge	encode	9	297953
+1	dd1056e	2	12:54:40	large array	fbs	encode	1	72142
+1	dd1056e	2	12:54:40	large array	fbs	encode	2	71313
+1	dd1056e	2	12:54:40	large array	fbs	encode	3	72057
+1	dd1056e	2	12:54:40	large array	fbs	encode	4	71423
+1	dd1056e	2	12:54:40	large array	fbs	encode	5	72100
+1	dd1056e	2	12:54:40	large array	fbs	encode	6	73542
+1	dd1056e	2	12:54:40	large array	fbs	encode	7	73277
+1	dd1056e	2	12:54:40	large array	fbs	encode	8	72953
+1	dd1056e	2	12:54:40	large array	fbs	encode	9	72851
+1	dd1056e	2	12:54:40	large array	serio	encode	1	7992
+1	dd1056e	2	12:54:40	large array	serio	encode	2	7886
+1	dd1056e	2	12:54:40	large array	serio	encode	3	8095
+1	dd1056e	2	12:54:40	large array	serio	encode	4	7995
+1	dd1056e	2	12:54:40	large array	serio	encode	5	7991
+1	dd1056e	2	12:54:40	large array	serio	encode	6	8033
+1	dd1056e	2	12:54:40	large array	serio	encode	7	8020
+1	dd1056e	2	12:54:40	large array	serio	encode	8	8023
+1	dd1056e	2	12:54:40	large array	serio	encode	9	7943
+1	dd1056e	2	12:54:40	large array	flamework2	encode	1	252141
+1	dd1056e	2	12:54:40	large array	flamework2	encode	2	247958
+1	dd1056e	2	12:54:40	large array	flamework2	encode	3	256226
+1	dd1056e	2	12:54:40	large array	flamework2	encode	4	243619
+1	dd1056e	2	12:54:40	large array	flamework2	encode	5	250284
+1	dd1056e	2	12:54:40	large array	flamework2	encode	6	250583
+1	dd1056e	2	12:54:40	large array	flamework2	encode	7	254195
+1	dd1056e	2	12:54:40	large array	flamework2	encode	8	254242
+1	dd1056e	2	12:54:40	large array	flamework2	encode	9	250523
+1	dd1056e	2	12:54:40	large array	blink	encode	1	135696
+1	dd1056e	2	12:54:40	large array	blink	encode	2	135176
+1	dd1056e	2	12:54:40	large array	blink	encode	3	133489
+1	dd1056e	2	12:54:40	large array	blink	encode	4	130341
+1	dd1056e	2	12:54:40	large array	blink	encode	5	134273
+1	dd1056e	2	12:54:40	large array	blink	encode	6	137492
+1	dd1056e	2	12:54:40	large array	blink	encode	7	134682
+1	dd1056e	2	12:54:40	large array	blink	encode	8	135528
+1	dd1056e	2	12:54:40	large array	blink	encode	9	136790
+1	dd1056e	2	12:54:40	string-heavy	surge	encode	1	295665
+1	dd1056e	2	12:54:40	string-heavy	surge	encode	2	304530
+1	dd1056e	2	12:54:40	string-heavy	surge	encode	3	305411
+1	dd1056e	2	12:54:40	string-heavy	surge	encode	4	295576
+1	dd1056e	2	12:54:40	string-heavy	surge	encode	5	300112
+1	dd1056e	2	12:54:40	string-heavy	surge	encode	6	305529
+1	dd1056e	2	12:54:40	string-heavy	surge	encode	7	305553
+1	dd1056e	2	12:54:40	string-heavy	surge	encode	8	295422
+1	dd1056e	2	12:54:40	string-heavy	surge	encode	9	305733
+1	dd1056e	2	12:54:40	string-heavy	fbs	encode	1	206369
+1	dd1056e	2	12:54:40	string-heavy	fbs	encode	2	205486
+1	dd1056e	2	12:54:40	string-heavy	fbs	encode	3	202305
+1	dd1056e	2	12:54:40	string-heavy	fbs	encode	4	206477
+1	dd1056e	2	12:54:40	string-heavy	fbs	encode	5	202336
+1	dd1056e	2	12:54:40	string-heavy	fbs	encode	6	200610
+1	dd1056e	2	12:54:40	string-heavy	fbs	encode	7	207393
+1	dd1056e	2	12:54:40	string-heavy	fbs	encode	8	202204
+1	dd1056e	2	12:54:40	string-heavy	fbs	encode	9	199217
+1	dd1056e	2	12:54:40	string-heavy	serio	encode	1	32048
+1	dd1056e	2	12:54:40	string-heavy	serio	encode	2	32165
+1	dd1056e	2	12:54:40	string-heavy	serio	encode	3	31720
+1	dd1056e	2	12:54:40	string-heavy	serio	encode	4	31832
+1	dd1056e	2	12:54:40	string-heavy	serio	encode	5	32033
+1	dd1056e	2	12:54:40	string-heavy	serio	encode	6	32127
+1	dd1056e	2	12:54:40	string-heavy	serio	encode	7	31921
+1	dd1056e	2	12:54:40	string-heavy	serio	encode	8	32098
+1	dd1056e	2	12:54:40	string-heavy	serio	encode	9	31831
+1	dd1056e	2	12:54:40	string-heavy	flamework2	encode	1	231587
+1	dd1056e	2	12:54:40	string-heavy	flamework2	encode	2	229198
+1	dd1056e	2	12:54:40	string-heavy	flamework2	encode	3	227703
+1	dd1056e	2	12:54:40	string-heavy	flamework2	encode	4	226151
+1	dd1056e	2	12:54:40	string-heavy	flamework2	encode	5	227538
+1	dd1056e	2	12:54:40	string-heavy	flamework2	encode	6	226577
+1	dd1056e	2	12:54:40	string-heavy	flamework2	encode	7	229935
+1	dd1056e	2	12:54:40	string-heavy	flamework2	encode	8	228592
+1	dd1056e	2	12:54:40	string-heavy	flamework2	encode	9	229127
+1	dd1056e	2	12:54:40	string-heavy	blink	encode	1	123429
+1	dd1056e	2	12:54:40	string-heavy	blink	encode	2	121211
+1	dd1056e	2	12:54:40	string-heavy	blink	encode	3	123366
+1	dd1056e	2	12:54:40	string-heavy	blink	encode	4	119729
+1	dd1056e	2	12:54:40	string-heavy	blink	encode	5	120025
+1	dd1056e	2	12:54:40	string-heavy	blink	encode	6	120169
+1	dd1056e	2	12:54:40	string-heavy	blink	encode	7	118014
+1	dd1056e	2	12:54:40	string-heavy	blink	encode	8	119399
+1	dd1056e	2	12:54:40	string-heavy	blink	encode	9	119717
+1	dd1056e	2	12:54:40	Blink: Booleans	surge	encode	1	203733
+1	dd1056e	2	12:54:40	Blink: Booleans	surge	encode	2	201395
+1	dd1056e	2	12:54:40	Blink: Booleans	surge	encode	3	200836
+1	dd1056e	2	12:54:40	Blink: Booleans	surge	encode	4	207049
+1	dd1056e	2	12:54:40	Blink: Booleans	surge	encode	5	203535
+1	dd1056e	2	12:54:40	Blink: Booleans	surge	encode	6	206162
+1	dd1056e	2	12:54:40	Blink: Booleans	surge	encode	7	199883
+1	dd1056e	2	12:54:40	Blink: Booleans	surge	encode	8	205681
+1	dd1056e	2	12:54:40	Blink: Booleans	surge	encode	9	202918
+1	dd1056e	2	12:54:40	Blink: Booleans	fbs	encode	1	53536
+1	dd1056e	2	12:54:40	Blink: Booleans	fbs	encode	2	53628
+1	dd1056e	2	12:54:40	Blink: Booleans	fbs	encode	3	53565
+1	dd1056e	2	12:54:40	Blink: Booleans	fbs	encode	4	53628
+1	dd1056e	2	12:54:40	Blink: Booleans	fbs	encode	5	53239
+1	dd1056e	2	12:54:40	Blink: Booleans	fbs	encode	6	53816
+1	dd1056e	2	12:54:40	Blink: Booleans	fbs	encode	7	53820
+1	dd1056e	2	12:54:40	Blink: Booleans	fbs	encode	8	53214
+1	dd1056e	2	12:54:40	Blink: Booleans	fbs	encode	9	53975
+1	dd1056e	2	12:54:40	Blink: Booleans	serio	encode	1	10363
+1	dd1056e	2	12:54:40	Blink: Booleans	serio	encode	2	10383
+1	dd1056e	2	12:54:40	Blink: Booleans	serio	encode	3	10377
+1	dd1056e	2	12:54:40	Blink: Booleans	serio	encode	4	10395
+1	dd1056e	2	12:54:40	Blink: Booleans	serio	encode	5	10366
+1	dd1056e	2	12:54:40	Blink: Booleans	serio	encode	6	10433
+1	dd1056e	2	12:54:40	Blink: Booleans	serio	encode	7	10432
+1	dd1056e	2	12:54:40	Blink: Booleans	serio	encode	8	10391
+1	dd1056e	2	12:54:40	Blink: Booleans	serio	encode	9	10402
+1	dd1056e	2	12:54:40	Blink: Booleans	flamework2	encode	1	148680
+1	dd1056e	2	12:54:40	Blink: Booleans	flamework2	encode	2	151110
+1	dd1056e	2	12:54:40	Blink: Booleans	flamework2	encode	3	148004
+1	dd1056e	2	12:54:40	Blink: Booleans	flamework2	encode	4	148403
+1	dd1056e	2	12:54:40	Blink: Booleans	flamework2	encode	5	148112
+1	dd1056e	2	12:54:40	Blink: Booleans	flamework2	encode	6	148892
+1	dd1056e	2	12:54:40	Blink: Booleans	flamework2	encode	7	149398
+1	dd1056e	2	12:54:40	Blink: Booleans	flamework2	encode	8	147998
+1	dd1056e	2	12:54:40	Blink: Booleans	flamework2	encode	9	148788
+1	dd1056e	2	12:54:40	Blink: Booleans	blink	encode	1	107755
+1	dd1056e	2	12:54:40	Blink: Booleans	blink	encode	2	105893
+1	dd1056e	2	12:54:40	Blink: Booleans	blink	encode	3	107648
+1	dd1056e	2	12:54:40	Blink: Booleans	blink	encode	4	106455
+1	dd1056e	2	12:54:40	Blink: Booleans	blink	encode	5	106377
+1	dd1056e	2	12:54:40	Blink: Booleans	blink	encode	6	106721
+1	dd1056e	2	12:54:40	Blink: Booleans	blink	encode	7	106722
+1	dd1056e	2	12:54:40	Blink: Booleans	blink	encode	8	107721
+1	dd1056e	2	12:54:40	Blink: Booleans	blink	encode	9	106669
+1	dd1056e	2	12:54:40	large array	surge	decode	1	121201
+1	dd1056e	2	12:54:40	large array	surge	decode	2	121038
+1	dd1056e	2	12:54:40	large array	surge	decode	3	114969
+1	dd1056e	2	12:54:40	large array	surge	decode	4	121966
+1	dd1056e	2	12:54:40	large array	surge	decode	5	103887
+1	dd1056e	2	12:54:40	large array	surge	decode	6	110633
+1	dd1056e	2	12:54:40	large array	surge	decode	7	108428
+1	dd1056e	2	12:54:40	large array	surge	decode	8	110924
+1	dd1056e	2	12:54:40	large array	surge	decode	9	119255
+1	dd1056e	2	12:54:40	large array	fbs	decode	1	43313
+1	dd1056e	2	12:54:40	large array	fbs	decode	2	43567
+1	dd1056e	2	12:54:40	large array	fbs	decode	3	42404
+1	dd1056e	2	12:54:40	large array	fbs	decode	4	43697
+1	dd1056e	2	12:54:40	large array	fbs	decode	5	41247
+1	dd1056e	2	12:54:40	large array	fbs	decode	6	43211
+1	dd1056e	2	12:54:40	large array	fbs	decode	7	42378
+1	dd1056e	2	12:54:40	large array	fbs	decode	8	42612
+1	dd1056e	2	12:54:40	large array	fbs	decode	9	43712
+1	dd1056e	2	12:54:40	large array	serio	decode	1	26146
+1	dd1056e	2	12:54:40	large array	serio	decode	2	26061
+1	dd1056e	2	12:54:40	large array	serio	decode	3	25447
+1	dd1056e	2	12:54:40	large array	serio	decode	4	24996
+1	dd1056e	2	12:54:40	large array	serio	decode	5	25265
+1	dd1056e	2	12:54:40	large array	serio	decode	6	25326
+1	dd1056e	2	12:54:40	large array	serio	decode	7	25139
+1	dd1056e	2	12:54:40	large array	serio	decode	8	25126
+1	dd1056e	2	12:54:40	large array	serio	decode	9	26087
+1	dd1056e	2	12:54:40	large array	flamework2	decode	1	117404
+1	dd1056e	2	12:54:40	large array	flamework2	decode	2	118332
+1	dd1056e	2	12:54:40	large array	flamework2	decode	3	117475
+1	dd1056e	2	12:54:40	large array	flamework2	decode	4	106316
+1	dd1056e	2	12:54:40	large array	flamework2	decode	5	117040
+1	dd1056e	2	12:54:40	large array	flamework2	decode	6	116794
+1	dd1056e	2	12:54:40	large array	flamework2	decode	7	113141
+1	dd1056e	2	12:54:40	large array	flamework2	decode	8	115192
+1	dd1056e	2	12:54:40	large array	flamework2	decode	9	115053
+1	dd1056e	2	12:54:40	large array	blink	decode	1	80119
+1	dd1056e	2	12:54:40	large array	blink	decode	2	79532
+1	dd1056e	2	12:54:40	large array	blink	decode	3	78363
+1	dd1056e	2	12:54:40	large array	blink	decode	4	73078
+1	dd1056e	2	12:54:40	large array	blink	decode	5	73507
+1	dd1056e	2	12:54:40	large array	blink	decode	6	79718
+1	dd1056e	2	12:54:40	large array	blink	decode	7	74309
+1	dd1056e	2	12:54:40	large array	blink	decode	8	80355
+1	dd1056e	2	12:54:40	large array	blink	decode	9	79590
+1	dd1056e	2	12:54:40	string-heavy	surge	decode	1	218561
+1	dd1056e	2	12:54:40	string-heavy	surge	decode	2	219625
+1	dd1056e	2	12:54:40	string-heavy	surge	decode	3	222051
+1	dd1056e	2	12:54:40	string-heavy	surge	decode	4	219520
+1	dd1056e	2	12:54:40	string-heavy	surge	decode	5	221959
+1	dd1056e	2	12:54:40	string-heavy	surge	decode	6	219977
+1	dd1056e	2	12:54:40	string-heavy	surge	decode	7	220338
+1	dd1056e	2	12:54:40	string-heavy	surge	decode	8	221014
+1	dd1056e	2	12:54:40	string-heavy	surge	decode	9	219174
+1	dd1056e	2	12:54:40	string-heavy	fbs	decode	1	171175
+1	dd1056e	2	12:54:40	string-heavy	fbs	decode	2	169835
+1	dd1056e	2	12:54:40	string-heavy	fbs	decode	3	172169
+1	dd1056e	2	12:54:40	string-heavy	fbs	decode	4	168966
+1	dd1056e	2	12:54:40	string-heavy	fbs	decode	5	172256
+1	dd1056e	2	12:54:40	string-heavy	fbs	decode	6	169393
+1	dd1056e	2	12:54:40	string-heavy	fbs	decode	7	171679
+1	dd1056e	2	12:54:40	string-heavy	fbs	decode	8	171226
+1	dd1056e	2	12:54:40	string-heavy	fbs	decode	9	170477
+1	dd1056e	2	12:54:40	string-heavy	serio	decode	1	58233
+1	dd1056e	2	12:54:40	string-heavy	serio	decode	2	57330
+1	dd1056e	2	12:54:40	string-heavy	serio	decode	3	58193
+1	dd1056e	2	12:54:40	string-heavy	serio	decode	4	57770
+1	dd1056e	2	12:54:40	string-heavy	serio	decode	5	57732
+1	dd1056e	2	12:54:40	string-heavy	serio	decode	6	57399
+1	dd1056e	2	12:54:40	string-heavy	serio	decode	7	57160
+1	dd1056e	2	12:54:40	string-heavy	serio	decode	8	58015
+1	dd1056e	2	12:54:40	string-heavy	serio	decode	9	57489
+1	dd1056e	2	12:54:40	string-heavy	flamework2	decode	1	157137
+1	dd1056e	2	12:54:40	string-heavy	flamework2	decode	2	157156
+1	dd1056e	2	12:54:40	string-heavy	flamework2	decode	3	156520
+1	dd1056e	2	12:54:40	string-heavy	flamework2	decode	4	156442
+1	dd1056e	2	12:54:40	string-heavy	flamework2	decode	5	161183
+1	dd1056e	2	12:54:40	string-heavy	flamework2	decode	6	158577
+1	dd1056e	2	12:54:40	string-heavy	flamework2	decode	7	159564
+1	dd1056e	2	12:54:40	string-heavy	flamework2	decode	8	156065
+1	dd1056e	2	12:54:40	string-heavy	flamework2	decode	9	156489
+1	dd1056e	2	12:54:40	string-heavy	blink	decode	1	229596
+1	dd1056e	2	12:54:40	string-heavy	blink	decode	2	230266
+1	dd1056e	2	12:54:40	string-heavy	blink	decode	3	232298
+1	dd1056e	2	12:54:40	string-heavy	blink	decode	4	229097
+1	dd1056e	2	12:54:40	string-heavy	blink	decode	5	229878
+1	dd1056e	2	12:54:40	string-heavy	blink	decode	6	231073
+1	dd1056e	2	12:54:40	string-heavy	blink	decode	7	230076
+1	dd1056e	2	12:54:40	string-heavy	blink	decode	8	230425
+1	dd1056e	2	12:54:40	string-heavy	blink	decode	9	229795
+1	dd1056e	2	12:54:40	Blink: Booleans	surge	decode	1	115670
+1	dd1056e	2	12:54:40	Blink: Booleans	surge	decode	2	117422
+1	dd1056e	2	12:54:40	Blink: Booleans	surge	decode	3	121873
+1	dd1056e	2	12:54:40	Blink: Booleans	surge	decode	4	119874
+1	dd1056e	2	12:54:40	Blink: Booleans	surge	decode	5	116030
+1	dd1056e	2	12:54:40	Blink: Booleans	surge	decode	6	118579
+1	dd1056e	2	12:54:40	Blink: Booleans	surge	decode	7	121000
+1	dd1056e	2	12:54:40	Blink: Booleans	surge	decode	8	113179
+1	dd1056e	2	12:54:40	Blink: Booleans	surge	decode	9	116863
+1	dd1056e	2	12:54:40	Blink: Booleans	fbs	decode	1	41280
+1	dd1056e	2	12:54:40	Blink: Booleans	fbs	decode	2	40766
+1	dd1056e	2	12:54:40	Blink: Booleans	fbs	decode	3	41196
+1	dd1056e	2	12:54:40	Blink: Booleans	fbs	decode	4	40778
+1	dd1056e	2	12:54:40	Blink: Booleans	fbs	decode	5	41009
+1	dd1056e	2	12:54:40	Blink: Booleans	fbs	decode	6	41194
+1	dd1056e	2	12:54:40	Blink: Booleans	fbs	decode	7	41164
+1	dd1056e	2	12:54:40	Blink: Booleans	fbs	decode	8	40298
+1	dd1056e	2	12:54:40	Blink: Booleans	fbs	decode	9	41473
+1	dd1056e	2	12:54:40	Blink: Booleans	serio	decode	1	12494
+1	dd1056e	2	12:54:40	Blink: Booleans	serio	decode	2	12485
+1	dd1056e	2	12:54:40	Blink: Booleans	serio	decode	3	12428
+1	dd1056e	2	12:54:40	Blink: Booleans	serio	decode	4	12379
+1	dd1056e	2	12:54:40	Blink: Booleans	serio	decode	5	12339
+1	dd1056e	2	12:54:40	Blink: Booleans	serio	decode	6	12447
+1	dd1056e	2	12:54:40	Blink: Booleans	serio	decode	7	12429
+1	dd1056e	2	12:54:40	Blink: Booleans	serio	decode	8	12395
+1	dd1056e	2	12:54:40	Blink: Booleans	serio	decode	9	12469
+1	dd1056e	2	12:54:40	Blink: Booleans	flamework2	decode	1	116965
+1	dd1056e	2	12:54:40	Blink: Booleans	flamework2	decode	2	118739
+1	dd1056e	2	12:54:40	Blink: Booleans	flamework2	decode	3	115095
+1	dd1056e	2	12:54:40	Blink: Booleans	flamework2	decode	4	119435
+1	dd1056e	2	12:54:40	Blink: Booleans	flamework2	decode	5	114792
+1	dd1056e	2	12:54:40	Blink: Booleans	flamework2	decode	6	117724
+1	dd1056e	2	12:54:40	Blink: Booleans	flamework2	decode	7	119113
+1	dd1056e	2	12:54:40	Blink: Booleans	flamework2	decode	8	116920
+1	dd1056e	2	12:54:40	Blink: Booleans	flamework2	decode	9	115614
+1	dd1056e	2	12:54:40	Blink: Booleans	blink	decode	1	77284
+1	dd1056e	2	12:54:40	Blink: Booleans	blink	decode	2	77366
+1	dd1056e	2	12:54:40	Blink: Booleans	blink	decode	3	76717
+1	dd1056e	2	12:54:40	Blink: Booleans	blink	decode	4	76496
+1	dd1056e	2	12:54:40	Blink: Booleans	blink	decode	5	77245
+1	dd1056e	2	12:54:40	Blink: Booleans	blink	decode	6	77886
+1	dd1056e	2	12:54:40	Blink: Booleans	blink	decode	7	75675
+1	dd1056e	2	12:54:40	Blink: Booleans	blink	decode	8	76789
+1	dd1056e	2	12:54:40	Blink: Booleans	blink	decode	9	62379
+1	766cb9a	3	12:56:07	large array	surge	encode	1	330034
+1	766cb9a	3	12:56:07	large array	surge	encode	2	331394
+1	766cb9a	3	12:56:07	large array	surge	encode	3	311285
+1	766cb9a	3	12:56:07	large array	surge	encode	4	294386
+1	766cb9a	3	12:56:07	large array	surge	encode	5	304105
+1	766cb9a	3	12:56:07	large array	surge	encode	6	331798
+1	766cb9a	3	12:56:07	large array	surge	encode	7	329808
+1	766cb9a	3	12:56:07	large array	surge	encode	8	327341
+1	766cb9a	3	12:56:07	large array	surge	encode	9	331887
+1	766cb9a	3	12:56:07	large array	fbs	encode	1	71759
+1	766cb9a	3	12:56:07	large array	fbs	encode	2	72565
+1	766cb9a	3	12:56:07	large array	fbs	encode	3	72141
+1	766cb9a	3	12:56:07	large array	fbs	encode	4	70427
+1	766cb9a	3	12:56:07	large array	fbs	encode	5	71193
+1	766cb9a	3	12:56:07	large array	fbs	encode	6	70845
+1	766cb9a	3	12:56:07	large array	fbs	encode	7	73033
+1	766cb9a	3	12:56:07	large array	fbs	encode	8	72428
+1	766cb9a	3	12:56:07	large array	fbs	encode	9	73504
+1	766cb9a	3	12:56:07	large array	serio	encode	1	8020
+1	766cb9a	3	12:56:07	large array	serio	encode	2	8035
+1	766cb9a	3	12:56:07	large array	serio	encode	3	7948
+1	766cb9a	3	12:56:07	large array	serio	encode	4	7996
+1	766cb9a	3	12:56:07	large array	serio	encode	5	8017
+1	766cb9a	3	12:56:07	large array	serio	encode	6	8052
+1	766cb9a	3	12:56:07	large array	serio	encode	7	8011
+1	766cb9a	3	12:56:07	large array	serio	encode	8	8067
+1	766cb9a	3	12:56:07	large array	serio	encode	9	8024
+1	766cb9a	3	12:56:07	large array	flamework2	encode	1	272800
+1	766cb9a	3	12:56:07	large array	flamework2	encode	2	274334
+1	766cb9a	3	12:56:07	large array	flamework2	encode	3	251553
+1	766cb9a	3	12:56:07	large array	flamework2	encode	4	253544
+1	766cb9a	3	12:56:07	large array	flamework2	encode	5	275040
+1	766cb9a	3	12:56:07	large array	flamework2	encode	6	277454
+1	766cb9a	3	12:56:07	large array	flamework2	encode	7	275121
+1	766cb9a	3	12:56:07	large array	flamework2	encode	8	276633
+1	766cb9a	3	12:56:07	large array	flamework2	encode	9	264596
+1	766cb9a	3	12:56:07	large array	blink	encode	1	139921
+1	766cb9a	3	12:56:07	large array	blink	encode	2	138645
+1	766cb9a	3	12:56:07	large array	blink	encode	3	125797
+1	766cb9a	3	12:56:07	large array	blink	encode	4	127289
+1	766cb9a	3	12:56:07	large array	blink	encode	5	136755
+1	766cb9a	3	12:56:07	large array	blink	encode	6	138359
+1	766cb9a	3	12:56:07	large array	blink	encode	7	139180
+1	766cb9a	3	12:56:07	large array	blink	encode	8	138492
+1	766cb9a	3	12:56:07	large array	blink	encode	9	131401
+1	766cb9a	3	12:56:07	string-heavy	surge	encode	1	327929
+1	766cb9a	3	12:56:07	string-heavy	surge	encode	2	334376
+1	766cb9a	3	12:56:07	string-heavy	surge	encode	3	331972
+1	766cb9a	3	12:56:07	string-heavy	surge	encode	4	326172
+1	766cb9a	3	12:56:07	string-heavy	surge	encode	5	337379
+1	766cb9a	3	12:56:07	string-heavy	surge	encode	6	333153
+1	766cb9a	3	12:56:07	string-heavy	surge	encode	7	328691
+1	766cb9a	3	12:56:07	string-heavy	surge	encode	8	338231
+1	766cb9a	3	12:56:07	string-heavy	surge	encode	9	335457
+1	766cb9a	3	12:56:07	string-heavy	fbs	encode	1	213172
+1	766cb9a	3	12:56:07	string-heavy	fbs	encode	2	215894
+1	766cb9a	3	12:56:07	string-heavy	fbs	encode	3	216783
+1	766cb9a	3	12:56:07	string-heavy	fbs	encode	4	214895
+1	766cb9a	3	12:56:07	string-heavy	fbs	encode	5	213251
+1	766cb9a	3	12:56:07	string-heavy	fbs	encode	6	213684
+1	766cb9a	3	12:56:07	string-heavy	fbs	encode	7	215194
+1	766cb9a	3	12:56:07	string-heavy	fbs	encode	8	212921
+1	766cb9a	3	12:56:07	string-heavy	fbs	encode	9	217015
+1	766cb9a	3	12:56:07	string-heavy	serio	encode	1	32454
+1	766cb9a	3	12:56:07	string-heavy	serio	encode	2	32389
+1	766cb9a	3	12:56:07	string-heavy	serio	encode	3	32297
+1	766cb9a	3	12:56:07	string-heavy	serio	encode	4	32101
+1	766cb9a	3	12:56:07	string-heavy	serio	encode	5	32418
+1	766cb9a	3	12:56:07	string-heavy	serio	encode	6	32133
+1	766cb9a	3	12:56:07	string-heavy	serio	encode	7	32182
+1	766cb9a	3	12:56:07	string-heavy	serio	encode	8	32589
+1	766cb9a	3	12:56:07	string-heavy	serio	encode	9	32167
+1	766cb9a	3	12:56:07	string-heavy	flamework2	encode	1	238075
+1	766cb9a	3	12:56:07	string-heavy	flamework2	encode	2	238473
+1	766cb9a	3	12:56:07	string-heavy	flamework2	encode	3	239445
+1	766cb9a	3	12:56:07	string-heavy	flamework2	encode	4	237631
+1	766cb9a	3	12:56:07	string-heavy	flamework2	encode	5	238383
+1	766cb9a	3	12:56:07	string-heavy	flamework2	encode	6	237490
+1	766cb9a	3	12:56:07	string-heavy	flamework2	encode	7	237892
+1	766cb9a	3	12:56:07	string-heavy	flamework2	encode	8	236867
+1	766cb9a	3	12:56:07	string-heavy	flamework2	encode	9	238194
+1	766cb9a	3	12:56:07	string-heavy	blink	encode	1	130416
+1	766cb9a	3	12:56:07	string-heavy	blink	encode	2	131944
+1	766cb9a	3	12:56:07	string-heavy	blink	encode	3	132443
+1	766cb9a	3	12:56:07	string-heavy	blink	encode	4	132676
+1	766cb9a	3	12:56:07	string-heavy	blink	encode	5	133161
+1	766cb9a	3	12:56:07	string-heavy	blink	encode	6	133425
+1	766cb9a	3	12:56:07	string-heavy	blink	encode	7	132659
+1	766cb9a	3	12:56:07	string-heavy	blink	encode	8	133273
+1	766cb9a	3	12:56:07	string-heavy	blink	encode	9	131668
+1	766cb9a	3	12:56:07	Blink: Booleans	surge	encode	1	215132
+1	766cb9a	3	12:56:07	Blink: Booleans	surge	encode	2	212509
+1	766cb9a	3	12:56:07	Blink: Booleans	surge	encode	3	214435
+1	766cb9a	3	12:56:07	Blink: Booleans	surge	encode	4	214294
+1	766cb9a	3	12:56:07	Blink: Booleans	surge	encode	5	211147
+1	766cb9a	3	12:56:07	Blink: Booleans	surge	encode	6	212951
+1	766cb9a	3	12:56:07	Blink: Booleans	surge	encode	7	213661
+1	766cb9a	3	12:56:07	Blink: Booleans	surge	encode	8	211783
+1	766cb9a	3	12:56:07	Blink: Booleans	surge	encode	9	208638
+1	766cb9a	3	12:56:07	Blink: Booleans	fbs	encode	1	52745
+1	766cb9a	3	12:56:07	Blink: Booleans	fbs	encode	2	52417
+1	766cb9a	3	12:56:07	Blink: Booleans	fbs	encode	3	52699
+1	766cb9a	3	12:56:07	Blink: Booleans	fbs	encode	4	52341
+1	766cb9a	3	12:56:07	Blink: Booleans	fbs	encode	5	52774
+1	766cb9a	3	12:56:07	Blink: Booleans	fbs	encode	6	52552
+1	766cb9a	3	12:56:07	Blink: Booleans	fbs	encode	7	52190
+1	766cb9a	3	12:56:07	Blink: Booleans	fbs	encode	8	52813
+1	766cb9a	3	12:56:07	Blink: Booleans	fbs	encode	9	52330
+1	766cb9a	3	12:56:07	Blink: Booleans	serio	encode	1	10386
+1	766cb9a	3	12:56:07	Blink: Booleans	serio	encode	2	10359
+1	766cb9a	3	12:56:07	Blink: Booleans	serio	encode	3	10335
+1	766cb9a	3	12:56:07	Blink: Booleans	serio	encode	4	10363
+1	766cb9a	3	12:56:07	Blink: Booleans	serio	encode	5	10331
+1	766cb9a	3	12:56:07	Blink: Booleans	serio	encode	6	10358
+1	766cb9a	3	12:56:07	Blink: Booleans	serio	encode	7	10352
+1	766cb9a	3	12:56:07	Blink: Booleans	serio	encode	8	10374
+1	766cb9a	3	12:56:07	Blink: Booleans	serio	encode	9	10342
+1	766cb9a	3	12:56:07	Blink: Booleans	flamework2	encode	1	105573
+1	766cb9a	3	12:56:07	Blink: Booleans	flamework2	encode	2	105422
+1	766cb9a	3	12:56:07	Blink: Booleans	flamework2	encode	3	105701
+1	766cb9a	3	12:56:07	Blink: Booleans	flamework2	encode	4	105017
+1	766cb9a	3	12:56:07	Blink: Booleans	flamework2	encode	5	106218
+1	766cb9a	3	12:56:07	Blink: Booleans	flamework2	encode	6	105572
+1	766cb9a	3	12:56:07	Blink: Booleans	flamework2	encode	7	104509
+1	766cb9a	3	12:56:07	Blink: Booleans	flamework2	encode	8	104091
+1	766cb9a	3	12:56:07	Blink: Booleans	flamework2	encode	9	105776
+1	766cb9a	3	12:56:07	Blink: Booleans	blink	encode	1	112741
+1	766cb9a	3	12:56:07	Blink: Booleans	blink	encode	2	113307
+1	766cb9a	3	12:56:07	Blink: Booleans	blink	encode	3	112418
+1	766cb9a	3	12:56:07	Blink: Booleans	blink	encode	4	110363
+1	766cb9a	3	12:56:07	Blink: Booleans	blink	encode	5	108705
+1	766cb9a	3	12:56:07	Blink: Booleans	blink	encode	6	110176
+1	766cb9a	3	12:56:07	Blink: Booleans	blink	encode	7	110493
+1	766cb9a	3	12:56:07	Blink: Booleans	blink	encode	8	109639
+1	766cb9a	3	12:56:07	Blink: Booleans	blink	encode	9	109979
+1	766cb9a	3	12:56:07	large array	surge	decode	1	122668
+1	766cb9a	3	12:56:07	large array	surge	decode	2	118221
+1	766cb9a	3	12:56:07	large array	surge	decode	3	121471
+1	766cb9a	3	12:56:07	large array	surge	decode	4	121252
+1	766cb9a	3	12:56:07	large array	surge	decode	5	121229
+1	766cb9a	3	12:56:07	large array	surge	decode	6	116062
+1	766cb9a	3	12:56:07	large array	surge	decode	7	115500
+1	766cb9a	3	12:56:07	large array	surge	decode	8	115138
+1	766cb9a	3	12:56:07	large array	surge	decode	9	120931
+1	766cb9a	3	12:56:07	large array	fbs	decode	1	43630
+1	766cb9a	3	12:56:07	large array	fbs	decode	2	43593
+1	766cb9a	3	12:56:07	large array	fbs	decode	3	44351
+1	766cb9a	3	12:56:07	large array	fbs	decode	4	43285
+1	766cb9a	3	12:56:07	large array	fbs	decode	5	43331
+1	766cb9a	3	12:56:07	large array	fbs	decode	6	44406
+1	766cb9a	3	12:56:07	large array	fbs	decode	7	43864
+1	766cb9a	3	12:56:07	large array	fbs	decode	8	43569
+1	766cb9a	3	12:56:07	large array	fbs	decode	9	43229
+1	766cb9a	3	12:56:07	large array	serio	decode	1	26084
+1	766cb9a	3	12:56:07	large array	serio	decode	2	25924
+1	766cb9a	3	12:56:07	large array	serio	decode	3	25476
+1	766cb9a	3	12:56:07	large array	serio	decode	4	26184
+1	766cb9a	3	12:56:07	large array	serio	decode	5	25831
+1	766cb9a	3	12:56:07	large array	serio	decode	6	26116
+1	766cb9a	3	12:56:07	large array	serio	decode	7	26177
+1	766cb9a	3	12:56:07	large array	serio	decode	8	26164
+1	766cb9a	3	12:56:07	large array	serio	decode	9	26063
+1	766cb9a	3	12:56:07	large array	flamework2	decode	1	115144
+1	766cb9a	3	12:56:07	large array	flamework2	decode	2	120346
+1	766cb9a	3	12:56:07	large array	flamework2	decode	3	110917
+1	766cb9a	3	12:56:07	large array	flamework2	decode	4	120290
+1	766cb9a	3	12:56:07	large array	flamework2	decode	5	121244
+1	766cb9a	3	12:56:07	large array	flamework2	decode	6	118598
+1	766cb9a	3	12:56:07	large array	flamework2	decode	7	117257
+1	766cb9a	3	12:56:07	large array	flamework2	decode	8	121311
+1	766cb9a	3	12:56:07	large array	flamework2	decode	9	119566
+1	766cb9a	3	12:56:07	large array	blink	decode	1	72184
+1	766cb9a	3	12:56:07	large array	blink	decode	2	77305
+1	766cb9a	3	12:56:07	large array	blink	decode	3	77997
+1	766cb9a	3	12:56:07	large array	blink	decode	4	78009
+1	766cb9a	3	12:56:07	large array	blink	decode	5	79708
+1	766cb9a	3	12:56:07	large array	blink	decode	6	80987
+1	766cb9a	3	12:56:07	large array	blink	decode	7	73958
+1	766cb9a	3	12:56:07	large array	blink	decode	8	79187
+1	766cb9a	3	12:56:07	large array	blink	decode	9	80282
+1	766cb9a	3	12:56:07	string-heavy	surge	decode	1	209899
+1	766cb9a	3	12:56:07	string-heavy	surge	decode	2	209675
+1	766cb9a	3	12:56:07	string-heavy	surge	decode	3	203223
+1	766cb9a	3	12:56:07	string-heavy	surge	decode	4	209924
+1	766cb9a	3	12:56:07	string-heavy	surge	decode	5	209254
+1	766cb9a	3	12:56:07	string-heavy	surge	decode	6	209938
+1	766cb9a	3	12:56:07	string-heavy	surge	decode	7	207417
+1	766cb9a	3	12:56:07	string-heavy	surge	decode	8	208497
+1	766cb9a	3	12:56:07	string-heavy	surge	decode	9	208513
+1	766cb9a	3	12:56:07	string-heavy	fbs	decode	1	164710
+1	766cb9a	3	12:56:07	string-heavy	fbs	decode	2	165375
+1	766cb9a	3	12:56:07	string-heavy	fbs	decode	3	162141
+1	766cb9a	3	12:56:07	string-heavy	fbs	decode	4	164760
+1	766cb9a	3	12:56:07	string-heavy	fbs	decode	5	164314
+1	766cb9a	3	12:56:07	string-heavy	fbs	decode	6	163593
+1	766cb9a	3	12:56:07	string-heavy	fbs	decode	7	163425
+1	766cb9a	3	12:56:07	string-heavy	fbs	decode	8	164526
+1	766cb9a	3	12:56:07	string-heavy	fbs	decode	9	164572
+1	766cb9a	3	12:56:07	string-heavy	serio	decode	1	57357
+1	766cb9a	3	12:56:07	string-heavy	serio	decode	2	56706
+1	766cb9a	3	12:56:07	string-heavy	serio	decode	3	56647
+1	766cb9a	3	12:56:07	string-heavy	serio	decode	4	57635
+1	766cb9a	3	12:56:07	string-heavy	serio	decode	5	56842
+1	766cb9a	3	12:56:07	string-heavy	serio	decode	6	56842
+1	766cb9a	3	12:56:07	string-heavy	serio	decode	7	56799
+1	766cb9a	3	12:56:07	string-heavy	serio	decode	8	57499
+1	766cb9a	3	12:56:07	string-heavy	serio	decode	9	57703
+1	766cb9a	3	12:56:07	string-heavy	flamework2	decode	1	150044
+1	766cb9a	3	12:56:07	string-heavy	flamework2	decode	2	146014
+1	766cb9a	3	12:56:07	string-heavy	flamework2	decode	3	148361
+1	766cb9a	3	12:56:07	string-heavy	flamework2	decode	4	149730
+1	766cb9a	3	12:56:07	string-heavy	flamework2	decode	5	153341
+1	766cb9a	3	12:56:07	string-heavy	flamework2	decode	6	154274
+1	766cb9a	3	12:56:07	string-heavy	flamework2	decode	7	152267
+1	766cb9a	3	12:56:07	string-heavy	flamework2	decode	8	151870
+1	766cb9a	3	12:56:07	string-heavy	flamework2	decode	9	149578
+1	766cb9a	3	12:56:07	string-heavy	blink	decode	1	218693
+1	766cb9a	3	12:56:07	string-heavy	blink	decode	2	208968
+1	766cb9a	3	12:56:07	string-heavy	blink	decode	3	211048
+1	766cb9a	3	12:56:07	string-heavy	blink	decode	4	217064
+1	766cb9a	3	12:56:07	string-heavy	blink	decode	5	217682
+1	766cb9a	3	12:56:07	string-heavy	blink	decode	6	218861
+1	766cb9a	3	12:56:07	string-heavy	blink	decode	7	215784
+1	766cb9a	3	12:56:07	string-heavy	blink	decode	8	217081
+1	766cb9a	3	12:56:07	string-heavy	blink	decode	9	215960
+1	766cb9a	3	12:56:07	Blink: Booleans	surge	decode	1	118586
+1	766cb9a	3	12:56:07	Blink: Booleans	surge	decode	2	113013
+1	766cb9a	3	12:56:07	Blink: Booleans	surge	decode	3	118341
+1	766cb9a	3	12:56:07	Blink: Booleans	surge	decode	4	118675
+1	766cb9a	3	12:56:07	Blink: Booleans	surge	decode	5	119941
+1	766cb9a	3	12:56:07	Blink: Booleans	surge	decode	6	116268
+1	766cb9a	3	12:56:07	Blink: Booleans	surge	decode	7	118949
+1	766cb9a	3	12:56:07	Blink: Booleans	surge	decode	8	118666
+1	766cb9a	3	12:56:07	Blink: Booleans	surge	decode	9	116765
+1	766cb9a	3	12:56:07	Blink: Booleans	fbs	decode	1	41902
+1	766cb9a	3	12:56:07	Blink: Booleans	fbs	decode	2	41131
+1	766cb9a	3	12:56:07	Blink: Booleans	fbs	decode	3	41508
+1	766cb9a	3	12:56:07	Blink: Booleans	fbs	decode	4	41248
+1	766cb9a	3	12:56:07	Blink: Booleans	fbs	decode	5	41085
+1	766cb9a	3	12:56:07	Blink: Booleans	fbs	decode	6	41408
+1	766cb9a	3	12:56:07	Blink: Booleans	fbs	decode	7	41329
+1	766cb9a	3	12:56:07	Blink: Booleans	fbs	decode	8	41535
+1	766cb9a	3	12:56:07	Blink: Booleans	fbs	decode	9	41554
+1	766cb9a	3	12:56:07	Blink: Booleans	serio	decode	1	12655
+1	766cb9a	3	12:56:07	Blink: Booleans	serio	decode	2	12597
+1	766cb9a	3	12:56:07	Blink: Booleans	serio	decode	3	12586
+1	766cb9a	3	12:56:07	Blink: Booleans	serio	decode	4	12530
+1	766cb9a	3	12:56:07	Blink: Booleans	serio	decode	5	12456
+1	766cb9a	3	12:56:07	Blink: Booleans	serio	decode	6	12601
+1	766cb9a	3	12:56:07	Blink: Booleans	serio	decode	7	12520
+1	766cb9a	3	12:56:07	Blink: Booleans	serio	decode	8	12611
+1	766cb9a	3	12:56:07	Blink: Booleans	serio	decode	9	12601
+1	766cb9a	3	12:56:07	Blink: Booleans	flamework2	decode	1	112483
+1	766cb9a	3	12:56:07	Blink: Booleans	flamework2	decode	2	114786
+1	766cb9a	3	12:56:07	Blink: Booleans	flamework2	decode	3	118370
+1	766cb9a	3	12:56:07	Blink: Booleans	flamework2	decode	4	115751
+1	766cb9a	3	12:56:07	Blink: Booleans	flamework2	decode	5	115382
+1	766cb9a	3	12:56:07	Blink: Booleans	flamework2	decode	6	116742
+1	766cb9a	3	12:56:07	Blink: Booleans	flamework2	decode	7	116935
+1	766cb9a	3	12:56:07	Blink: Booleans	flamework2	decode	8	117157
+1	766cb9a	3	12:56:07	Blink: Booleans	flamework2	decode	9	118930
+1	766cb9a	3	12:56:07	Blink: Booleans	blink	decode	1	72771
+1	766cb9a	3	12:56:07	Blink: Booleans	blink	decode	2	79085
+1	766cb9a	3	12:56:07	Blink: Booleans	blink	decode	3	76417
+1	766cb9a	3	12:56:07	Blink: Booleans	blink	decode	4	76759
+1	766cb9a	3	12:56:07	Blink: Booleans	blink	decode	5	73905
+1	766cb9a	3	12:56:07	Blink: Booleans	blink	decode	6	77017
+1	766cb9a	3	12:56:07	Blink: Booleans	blink	decode	7	76410
+1	766cb9a	3	12:56:07	Blink: Booleans	blink	decode	8	77441
+1	766cb9a	3	12:56:07	Blink: Booleans	blink	decode	9	76515
+1	dd1056e	4	12:57:35	large array	surge	encode	1	327276
+1	dd1056e	4	12:57:35	large array	surge	encode	2	329133
+1	dd1056e	4	12:57:35	large array	surge	encode	3	321973
+1	dd1056e	4	12:57:35	large array	surge	encode	4	322903
+1	dd1056e	4	12:57:35	large array	surge	encode	5	329948
+1	dd1056e	4	12:57:35	large array	surge	encode	6	330411
+1	dd1056e	4	12:57:35	large array	surge	encode	7	330201
+1	dd1056e	4	12:57:35	large array	surge	encode	8	328980
+1	dd1056e	4	12:57:35	large array	surge	encode	9	329742
+1	dd1056e	4	12:57:35	large array	fbs	encode	1	75199
+1	dd1056e	4	12:57:35	large array	fbs	encode	2	74806
+1	dd1056e	4	12:57:35	large array	fbs	encode	3	73462
+1	dd1056e	4	12:57:35	large array	fbs	encode	4	73743
+1	dd1056e	4	12:57:35	large array	fbs	encode	5	73293
+1	dd1056e	4	12:57:35	large array	fbs	encode	6	72751
+1	dd1056e	4	12:57:35	large array	fbs	encode	7	74113
+1	dd1056e	4	12:57:35	large array	fbs	encode	8	73847
+1	dd1056e	4	12:57:35	large array	fbs	encode	9	74742
+1	dd1056e	4	12:57:35	large array	serio	encode	1	7967
+1	dd1056e	4	12:57:35	large array	serio	encode	2	7847
+1	dd1056e	4	12:57:35	large array	serio	encode	3	7963
+1	dd1056e	4	12:57:35	large array	serio	encode	4	7995
+1	dd1056e	4	12:57:35	large array	serio	encode	5	8015
+1	dd1056e	4	12:57:35	large array	serio	encode	6	7974
+1	dd1056e	4	12:57:35	large array	serio	encode	7	7965
+1	dd1056e	4	12:57:35	large array	serio	encode	8	8000
+1	dd1056e	4	12:57:35	large array	serio	encode	9	7983
+1	dd1056e	4	12:57:35	large array	flamework2	encode	1	277433
+1	dd1056e	4	12:57:35	large array	flamework2	encode	2	264129
+1	dd1056e	4	12:57:35	large array	flamework2	encode	3	273392
+1	dd1056e	4	12:57:35	large array	flamework2	encode	4	276191
+1	dd1056e	4	12:57:35	large array	flamework2	encode	5	278174
+1	dd1056e	4	12:57:35	large array	flamework2	encode	6	278748
+1	dd1056e	4	12:57:35	large array	flamework2	encode	7	271867
+1	dd1056e	4	12:57:35	large array	flamework2	encode	8	276460
+1	dd1056e	4	12:57:35	large array	flamework2	encode	9	273474
+1	dd1056e	4	12:57:35	large array	blink	encode	1	147683
+1	dd1056e	4	12:57:35	large array	blink	encode	2	137369
+1	dd1056e	4	12:57:35	large array	blink	encode	3	147382
+1	dd1056e	4	12:57:35	large array	blink	encode	4	148279
+1	dd1056e	4	12:57:35	large array	blink	encode	5	144267
+1	dd1056e	4	12:57:35	large array	blink	encode	6	146695
+1	dd1056e	4	12:57:35	large array	blink	encode	7	147308
+1	dd1056e	4	12:57:35	large array	blink	encode	8	146817
+1	dd1056e	4	12:57:35	large array	blink	encode	9	147416
+1	dd1056e	4	12:57:35	string-heavy	surge	encode	1	326091
+1	dd1056e	4	12:57:35	string-heavy	surge	encode	2	327165
+1	dd1056e	4	12:57:35	string-heavy	surge	encode	3	327442
+1	dd1056e	4	12:57:35	string-heavy	surge	encode	4	320980
+1	dd1056e	4	12:57:35	string-heavy	surge	encode	5	326079
+1	dd1056e	4	12:57:35	string-heavy	surge	encode	6	327174
+1	dd1056e	4	12:57:35	string-heavy	surge	encode	7	325531
+1	dd1056e	4	12:57:35	string-heavy	surge	encode	8	327158
+1	dd1056e	4	12:57:35	string-heavy	surge	encode	9	310560
+1	dd1056e	4	12:57:35	string-heavy	fbs	encode	1	218900
+1	dd1056e	4	12:57:35	string-heavy	fbs	encode	2	220908
+1	dd1056e	4	12:57:35	string-heavy	fbs	encode	3	217928
+1	dd1056e	4	12:57:35	string-heavy	fbs	encode	4	218484
+1	dd1056e	4	12:57:35	string-heavy	fbs	encode	5	218948
+1	dd1056e	4	12:57:35	string-heavy	fbs	encode	6	218323
+1	dd1056e	4	12:57:35	string-heavy	fbs	encode	7	218157
+1	dd1056e	4	12:57:35	string-heavy	fbs	encode	8	215991
+1	dd1056e	4	12:57:35	string-heavy	fbs	encode	9	206353
+1	dd1056e	4	12:57:35	string-heavy	serio	encode	1	32616
+1	dd1056e	4	12:57:35	string-heavy	serio	encode	2	32647
+1	dd1056e	4	12:57:35	string-heavy	serio	encode	3	32817
+1	dd1056e	4	12:57:35	string-heavy	serio	encode	4	32566
+1	dd1056e	4	12:57:35	string-heavy	serio	encode	5	32837
+1	dd1056e	4	12:57:35	string-heavy	serio	encode	6	32614
+1	dd1056e	4	12:57:35	string-heavy	serio	encode	7	32343
+1	dd1056e	4	12:57:35	string-heavy	serio	encode	8	31985
+1	dd1056e	4	12:57:35	string-heavy	serio	encode	9	32623
+1	dd1056e	4	12:57:35	string-heavy	flamework2	encode	1	244969
+1	dd1056e	4	12:57:35	string-heavy	flamework2	encode	2	247790
+1	dd1056e	4	12:57:35	string-heavy	flamework2	encode	3	246195
+1	dd1056e	4	12:57:35	string-heavy	flamework2	encode	4	246675
+1	dd1056e	4	12:57:35	string-heavy	flamework2	encode	5	247993
+1	dd1056e	4	12:57:35	string-heavy	flamework2	encode	6	248414
+1	dd1056e	4	12:57:35	string-heavy	flamework2	encode	7	248886
+1	dd1056e	4	12:57:35	string-heavy	flamework2	encode	8	236964
+1	dd1056e	4	12:57:35	string-heavy	flamework2	encode	9	244425
+1	dd1056e	4	12:57:35	string-heavy	blink	encode	1	129839
+1	dd1056e	4	12:57:35	string-heavy	blink	encode	2	131435
+1	dd1056e	4	12:57:35	string-heavy	blink	encode	3	132468
+1	dd1056e	4	12:57:35	string-heavy	blink	encode	4	133709
+1	dd1056e	4	12:57:35	string-heavy	blink	encode	5	133054
+1	dd1056e	4	12:57:35	string-heavy	blink	encode	6	132803
+1	dd1056e	4	12:57:35	string-heavy	blink	encode	7	132835
+1	dd1056e	4	12:57:35	string-heavy	blink	encode	8	122065
+1	dd1056e	4	12:57:35	string-heavy	blink	encode	9	130869
+1	dd1056e	4	12:57:35	Blink: Booleans	surge	encode	1	212404
+1	dd1056e	4	12:57:35	Blink: Booleans	surge	encode	2	208901
+1	dd1056e	4	12:57:35	Blink: Booleans	surge	encode	3	209040
+1	dd1056e	4	12:57:35	Blink: Booleans	surge	encode	4	210926
+1	dd1056e	4	12:57:35	Blink: Booleans	surge	encode	5	214393
+1	dd1056e	4	12:57:35	Blink: Booleans	surge	encode	6	214054
+1	dd1056e	4	12:57:35	Blink: Booleans	surge	encode	7	217129
+1	dd1056e	4	12:57:35	Blink: Booleans	surge	encode	8	214483
+1	dd1056e	4	12:57:35	Blink: Booleans	surge	encode	9	211407
+1	dd1056e	4	12:57:35	Blink: Booleans	fbs	encode	1	53115
+1	dd1056e	4	12:57:35	Blink: Booleans	fbs	encode	2	53404
+1	dd1056e	4	12:57:35	Blink: Booleans	fbs	encode	3	53893
+1	dd1056e	4	12:57:35	Blink: Booleans	fbs	encode	4	53217
+1	dd1056e	4	12:57:35	Blink: Booleans	fbs	encode	5	53057
+1	dd1056e	4	12:57:35	Blink: Booleans	fbs	encode	6	52891
+1	dd1056e	4	12:57:35	Blink: Booleans	fbs	encode	7	53025
+1	dd1056e	4	12:57:35	Blink: Booleans	fbs	encode	8	52868
+1	dd1056e	4	12:57:35	Blink: Booleans	fbs	encode	9	52961
+1	dd1056e	4	12:57:35	Blink: Booleans	serio	encode	1	10362
+1	dd1056e	4	12:57:35	Blink: Booleans	serio	encode	2	10428
+1	dd1056e	4	12:57:35	Blink: Booleans	serio	encode	3	10409
+1	dd1056e	4	12:57:35	Blink: Booleans	serio	encode	4	10389
+1	dd1056e	4	12:57:35	Blink: Booleans	serio	encode	5	10354
+1	dd1056e	4	12:57:35	Blink: Booleans	serio	encode	6	10342
+1	dd1056e	4	12:57:35	Blink: Booleans	serio	encode	7	10382
+1	dd1056e	4	12:57:35	Blink: Booleans	serio	encode	8	10356
+1	dd1056e	4	12:57:35	Blink: Booleans	serio	encode	9	10384
+1	dd1056e	4	12:57:35	Blink: Booleans	flamework2	encode	1	150935
+1	dd1056e	4	12:57:35	Blink: Booleans	flamework2	encode	2	148673
+1	dd1056e	4	12:57:35	Blink: Booleans	flamework2	encode	3	151700
+1	dd1056e	4	12:57:35	Blink: Booleans	flamework2	encode	4	151399
+1	dd1056e	4	12:57:35	Blink: Booleans	flamework2	encode	5	149074
+1	dd1056e	4	12:57:35	Blink: Booleans	flamework2	encode	6	150481
+1	dd1056e	4	12:57:35	Blink: Booleans	flamework2	encode	7	150035
+1	dd1056e	4	12:57:35	Blink: Booleans	flamework2	encode	8	152910
+1	dd1056e	4	12:57:35	Blink: Booleans	flamework2	encode	9	150959
+1	dd1056e	4	12:57:35	Blink: Booleans	blink	encode	1	113792
+1	dd1056e	4	12:57:35	Blink: Booleans	blink	encode	2	115471
+1	dd1056e	4	12:57:35	Blink: Booleans	blink	encode	3	114398
+1	dd1056e	4	12:57:35	Blink: Booleans	blink	encode	4	110768
+1	dd1056e	4	12:57:35	Blink: Booleans	blink	encode	5	109863
+1	dd1056e	4	12:57:35	Blink: Booleans	blink	encode	6	112691
+1	dd1056e	4	12:57:35	Blink: Booleans	blink	encode	7	112248
+1	dd1056e	4	12:57:35	Blink: Booleans	blink	encode	8	112980
+1	dd1056e	4	12:57:35	Blink: Booleans	blink	encode	9	112849
+1	dd1056e	4	12:57:35	large array	surge	decode	1	119898
+1	dd1056e	4	12:57:35	large array	surge	decode	2	119982
+1	dd1056e	4	12:57:35	large array	surge	decode	3	120611
+1	dd1056e	4	12:57:35	large array	surge	decode	4	121531
+1	dd1056e	4	12:57:35	large array	surge	decode	5	119834
+1	dd1056e	4	12:57:35	large array	surge	decode	6	119999
+1	dd1056e	4	12:57:35	large array	surge	decode	7	121472
+1	dd1056e	4	12:57:35	large array	surge	decode	8	118126
+1	dd1056e	4	12:57:35	large array	surge	decode	9	116033
+1	dd1056e	4	12:57:35	large array	fbs	decode	1	44423
+1	dd1056e	4	12:57:35	large array	fbs	decode	2	43095
+1	dd1056e	4	12:57:35	large array	fbs	decode	3	43450
+1	dd1056e	4	12:57:35	large array	fbs	decode	4	44233
+1	dd1056e	4	12:57:35	large array	fbs	decode	5	44079
+1	dd1056e	4	12:57:35	large array	fbs	decode	6	44122
+1	dd1056e	4	12:57:35	large array	fbs	decode	7	44402
+1	dd1056e	4	12:57:35	large array	fbs	decode	8	44394
+1	dd1056e	4	12:57:35	large array	fbs	decode	9	44428
+1	dd1056e	4	12:57:35	large array	serio	decode	1	25606
+1	dd1056e	4	12:57:35	large array	serio	decode	2	25577
+1	dd1056e	4	12:57:35	large array	serio	decode	3	25731
+1	dd1056e	4	12:57:35	large array	serio	decode	4	25437
+1	dd1056e	4	12:57:35	large array	serio	decode	5	25665
+1	dd1056e	4	12:57:35	large array	serio	decode	6	25648
+1	dd1056e	4	12:57:35	large array	serio	decode	7	25831
+1	dd1056e	4	12:57:35	large array	serio	decode	8	25701
+1	dd1056e	4	12:57:35	large array	serio	decode	9	25582
+1	dd1056e	4	12:57:35	large array	flamework2	decode	1	114711
+1	dd1056e	4	12:57:35	large array	flamework2	decode	2	113711
+1	dd1056e	4	12:57:35	large array	flamework2	decode	3	115838
+1	dd1056e	4	12:57:35	large array	flamework2	decode	4	119806
+1	dd1056e	4	12:57:35	large array	flamework2	decode	5	118616
+1	dd1056e	4	12:57:35	large array	flamework2	decode	6	119250
+1	dd1056e	4	12:57:35	large array	flamework2	decode	7	118338
+1	dd1056e	4	12:57:35	large array	flamework2	decode	8	117918
+1	dd1056e	4	12:57:35	large array	flamework2	decode	9	119767
+1	dd1056e	4	12:57:35	large array	blink	decode	1	79294
+1	dd1056e	4	12:57:35	large array	blink	decode	2	77972
+1	dd1056e	4	12:57:35	large array	blink	decode	3	77775
+1	dd1056e	4	12:57:35	large array	blink	decode	4	78711
+1	dd1056e	4	12:57:35	large array	blink	decode	5	77541
+1	dd1056e	4	12:57:35	large array	blink	decode	6	78547
+1	dd1056e	4	12:57:35	large array	blink	decode	7	78897
+1	dd1056e	4	12:57:35	large array	blink	decode	8	81048
+1	dd1056e	4	12:57:35	large array	blink	decode	9	78732
+1	dd1056e	4	12:57:35	string-heavy	surge	decode	1	210325
+1	dd1056e	4	12:57:35	string-heavy	surge	decode	2	208849
+1	dd1056e	4	12:57:35	string-heavy	surge	decode	3	210275
+1	dd1056e	4	12:57:35	string-heavy	surge	decode	4	210786
+1	dd1056e	4	12:57:35	string-heavy	surge	decode	5	211083
+1	dd1056e	4	12:57:35	string-heavy	surge	decode	6	210937
+1	dd1056e	4	12:57:35	string-heavy	surge	decode	7	209026
+1	dd1056e	4	12:57:35	string-heavy	surge	decode	8	218938
+1	dd1056e	4	12:57:35	string-heavy	surge	decode	9	222062
+1	dd1056e	4	12:57:35	string-heavy	fbs	decode	1	167826
+1	dd1056e	4	12:57:35	string-heavy	fbs	decode	2	164390
+1	dd1056e	4	12:57:35	string-heavy	fbs	decode	3	166179
+1	dd1056e	4	12:57:35	string-heavy	fbs	decode	4	167454
+1	dd1056e	4	12:57:35	string-heavy	fbs	decode	5	168242
+1	dd1056e	4	12:57:35	string-heavy	fbs	decode	6	166733
+1	dd1056e	4	12:57:35	string-heavy	fbs	decode	7	167947
+1	dd1056e	4	12:57:35	string-heavy	fbs	decode	8	175168
+1	dd1056e	4	12:57:35	string-heavy	fbs	decode	9	174630
+1	dd1056e	4	12:57:35	string-heavy	serio	decode	1	56984
+1	dd1056e	4	12:57:35	string-heavy	serio	decode	2	57030
+1	dd1056e	4	12:57:35	string-heavy	serio	decode	3	57767
+1	dd1056e	4	12:57:35	string-heavy	serio	decode	4	57012
+1	dd1056e	4	12:57:35	string-heavy	serio	decode	5	56874
+1	dd1056e	4	12:57:35	string-heavy	serio	decode	6	57104
+1	dd1056e	4	12:57:35	string-heavy	serio	decode	7	56919
+1	dd1056e	4	12:57:35	string-heavy	serio	decode	8	58416
+1	dd1056e	4	12:57:35	string-heavy	serio	decode	9	59095
+1	dd1056e	4	12:57:35	string-heavy	flamework2	decode	1	152427
+1	dd1056e	4	12:57:35	string-heavy	flamework2	decode	2	152595
+1	dd1056e	4	12:57:35	string-heavy	flamework2	decode	3	151241
+1	dd1056e	4	12:57:35	string-heavy	flamework2	decode	4	150176
+1	dd1056e	4	12:57:35	string-heavy	flamework2	decode	5	149966
+1	dd1056e	4	12:57:35	string-heavy	flamework2	decode	6	153535
+1	dd1056e	4	12:57:35	string-heavy	flamework2	decode	7	157414
+1	dd1056e	4	12:57:35	string-heavy	flamework2	decode	8	156557
+1	dd1056e	4	12:57:35	string-heavy	flamework2	decode	9	158242
+1	dd1056e	4	12:57:35	string-heavy	blink	decode	1	218947
+1	dd1056e	4	12:57:35	string-heavy	blink	decode	2	219399
+1	dd1056e	4	12:57:35	string-heavy	blink	decode	3	218488
+1	dd1056e	4	12:57:35	string-heavy	blink	decode	4	218656
+1	dd1056e	4	12:57:35	string-heavy	blink	decode	5	219838
+1	dd1056e	4	12:57:35	string-heavy	blink	decode	6	218456
+1	dd1056e	4	12:57:35	string-heavy	blink	decode	7	228089
+1	dd1056e	4	12:57:35	string-heavy	blink	decode	8	230233
+1	dd1056e	4	12:57:35	string-heavy	blink	decode	9	228965
+1	dd1056e	4	12:57:35	Blink: Booleans	surge	decode	1	104850
+1	dd1056e	4	12:57:35	Blink: Booleans	surge	decode	2	96828
+1	dd1056e	4	12:57:35	Blink: Booleans	surge	decode	3	105180
+1	dd1056e	4	12:57:35	Blink: Booleans	surge	decode	4	107307
+1	dd1056e	4	12:57:35	Blink: Booleans	surge	decode	5	109202
+1	dd1056e	4	12:57:35	Blink: Booleans	surge	decode	6	119663
+1	dd1056e	4	12:57:35	Blink: Booleans	surge	decode	7	120783
+1	dd1056e	4	12:57:35	Blink: Booleans	surge	decode	8	120308
+1	dd1056e	4	12:57:35	Blink: Booleans	surge	decode	9	119745
+1	dd1056e	4	12:57:35	Blink: Booleans	fbs	decode	1	37867
+1	dd1056e	4	12:57:35	Blink: Booleans	fbs	decode	2	36630
+1	dd1056e	4	12:57:35	Blink: Booleans	fbs	decode	3	38147
+1	dd1056e	4	12:57:35	Blink: Booleans	fbs	decode	4	38103
+1	dd1056e	4	12:57:35	Blink: Booleans	fbs	decode	5	40893
+1	dd1056e	4	12:57:35	Blink: Booleans	fbs	decode	6	41252
+1	dd1056e	4	12:57:35	Blink: Booleans	fbs	decode	7	40787
+1	dd1056e	4	12:57:35	Blink: Booleans	fbs	decode	8	40692
+1	dd1056e	4	12:57:35	Blink: Booleans	fbs	decode	9	40713
+1	dd1056e	4	12:57:35	Blink: Booleans	serio	decode	1	12174
+1	dd1056e	4	12:57:35	Blink: Booleans	serio	decode	2	12049
+1	dd1056e	4	12:57:35	Blink: Booleans	serio	decode	3	12246
+1	dd1056e	4	12:57:35	Blink: Booleans	serio	decode	4	12338
+1	dd1056e	4	12:57:35	Blink: Booleans	serio	decode	5	12644
+1	dd1056e	4	12:57:35	Blink: Booleans	serio	decode	6	12550
+1	dd1056e	4	12:57:35	Blink: Booleans	serio	decode	7	12718
+1	dd1056e	4	12:57:35	Blink: Booleans	serio	decode	8	12726
+1	dd1056e	4	12:57:35	Blink: Booleans	serio	decode	9	12610
+1	dd1056e	4	12:57:35	Blink: Booleans	flamework2	decode	1	106138
+1	dd1056e	4	12:57:35	Blink: Booleans	flamework2	decode	2	101309
+1	dd1056e	4	12:57:35	Blink: Booleans	flamework2	decode	3	106839
+1	dd1056e	4	12:57:35	Blink: Booleans	flamework2	decode	4	101098
+1	dd1056e	4	12:57:35	Blink: Booleans	flamework2	decode	5	112122
+1	dd1056e	4	12:57:35	Blink: Booleans	flamework2	decode	6	114839
+1	dd1056e	4	12:57:35	Blink: Booleans	flamework2	decode	7	115862
+1	dd1056e	4	12:57:35	Blink: Booleans	flamework2	decode	8	115593
+1	dd1056e	4	12:57:35	Blink: Booleans	flamework2	decode	9	113305
+1	dd1056e	4	12:57:35	Blink: Booleans	blink	decode	1	64688
+1	dd1056e	4	12:57:35	Blink: Booleans	blink	decode	2	70906
+1	dd1056e	4	12:57:35	Blink: Booleans	blink	decode	3	71588
+1	dd1056e	4	12:57:35	Blink: Booleans	blink	decode	4	70381
+1	dd1056e	4	12:57:35	Blink: Booleans	blink	decode	5	77257
+1	dd1056e	4	12:57:35	Blink: Booleans	blink	decode	6	76802
+1	dd1056e	4	12:57:35	Blink: Booleans	blink	decode	7	75642
+1	dd1056e	4	12:57:35	Blink: Booleans	blink	decode	8	76087
+1	dd1056e	4	12:57:35	Blink: Booleans	blink	decode	9	75128
+2	766cb9a	1	13:00:32	string-heavy	surge	encode	1	287976
+2	766cb9a	1	13:00:32	string-heavy	surge	encode	2	330923
+2	766cb9a	1	13:00:32	string-heavy	surge	encode	3	331799
+2	766cb9a	1	13:00:32	string-heavy	surge	encode	4	315008
+2	766cb9a	1	13:00:32	string-heavy	surge	encode	5	288410
+2	766cb9a	1	13:00:32	string-heavy	surge	encode	6	300779
+2	766cb9a	1	13:00:32	string-heavy	surge	encode	7	335671
+2	766cb9a	1	13:00:32	string-heavy	surge	encode	8	334668
+2	766cb9a	1	13:00:32	string-heavy	surge	encode	9	329407
+2	766cb9a	1	13:00:32	string-heavy	fbs	encode	1	193318
+2	766cb9a	1	13:00:32	string-heavy	fbs	encode	2	216934
+2	766cb9a	1	13:00:32	string-heavy	fbs	encode	3	215753
+2	766cb9a	1	13:00:32	string-heavy	fbs	encode	4	208619
+2	766cb9a	1	13:00:32	string-heavy	fbs	encode	5	198976
+2	766cb9a	1	13:00:32	string-heavy	fbs	encode	6	198722
+2	766cb9a	1	13:00:32	string-heavy	fbs	encode	7	213959
+2	766cb9a	1	13:00:32	string-heavy	fbs	encode	8	213444
+2	766cb9a	1	13:00:32	string-heavy	fbs	encode	9	216056
+2	766cb9a	1	13:00:32	string-heavy	serio	encode	1	31760
+2	766cb9a	1	13:00:32	string-heavy	serio	encode	2	32195
+2	766cb9a	1	13:00:32	string-heavy	serio	encode	3	32720
+2	766cb9a	1	13:00:32	string-heavy	serio	encode	4	31826
+2	766cb9a	1	13:00:32	string-heavy	serio	encode	5	31749
+2	766cb9a	1	13:00:32	string-heavy	serio	encode	6	31984
+2	766cb9a	1	13:00:32	string-heavy	serio	encode	7	32499
+2	766cb9a	1	13:00:32	string-heavy	serio	encode	8	32449
+2	766cb9a	1	13:00:32	string-heavy	serio	encode	9	32531
+2	766cb9a	1	13:00:32	string-heavy	flamework2	encode	1	244644
+2	766cb9a	1	13:00:32	string-heavy	flamework2	encode	2	242757
+2	766cb9a	1	13:00:32	string-heavy	flamework2	encode	3	242055
+2	766cb9a	1	13:00:32	string-heavy	flamework2	encode	4	220611
+2	766cb9a	1	13:00:32	string-heavy	flamework2	encode	5	223234
+2	766cb9a	1	13:00:32	string-heavy	flamework2	encode	6	246207
+2	766cb9a	1	13:00:32	string-heavy	flamework2	encode	7	240793
+2	766cb9a	1	13:00:32	string-heavy	flamework2	encode	8	242082
+2	766cb9a	1	13:00:32	string-heavy	flamework2	encode	9	244686
+2	766cb9a	1	13:00:32	string-heavy	blink	encode	1	133704
+2	766cb9a	1	13:00:32	string-heavy	blink	encode	2	134556
+2	766cb9a	1	13:00:32	string-heavy	blink	encode	3	132165
+2	766cb9a	1	13:00:32	string-heavy	blink	encode	4	110273
+2	766cb9a	1	13:00:32	string-heavy	blink	encode	5	115153
+2	766cb9a	1	13:00:32	string-heavy	blink	encode	6	132989
+2	766cb9a	1	13:00:32	string-heavy	blink	encode	7	132637
+2	766cb9a	1	13:00:32	string-heavy	blink	encode	8	134833
+2	766cb9a	1	13:00:32	string-heavy	blink	encode	9	133028
+2	766cb9a	1	13:00:32	string-heavy	surge	decode	1	218178
+2	766cb9a	1	13:00:32	string-heavy	surge	decode	2	218516
+2	766cb9a	1	13:00:32	string-heavy	surge	decode	3	220440
+2	766cb9a	1	13:00:32	string-heavy	surge	decode	4	218236
+2	766cb9a	1	13:00:32	string-heavy	surge	decode	5	216737
+2	766cb9a	1	13:00:32	string-heavy	surge	decode	6	217969
+2	766cb9a	1	13:00:32	string-heavy	surge	decode	7	218348
+2	766cb9a	1	13:00:32	string-heavy	surge	decode	8	217330
+2	766cb9a	1	13:00:32	string-heavy	surge	decode	9	220602
+2	766cb9a	1	13:00:32	string-heavy	fbs	decode	1	172482
+2	766cb9a	1	13:00:32	string-heavy	fbs	decode	2	173356
+2	766cb9a	1	13:00:32	string-heavy	fbs	decode	3	173685
+2	766cb9a	1	13:00:32	string-heavy	fbs	decode	4	174761
+2	766cb9a	1	13:00:32	string-heavy	fbs	decode	5	173177
+2	766cb9a	1	13:00:32	string-heavy	fbs	decode	6	174904
+2	766cb9a	1	13:00:32	string-heavy	fbs	decode	7	172430
+2	766cb9a	1	13:00:32	string-heavy	fbs	decode	8	172760
+2	766cb9a	1	13:00:32	string-heavy	fbs	decode	9	172041
+2	766cb9a	1	13:00:32	string-heavy	serio	decode	1	58720
+2	766cb9a	1	13:00:32	string-heavy	serio	decode	2	59084
+2	766cb9a	1	13:00:32	string-heavy	serio	decode	3	58729
+2	766cb9a	1	13:00:32	string-heavy	serio	decode	4	59987
+2	766cb9a	1	13:00:32	string-heavy	serio	decode	5	58919
+2	766cb9a	1	13:00:32	string-heavy	serio	decode	6	59022
+2	766cb9a	1	13:00:32	string-heavy	serio	decode	7	59302
+2	766cb9a	1	13:00:32	string-heavy	serio	decode	8	59078
+2	766cb9a	1	13:00:32	string-heavy	serio	decode	9	58528
+2	766cb9a	1	13:00:32	string-heavy	flamework2	decode	1	156676
+2	766cb9a	1	13:00:32	string-heavy	flamework2	decode	2	155356
+2	766cb9a	1	13:00:32	string-heavy	flamework2	decode	3	155885
+2	766cb9a	1	13:00:32	string-heavy	flamework2	decode	4	155640
+2	766cb9a	1	13:00:32	string-heavy	flamework2	decode	5	156434
+2	766cb9a	1	13:00:32	string-heavy	flamework2	decode	6	155532
+2	766cb9a	1	13:00:32	string-heavy	flamework2	decode	7	154002
+2	766cb9a	1	13:00:32	string-heavy	flamework2	decode	8	155873
+2	766cb9a	1	13:00:32	string-heavy	flamework2	decode	9	158078
+2	766cb9a	1	13:00:32	string-heavy	blink	decode	1	230517
+2	766cb9a	1	13:00:32	string-heavy	blink	decode	2	226136
+2	766cb9a	1	13:00:32	string-heavy	blink	decode	3	227845
+2	766cb9a	1	13:00:32	string-heavy	blink	decode	4	228212
+2	766cb9a	1	13:00:32	string-heavy	blink	decode	5	230463
+2	766cb9a	1	13:00:32	string-heavy	blink	decode	6	227663
+2	766cb9a	1	13:00:32	string-heavy	blink	decode	7	227834
+2	766cb9a	1	13:00:32	string-heavy	blink	decode	8	227213
+2	766cb9a	1	13:00:32	string-heavy	blink	decode	9	229130
+2	dd1056e	2	13:01:21	string-heavy	surge	encode	1	327030
+2	dd1056e	2	13:01:21	string-heavy	surge	encode	2	323496
+2	dd1056e	2	13:01:21	string-heavy	surge	encode	3	325759
+2	dd1056e	2	13:01:21	string-heavy	surge	encode	4	322849
+2	dd1056e	2	13:01:21	string-heavy	surge	encode	5	325866
+2	dd1056e	2	13:01:21	string-heavy	surge	encode	6	309349
+2	dd1056e	2	13:01:21	string-heavy	surge	encode	7	289095
+2	dd1056e	2	13:01:21	string-heavy	surge	encode	8	300345
+2	dd1056e	2	13:01:21	string-heavy	surge	encode	9	292949
+2	dd1056e	2	13:01:21	string-heavy	fbs	encode	1	218635
+2	dd1056e	2	13:01:21	string-heavy	fbs	encode	2	218599
+2	dd1056e	2	13:01:21	string-heavy	fbs	encode	3	212604
+2	dd1056e	2	13:01:21	string-heavy	fbs	encode	4	216912
+2	dd1056e	2	13:01:21	string-heavy	fbs	encode	5	215855
+2	dd1056e	2	13:01:21	string-heavy	fbs	encode	6	201524
+2	dd1056e	2	13:01:21	string-heavy	fbs	encode	7	202847
+2	dd1056e	2	13:01:21	string-heavy	fbs	encode	8	202804
+2	dd1056e	2	13:01:21	string-heavy	fbs	encode	9	201546
+2	dd1056e	2	13:01:21	string-heavy	serio	encode	1	32375
+2	dd1056e	2	13:01:21	string-heavy	serio	encode	2	32363
+2	dd1056e	2	13:01:21	string-heavy	serio	encode	3	32407
+2	dd1056e	2	13:01:21	string-heavy	serio	encode	4	32324
+2	dd1056e	2	13:01:21	string-heavy	serio	encode	5	32524
+2	dd1056e	2	13:01:21	string-heavy	serio	encode	6	32115
+2	dd1056e	2	13:01:21	string-heavy	serio	encode	7	31444
+2	dd1056e	2	13:01:21	string-heavy	serio	encode	8	32115
+2	dd1056e	2	13:01:21	string-heavy	serio	encode	9	31626
+2	dd1056e	2	13:01:21	string-heavy	flamework2	encode	1	244329
+2	dd1056e	2	13:01:21	string-heavy	flamework2	encode	2	241032
+2	dd1056e	2	13:01:21	string-heavy	flamework2	encode	3	244571
+2	dd1056e	2	13:01:21	string-heavy	flamework2	encode	4	244824
+2	dd1056e	2	13:01:21	string-heavy	flamework2	encode	5	232080
+2	dd1056e	2	13:01:21	string-heavy	flamework2	encode	6	222398
+2	dd1056e	2	13:01:21	string-heavy	flamework2	encode	7	224207
+2	dd1056e	2	13:01:21	string-heavy	flamework2	encode	8	226753
+2	dd1056e	2	13:01:21	string-heavy	flamework2	encode	9	228052
+2	dd1056e	2	13:01:21	string-heavy	blink	encode	1	130647
+2	dd1056e	2	13:01:21	string-heavy	blink	encode	2	131112
+2	dd1056e	2	13:01:21	string-heavy	blink	encode	3	131111
+2	dd1056e	2	13:01:21	string-heavy	blink	encode	4	130146
+2	dd1056e	2	13:01:21	string-heavy	blink	encode	5	117448
+2	dd1056e	2	13:01:21	string-heavy	blink	encode	6	116021
+2	dd1056e	2	13:01:21	string-heavy	blink	encode	7	116163
+2	dd1056e	2	13:01:21	string-heavy	blink	encode	8	116051
+2	dd1056e	2	13:01:21	string-heavy	blink	encode	9	115473
+2	dd1056e	2	13:01:21	string-heavy	surge	decode	1	206705
+2	dd1056e	2	13:01:21	string-heavy	surge	decode	2	209777
+2	dd1056e	2	13:01:21	string-heavy	surge	decode	3	206421
+2	dd1056e	2	13:01:21	string-heavy	surge	decode	4	218535
+2	dd1056e	2	13:01:21	string-heavy	surge	decode	5	219044
+2	dd1056e	2	13:01:21	string-heavy	surge	decode	6	214599
+2	dd1056e	2	13:01:21	string-heavy	surge	decode	7	216540
+2	dd1056e	2	13:01:21	string-heavy	surge	decode	8	219702
+2	dd1056e	2	13:01:21	string-heavy	surge	decode	9	218277
+2	dd1056e	2	13:01:21	string-heavy	fbs	decode	1	164742
+2	dd1056e	2	13:01:21	string-heavy	fbs	decode	2	164670
+2	dd1056e	2	13:01:21	string-heavy	fbs	decode	3	164890
+2	dd1056e	2	13:01:21	string-heavy	fbs	decode	4	174092
+2	dd1056e	2	13:01:21	string-heavy	fbs	decode	5	173691
+2	dd1056e	2	13:01:21	string-heavy	fbs	decode	6	170713
+2	dd1056e	2	13:01:21	string-heavy	fbs	decode	7	173182
+2	dd1056e	2	13:01:21	string-heavy	fbs	decode	8	174071
+2	dd1056e	2	13:01:21	string-heavy	fbs	decode	9	174310
+2	dd1056e	2	13:01:21	string-heavy	serio	decode	1	56795
+2	dd1056e	2	13:01:21	string-heavy	serio	decode	2	56815
+2	dd1056e	2	13:01:21	string-heavy	serio	decode	3	56802
+2	dd1056e	2	13:01:21	string-heavy	serio	decode	4	57326
+2	dd1056e	2	13:01:21	string-heavy	serio	decode	5	58128
+2	dd1056e	2	13:01:21	string-heavy	serio	decode	6	57034
+2	dd1056e	2	13:01:21	string-heavy	serio	decode	7	57915
+2	dd1056e	2	13:01:21	string-heavy	serio	decode	8	58531
+2	dd1056e	2	13:01:21	string-heavy	serio	decode	9	57510
+2	dd1056e	2	13:01:21	string-heavy	flamework2	decode	1	151020
+2	dd1056e	2	13:01:21	string-heavy	flamework2	decode	2	149192
+2	dd1056e	2	13:01:21	string-heavy	flamework2	decode	3	155706
+2	dd1056e	2	13:01:21	string-heavy	flamework2	decode	4	156196
+2	dd1056e	2	13:01:21	string-heavy	flamework2	decode	5	155489
+2	dd1056e	2	13:01:21	string-heavy	flamework2	decode	6	151188
+2	dd1056e	2	13:01:21	string-heavy	flamework2	decode	7	156439
+2	dd1056e	2	13:01:21	string-heavy	flamework2	decode	8	154998
+2	dd1056e	2	13:01:21	string-heavy	flamework2	decode	9	157906
+2	dd1056e	2	13:01:21	string-heavy	blink	decode	1	215153
+2	dd1056e	2	13:01:21	string-heavy	blink	decode	2	211013
+2	dd1056e	2	13:01:21	string-heavy	blink	decode	3	227303
+2	dd1056e	2	13:01:21	string-heavy	blink	decode	4	227350
+2	dd1056e	2	13:01:21	string-heavy	blink	decode	5	225676
+2	dd1056e	2	13:01:21	string-heavy	blink	decode	6	223253
+2	dd1056e	2	13:01:21	string-heavy	blink	decode	7	228311
+2	dd1056e	2	13:01:21	string-heavy	blink	decode	8	227373
+2	dd1056e	2	13:01:21	string-heavy	blink	decode	9	225013
+2	766cb9a	4	13:02:25	string-heavy	surge	encode	1	306228
+2	766cb9a	4	13:02:25	string-heavy	surge	encode	2	310984
+2	766cb9a	4	13:02:25	string-heavy	surge	encode	3	306279
+2	766cb9a	4	13:02:25	string-heavy	surge	encode	4	290619
+2	766cb9a	4	13:02:25	string-heavy	surge	encode	5	299631
+2	766cb9a	4	13:02:25	string-heavy	surge	encode	6	306653
+2	766cb9a	4	13:02:25	string-heavy	surge	encode	7	303402
+2	766cb9a	4	13:02:25	string-heavy	surge	encode	8	329666
+2	766cb9a	4	13:02:25	string-heavy	surge	encode	9	332813
+2	766cb9a	4	13:02:25	string-heavy	fbs	encode	1	200287
+2	766cb9a	4	13:02:25	string-heavy	fbs	encode	2	203614
+2	766cb9a	4	13:02:25	string-heavy	fbs	encode	3	203003
+2	766cb9a	4	13:02:25	string-heavy	fbs	encode	4	199848
+2	766cb9a	4	13:02:25	string-heavy	fbs	encode	5	196386
+2	766cb9a	4	13:02:25	string-heavy	fbs	encode	6	198674
+2	766cb9a	4	13:02:25	string-heavy	fbs	encode	7	200628
+2	766cb9a	4	13:02:25	string-heavy	fbs	encode	8	215907
+2	766cb9a	4	13:02:25	string-heavy	fbs	encode	9	215118
+2	766cb9a	4	13:02:25	string-heavy	serio	encode	1	31702
+2	766cb9a	4	13:02:25	string-heavy	serio	encode	2	31595
+2	766cb9a	4	13:02:25	string-heavy	serio	encode	3	31759
+2	766cb9a	4	13:02:25	string-heavy	serio	encode	4	31659
+2	766cb9a	4	13:02:25	string-heavy	serio	encode	5	31847
+2	766cb9a	4	13:02:25	string-heavy	serio	encode	6	31958
+2	766cb9a	4	13:02:25	string-heavy	serio	encode	7	31691
+2	766cb9a	4	13:02:25	string-heavy	serio	encode	8	32579
+2	766cb9a	4	13:02:25	string-heavy	serio	encode	9	32387
+2	766cb9a	4	13:02:25	string-heavy	flamework2	encode	1	227933
+2	766cb9a	4	13:02:25	string-heavy	flamework2	encode	2	226961
+2	766cb9a	4	13:02:25	string-heavy	flamework2	encode	3	214366
+2	766cb9a	4	13:02:25	string-heavy	flamework2	encode	4	219179
+2	766cb9a	4	13:02:25	string-heavy	flamework2	encode	5	223666
+2	766cb9a	4	13:02:25	string-heavy	flamework2	encode	6	225480
+2	766cb9a	4	13:02:25	string-heavy	flamework2	encode	7	226015
+2	766cb9a	4	13:02:25	string-heavy	flamework2	encode	8	241671
+2	766cb9a	4	13:02:25	string-heavy	flamework2	encode	9	242602
+2	766cb9a	4	13:02:25	string-heavy	blink	encode	1	116996
+2	766cb9a	4	13:02:25	string-heavy	blink	encode	2	119028
+2	766cb9a	4	13:02:25	string-heavy	blink	encode	3	105406
+2	766cb9a	4	13:02:25	string-heavy	blink	encode	4	114217
+2	766cb9a	4	13:02:25	string-heavy	blink	encode	5	118466
+2	766cb9a	4	13:02:25	string-heavy	blink	encode	6	110895
+2	766cb9a	4	13:02:25	string-heavy	blink	encode	7	116277
+2	766cb9a	4	13:02:25	string-heavy	blink	encode	8	129960
+2	766cb9a	4	13:02:25	string-heavy	blink	encode	9	128932
+2	766cb9a	4	13:02:25	string-heavy	surge	decode	1	220268
+2	766cb9a	4	13:02:25	string-heavy	surge	decode	2	209414
+2	766cb9a	4	13:02:25	string-heavy	surge	decode	3	216237
+2	766cb9a	4	13:02:25	string-heavy	surge	decode	4	220506
+2	766cb9a	4	13:02:25	string-heavy	surge	decode	5	220732
+2	766cb9a	4	13:02:25	string-heavy	surge	decode	6	218445
+2	766cb9a	4	13:02:25	string-heavy	surge	decode	7	217381
+2	766cb9a	4	13:02:25	string-heavy	surge	decode	8	219956
+2	766cb9a	4	13:02:25	string-heavy	surge	decode	9	220827
+2	766cb9a	4	13:02:25	string-heavy	fbs	decode	1	173931
+2	766cb9a	4	13:02:25	string-heavy	fbs	decode	2	165040
+2	766cb9a	4	13:02:25	string-heavy	fbs	decode	3	174676
+2	766cb9a	4	13:02:25	string-heavy	fbs	decode	4	174202
+2	766cb9a	4	13:02:25	string-heavy	fbs	decode	5	173565
+2	766cb9a	4	13:02:25	string-heavy	fbs	decode	6	170916
+2	766cb9a	4	13:02:25	string-heavy	fbs	decode	7	173036
+2	766cb9a	4	13:02:25	string-heavy	fbs	decode	8	173830
+2	766cb9a	4	13:02:25	string-heavy	fbs	decode	9	173161
+2	766cb9a	4	13:02:25	string-heavy	serio	decode	1	58854
+2	766cb9a	4	13:02:25	string-heavy	serio	decode	2	56362
+2	766cb9a	4	13:02:25	string-heavy	serio	decode	3	57471
+2	766cb9a	4	13:02:25	string-heavy	serio	decode	4	57640
+2	766cb9a	4	13:02:25	string-heavy	serio	decode	5	58253
+2	766cb9a	4	13:02:25	string-heavy	serio	decode	6	57230
+2	766cb9a	4	13:02:25	string-heavy	serio	decode	7	58288
+2	766cb9a	4	13:02:25	string-heavy	serio	decode	8	57991
+2	766cb9a	4	13:02:25	string-heavy	serio	decode	9	58012
+2	766cb9a	4	13:02:25	string-heavy	flamework2	decode	1	153546
+2	766cb9a	4	13:02:25	string-heavy	flamework2	decode	2	151269
+2	766cb9a	4	13:02:25	string-heavy	flamework2	decode	3	159372
+2	766cb9a	4	13:02:25	string-heavy	flamework2	decode	4	159173
+2	766cb9a	4	13:02:25	string-heavy	flamework2	decode	5	156919
+2	766cb9a	4	13:02:25	string-heavy	flamework2	decode	6	155807
+2	766cb9a	4	13:02:25	string-heavy	flamework2	decode	7	157852
+2	766cb9a	4	13:02:25	string-heavy	flamework2	decode	8	156647
+2	766cb9a	4	13:02:25	string-heavy	flamework2	decode	9	158347
+2	766cb9a	4	13:02:25	string-heavy	blink	decode	1	215877
+2	766cb9a	4	13:02:25	string-heavy	blink	decode	2	214794
+2	766cb9a	4	13:02:25	string-heavy	blink	decode	3	227497
+2	766cb9a	4	13:02:25	string-heavy	blink	decode	4	227823
+2	766cb9a	4	13:02:25	string-heavy	blink	decode	5	227372
+2	766cb9a	4	13:02:25	string-heavy	blink	decode	6	222366
+2	766cb9a	4	13:02:25	string-heavy	blink	decode	7	225546
+2	766cb9a	4	13:02:25	string-heavy	blink	decode	8	226728
+2	766cb9a	4	13:02:25	string-heavy	blink	decode	9	224947
+2	dd1056e	5	13:03:13	string-heavy	surge	encode	1	328390
+2	dd1056e	5	13:03:13	string-heavy	surge	encode	2	314702
+2	dd1056e	5	13:03:13	string-heavy	surge	encode	3	290069
+2	dd1056e	5	13:03:13	string-heavy	surge	encode	4	305612
+2	dd1056e	5	13:03:13	string-heavy	surge	encode	5	301438
+2	dd1056e	5	13:03:13	string-heavy	surge	encode	6	312756
+2	dd1056e	5	13:03:13	string-heavy	surge	encode	7	301449
+2	dd1056e	5	13:03:13	string-heavy	surge	encode	8	305498
+2	dd1056e	5	13:03:13	string-heavy	surge	encode	9	299447
+2	dd1056e	5	13:03:13	string-heavy	fbs	encode	1	218986
+2	dd1056e	5	13:03:13	string-heavy	fbs	encode	2	210111
+2	dd1056e	5	13:03:13	string-heavy	fbs	encode	3	199940
+2	dd1056e	5	13:03:13	string-heavy	fbs	encode	4	206523
+2	dd1056e	5	13:03:13	string-heavy	fbs	encode	5	204850
+2	dd1056e	5	13:03:13	string-heavy	fbs	encode	6	204231
+2	dd1056e	5	13:03:13	string-heavy	fbs	encode	7	207150
+2	dd1056e	5	13:03:13	string-heavy	fbs	encode	8	204735
+2	dd1056e	5	13:03:13	string-heavy	fbs	encode	9	206077
+2	dd1056e	5	13:03:13	string-heavy	serio	encode	1	32390
+2	dd1056e	5	13:03:13	string-heavy	serio	encode	2	31387
+2	dd1056e	5	13:03:13	string-heavy	serio	encode	3	31310
+2	dd1056e	5	13:03:13	string-heavy	serio	encode	4	31381
+2	dd1056e	5	13:03:13	string-heavy	serio	encode	5	31904
+2	dd1056e	5	13:03:13	string-heavy	serio	encode	6	31396
+2	dd1056e	5	13:03:13	string-heavy	serio	encode	7	31641
+2	dd1056e	5	13:03:13	string-heavy	serio	encode	8	31458
+2	dd1056e	5	13:03:13	string-heavy	serio	encode	9	31503
+2	dd1056e	5	13:03:13	string-heavy	flamework2	encode	1	244328
+2	dd1056e	5	13:03:13	string-heavy	flamework2	encode	2	223463
+2	dd1056e	5	13:03:13	string-heavy	flamework2	encode	3	226417
+2	dd1056e	5	13:03:13	string-heavy	flamework2	encode	4	228909
+2	dd1056e	5	13:03:13	string-heavy	flamework2	encode	5	227076
+2	dd1056e	5	13:03:13	string-heavy	flamework2	encode	6	228432
+2	dd1056e	5	13:03:13	string-heavy	flamework2	encode	7	222221
+2	dd1056e	5	13:03:13	string-heavy	flamework2	encode	8	223722
+2	dd1056e	5	13:03:13	string-heavy	flamework2	encode	9	225328
+2	dd1056e	5	13:03:13	string-heavy	blink	encode	1	134135
+2	dd1056e	5	13:03:13	string-heavy	blink	encode	2	114579
+2	dd1056e	5	13:03:13	string-heavy	blink	encode	3	119983
+2	dd1056e	5	13:03:13	string-heavy	blink	encode	4	120810
+2	dd1056e	5	13:03:13	string-heavy	blink	encode	5	119191
+2	dd1056e	5	13:03:13	string-heavy	blink	encode	6	121022
+2	dd1056e	5	13:03:13	string-heavy	blink	encode	7	121991
+2	dd1056e	5	13:03:13	string-heavy	blink	encode	8	121906
+2	dd1056e	5	13:03:13	string-heavy	blink	encode	9	120248
+2	dd1056e	5	13:03:13	string-heavy	surge	decode	1	208137
+2	dd1056e	5	13:03:13	string-heavy	surge	decode	2	208598
+2	dd1056e	5	13:03:13	string-heavy	surge	decode	3	211648
+2	dd1056e	5	13:03:13	string-heavy	surge	decode	4	206584
+2	dd1056e	5	13:03:13	string-heavy	surge	decode	5	208996
+2	dd1056e	5	13:03:13	string-heavy	surge	decode	6	209060
+2	dd1056e	5	13:03:13	string-heavy	surge	decode	7	210763
+2	dd1056e	5	13:03:13	string-heavy	surge	decode	8	207083
+2	dd1056e	5	13:03:13	string-heavy	surge	decode	9	209354
+2	dd1056e	5	13:03:13	string-heavy	fbs	decode	1	165512
+2	dd1056e	5	13:03:13	string-heavy	fbs	decode	2	166746
+2	dd1056e	5	13:03:13	string-heavy	fbs	decode	3	163736
+2	dd1056e	5	13:03:13	string-heavy	fbs	decode	4	167037
+2	dd1056e	5	13:03:13	string-heavy	fbs	decode	5	168221
+2	dd1056e	5	13:03:13	string-heavy	fbs	decode	6	166486
+2	dd1056e	5	13:03:13	string-heavy	fbs	decode	7	167777
+2	dd1056e	5	13:03:13	string-heavy	fbs	decode	8	166215
+2	dd1056e	5	13:03:13	string-heavy	fbs	decode	9	167496
+2	dd1056e	5	13:03:13	string-heavy	serio	decode	1	56967
+2	dd1056e	5	13:03:13	string-heavy	serio	decode	2	56848
+2	dd1056e	5	13:03:13	string-heavy	serio	decode	3	56552
+2	dd1056e	5	13:03:13	string-heavy	serio	decode	4	56651
+2	dd1056e	5	13:03:13	string-heavy	serio	decode	5	56669
+2	dd1056e	5	13:03:13	string-heavy	serio	decode	6	57364
+2	dd1056e	5	13:03:13	string-heavy	serio	decode	7	57599
+2	dd1056e	5	13:03:13	string-heavy	serio	decode	8	56538
+2	dd1056e	5	13:03:13	string-heavy	serio	decode	9	57577
+2	dd1056e	5	13:03:13	string-heavy	flamework2	decode	1	152526
+2	dd1056e	5	13:03:13	string-heavy	flamework2	decode	2	151664
+2	dd1056e	5	13:03:13	string-heavy	flamework2	decode	3	143084
+2	dd1056e	5	13:03:13	string-heavy	flamework2	decode	4	154345
+2	dd1056e	5	13:03:13	string-heavy	flamework2	decode	5	151531
+2	dd1056e	5	13:03:13	string-heavy	flamework2	decode	6	151996
+2	dd1056e	5	13:03:13	string-heavy	flamework2	decode	7	146978
+2	dd1056e	5	13:03:13	string-heavy	flamework2	decode	8	153127
+2	dd1056e	5	13:03:13	string-heavy	flamework2	decode	9	146593
+2	dd1056e	5	13:03:13	string-heavy	blink	decode	1	216921
+2	dd1056e	5	13:03:13	string-heavy	blink	decode	2	216456
+2	dd1056e	5	13:03:13	string-heavy	blink	decode	3	217790
+2	dd1056e	5	13:03:13	string-heavy	blink	decode	4	218585
+2	dd1056e	5	13:03:13	string-heavy	blink	decode	5	216792
+2	dd1056e	5	13:03:13	string-heavy	blink	decode	6	219388
+2	dd1056e	5	13:03:13	string-heavy	blink	decode	7	213967
+2	dd1056e	5	13:03:13	string-heavy	blink	decode	8	211976
+2	dd1056e	5	13:03:13	string-heavy	blink	decode	9	217948
+2	766cb9a	7	13:04:17	string-heavy	surge	encode	1	335351
+2	766cb9a	7	13:04:17	string-heavy	surge	encode	2	338112
+2	766cb9a	7	13:04:17	string-heavy	surge	encode	3	311187
+2	766cb9a	7	13:04:17	string-heavy	surge	encode	4	308279
+2	766cb9a	7	13:04:17	string-heavy	surge	encode	5	312782
+2	766cb9a	7	13:04:17	string-heavy	surge	encode	6	311181
+2	766cb9a	7	13:04:17	string-heavy	surge	encode	7	303199
+2	766cb9a	7	13:04:17	string-heavy	surge	encode	8	310419
+2	766cb9a	7	13:04:17	string-heavy	surge	encode	9	309411
+2	766cb9a	7	13:04:17	string-heavy	fbs	encode	1	218252
+2	766cb9a	7	13:04:17	string-heavy	fbs	encode	2	214293
+2	766cb9a	7	13:04:17	string-heavy	fbs	encode	3	198328
+2	766cb9a	7	13:04:17	string-heavy	fbs	encode	4	195146
+2	766cb9a	7	13:04:17	string-heavy	fbs	encode	5	199645
+2	766cb9a	7	13:04:17	string-heavy	fbs	encode	6	200217
+2	766cb9a	7	13:04:17	string-heavy	fbs	encode	7	198744
+2	766cb9a	7	13:04:17	string-heavy	fbs	encode	8	210458
+2	766cb9a	7	13:04:17	string-heavy	fbs	encode	9	200852
+2	766cb9a	7	13:04:17	string-heavy	serio	encode	1	32634
+2	766cb9a	7	13:04:17	string-heavy	serio	encode	2	32514
+2	766cb9a	7	13:04:17	string-heavy	serio	encode	3	31930
+2	766cb9a	7	13:04:17	string-heavy	serio	encode	4	31893
+2	766cb9a	7	13:04:17	string-heavy	serio	encode	5	32113
+2	766cb9a	7	13:04:17	string-heavy	serio	encode	6	31762
+2	766cb9a	7	13:04:17	string-heavy	serio	encode	7	31760
+2	766cb9a	7	13:04:17	string-heavy	serio	encode	8	31984
+2	766cb9a	7	13:04:17	string-heavy	serio	encode	9	31833
+2	766cb9a	7	13:04:17	string-heavy	flamework2	encode	1	248913
+2	766cb9a	7	13:04:17	string-heavy	flamework2	encode	2	244890
+2	766cb9a	7	13:04:17	string-heavy	flamework2	encode	3	226709
+2	766cb9a	7	13:04:17	string-heavy	flamework2	encode	4	239998
+2	766cb9a	7	13:04:17	string-heavy	flamework2	encode	5	231173
+2	766cb9a	7	13:04:17	string-heavy	flamework2	encode	6	232244
+2	766cb9a	7	13:04:17	string-heavy	flamework2	encode	7	230680
+2	766cb9a	7	13:04:17	string-heavy	flamework2	encode	8	230461
+2	766cb9a	7	13:04:17	string-heavy	flamework2	encode	9	227434
+2	766cb9a	7	13:04:17	string-heavy	blink	encode	1	132873
+2	766cb9a	7	13:04:17	string-heavy	blink	encode	2	124539
+2	766cb9a	7	13:04:17	string-heavy	blink	encode	3	115721
+2	766cb9a	7	13:04:17	string-heavy	blink	encode	4	130955
+2	766cb9a	7	13:04:17	string-heavy	blink	encode	5	118646
+2	766cb9a	7	13:04:17	string-heavy	blink	encode	6	118806
+2	766cb9a	7	13:04:17	string-heavy	blink	encode	7	115850
+2	766cb9a	7	13:04:17	string-heavy	blink	encode	8	120629
+2	766cb9a	7	13:04:17	string-heavy	blink	encode	9	118739
+2	766cb9a	7	13:04:17	string-heavy	surge	decode	1	206614
+2	766cb9a	7	13:04:17	string-heavy	surge	decode	2	207049
+2	766cb9a	7	13:04:17	string-heavy	surge	decode	3	209433
+2	766cb9a	7	13:04:17	string-heavy	surge	decode	4	207818
+2	766cb9a	7	13:04:17	string-heavy	surge	decode	5	210645
+2	766cb9a	7	13:04:17	string-heavy	surge	decode	6	212255
+2	766cb9a	7	13:04:17	string-heavy	surge	decode	7	211214
+2	766cb9a	7	13:04:17	string-heavy	surge	decode	8	209932
+2	766cb9a	7	13:04:17	string-heavy	surge	decode	9	208724
+2	766cb9a	7	13:04:17	string-heavy	fbs	decode	1	168572
+2	766cb9a	7	13:04:17	string-heavy	fbs	decode	2	165319
+2	766cb9a	7	13:04:17	string-heavy	fbs	decode	3	164504
+2	766cb9a	7	13:04:17	string-heavy	fbs	decode	4	164666
+2	766cb9a	7	13:04:17	string-heavy	fbs	decode	5	164579
+2	766cb9a	7	13:04:17	string-heavy	fbs	decode	6	164957
+2	766cb9a	7	13:04:17	string-heavy	fbs	decode	7	166274
+2	766cb9a	7	13:04:17	string-heavy	fbs	decode	8	165057
+2	766cb9a	7	13:04:17	string-heavy	fbs	decode	9	166480
+2	766cb9a	7	13:04:17	string-heavy	serio	decode	1	56838
+2	766cb9a	7	13:04:17	string-heavy	serio	decode	2	57325
+2	766cb9a	7	13:04:17	string-heavy	serio	decode	3	56933
+2	766cb9a	7	13:04:17	string-heavy	serio	decode	4	57386
+2	766cb9a	7	13:04:17	string-heavy	serio	decode	5	56838
+2	766cb9a	7	13:04:17	string-heavy	serio	decode	6	56778
+2	766cb9a	7	13:04:17	string-heavy	serio	decode	7	56497
+2	766cb9a	7	13:04:17	string-heavy	serio	decode	8	56789
+2	766cb9a	7	13:04:17	string-heavy	serio	decode	9	57714
+2	766cb9a	7	13:04:17	string-heavy	flamework2	decode	1	152775
+2	766cb9a	7	13:04:17	string-heavy	flamework2	decode	2	151161
+2	766cb9a	7	13:04:17	string-heavy	flamework2	decode	3	150939
+2	766cb9a	7	13:04:17	string-heavy	flamework2	decode	4	150618
+2	766cb9a	7	13:04:17	string-heavy	flamework2	decode	5	157102
+2	766cb9a	7	13:04:17	string-heavy	flamework2	decode	6	154427
+2	766cb9a	7	13:04:17	string-heavy	flamework2	decode	7	151462
+2	766cb9a	7	13:04:17	string-heavy	flamework2	decode	8	152912
+2	766cb9a	7	13:04:17	string-heavy	flamework2	decode	9	156596
+2	766cb9a	7	13:04:17	string-heavy	blink	decode	1	218838
+2	766cb9a	7	13:04:17	string-heavy	blink	decode	2	217375
+2	766cb9a	7	13:04:17	string-heavy	blink	decode	3	217410
+2	766cb9a	7	13:04:17	string-heavy	blink	decode	4	218014
+2	766cb9a	7	13:04:17	string-heavy	blink	decode	5	228948
+2	766cb9a	7	13:04:17	string-heavy	blink	decode	6	215998
+2	766cb9a	7	13:04:17	string-heavy	blink	decode	7	218429
+2	766cb9a	7	13:04:17	string-heavy	blink	decode	8	219476
+2	766cb9a	7	13:04:17	string-heavy	blink	decode	9	227438
+2	dd1056e	8	13:05:06	string-heavy	surge	encode	1	298656
+2	dd1056e	8	13:05:06	string-heavy	surge	encode	2	288240
+2	dd1056e	8	13:05:06	string-heavy	surge	encode	3	292889
+2	dd1056e	8	13:05:06	string-heavy	surge	encode	4	299433
+2	dd1056e	8	13:05:06	string-heavy	surge	encode	5	303980
+2	dd1056e	8	13:05:06	string-heavy	surge	encode	6	298177
+2	dd1056e	8	13:05:06	string-heavy	surge	encode	7	301615
+2	dd1056e	8	13:05:06	string-heavy	surge	encode	8	300125
+2	dd1056e	8	13:05:06	string-heavy	surge	encode	9	299409
+2	dd1056e	8	13:05:06	string-heavy	fbs	encode	1	202251
+2	dd1056e	8	13:05:06	string-heavy	fbs	encode	2	193379
+2	dd1056e	8	13:05:06	string-heavy	fbs	encode	3	202341
+2	dd1056e	8	13:05:06	string-heavy	fbs	encode	4	200439
+2	dd1056e	8	13:05:06	string-heavy	fbs	encode	5	200907
+2	dd1056e	8	13:05:06	string-heavy	fbs	encode	6	201860
+2	dd1056e	8	13:05:06	string-heavy	fbs	encode	7	200874
+2	dd1056e	8	13:05:06	string-heavy	fbs	encode	8	204404
+2	dd1056e	8	13:05:06	string-heavy	fbs	encode	9	205556
+2	dd1056e	8	13:05:06	string-heavy	serio	encode	1	31932
+2	dd1056e	8	13:05:06	string-heavy	serio	encode	2	31386
+2	dd1056e	8	13:05:06	string-heavy	serio	encode	3	31428
+2	dd1056e	8	13:05:06	string-heavy	serio	encode	4	31985
+2	dd1056e	8	13:05:06	string-heavy	serio	encode	5	31861
+2	dd1056e	8	13:05:06	string-heavy	serio	encode	6	31657
+2	dd1056e	8	13:05:06	string-heavy	serio	encode	7	31911
+2	dd1056e	8	13:05:06	string-heavy	serio	encode	8	31935
+2	dd1056e	8	13:05:06	string-heavy	serio	encode	9	31944
+2	dd1056e	8	13:05:06	string-heavy	flamework2	encode	1	231729
+2	dd1056e	8	13:05:06	string-heavy	flamework2	encode	2	225994
+2	dd1056e	8	13:05:06	string-heavy	flamework2	encode	3	220448
+2	dd1056e	8	13:05:06	string-heavy	flamework2	encode	4	224025
+2	dd1056e	8	13:05:06	string-heavy	flamework2	encode	5	228663
+2	dd1056e	8	13:05:06	string-heavy	flamework2	encode	6	224112
+2	dd1056e	8	13:05:06	string-heavy	flamework2	encode	7	228748
+2	dd1056e	8	13:05:06	string-heavy	flamework2	encode	8	227930
+2	dd1056e	8	13:05:06	string-heavy	flamework2	encode	9	228443
+2	dd1056e	8	13:05:06	string-heavy	blink	encode	1	118619
+2	dd1056e	8	13:05:06	string-heavy	blink	encode	2	116749
+2	dd1056e	8	13:05:06	string-heavy	blink	encode	3	116026
+2	dd1056e	8	13:05:06	string-heavy	blink	encode	4	114798
+2	dd1056e	8	13:05:06	string-heavy	blink	encode	5	120672
+2	dd1056e	8	13:05:06	string-heavy	blink	encode	6	117687
+2	dd1056e	8	13:05:06	string-heavy	blink	encode	7	119321
+2	dd1056e	8	13:05:06	string-heavy	blink	encode	8	122743
+2	dd1056e	8	13:05:06	string-heavy	blink	encode	9	118435
+2	dd1056e	8	13:05:06	string-heavy	surge	decode	1	209560
+2	dd1056e	8	13:05:06	string-heavy	surge	decode	2	206896
+2	dd1056e	8	13:05:06	string-heavy	surge	decode	3	210516
+2	dd1056e	8	13:05:06	string-heavy	surge	decode	4	203627
+2	dd1056e	8	13:05:06	string-heavy	surge	decode	5	201093
+2	dd1056e	8	13:05:06	string-heavy	surge	decode	6	208603
+2	dd1056e	8	13:05:06	string-heavy	surge	decode	7	207697
+2	dd1056e	8	13:05:06	string-heavy	surge	decode	8	207916
+2	dd1056e	8	13:05:06	string-heavy	surge	decode	9	207960
+2	dd1056e	8	13:05:06	string-heavy	fbs	decode	1	165753
+2	dd1056e	8	13:05:06	string-heavy	fbs	decode	2	164844
+2	dd1056e	8	13:05:06	string-heavy	fbs	decode	3	167108
+2	dd1056e	8	13:05:06	string-heavy	fbs	decode	4	165587
+2	dd1056e	8	13:05:06	string-heavy	fbs	decode	5	165557
+2	dd1056e	8	13:05:06	string-heavy	fbs	decode	6	166240
+2	dd1056e	8	13:05:06	string-heavy	fbs	decode	7	166833
+2	dd1056e	8	13:05:06	string-heavy	fbs	decode	8	165397
+2	dd1056e	8	13:05:06	string-heavy	fbs	decode	9	166682
+2	dd1056e	8	13:05:06	string-heavy	serio	decode	1	58344
+2	dd1056e	8	13:05:06	string-heavy	serio	decode	2	58020
+2	dd1056e	8	13:05:06	string-heavy	serio	decode	3	57235
+2	dd1056e	8	13:05:06	string-heavy	serio	decode	4	56535
+2	dd1056e	8	13:05:06	string-heavy	serio	decode	5	57805
+2	dd1056e	8	13:05:06	string-heavy	serio	decode	6	57260
+2	dd1056e	8	13:05:06	string-heavy	serio	decode	7	57114
+2	dd1056e	8	13:05:06	string-heavy	serio	decode	8	58135
+2	dd1056e	8	13:05:06	string-heavy	serio	decode	9	57138
+2	dd1056e	8	13:05:06	string-heavy	flamework2	decode	1	153168
+2	dd1056e	8	13:05:06	string-heavy	flamework2	decode	2	147963
+2	dd1056e	8	13:05:06	string-heavy	flamework2	decode	3	151747
+2	dd1056e	8	13:05:06	string-heavy	flamework2	decode	4	148728
+2	dd1056e	8	13:05:06	string-heavy	flamework2	decode	5	148711
+2	dd1056e	8	13:05:06	string-heavy	flamework2	decode	6	151137
+2	dd1056e	8	13:05:06	string-heavy	flamework2	decode	7	150715
+2	dd1056e	8	13:05:06	string-heavy	flamework2	decode	8	147905
+2	dd1056e	8	13:05:06	string-heavy	flamework2	decode	9	152915
+2	dd1056e	8	13:05:06	string-heavy	blink	decode	1	220355
+2	dd1056e	8	13:05:06	string-heavy	blink	decode	2	217784
+2	dd1056e	8	13:05:06	string-heavy	blink	decode	3	222317
+2	dd1056e	8	13:05:06	string-heavy	blink	decode	4	213108
+2	dd1056e	8	13:05:06	string-heavy	blink	decode	5	220428
+2	dd1056e	8	13:05:06	string-heavy	blink	decode	6	219243
+2	dd1056e	8	13:05:06	string-heavy	blink	decode	7	216660
+2	dd1056e	8	13:05:06	string-heavy	blink	decode	8	217132
+2	dd1056e	8	13:05:06	string-heavy	blink	decode	9	217294
+3	766cb9a	1	13:07:13	string-heavy	surge	encode	1	301186
+3	766cb9a	1	13:07:13	string-heavy	surge	encode	2	328499
+3	766cb9a	1	13:07:13	string-heavy	surge	encode	3	334387
+3	766cb9a	1	13:07:13	string-heavy	surge	encode	4	324695
+3	766cb9a	1	13:07:13	string-heavy	surge	encode	5	325137
+3	766cb9a	1	13:07:13	string-heavy	surge	encode	6	298930
+3	766cb9a	1	13:07:13	string-heavy	surge	encode	7	330634
+3	766cb9a	1	13:07:13	string-heavy	surge	encode	8	334514
+3	766cb9a	1	13:07:13	string-heavy	surge	encode	9	334045
+3	766cb9a	1	13:07:13	string-heavy	fbs	encode	1	205529
+3	766cb9a	1	13:07:13	string-heavy	fbs	encode	2	221765
+3	766cb9a	1	13:07:13	string-heavy	fbs	encode	3	218060
+3	766cb9a	1	13:07:13	string-heavy	fbs	encode	4	220476
+3	766cb9a	1	13:07:13	string-heavy	fbs	encode	5	216141
+3	766cb9a	1	13:07:13	string-heavy	fbs	encode	6	198360
+3	766cb9a	1	13:07:13	string-heavy	fbs	encode	7	219144
+3	766cb9a	1	13:07:13	string-heavy	fbs	encode	8	216383
+3	766cb9a	1	13:07:13	string-heavy	fbs	encode	9	218987
+3	766cb9a	1	13:07:13	string-heavy	serio	encode	1	31592
+3	766cb9a	1	13:07:13	string-heavy	serio	encode	2	32436
+3	766cb9a	1	13:07:13	string-heavy	serio	encode	3	32182
+3	766cb9a	1	13:07:13	string-heavy	serio	encode	4	32498
+3	766cb9a	1	13:07:13	string-heavy	serio	encode	5	31439
+3	766cb9a	1	13:07:13	string-heavy	serio	encode	6	31620
+3	766cb9a	1	13:07:13	string-heavy	serio	encode	7	32635
+3	766cb9a	1	13:07:13	string-heavy	serio	encode	8	32315
+3	766cb9a	1	13:07:13	string-heavy	serio	encode	9	32400
+3	766cb9a	1	13:07:13	string-heavy	flamework2	encode	1	235834
+3	766cb9a	1	13:07:13	string-heavy	flamework2	encode	2	245558
+3	766cb9a	1	13:07:13	string-heavy	flamework2	encode	3	248523
+3	766cb9a	1	13:07:13	string-heavy	flamework2	encode	4	246964
+3	766cb9a	1	13:07:13	string-heavy	flamework2	encode	5	233411
+3	766cb9a	1	13:07:13	string-heavy	flamework2	encode	6	228449
+3	766cb9a	1	13:07:13	string-heavy	flamework2	encode	7	248089
+3	766cb9a	1	13:07:13	string-heavy	flamework2	encode	8	247170
+3	766cb9a	1	13:07:13	string-heavy	flamework2	encode	9	247951
+3	766cb9a	1	13:07:13	string-heavy	blink	encode	1	135374
+3	766cb9a	1	13:07:13	string-heavy	blink	encode	2	134985
+3	766cb9a	1	13:07:13	string-heavy	blink	encode	3	134405
+3	766cb9a	1	13:07:13	string-heavy	blink	encode	4	134753
+3	766cb9a	1	13:07:13	string-heavy	blink	encode	5	129887
+3	766cb9a	1	13:07:13	string-heavy	blink	encode	6	122273
+3	766cb9a	1	13:07:13	string-heavy	blink	encode	7	135162
+3	766cb9a	1	13:07:13	string-heavy	blink	encode	8	135507
+3	766cb9a	1	13:07:13	string-heavy	blink	encode	9	135251
+3	766cb9a	1	13:07:13	string-heavy	surge	decode	1	219958
+3	766cb9a	1	13:07:13	string-heavy	surge	decode	2	220085
+3	766cb9a	1	13:07:13	string-heavy	surge	decode	3	219461
+3	766cb9a	1	13:07:13	string-heavy	surge	decode	4	208735
+3	766cb9a	1	13:07:13	string-heavy	surge	decode	5	213582
+3	766cb9a	1	13:07:13	string-heavy	surge	decode	6	217071
+3	766cb9a	1	13:07:13	string-heavy	surge	decode	7	218650
+3	766cb9a	1	13:07:13	string-heavy	surge	decode	8	219472
+3	766cb9a	1	13:07:13	string-heavy	surge	decode	9	220126
+3	766cb9a	1	13:07:13	string-heavy	fbs	decode	1	173528
+3	766cb9a	1	13:07:13	string-heavy	fbs	decode	2	174086
+3	766cb9a	1	13:07:13	string-heavy	fbs	decode	3	175176
+3	766cb9a	1	13:07:13	string-heavy	fbs	decode	4	163203
+3	766cb9a	1	13:07:13	string-heavy	fbs	decode	5	170456
+3	766cb9a	1	13:07:13	string-heavy	fbs	decode	6	174052
+3	766cb9a	1	13:07:13	string-heavy	fbs	decode	7	172197
+3	766cb9a	1	13:07:13	string-heavy	fbs	decode	8	173996
+3	766cb9a	1	13:07:13	string-heavy	fbs	decode	9	173041
+3	766cb9a	1	13:07:13	string-heavy	serio	decode	1	57999
+3	766cb9a	1	13:07:13	string-heavy	serio	decode	2	58590
+3	766cb9a	1	13:07:13	string-heavy	serio	decode	3	59239
+3	766cb9a	1	13:07:13	string-heavy	serio	decode	4	56705
+3	766cb9a	1	13:07:13	string-heavy	serio	decode	5	57224
+3	766cb9a	1	13:07:13	string-heavy	serio	decode	6	57950
+3	766cb9a	1	13:07:13	string-heavy	serio	decode	7	57194
+3	766cb9a	1	13:07:13	string-heavy	serio	decode	8	58461
+3	766cb9a	1	13:07:13	string-heavy	serio	decode	9	58357
+3	766cb9a	1	13:07:13	string-heavy	flamework2	decode	1	158966
+3	766cb9a	1	13:07:13	string-heavy	flamework2	decode	2	155987
+3	766cb9a	1	13:07:13	string-heavy	flamework2	decode	3	157746
+3	766cb9a	1	13:07:13	string-heavy	flamework2	decode	4	158057
+3	766cb9a	1	13:07:13	string-heavy	flamework2	decode	5	155835
+3	766cb9a	1	13:07:13	string-heavy	flamework2	decode	6	159094
+3	766cb9a	1	13:07:13	string-heavy	flamework2	decode	7	156011
+3	766cb9a	1	13:07:13	string-heavy	flamework2	decode	8	157820
+3	766cb9a	1	13:07:13	string-heavy	flamework2	decode	9	156419
+3	766cb9a	1	13:07:13	string-heavy	blink	decode	1	228423
+3	766cb9a	1	13:07:13	string-heavy	blink	decode	2	227327
+3	766cb9a	1	13:07:13	string-heavy	blink	decode	3	218450
+3	766cb9a	1	13:07:13	string-heavy	blink	decode	4	229199
+3	766cb9a	1	13:07:13	string-heavy	blink	decode	5	222695
+3	766cb9a	1	13:07:13	string-heavy	blink	decode	6	228813
+3	766cb9a	1	13:07:13	string-heavy	blink	decode	7	229729
+3	766cb9a	1	13:07:13	string-heavy	blink	decode	8	228405
+3	766cb9a	1	13:07:13	string-heavy	blink	decode	9	228684
+3	dd1056e	2	13:08:02	string-heavy	surge	encode	1	325706
+3	dd1056e	2	13:08:02	string-heavy	surge	encode	2	281810
+3	dd1056e	2	13:08:02	string-heavy	surge	encode	3	295342
+3	dd1056e	2	13:08:02	string-heavy	surge	encode	4	296447
+3	dd1056e	2	13:08:02	string-heavy	surge	encode	5	289429
+3	dd1056e	2	13:08:02	string-heavy	surge	encode	6	293126
+3	dd1056e	2	13:08:02	string-heavy	surge	encode	7	299740
+3	dd1056e	2	13:08:02	string-heavy	surge	encode	8	297160
+3	dd1056e	2	13:08:02	string-heavy	surge	encode	9	296161
+3	dd1056e	2	13:08:02	string-heavy	fbs	encode	1	202931
+3	dd1056e	2	13:08:02	string-heavy	fbs	encode	2	194726
+3	dd1056e	2	13:08:02	string-heavy	fbs	encode	3	197550
+3	dd1056e	2	13:08:02	string-heavy	fbs	encode	4	204775
+3	dd1056e	2	13:08:02	string-heavy	fbs	encode	5	198449
+3	dd1056e	2	13:08:02	string-heavy	fbs	encode	6	201944
+3	dd1056e	2	13:08:02	string-heavy	fbs	encode	7	199709
+3	dd1056e	2	13:08:02	string-heavy	fbs	encode	8	201652
+3	dd1056e	2	13:08:02	string-heavy	fbs	encode	9	198702
+3	dd1056e	2	13:08:02	string-heavy	serio	encode	1	31893
+3	dd1056e	2	13:08:02	string-heavy	serio	encode	2	31786
+3	dd1056e	2	13:08:02	string-heavy	serio	encode	3	31644
+3	dd1056e	2	13:08:02	string-heavy	serio	encode	4	31840
+3	dd1056e	2	13:08:02	string-heavy	serio	encode	5	31805
+3	dd1056e	2	13:08:02	string-heavy	serio	encode	6	31933
+3	dd1056e	2	13:08:02	string-heavy	serio	encode	7	31770
+3	dd1056e	2	13:08:02	string-heavy	serio	encode	8	31900
+3	dd1056e	2	13:08:02	string-heavy	serio	encode	9	32021
+3	dd1056e	2	13:08:02	string-heavy	flamework2	encode	1	229452
+3	dd1056e	2	13:08:02	string-heavy	flamework2	encode	2	220333
+3	dd1056e	2	13:08:02	string-heavy	flamework2	encode	3	227429
+3	dd1056e	2	13:08:02	string-heavy	flamework2	encode	4	226209
+3	dd1056e	2	13:08:02	string-heavy	flamework2	encode	5	230007
+3	dd1056e	2	13:08:02	string-heavy	flamework2	encode	6	228650
+3	dd1056e	2	13:08:02	string-heavy	flamework2	encode	7	229840
+3	dd1056e	2	13:08:02	string-heavy	flamework2	encode	8	228543
+3	dd1056e	2	13:08:02	string-heavy	flamework2	encode	9	227060
+3	dd1056e	2	13:08:02	string-heavy	blink	encode	1	104663
+3	dd1056e	2	13:08:02	string-heavy	blink	encode	2	113206
+3	dd1056e	2	13:08:02	string-heavy	blink	encode	3	119225
+3	dd1056e	2	13:08:02	string-heavy	blink	encode	4	120696
+3	dd1056e	2	13:08:02	string-heavy	blink	encode	5	117492
+3	dd1056e	2	13:08:02	string-heavy	blink	encode	6	115846
+3	dd1056e	2	13:08:02	string-heavy	blink	encode	7	118011
+3	dd1056e	2	13:08:02	string-heavy	blink	encode	8	119926
+3	dd1056e	2	13:08:02	string-heavy	blink	encode	9	120569
+3	dd1056e	2	13:08:02	string-heavy	surge	decode	1	207777
+3	dd1056e	2	13:08:02	string-heavy	surge	decode	2	208790
+3	dd1056e	2	13:08:02	string-heavy	surge	decode	3	209272
+3	dd1056e	2	13:08:02	string-heavy	surge	decode	4	208996
+3	dd1056e	2	13:08:02	string-heavy	surge	decode	5	222373
+3	dd1056e	2	13:08:02	string-heavy	surge	decode	6	222793
+3	dd1056e	2	13:08:02	string-heavy	surge	decode	7	222752
+3	dd1056e	2	13:08:02	string-heavy	surge	decode	8	221570
+3	dd1056e	2	13:08:02	string-heavy	surge	decode	9	221027
+3	dd1056e	2	13:08:02	string-heavy	fbs	decode	1	165764
+3	dd1056e	2	13:08:02	string-heavy	fbs	decode	2	165609
+3	dd1056e	2	13:08:02	string-heavy	fbs	decode	3	165958
+3	dd1056e	2	13:08:02	string-heavy	fbs	decode	4	165190
+3	dd1056e	2	13:08:02	string-heavy	fbs	decode	5	173829
+3	dd1056e	2	13:08:02	string-heavy	fbs	decode	6	174986
+3	dd1056e	2	13:08:02	string-heavy	fbs	decode	7	175797
+3	dd1056e	2	13:08:02	string-heavy	fbs	decode	8	173572
+3	dd1056e	2	13:08:02	string-heavy	fbs	decode	9	176474
+3	dd1056e	2	13:08:02	string-heavy	serio	decode	1	56314
+3	dd1056e	2	13:08:02	string-heavy	serio	decode	2	56622
+3	dd1056e	2	13:08:02	string-heavy	serio	decode	3	57904
+3	dd1056e	2	13:08:02	string-heavy	serio	decode	4	56631
+3	dd1056e	2	13:08:02	string-heavy	serio	decode	5	58516
+3	dd1056e	2	13:08:02	string-heavy	serio	decode	6	58133
+3	dd1056e	2	13:08:02	string-heavy	serio	decode	7	59259
+3	dd1056e	2	13:08:02	string-heavy	serio	decode	8	59189
+3	dd1056e	2	13:08:02	string-heavy	serio	decode	9	58809
+3	dd1056e	2	13:08:02	string-heavy	flamework2	decode	1	153077
+3	dd1056e	2	13:08:02	string-heavy	flamework2	decode	2	151530
+3	dd1056e	2	13:08:02	string-heavy	flamework2	decode	3	148046
+3	dd1056e	2	13:08:02	string-heavy	flamework2	decode	4	158582
+3	dd1056e	2	13:08:02	string-heavy	flamework2	decode	5	158047
+3	dd1056e	2	13:08:02	string-heavy	flamework2	decode	6	157770
+3	dd1056e	2	13:08:02	string-heavy	flamework2	decode	7	156246
+3	dd1056e	2	13:08:02	string-heavy	flamework2	decode	8	156811
+3	dd1056e	2	13:08:02	string-heavy	flamework2	decode	9	158707
+3	dd1056e	2	13:08:02	string-heavy	blink	decode	1	215099
+3	dd1056e	2	13:08:02	string-heavy	blink	decode	2	214565
+3	dd1056e	2	13:08:02	string-heavy	blink	decode	3	211641
+3	dd1056e	2	13:08:02	string-heavy	blink	decode	4	230314
+3	dd1056e	2	13:08:02	string-heavy	blink	decode	5	230236
+3	dd1056e	2	13:08:02	string-heavy	blink	decode	6	229549
+3	dd1056e	2	13:08:02	string-heavy	blink	decode	7	229392
+3	dd1056e	2	13:08:02	string-heavy	blink	decode	8	228325
+3	dd1056e	2	13:08:02	string-heavy	blink	decode	9	230512
+3	variant	3	13:08:50	string-heavy	surge	encode	1	335686
+3	variant	3	13:08:50	string-heavy	surge	encode	2	330897
+3	variant	3	13:08:50	string-heavy	surge	encode	3	321196
+3	variant	3	13:08:50	string-heavy	surge	encode	4	311724
+3	variant	3	13:08:50	string-heavy	surge	encode	5	332212
+3	variant	3	13:08:50	string-heavy	surge	encode	6	335452
+3	variant	3	13:08:50	string-heavy	surge	encode	7	308737
+3	variant	3	13:08:50	string-heavy	surge	encode	8	299927
+3	variant	3	13:08:50	string-heavy	surge	encode	9	306132
+3	variant	3	13:08:50	string-heavy	fbs	encode	1	221603
+3	variant	3	13:08:50	string-heavy	fbs	encode	2	220152
+3	variant	3	13:08:50	string-heavy	fbs	encode	3	202858
+3	variant	3	13:08:50	string-heavy	fbs	encode	4	213043
+3	variant	3	13:08:50	string-heavy	fbs	encode	5	221073
+3	variant	3	13:08:50	string-heavy	fbs	encode	6	220283
+3	variant	3	13:08:50	string-heavy	fbs	encode	7	205273
+3	variant	3	13:08:50	string-heavy	fbs	encode	8	203906
+3	variant	3	13:08:50	string-heavy	fbs	encode	9	206016
+3	variant	3	13:08:50	string-heavy	serio	encode	1	32372
+3	variant	3	13:08:50	string-heavy	serio	encode	2	32392
+3	variant	3	13:08:50	string-heavy	serio	encode	3	31689
+3	variant	3	13:08:50	string-heavy	serio	encode	4	32413
+3	variant	3	13:08:50	string-heavy	serio	encode	5	32409
+3	variant	3	13:08:50	string-heavy	serio	encode	6	32366
+3	variant	3	13:08:50	string-heavy	serio	encode	7	32336
+3	variant	3	13:08:50	string-heavy	serio	encode	8	32015
+3	variant	3	13:08:50	string-heavy	serio	encode	9	31724
+3	variant	3	13:08:50	string-heavy	flamework2	encode	1	245754
+3	variant	3	13:08:50	string-heavy	flamework2	encode	2	246172
+3	variant	3	13:08:50	string-heavy	flamework2	encode	3	225253
+3	variant	3	13:08:50	string-heavy	flamework2	encode	4	246165
+3	variant	3	13:08:50	string-heavy	flamework2	encode	5	243275
+3	variant	3	13:08:50	string-heavy	flamework2	encode	6	231777
+3	variant	3	13:08:50	string-heavy	flamework2	encode	7	230023
+3	variant	3	13:08:50	string-heavy	flamework2	encode	8	228119
+3	variant	3	13:08:50	string-heavy	flamework2	encode	9	229165
+3	variant	3	13:08:50	string-heavy	blink	encode	1	134381
+3	variant	3	13:08:50	string-heavy	blink	encode	2	131947
+3	variant	3	13:08:50	string-heavy	blink	encode	3	113204
+3	variant	3	13:08:50	string-heavy	blink	encode	4	133631
+3	variant	3	13:08:50	string-heavy	blink	encode	5	134928
+3	variant	3	13:08:50	string-heavy	blink	encode	6	117719
+3	variant	3	13:08:50	string-heavy	blink	encode	7	119713
+3	variant	3	13:08:50	string-heavy	blink	encode	8	119316
+3	variant	3	13:08:50	string-heavy	blink	encode	9	120756
+3	variant	3	13:08:50	string-heavy	surge	decode	1	207943
+3	variant	3	13:08:50	string-heavy	surge	decode	2	208119
+3	variant	3	13:08:50	string-heavy	surge	decode	3	207726
+3	variant	3	13:08:50	string-heavy	surge	decode	4	221444
+3	variant	3	13:08:50	string-heavy	surge	decode	5	215982
+3	variant	3	13:08:50	string-heavy	surge	decode	6	222152
+3	variant	3	13:08:50	string-heavy	surge	decode	7	221704
+3	variant	3	13:08:50	string-heavy	surge	decode	8	221618
+3	variant	3	13:08:50	string-heavy	surge	decode	9	222297
+3	variant	3	13:08:50	string-heavy	fbs	decode	1	165957
+3	variant	3	13:08:50	string-heavy	fbs	decode	2	164249
+3	variant	3	13:08:50	string-heavy	fbs	decode	3	164631
+3	variant	3	13:08:50	string-heavy	fbs	decode	4	172171
+3	variant	3	13:08:50	string-heavy	fbs	decode	5	168590
+3	variant	3	13:08:50	string-heavy	fbs	decode	6	174415
+3	variant	3	13:08:50	string-heavy	fbs	decode	7	171749
+3	variant	3	13:08:50	string-heavy	fbs	decode	8	175273
+3	variant	3	13:08:50	string-heavy	fbs	decode	9	174718
+3	variant	3	13:08:50	string-heavy	serio	decode	1	57723
+3	variant	3	13:08:50	string-heavy	serio	decode	2	56570
+3	variant	3	13:08:50	string-heavy	serio	decode	3	58158
+3	variant	3	13:08:50	string-heavy	serio	decode	4	58089
+3	variant	3	13:08:50	string-heavy	serio	decode	5	57985
+3	variant	3	13:08:50	string-heavy	serio	decode	6	58358
+3	variant	3	13:08:50	string-heavy	serio	decode	7	58965
+3	variant	3	13:08:50	string-heavy	serio	decode	8	58640
+3	variant	3	13:08:50	string-heavy	serio	decode	9	57903
+3	variant	3	13:08:50	string-heavy	flamework2	decode	1	151953
+3	variant	3	13:08:50	string-heavy	flamework2	decode	2	153631
+3	variant	3	13:08:50	string-heavy	flamework2	decode	3	155705
+3	variant	3	13:08:50	string-heavy	flamework2	decode	4	153522
+3	variant	3	13:08:50	string-heavy	flamework2	decode	5	157139
+3	variant	3	13:08:50	string-heavy	flamework2	decode	6	157644
+3	variant	3	13:08:50	string-heavy	flamework2	decode	7	157477
+3	variant	3	13:08:50	string-heavy	flamework2	decode	8	159193
+3	variant	3	13:08:50	string-heavy	flamework2	decode	9	159319
+3	variant	3	13:08:50	string-heavy	blink	decode	1	220135
+3	variant	3	13:08:50	string-heavy	blink	decode	2	218557
+3	variant	3	13:08:50	string-heavy	blink	decode	3	232177
+3	variant	3	13:08:50	string-heavy	blink	decode	4	221186
+3	variant	3	13:08:50	string-heavy	blink	decode	5	233803
+3	variant	3	13:08:50	string-heavy	blink	decode	6	233013
+3	variant	3	13:08:50	string-heavy	blink	decode	7	229806
+3	variant	3	13:08:50	string-heavy	blink	decode	8	231578
+3	variant	3	13:08:50	string-heavy	blink	decode	9	232455
+3	766cb9a	4	13:09:39	string-heavy	surge	encode	1	335461
+3	766cb9a	4	13:09:39	string-heavy	surge	encode	2	291085
+3	766cb9a	4	13:09:39	string-heavy	surge	encode	3	301708
+3	766cb9a	4	13:09:39	string-heavy	surge	encode	4	305889
+3	766cb9a	4	13:09:39	string-heavy	surge	encode	5	302469
+3	766cb9a	4	13:09:39	string-heavy	surge	encode	6	308170
+3	766cb9a	4	13:09:39	string-heavy	surge	encode	7	308129
+3	766cb9a	4	13:09:39	string-heavy	surge	encode	8	308800
+3	766cb9a	4	13:09:39	string-heavy	surge	encode	9	306324
+3	766cb9a	4	13:09:39	string-heavy	fbs	encode	1	218816
+3	766cb9a	4	13:09:39	string-heavy	fbs	encode	2	199804
+3	766cb9a	4	13:09:39	string-heavy	fbs	encode	3	197457
+3	766cb9a	4	13:09:39	string-heavy	fbs	encode	4	201466
+3	766cb9a	4	13:09:39	string-heavy	fbs	encode	5	199059
+3	766cb9a	4	13:09:39	string-heavy	fbs	encode	6	199410
+3	766cb9a	4	13:09:39	string-heavy	fbs	encode	7	199095
+3	766cb9a	4	13:09:39	string-heavy	fbs	encode	8	199349
+3	766cb9a	4	13:09:39	string-heavy	fbs	encode	9	202080
+3	766cb9a	4	13:09:39	string-heavy	serio	encode	1	32438
+3	766cb9a	4	13:09:39	string-heavy	serio	encode	2	32227
+3	766cb9a	4	13:09:39	string-heavy	serio	encode	3	31814
+3	766cb9a	4	13:09:39	string-heavy	serio	encode	4	32075
+3	766cb9a	4	13:09:39	string-heavy	serio	encode	5	32025
+3	766cb9a	4	13:09:39	string-heavy	serio	encode	6	32089
+3	766cb9a	4	13:09:39	string-heavy	serio	encode	7	32094
+3	766cb9a	4	13:09:39	string-heavy	serio	encode	8	31966
+3	766cb9a	4	13:09:39	string-heavy	serio	encode	9	31814
+3	766cb9a	4	13:09:39	string-heavy	flamework2	encode	1	235391
+3	766cb9a	4	13:09:39	string-heavy	flamework2	encode	2	226041
+3	766cb9a	4	13:09:39	string-heavy	flamework2	encode	3	230727
+3	766cb9a	4	13:09:39	string-heavy	flamework2	encode	4	227898
+3	766cb9a	4	13:09:39	string-heavy	flamework2	encode	5	227834
+3	766cb9a	4	13:09:39	string-heavy	flamework2	encode	6	226069
+3	766cb9a	4	13:09:39	string-heavy	flamework2	encode	7	226384
+3	766cb9a	4	13:09:39	string-heavy	flamework2	encode	8	223094
+3	766cb9a	4	13:09:39	string-heavy	flamework2	encode	9	228462
+3	766cb9a	4	13:09:39	string-heavy	blink	encode	1	120637
+3	766cb9a	4	13:09:39	string-heavy	blink	encode	2	116981
+3	766cb9a	4	13:09:39	string-heavy	blink	encode	3	120605
+3	766cb9a	4	13:09:39	string-heavy	blink	encode	4	116113
+3	766cb9a	4	13:09:39	string-heavy	blink	encode	5	118488
+3	766cb9a	4	13:09:39	string-heavy	blink	encode	6	120376
+3	766cb9a	4	13:09:39	string-heavy	blink	encode	7	120447
+3	766cb9a	4	13:09:39	string-heavy	blink	encode	8	122110
+3	766cb9a	4	13:09:39	string-heavy	blink	encode	9	118422
+3	766cb9a	4	13:09:39	string-heavy	surge	decode	1	220570
+3	766cb9a	4	13:09:39	string-heavy	surge	decode	2	221696
+3	766cb9a	4	13:09:39	string-heavy	surge	decode	3	218164
+3	766cb9a	4	13:09:39	string-heavy	surge	decode	4	219303
+3	766cb9a	4	13:09:39	string-heavy	surge	decode	5	219893
+3	766cb9a	4	13:09:39	string-heavy	surge	decode	6	219626
+3	766cb9a	4	13:09:39	string-heavy	surge	decode	7	208997
+3	766cb9a	4	13:09:39	string-heavy	surge	decode	8	207459
+3	766cb9a	4	13:09:39	string-heavy	surge	decode	9	219711
+3	766cb9a	4	13:09:39	string-heavy	fbs	decode	1	172999
+3	766cb9a	4	13:09:39	string-heavy	fbs	decode	2	172780
+3	766cb9a	4	13:09:39	string-heavy	fbs	decode	3	167957
+3	766cb9a	4	13:09:39	string-heavy	fbs	decode	4	173129
+3	766cb9a	4	13:09:39	string-heavy	fbs	decode	5	172895
+3	766cb9a	4	13:09:39	string-heavy	fbs	decode	6	171614
+3	766cb9a	4	13:09:39	string-heavy	fbs	decode	7	165603
+3	766cb9a	4	13:09:39	string-heavy	fbs	decode	8	163347
+3	766cb9a	4	13:09:39	string-heavy	fbs	decode	9	173178
+3	766cb9a	4	13:09:39	string-heavy	serio	decode	1	58179
+3	766cb9a	4	13:09:39	string-heavy	serio	decode	2	59418
+3	766cb9a	4	13:09:39	string-heavy	serio	decode	3	57436
+3	766cb9a	4	13:09:39	string-heavy	serio	decode	4	58442
+3	766cb9a	4	13:09:39	string-heavy	serio	decode	5	59248
+3	766cb9a	4	13:09:39	string-heavy	serio	decode	6	58290
+3	766cb9a	4	13:09:39	string-heavy	serio	decode	7	57675
+3	766cb9a	4	13:09:39	string-heavy	serio	decode	8	58200
+3	766cb9a	4	13:09:39	string-heavy	serio	decode	9	58428
+3	766cb9a	4	13:09:39	string-heavy	flamework2	decode	1	157103
+3	766cb9a	4	13:09:39	string-heavy	flamework2	decode	2	158063
+3	766cb9a	4	13:09:39	string-heavy	flamework2	decode	3	158516
+3	766cb9a	4	13:09:39	string-heavy	flamework2	decode	4	156569
+3	766cb9a	4	13:09:39	string-heavy	flamework2	decode	5	157039
+3	766cb9a	4	13:09:39	string-heavy	flamework2	decode	6	156787
+3	766cb9a	4	13:09:39	string-heavy	flamework2	decode	7	157884
+3	766cb9a	4	13:09:39	string-heavy	flamework2	decode	8	158101
+3	766cb9a	4	13:09:39	string-heavy	flamework2	decode	9	158920
+3	766cb9a	4	13:09:39	string-heavy	blink	decode	1	230684
+3	766cb9a	4	13:09:39	string-heavy	blink	decode	2	226591
+3	766cb9a	4	13:09:39	string-heavy	blink	decode	3	226015
+3	766cb9a	4	13:09:39	string-heavy	blink	decode	4	230925
+3	766cb9a	4	13:09:39	string-heavy	blink	decode	5	229826
+3	766cb9a	4	13:09:39	string-heavy	blink	decode	6	217257
+3	766cb9a	4	13:09:39	string-heavy	blink	decode	7	228376
+3	766cb9a	4	13:09:39	string-heavy	blink	decode	8	229210
+3	766cb9a	4	13:09:39	string-heavy	blink	decode	9	228021
+3	dd1056e	5	13:10:28	string-heavy	surge	encode	1	327140
+3	dd1056e	5	13:10:28	string-heavy	surge	encode	2	321410
+3	dd1056e	5	13:10:28	string-heavy	surge	encode	3	321734
+3	dd1056e	5	13:10:28	string-heavy	surge	encode	4	290129
+3	dd1056e	5	13:10:28	string-heavy	surge	encode	5	298432
+3	dd1056e	5	13:10:28	string-heavy	surge	encode	6	296148
+3	dd1056e	5	13:10:28	string-heavy	surge	encode	7	300007
+3	dd1056e	5	13:10:28	string-heavy	surge	encode	8	290418
+3	dd1056e	5	13:10:28	string-heavy	surge	encode	9	296251
+3	dd1056e	5	13:10:28	string-heavy	fbs	encode	1	216653
+3	dd1056e	5	13:10:28	string-heavy	fbs	encode	2	218140
+3	dd1056e	5	13:10:28	string-heavy	fbs	encode	3	214824
+3	dd1056e	5	13:10:28	string-heavy	fbs	encode	4	196554
+3	dd1056e	5	13:10:28	string-heavy	fbs	encode	5	202600
+3	dd1056e	5	13:10:28	string-heavy	fbs	encode	6	204240
+3	dd1056e	5	13:10:28	string-heavy	fbs	encode	7	201738
+3	dd1056e	5	13:10:28	string-heavy	fbs	encode	8	202641
+3	dd1056e	5	13:10:28	string-heavy	fbs	encode	9	203116
+3	dd1056e	5	13:10:28	string-heavy	serio	encode	1	32162
+3	dd1056e	5	13:10:28	string-heavy	serio	encode	2	31810
+3	dd1056e	5	13:10:28	string-heavy	serio	encode	3	30923
+3	dd1056e	5	13:10:28	string-heavy	serio	encode	4	31311
+3	dd1056e	5	13:10:28	string-heavy	serio	encode	5	31668
+3	dd1056e	5	13:10:28	string-heavy	serio	encode	6	31484
+3	dd1056e	5	13:10:28	string-heavy	serio	encode	7	31693
+3	dd1056e	5	13:10:28	string-heavy	serio	encode	8	31631
+3	dd1056e	5	13:10:28	string-heavy	serio	encode	9	31778
+3	dd1056e	5	13:10:28	string-heavy	flamework2	encode	1	231205
+3	dd1056e	5	13:10:28	string-heavy	flamework2	encode	2	234904
+3	dd1056e	5	13:10:28	string-heavy	flamework2	encode	3	219046
+3	dd1056e	5	13:10:28	string-heavy	flamework2	encode	4	219213
+3	dd1056e	5	13:10:28	string-heavy	flamework2	encode	5	218095
+3	dd1056e	5	13:10:28	string-heavy	flamework2	encode	6	215929
+3	dd1056e	5	13:10:28	string-heavy	flamework2	encode	7	219098
+3	dd1056e	5	13:10:28	string-heavy	flamework2	encode	8	219203
+3	dd1056e	5	13:10:28	string-heavy	flamework2	encode	9	218582
+3	dd1056e	5	13:10:28	string-heavy	blink	encode	1	135213
+3	dd1056e	5	13:10:28	string-heavy	blink	encode	2	136303
+3	dd1056e	5	13:10:28	string-heavy	blink	encode	3	108335
+3	dd1056e	5	13:10:28	string-heavy	blink	encode	4	114240
+3	dd1056e	5	13:10:28	string-heavy	blink	encode	5	117168
+3	dd1056e	5	13:10:28	string-heavy	blink	encode	6	118055
+3	dd1056e	5	13:10:28	string-heavy	blink	encode	7	120265
+3	dd1056e	5	13:10:28	string-heavy	blink	encode	8	120906
+3	dd1056e	5	13:10:28	string-heavy	blink	encode	9	119060
+3	dd1056e	5	13:10:28	string-heavy	surge	decode	1	211457
+3	dd1056e	5	13:10:28	string-heavy	surge	decode	2	209320
+3	dd1056e	5	13:10:28	string-heavy	surge	decode	3	209768
+3	dd1056e	5	13:10:28	string-heavy	surge	decode	4	199288
+3	dd1056e	5	13:10:28	string-heavy	surge	decode	5	221490
+3	dd1056e	5	13:10:28	string-heavy	surge	decode	6	221679
+3	dd1056e	5	13:10:28	string-heavy	surge	decode	7	221789
+3	dd1056e	5	13:10:28	string-heavy	surge	decode	8	222909
+3	dd1056e	5	13:10:28	string-heavy	surge	decode	9	221709
+3	dd1056e	5	13:10:28	string-heavy	fbs	decode	1	166629
+3	dd1056e	5	13:10:28	string-heavy	fbs	decode	2	166785
+3	dd1056e	5	13:10:28	string-heavy	fbs	decode	3	164367
+3	dd1056e	5	13:10:28	string-heavy	fbs	decode	4	162077
+3	dd1056e	5	13:10:28	string-heavy	fbs	decode	5	174167
+3	dd1056e	5	13:10:28	string-heavy	fbs	decode	6	175600
+3	dd1056e	5	13:10:28	string-heavy	fbs	decode	7	173036
+3	dd1056e	5	13:10:28	string-heavy	fbs	decode	8	174970
+3	dd1056e	5	13:10:28	string-heavy	fbs	decode	9	174775
+3	dd1056e	5	13:10:28	string-heavy	serio	decode	1	56695
+3	dd1056e	5	13:10:28	string-heavy	serio	decode	2	57189
+3	dd1056e	5	13:10:28	string-heavy	serio	decode	3	56875
+3	dd1056e	5	13:10:28	string-heavy	serio	decode	4	57492
+3	dd1056e	5	13:10:28	string-heavy	serio	decode	5	58192
+3	dd1056e	5	13:10:28	string-heavy	serio	decode	6	59037
+3	dd1056e	5	13:10:28	string-heavy	serio	decode	7	57717
+3	dd1056e	5	13:10:28	string-heavy	serio	decode	8	59135
+3	dd1056e	5	13:10:28	string-heavy	serio	decode	9	57688
+3	dd1056e	5	13:10:28	string-heavy	flamework2	decode	1	152833
+3	dd1056e	5	13:10:28	string-heavy	flamework2	decode	2	148833
+3	dd1056e	5	13:10:28	string-heavy	flamework2	decode	3	147201
+3	dd1056e	5	13:10:28	string-heavy	flamework2	decode	4	155690
+3	dd1056e	5	13:10:28	string-heavy	flamework2	decode	5	156799
+3	dd1056e	5	13:10:28	string-heavy	flamework2	decode	6	157205
+3	dd1056e	5	13:10:28	string-heavy	flamework2	decode	7	158479
+3	dd1056e	5	13:10:28	string-heavy	flamework2	decode	8	157995
+3	dd1056e	5	13:10:28	string-heavy	flamework2	decode	9	160236
+3	dd1056e	5	13:10:28	string-heavy	blink	decode	1	217953
+3	dd1056e	5	13:10:28	string-heavy	blink	decode	2	216466
+3	dd1056e	5	13:10:28	string-heavy	blink	decode	3	212021
+3	dd1056e	5	13:10:28	string-heavy	blink	decode	4	231315
+3	dd1056e	5	13:10:28	string-heavy	blink	decode	5	229282
+3	dd1056e	5	13:10:28	string-heavy	blink	decode	6	229904
+3	dd1056e	5	13:10:28	string-heavy	blink	decode	7	229411
+3	dd1056e	5	13:10:28	string-heavy	blink	decode	8	229632
+3	dd1056e	5	13:10:28	string-heavy	blink	decode	9	230510
+3	variant	6	13:11:16	string-heavy	surge	encode	1	330779
+3	variant	6	13:11:16	string-heavy	surge	encode	2	333718
+3	variant	6	13:11:16	string-heavy	surge	encode	3	296328
+3	variant	6	13:11:16	string-heavy	surge	encode	4	303859
+3	variant	6	13:11:16	string-heavy	surge	encode	5	333183
+3	variant	6	13:11:16	string-heavy	surge	encode	6	336096
+3	variant	6	13:11:16	string-heavy	surge	encode	7	334267
+3	variant	6	13:11:16	string-heavy	surge	encode	8	339549
+3	variant	6	13:11:16	string-heavy	surge	encode	9	332483
+3	variant	6	13:11:16	string-heavy	fbs	encode	1	221226
+3	variant	6	13:11:16	string-heavy	fbs	encode	2	221066
+3	variant	6	13:11:16	string-heavy	fbs	encode	3	199584
+3	variant	6	13:11:16	string-heavy	fbs	encode	4	208576
+3	variant	6	13:11:16	string-heavy	fbs	encode	5	221406
+3	variant	6	13:11:16	string-heavy	fbs	encode	6	218002
+3	variant	6	13:11:16	string-heavy	fbs	encode	7	219135
+3	variant	6	13:11:16	string-heavy	fbs	encode	8	217499
+3	variant	6	13:11:16	string-heavy	fbs	encode	9	221177
+3	variant	6	13:11:16	string-heavy	serio	encode	1	31721
+3	variant	6	13:11:16	string-heavy	serio	encode	2	30931
+3	variant	6	13:11:16	string-heavy	serio	encode	3	31261
+3	variant	6	13:11:16	string-heavy	serio	encode	4	31973
+3	variant	6	13:11:16	string-heavy	serio	encode	5	31646
+3	variant	6	13:11:16	string-heavy	serio	encode	6	31881
+3	variant	6	13:11:16	string-heavy	serio	encode	7	31679
+3	variant	6	13:11:16	string-heavy	serio	encode	8	31714
+3	variant	6	13:11:16	string-heavy	serio	encode	9	31756
+3	variant	6	13:11:16	string-heavy	flamework2	encode	1	248243
+3	variant	6	13:11:16	string-heavy	flamework2	encode	2	237491
+3	variant	6	13:11:16	string-heavy	flamework2	encode	3	227322
+3	variant	6	13:11:16	string-heavy	flamework2	encode	4	246494
+3	variant	6	13:11:16	string-heavy	flamework2	encode	5	245590
+3	variant	6	13:11:16	string-heavy	flamework2	encode	6	244710
+3	variant	6	13:11:16	string-heavy	flamework2	encode	7	245933
+3	variant	6	13:11:16	string-heavy	flamework2	encode	8	246524
+3	variant	6	13:11:16	string-heavy	flamework2	encode	9	247889
+3	variant	6	13:11:16	string-heavy	blink	encode	1	134357
+3	variant	6	13:11:16	string-heavy	blink	encode	2	120117
+3	variant	6	13:11:16	string-heavy	blink	encode	3	114569
+3	variant	6	13:11:16	string-heavy	blink	encode	4	132086
+3	variant	6	13:11:16	string-heavy	blink	encode	5	129888
+3	variant	6	13:11:16	string-heavy	blink	encode	6	132519
+3	variant	6	13:11:16	string-heavy	blink	encode	7	133182
+3	variant	6	13:11:16	string-heavy	blink	encode	8	132248
+3	variant	6	13:11:16	string-heavy	blink	encode	9	132291
+3	variant	6	13:11:16	string-heavy	surge	decode	1	222485
+3	variant	6	13:11:16	string-heavy	surge	decode	2	219133
+3	variant	6	13:11:16	string-heavy	surge	decode	3	220418
+3	variant	6	13:11:16	string-heavy	surge	decode	4	221672
+3	variant	6	13:11:16	string-heavy	surge	decode	5	219502
+3	variant	6	13:11:16	string-heavy	surge	decode	6	221230
+3	variant	6	13:11:16	string-heavy	surge	decode	7	222746
+3	variant	6	13:11:16	string-heavy	surge	decode	8	221729
+3	variant	6	13:11:16	string-heavy	surge	decode	9	207292
+3	variant	6	13:11:16	string-heavy	fbs	decode	1	174960
+3	variant	6	13:11:16	string-heavy	fbs	decode	2	174482
+3	variant	6	13:11:16	string-heavy	fbs	decode	3	173453
+3	variant	6	13:11:16	string-heavy	fbs	decode	4	175104
+3	variant	6	13:11:16	string-heavy	fbs	decode	5	175937
+3	variant	6	13:11:16	string-heavy	fbs	decode	6	176426
+3	variant	6	13:11:16	string-heavy	fbs	decode	7	176051
+3	variant	6	13:11:16	string-heavy	fbs	decode	8	174118
+3	variant	6	13:11:16	string-heavy	fbs	decode	9	173719
+3	variant	6	13:11:16	string-heavy	serio	decode	1	57904
+3	variant	6	13:11:16	string-heavy	serio	decode	2	57863
+3	variant	6	13:11:16	string-heavy	serio	decode	3	57924
+3	variant	6	13:11:16	string-heavy	serio	decode	4	58987
+3	variant	6	13:11:16	string-heavy	serio	decode	5	58053
+3	variant	6	13:11:16	string-heavy	serio	decode	6	58302
+3	variant	6	13:11:16	string-heavy	serio	decode	7	58140
+3	variant	6	13:11:16	string-heavy	serio	decode	8	57800
+3	variant	6	13:11:16	string-heavy	serio	decode	9	58495
+3	variant	6	13:11:16	string-heavy	flamework2	decode	1	160473
+3	variant	6	13:11:16	string-heavy	flamework2	decode	2	156673
+3	variant	6	13:11:16	string-heavy	flamework2	decode	3	153517
+3	variant	6	13:11:16	string-heavy	flamework2	decode	4	155667
+3	variant	6	13:11:16	string-heavy	flamework2	decode	5	159071
+3	variant	6	13:11:16	string-heavy	flamework2	decode	6	158493
+3	variant	6	13:11:16	string-heavy	flamework2	decode	7	158018
+3	variant	6	13:11:16	string-heavy	flamework2	decode	8	159165
+3	variant	6	13:11:16	string-heavy	flamework2	decode	9	158643
+3	variant	6	13:11:16	string-heavy	blink	decode	1	231532
+3	variant	6	13:11:16	string-heavy	blink	decode	2	231047
+3	variant	6	13:11:16	string-heavy	blink	decode	3	231076
+3	variant	6	13:11:16	string-heavy	blink	decode	4	231209
+3	variant	6	13:11:16	string-heavy	blink	decode	5	230918
+3	variant	6	13:11:16	string-heavy	blink	decode	6	226846
+3	variant	6	13:11:16	string-heavy	blink	decode	7	231691
+3	variant	6	13:11:16	string-heavy	blink	decode	8	220808
+3	variant	6	13:11:16	string-heavy	blink	decode	9	228824
+3	766cb9a	7	13:12:05	string-heavy	surge	encode	1	340792
+3	766cb9a	7	13:12:05	string-heavy	surge	encode	2	319112
+3	766cb9a	7	13:12:05	string-heavy	surge	encode	3	289877
+3	766cb9a	7	13:12:05	string-heavy	surge	encode	4	305898
+3	766cb9a	7	13:12:05	string-heavy	surge	encode	5	301455
+3	766cb9a	7	13:12:05	string-heavy	surge	encode	6	309168
+3	766cb9a	7	13:12:05	string-heavy	surge	encode	7	306136
+3	766cb9a	7	13:12:05	string-heavy	surge	encode	8	309226
+3	766cb9a	7	13:12:05	string-heavy	surge	encode	9	302686
+3	766cb9a	7	13:12:05	string-heavy	fbs	encode	1	217341
+3	766cb9a	7	13:12:05	string-heavy	fbs	encode	2	204749
+3	766cb9a	7	13:12:05	string-heavy	fbs	encode	3	200882
+3	766cb9a	7	13:12:05	string-heavy	fbs	encode	4	204383
+3	766cb9a	7	13:12:05	string-heavy	fbs	encode	5	202119
+3	766cb9a	7	13:12:05	string-heavy	fbs	encode	6	200972
+3	766cb9a	7	13:12:05	string-heavy	fbs	encode	7	201141
+3	766cb9a	7	13:12:05	string-heavy	fbs	encode	8	202726
+3	766cb9a	7	13:12:05	string-heavy	fbs	encode	9	203129
+3	766cb9a	7	13:12:05	string-heavy	serio	encode	1	32622
+3	766cb9a	7	13:12:05	string-heavy	serio	encode	2	32284
+3	766cb9a	7	13:12:05	string-heavy	serio	encode	3	31665
+3	766cb9a	7	13:12:05	string-heavy	serio	encode	4	32034
+3	766cb9a	7	13:12:05	string-heavy	serio	encode	5	32342
+3	766cb9a	7	13:12:05	string-heavy	serio	encode	6	31864
+3	766cb9a	7	13:12:05	string-heavy	serio	encode	7	32334
+3	766cb9a	7	13:12:05	string-heavy	serio	encode	8	31860
+3	766cb9a	7	13:12:05	string-heavy	serio	encode	9	31694
+3	766cb9a	7	13:12:05	string-heavy	flamework2	encode	1	244512
+3	766cb9a	7	13:12:05	string-heavy	flamework2	encode	2	234850
+3	766cb9a	7	13:12:05	string-heavy	flamework2	encode	3	222860
+3	766cb9a	7	13:12:05	string-heavy	flamework2	encode	4	227231
+3	766cb9a	7	13:12:05	string-heavy	flamework2	encode	5	226314
+3	766cb9a	7	13:12:05	string-heavy	flamework2	encode	6	232337
+3	766cb9a	7	13:12:05	string-heavy	flamework2	encode	7	233086
+3	766cb9a	7	13:12:05	string-heavy	flamework2	encode	8	229813
+3	766cb9a	7	13:12:05	string-heavy	flamework2	encode	9	229636
+3	766cb9a	7	13:12:05	string-heavy	blink	encode	1	133838
+3	766cb9a	7	13:12:05	string-heavy	blink	encode	2	113623
+3	766cb9a	7	13:12:05	string-heavy	blink	encode	3	119354
+3	766cb9a	7	13:12:05	string-heavy	blink	encode	4	118019
+3	766cb9a	7	13:12:05	string-heavy	blink	encode	5	117625
+3	766cb9a	7	13:12:05	string-heavy	blink	encode	6	118261
+3	766cb9a	7	13:12:05	string-heavy	blink	encode	7	118368
+3	766cb9a	7	13:12:05	string-heavy	blink	encode	8	118343
+3	766cb9a	7	13:12:05	string-heavy	blink	encode	9	117514
+3	766cb9a	7	13:12:05	string-heavy	surge	decode	1	209415
+3	766cb9a	7	13:12:05	string-heavy	surge	decode	2	210315
+3	766cb9a	7	13:12:05	string-heavy	surge	decode	3	201627
+3	766cb9a	7	13:12:05	string-heavy	surge	decode	4	204132
+3	766cb9a	7	13:12:05	string-heavy	surge	decode	5	208329
+3	766cb9a	7	13:12:05	string-heavy	surge	decode	6	208984
+3	766cb9a	7	13:12:05	string-heavy	surge	decode	7	208181
+3	766cb9a	7	13:12:05	string-heavy	surge	decode	8	218149
+3	766cb9a	7	13:12:05	string-heavy	surge	decode	9	210291
+3	766cb9a	7	13:12:05	string-heavy	fbs	decode	1	165130
+3	766cb9a	7	13:12:05	string-heavy	fbs	decode	2	167134
+3	766cb9a	7	13:12:05	string-heavy	fbs	decode	3	163042
+3	766cb9a	7	13:12:05	string-heavy	fbs	decode	4	165810
+3	766cb9a	7	13:12:05	string-heavy	fbs	decode	5	165453
+3	766cb9a	7	13:12:05	string-heavy	fbs	decode	6	165175
+3	766cb9a	7	13:12:05	string-heavy	fbs	decode	7	171148
+3	766cb9a	7	13:12:05	string-heavy	fbs	decode	8	172217
+3	766cb9a	7	13:12:05	string-heavy	fbs	decode	9	164979
+3	766cb9a	7	13:12:05	string-heavy	serio	decode	1	56940
+3	766cb9a	7	13:12:05	string-heavy	serio	decode	2	56095
+3	766cb9a	7	13:12:05	string-heavy	serio	decode	3	56437
+3	766cb9a	7	13:12:05	string-heavy	serio	decode	4	56870
+3	766cb9a	7	13:12:05	string-heavy	serio	decode	5	56640
+3	766cb9a	7	13:12:05	string-heavy	serio	decode	6	56548
+3	766cb9a	7	13:12:05	string-heavy	serio	decode	7	57554
+3	766cb9a	7	13:12:05	string-heavy	serio	decode	8	59117
+3	766cb9a	7	13:12:05	string-heavy	serio	decode	9	56829
+3	766cb9a	7	13:12:05	string-heavy	flamework2	decode	1	151005
+3	766cb9a	7	13:12:05	string-heavy	flamework2	decode	2	150678
+3	766cb9a	7	13:12:05	string-heavy	flamework2	decode	3	148018
+3	766cb9a	7	13:12:05	string-heavy	flamework2	decode	4	149458
+3	766cb9a	7	13:12:05	string-heavy	flamework2	decode	5	153663
+3	766cb9a	7	13:12:05	string-heavy	flamework2	decode	6	151290
+3	766cb9a	7	13:12:05	string-heavy	flamework2	decode	7	151182
+3	766cb9a	7	13:12:05	string-heavy	flamework2	decode	8	151508
+3	766cb9a	7	13:12:05	string-heavy	flamework2	decode	9	155072
+3	766cb9a	7	13:12:05	string-heavy	blink	decode	1	217384
+3	766cb9a	7	13:12:05	string-heavy	blink	decode	2	211270
+3	766cb9a	7	13:12:05	string-heavy	blink	decode	3	215924
+3	766cb9a	7	13:12:05	string-heavy	blink	decode	4	216607
+3	766cb9a	7	13:12:05	string-heavy	blink	decode	5	214800
+3	766cb9a	7	13:12:05	string-heavy	blink	decode	6	219679
+3	766cb9a	7	13:12:05	string-heavy	blink	decode	7	223512
+3	766cb9a	7	13:12:05	string-heavy	blink	decode	8	216756
+3	766cb9a	7	13:12:05	string-heavy	blink	decode	9	217271
+3	dd1056e	8	13:12:54	string-heavy	surge	encode	1	303538
+3	dd1056e	8	13:12:54	string-heavy	surge	encode	2	300571
+3	dd1056e	8	13:12:54	string-heavy	surge	encode	3	300800
+3	dd1056e	8	13:12:54	string-heavy	surge	encode	4	293754
+3	dd1056e	8	13:12:54	string-heavy	surge	encode	5	299409
+3	dd1056e	8	13:12:54	string-heavy	surge	encode	6	294147
+3	dd1056e	8	13:12:54	string-heavy	surge	encode	7	300455
+3	dd1056e	8	13:12:54	string-heavy	surge	encode	8	300495
+3	dd1056e	8	13:12:54	string-heavy	surge	encode	9	304384
+3	dd1056e	8	13:12:54	string-heavy	fbs	encode	1	219340
+3	dd1056e	8	13:12:54	string-heavy	fbs	encode	2	205308
+3	dd1056e	8	13:12:54	string-heavy	fbs	encode	3	199167
+3	dd1056e	8	13:12:54	string-heavy	fbs	encode	4	195641
+3	dd1056e	8	13:12:54	string-heavy	fbs	encode	5	201707
+3	dd1056e	8	13:12:54	string-heavy	fbs	encode	6	204210
+3	dd1056e	8	13:12:54	string-heavy	fbs	encode	7	200251
+3	dd1056e	8	13:12:54	string-heavy	fbs	encode	8	202988
+3	dd1056e	8	13:12:54	string-heavy	fbs	encode	9	200706
+3	dd1056e	8	13:12:54	string-heavy	serio	encode	1	31674
+3	dd1056e	8	13:12:54	string-heavy	serio	encode	2	31719
+3	dd1056e	8	13:12:54	string-heavy	serio	encode	3	31376
+3	dd1056e	8	13:12:54	string-heavy	serio	encode	4	31483
+3	dd1056e	8	13:12:54	string-heavy	serio	encode	5	31681
+3	dd1056e	8	13:12:54	string-heavy	serio	encode	6	31600
+3	dd1056e	8	13:12:54	string-heavy	serio	encode	7	31593
+3	dd1056e	8	13:12:54	string-heavy	serio	encode	8	31551
+3	dd1056e	8	13:12:54	string-heavy	serio	encode	9	31667
+3	dd1056e	8	13:12:54	string-heavy	flamework2	encode	1	227865
+3	dd1056e	8	13:12:54	string-heavy	flamework2	encode	2	227298
+3	dd1056e	8	13:12:54	string-heavy	flamework2	encode	3	215718
+3	dd1056e	8	13:12:54	string-heavy	flamework2	encode	4	221706
+3	dd1056e	8	13:12:54	string-heavy	flamework2	encode	5	228100
+3	dd1056e	8	13:12:54	string-heavy	flamework2	encode	6	220644
+3	dd1056e	8	13:12:54	string-heavy	flamework2	encode	7	226751
+3	dd1056e	8	13:12:54	string-heavy	flamework2	encode	8	224925
+3	dd1056e	8	13:12:54	string-heavy	flamework2	encode	9	224472
+3	dd1056e	8	13:12:54	string-heavy	blink	encode	1	119339
+3	dd1056e	8	13:12:54	string-heavy	blink	encode	2	117288
+3	dd1056e	8	13:12:54	string-heavy	blink	encode	3	109532
+3	dd1056e	8	13:12:54	string-heavy	blink	encode	4	117882
+3	dd1056e	8	13:12:54	string-heavy	blink	encode	5	117104
+3	dd1056e	8	13:12:54	string-heavy	blink	encode	6	116382
+3	dd1056e	8	13:12:54	string-heavy	blink	encode	7	116547
+3	dd1056e	8	13:12:54	string-heavy	blink	encode	8	110787
+3	dd1056e	8	13:12:54	string-heavy	blink	encode	9	112962
+3	dd1056e	8	13:12:54	string-heavy	surge	decode	1	209439
+3	dd1056e	8	13:12:54	string-heavy	surge	decode	2	204627
+3	dd1056e	8	13:12:54	string-heavy	surge	decode	3	208594
+3	dd1056e	8	13:12:54	string-heavy	surge	decode	4	205981
+3	dd1056e	8	13:12:54	string-heavy	surge	decode	5	208386
+3	dd1056e	8	13:12:54	string-heavy	surge	decode	6	208364
+3	dd1056e	8	13:12:54	string-heavy	surge	decode	7	210530
+3	dd1056e	8	13:12:54	string-heavy	surge	decode	8	208115
+3	dd1056e	8	13:12:54	string-heavy	surge	decode	9	222489
+3	dd1056e	8	13:12:54	string-heavy	fbs	decode	1	164880
+3	dd1056e	8	13:12:54	string-heavy	fbs	decode	2	164556
+3	dd1056e	8	13:12:54	string-heavy	fbs	decode	3	163027
+3	dd1056e	8	13:12:54	string-heavy	fbs	decode	4	164714
+3	dd1056e	8	13:12:54	string-heavy	fbs	decode	5	164670
+3	dd1056e	8	13:12:54	string-heavy	fbs	decode	6	165106
+3	dd1056e	8	13:12:54	string-heavy	fbs	decode	7	164147
+3	dd1056e	8	13:12:54	string-heavy	fbs	decode	8	163980
+3	dd1056e	8	13:12:54	string-heavy	fbs	decode	9	174372
+3	dd1056e	8	13:12:54	string-heavy	serio	decode	1	55534
+3	dd1056e	8	13:12:54	string-heavy	serio	decode	2	56544
+3	dd1056e	8	13:12:54	string-heavy	serio	decode	3	56202
+3	dd1056e	8	13:12:54	string-heavy	serio	decode	4	55557
+3	dd1056e	8	13:12:54	string-heavy	serio	decode	5	56769
+3	dd1056e	8	13:12:54	string-heavy	serio	decode	6	55984
+3	dd1056e	8	13:12:54	string-heavy	serio	decode	7	56232
+3	dd1056e	8	13:12:54	string-heavy	serio	decode	8	56988
+3	dd1056e	8	13:12:54	string-heavy	serio	decode	9	58817
+3	dd1056e	8	13:12:54	string-heavy	flamework2	decode	1	151671
+3	dd1056e	8	13:12:54	string-heavy	flamework2	decode	2	150211
+3	dd1056e	8	13:12:54	string-heavy	flamework2	decode	3	152787
+3	dd1056e	8	13:12:54	string-heavy	flamework2	decode	4	151301
+3	dd1056e	8	13:12:54	string-heavy	flamework2	decode	5	148207
+3	dd1056e	8	13:12:54	string-heavy	flamework2	decode	6	153383
+3	dd1056e	8	13:12:54	string-heavy	flamework2	decode	7	150241
+3	dd1056e	8	13:12:54	string-heavy	flamework2	decode	8	153547
+3	dd1056e	8	13:12:54	string-heavy	flamework2	decode	9	156519
+3	dd1056e	8	13:12:54	string-heavy	blink	decode	1	215836
+3	dd1056e	8	13:12:54	string-heavy	blink	decode	2	212473
+3	dd1056e	8	13:12:54	string-heavy	blink	decode	3	214878
+3	dd1056e	8	13:12:54	string-heavy	blink	decode	4	212977
+3	dd1056e	8	13:12:54	string-heavy	blink	decode	5	216474
+3	dd1056e	8	13:12:54	string-heavy	blink	decode	6	213359
+3	dd1056e	8	13:12:54	string-heavy	blink	decode	7	211066
+3	dd1056e	8	13:12:54	string-heavy	blink	decode	8	225609
+3	dd1056e	8	13:12:54	string-heavy	blink	decode	9	227731
+3	variant	9	13:13:42	string-heavy	surge	encode	1	303260
+3	variant	9	13:13:42	string-heavy	surge	encode	2	303626
+3	variant	9	13:13:42	string-heavy	surge	encode	3	304221
+3	variant	9	13:13:42	string-heavy	surge	encode	4	302941
+3	variant	9	13:13:42	string-heavy	surge	encode	5	335235
+3	variant	9	13:13:42	string-heavy	surge	encode	6	330840
+3	variant	9	13:13:42	string-heavy	surge	encode	7	331430
+3	variant	9	13:13:42	string-heavy	surge	encode	8	335531
+3	variant	9	13:13:42	string-heavy	surge	encode	9	336226
+3	variant	9	13:13:42	string-heavy	fbs	encode	1	202602
+3	variant	9	13:13:42	string-heavy	fbs	encode	2	200838
+3	variant	9	13:13:42	string-heavy	fbs	encode	3	195319
+3	variant	9	13:13:42	string-heavy	fbs	encode	4	195990
+3	variant	9	13:13:42	string-heavy	fbs	encode	5	218717
+3	variant	9	13:13:42	string-heavy	fbs	encode	6	219907
+3	variant	9	13:13:42	string-heavy	fbs	encode	7	218451
+3	variant	9	13:13:42	string-heavy	fbs	encode	8	219766
+3	variant	9	13:13:42	string-heavy	fbs	encode	9	202844
+3	variant	9	13:13:42	string-heavy	serio	encode	1	32179
+3	variant	9	13:13:42	string-heavy	serio	encode	2	32057
+3	variant	9	13:13:42	string-heavy	serio	encode	3	30944
+3	variant	9	13:13:42	string-heavy	serio	encode	4	31866
+3	variant	9	13:13:42	string-heavy	serio	encode	5	32388
+3	variant	9	13:13:42	string-heavy	serio	encode	6	32746
+3	variant	9	13:13:42	string-heavy	serio	encode	7	32532
+3	variant	9	13:13:42	string-heavy	serio	encode	8	32659
+3	variant	9	13:13:42	string-heavy	serio	encode	9	31983
+3	variant	9	13:13:42	string-heavy	flamework2	encode	1	224151
+3	variant	9	13:13:42	string-heavy	flamework2	encode	2	221216
+3	variant	9	13:13:42	string-heavy	flamework2	encode	3	212914
+3	variant	9	13:13:42	string-heavy	flamework2	encode	4	233505
+3	variant	9	13:13:42	string-heavy	flamework2	encode	5	238466
+3	variant	9	13:13:42	string-heavy	flamework2	encode	6	239646
+3	variant	9	13:13:42	string-heavy	flamework2	encode	7	240793
+3	variant	9	13:13:42	string-heavy	flamework2	encode	8	242075
+3	variant	9	13:13:42	string-heavy	flamework2	encode	9	226109
+3	variant	9	13:13:42	string-heavy	blink	encode	1	114005
+3	variant	9	13:13:42	string-heavy	blink	encode	2	118155
+3	variant	9	13:13:42	string-heavy	blink	encode	3	109983
+3	variant	9	13:13:42	string-heavy	blink	encode	4	127481
+3	variant	9	13:13:42	string-heavy	blink	encode	5	132452
+3	variant	9	13:13:42	string-heavy	blink	encode	6	134694
+3	variant	9	13:13:42	string-heavy	blink	encode	7	133716
+3	variant	9	13:13:42	string-heavy	blink	encode	8	133236
+3	variant	9	13:13:42	string-heavy	blink	encode	9	118748
+3	variant	9	13:13:42	string-heavy	surge	decode	1	208238
+3	variant	9	13:13:42	string-heavy	surge	decode	2	209446
+3	variant	9	13:13:42	string-heavy	surge	decode	3	215872
+3	variant	9	13:13:42	string-heavy	surge	decode	4	216021
+3	variant	9	13:13:42	string-heavy	surge	decode	5	220509
+3	variant	9	13:13:42	string-heavy	surge	decode	6	220386
+3	variant	9	13:13:42	string-heavy	surge	decode	7	219787
+3	variant	9	13:13:42	string-heavy	surge	decode	8	218880
+3	variant	9	13:13:42	string-heavy	surge	decode	9	218990
+3	variant	9	13:13:42	string-heavy	fbs	decode	1	166065
+3	variant	9	13:13:42	string-heavy	fbs	decode	2	168489
+3	variant	9	13:13:42	string-heavy	fbs	decode	3	170996
+3	variant	9	13:13:42	string-heavy	fbs	decode	4	174376
+3	variant	9	13:13:42	string-heavy	fbs	decode	5	174992
+3	variant	9	13:13:42	string-heavy	fbs	decode	6	174529
+3	variant	9	13:13:42	string-heavy	fbs	decode	7	175112
+3	variant	9	13:13:42	string-heavy	fbs	decode	8	174813
+3	variant	9	13:13:42	string-heavy	fbs	decode	9	175425
+3	variant	9	13:13:42	string-heavy	serio	decode	1	56629
+3	variant	9	13:13:42	string-heavy	serio	decode	2	57902
+3	variant	9	13:13:42	string-heavy	serio	decode	3	56556
+3	variant	9	13:13:42	string-heavy	serio	decode	4	58353
+3	variant	9	13:13:42	string-heavy	serio	decode	5	58933
+3	variant	9	13:13:42	string-heavy	serio	decode	6	57523
+3	variant	9	13:13:42	string-heavy	serio	decode	7	58480
+3	variant	9	13:13:42	string-heavy	serio	decode	8	58724
+3	variant	9	13:13:42	string-heavy	serio	decode	9	57991
+3	variant	9	13:13:42	string-heavy	flamework2	decode	1	150734
+3	variant	9	13:13:42	string-heavy	flamework2	decode	2	155339
+3	variant	9	13:13:42	string-heavy	flamework2	decode	3	155707
+3	variant	9	13:13:42	string-heavy	flamework2	decode	4	159429
+3	variant	9	13:13:42	string-heavy	flamework2	decode	5	156043
+3	variant	9	13:13:42	string-heavy	flamework2	decode	6	159674
+3	variant	9	13:13:42	string-heavy	flamework2	decode	7	157954
+3	variant	9	13:13:42	string-heavy	flamework2	decode	8	157918
+3	variant	9	13:13:42	string-heavy	flamework2	decode	9	158628
+3	variant	9	13:13:42	string-heavy	blink	decode	1	219216
+3	variant	9	13:13:42	string-heavy	blink	decode	2	226593
+3	variant	9	13:13:42	string-heavy	blink	decode	3	222410
+3	variant	9	13:13:42	string-heavy	blink	decode	4	228818
+3	variant	9	13:13:42	string-heavy	blink	decode	5	226943
+3	variant	9	13:13:42	string-heavy	blink	decode	6	230395
+3	variant	9	13:13:42	string-heavy	blink	decode	7	228730
+3	variant	9	13:13:42	string-heavy	blink	decode	8	227537
+3	variant	9	13:13:42	string-heavy	blink	decode	9	229222

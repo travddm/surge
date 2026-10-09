@@ -1,7 +1,7 @@
 # Smaller generated code from its cold paths
 
-2026-10-09 · surge `766cb9a` and `dd1056e` · Lune 0.10.5 · Roblox
-0.742.0.7421053
+2026-10-09 · surge `766cb9a`, `dd1056e` and `1ad50a6` · Lune 0.10.5 ·
+Roblox 0.742.0.7421053
 
 ## Abstract
 
@@ -13,7 +13,11 @@ five items fills its item list from one string of names as the module loads.
 The bytecode of the twenty surge modules of the benchmark falls by 2,933
 bytes, 5.7%, and by 23.0% and 20.0% on the enum and string-heavy rows. No
 byte changed. No row's encode or decode moved further than rows whose code
-did not change moved between the same two runs. The changes are kept.
+did not change moved between the same two runs. The string-heavy row's
+encode, the one quiet cell of a changed row below the reference in both
+runs, was measured again in shorter runs and in a full run without the
+change to `grow`, and lies within the range that four earlier full runs of
+its unchanged code span. The changes are kept.
 
 ## Background
 
@@ -97,6 +101,19 @@ to 12:33 UTC, and the change from 12:34 to 12:47 UTC. At each start no Roblox
 process was running, and the CPU load, averaged over fifteen one-second
 samples of `Get-Counter`, was 4.6% and 5.0%.
 
+**Follow-up runs.** After the two full runs, three sets of scoped runs
+(`mise run bench:speed:only`), each one Studio run of nine trials per cell,
+alternated between builds. Set 1, from 12:53 to 12:59 UTC at a load of 5.6%,
+ran the large array, the string-heavy row and `Blink: Booleans` at the
+reference, then the change, twice. Set 2, from 13:00 to 13:06 UTC at 4.6%,
+ran the string-heavy row at the reference and the change three times. Set
+3, from 13:07 to 13:14 UTC at 5.7%, ran it at the reference, the change, and
+a variant, three times. The variant was a temporary build of `dd1056e` with
+the reservation's growth written as at `766cb9a`, not kept. Then a full run
+of `1ad50a6`, which withdrew the change to `grow` and kept the others, ran
+from 13:18 to 13:32 UTC at 5.1%. `ce3c43e` restored the change to `grow`;
+its code is that of `dd1056e`.
+
 **Code size.** `mise run bench:code` at each commit
 ([benchmarks/code-size.md](../benchmarks/code-size.md)).
 
@@ -165,20 +182,67 @@ which takes `writeLongCount` in each call, is 1.006×: 303.8k ±1.6% and
 change, recorded at `89c2a85`, `a89553b`, `359c8e1` and `766cb9a`.
 
 Two encode cells have both runs of the change below both runs of the
-reference: `Blink: Booleans`', above, and the string-heavy row's, at 0.985× adjusted, 308.6k ±1.5% and
-304.8k ±1.3%, with runs of 308.8k and 307.1k, and 306.1k and 302.2k. Three
-decode cells, whose code is the same in both builds, have both runs below
-too: the tree's, the packed toggles', and `Blink: Booleans`'. The tree's is
-0.981× adjusted.
+reference: `Blink: Booleans`', above, and the string-heavy row's, at 0.985×
+adjusted, 308.6k ±1.5% and 304.8k ±1.3%, with runs of 308.8k and 307.1k, and
+306.1k and 302.2k. Three decode cells, whose code is the same in both
+builds, have both runs below too: the tree's, the packed toggles', and
+`Blink: Booleans`'. The tree's is 0.981× adjusted.
+
+### Follow-up runs
+
+surge's encode in the scoped runs, the median of each run, in the order run:
+
+| Set | Row             | Reference              | Change                 | Variant                |
+| --- | --------------- | ---------------------- | ---------------------- | ---------------------- |
+| 1   | Blink: Booleans | 211.1k, 213.0k         | 203.5k, 212.4k         |                        |
+| 1   | large array     | 326.3k, 329.8k         | 303.5k, 329.1k         |                        |
+| 1   | string-heavy    | 333.5k, 333.2k         | 304.5k, 326.1k         |                        |
+| 2   | string-heavy    | 329.4k, 306.3k, 311.2k | 322.8k, 305.5k, 299.4k |                        |
+| 3   | string-heavy    | 328.5k, 306.3k, 306.1k | 296.2k, 298.4k, 300.5k | 321.2k, 333.2k, 330.8k |
+
+The other libraries moved with surge from one run to the next. In set 1, the
+change's second run was level with the reference's on `Blink: Booleans` and
+the large array. On the string-heavy row, every column was slower in the
+change's first run than in both of the reference's, and in its second run
+surge was 2% below the reference while fbs, flamework2 and Blink were level
+or higher. In set 3, surge's encode over the
+fbs cell of the same run was 1.517 at the reference, 1.481 at the change and
+1.553 at the variant, on average.
+
+The full run of `1ad50a6`, without the change to `grow`, measured the
+string-heavy row's encode at 304.2k ±1.9%, with runs of 304.0k and 304.3k:
+0.977× adjusted against the reference, where `dd1056e` measured 304.8k.
+
+The string-heavy row's encode over the fbs, flamework2 and Blink cells of
+the same run, in each full run since its `serialize` last changed, at
+`89c2a85`:
+
+| Recorded at | String-heavy `serialize` | Over fbs | Over flamework2 | Over Blink |
+| ----------- | ------------------------ | -------- | --------------- | ---------- |
+| `89c2a85`   | as at `766cb9a`          | 1.490    | 1.323           | 2.533†     |
+| `a89553b`   | as at `766cb9a`          | 1.516    | 1.345           | 2.506      |
+| `359c8e1`   | as at `766cb9a`          | 1.492    | 1.350           | 2.599      |
+| `766cb9a`   | the reference            | 1.527    | 1.344           | 2.580      |
+| `dd1056e`   | the change               | 1.482    | 1.358           | 2.548      |
+| `1ad50a6`   | without `grow`'s change  | 1.485    | 1.324           | 2.514      |
+
+A ratio marked † is through a cell marked noisy.
 
 ## Discussion
 
-- The string-heavy row's encode slowed by about as much as the tree's
-  decode, which runs the same code in both builds, so the run does not
-  separate it from the drift between two runs. The string-heavy row's strings
-  are each under 254 bytes, and their one-byte form is the same code in both
+- The string-heavy row's encode was below the reference in both full runs
+  of the change, by about as much as the tree's decode, whose code did not
+  change. Over the other libraries of the same run, the change's two runs
+  lie within the range of the four runs of unchanged code, at its lower edge
+  over fbs, and the reference lies at its upper edge. The row's strings are
+  each under 254 bytes, and their one-byte form is the same code in both
   builds; what changed in its `serialize` is the code of the long forms and
   of growth, which its calls do not reach once the scratch buffer has grown.
+- Set 3 put the variant above the reference and the change below it, which
+  led to `1ad50a6`. Its full run measured the row as `dd1056e`'s did, so the
+  set's spread between builds, about 5%, is not the change to `grow`'s, and
+  `ce3c43e` restored it. Within each set, runs of one build moved by as
+  much from one run to the next.
 - The large array's encode calls `writeLongCount` in both builds; what moved
   into the package is the reservation of the long form.
 - The enum's string of names runs once, as the module loads, and its item
@@ -192,7 +256,8 @@ too: the tree's, the packed toggles', and `Blink: Booleans`'. The tree's is
 
 The four changes take 5.7% off the bytecode of the benchmark's surge modules,
 and 23.0% and 20.0% off the enum and string-heavy rows, with no row's speed
-moving further than unchanged code moves between two runs.
+moving further than unchanged code moves between two runs, or, on the
+string-heavy row, outside the range of four runs of its unchanged code.
 
 ## Data
 
@@ -202,8 +267,20 @@ moving further than unchanged code moves between two runs.
   [data/before-cold-paths-in-one-call.tsv](data/before-cold-paths-in-one-call.tsv),
   recorded at `766cb9a`.
 - The change: `docs/benchmarks/speed.md` and
-  `docs/benchmarks/speed-trials.tsv` as committed with this paper, recorded at
+  `docs/benchmarks/speed-trials.tsv` as committed at `93ebfde`, recorded at
   `dd1056e`.
+- Without the change to `grow`:
+  [data/cold-paths-without-grow-capacity.md](data/cold-paths-without-grow-capacity.md)
+  and
+  [data/cold-paths-without-grow-capacity.tsv](data/cold-paths-without-grow-capacity.tsv),
+  recorded at `1ad50a6`.
+- The scoped runs:
+  [data/cold-paths-scoped-runs.tsv](data/cold-paths-scoped-runs.tsv), every
+  trial of the three sets, by set, commit and run.
+- The earlier full runs: `docs/benchmarks/speed.md` as committed at
+  `362a52a` and `c5d568b`, recorded at `89c2a85` and `359c8e1`, and
+  [data/before-enum-index-by-item.md](data/before-enum-index-by-item.md),
+  recorded at `a89553b`.
 - The bytecode: `docs/benchmarks/code-size.md` as committed at `766cb9a` and
   with this paper.
 - The figures above were computed from the `.tsv` files, with the recorder's
