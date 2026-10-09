@@ -85,6 +85,8 @@ code the transformer generates runs. What has been measured is under
   generated code reads a length or compares a count twice.
 - [count-read-once.md](../research/count-read-once.md) — a count's length
   read once in a size loop, and a count compared once in its write.
+- [enum-index-by-item.md](../research/enum-index-by-item.md) — an enum's
+  index keyed by the item itself, with no read of its `Name`.
 
 This document holds what is still open.
 

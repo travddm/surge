@@ -1372,8 +1372,9 @@ export abstract class EmitContext {
 	 * misses the next, so the round-trip suite runs under a stand-in `Enum`
 	 * that gives each item one object (`tests/scripts/lune-roblox-shim.luau`),
 	 * and the speed tier checks each round trip in Roblox. A key of the
-	 * item's `Value` wrote slower than one of its `Name`
-	 * (docs/research/enum-and-cframe-rows.md).
+	 * item's `Name`, which reads a property of each item, wrote at 0.27x
+	 * the throughput (docs/research/enum-index-by-item.md), and one of its
+	 * `Value` slower than that (docs/research/enum-and-cframe-rows.md).
 	 */
 	public ensureEnumTable(enumName: string, members: ReadonlyArray<string>): { itemsName: string; indexName: string } {
 		const key = `${enumName}|${members.join("|")}`;
