@@ -119,17 +119,22 @@ local function readTransforms(buf)
 
 	local offset = 4
 	for index = 1, count do
-		local position =
-			Vector3.new(buffer.readf32(buf, offset), buffer.readf32(buf, offset + 4), buffer.readf32(buf, offset + 8))
-		local scaled = Vector3.new(
-			buffer.readf32(buf, offset + 12),
-			buffer.readf32(buf, offset + 16),
-			buffer.readf32(buf, offset + 20)
+		local x = buffer.readf32(buf, offset + 12)
+		local y = buffer.readf32(buf, offset + 16)
+		local z = buffer.readf32(buf, offset + 20)
+		-- The axis scaled by the angle becomes a unit quaternion, so that one constructor builds the
+		-- CFrame. sin(angle / 2) / angle tends to 1/2 as the angle tends to 0.
+		local angle = math.sqrt(x * x + y * y + z * z)
+		local scale = if angle > 1e-6 then math.sin(angle * 0.5) / angle else 0.5
+		list[index] = CFrame.new(
+			buffer.readf32(buf, offset),
+			buffer.readf32(buf, offset + 4),
+			buffer.readf32(buf, offset + 8),
+			x * scale,
+			y * scale,
+			z * scale,
+			math.cos(angle * 0.5)
 		)
-		local angle = scaled.Magnitude
-		-- surge's rule, which this has to match to decode what it wrote: a zero rotation leaves no
-		-- axis to recover, so the axis is arbitrary.
-		list[index] = CFrame.fromAxisAngle(if angle > 1e-6 then scaled.Unit else Vector3.zAxis, angle) + position
 		offset += CFRAME_BYTES
 	end
 	return { list = list }
