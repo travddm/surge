@@ -125,9 +125,9 @@ the three candidates a shape sized exactly (Transformer 5.20 in
 [specs/transformer.md](../specs/transformer.md)) does not:
 `finishWrite`'s copy, the scratch state in the closure, and the capacity
 check. A nested object inside a run of Transformer 5.5 still reads its path
-once per property. A sized write reads an array's length twice, and what its
-size reads inside a loop or a branch, such as an optional's or a union's
-bytes, its write reads again.
+once per property. A sized write reads twice the length of an array whose
+count has a fixed width, and what its size reads inside a loop or a branch,
+such as an optional's or a union's bytes, its write reads again.
 
 One design the `finishWrite` probe did not reach: handing the caller a buffer
 surge owns and reuses, which removes the allocation as well as the copy. It

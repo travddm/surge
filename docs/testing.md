@@ -84,7 +84,7 @@ file the new version would reorder.
 - Lune gives an enum item a new object on each access, where Roblox gives it
   one. The shim's stand-in `Enum` gives it one, so the generated code, which
   keys an enum's index by the item, round-trips under Lune; the speed tier
-  checks the same round trips in Roblox
+  checks the benchmark catalog's round trips in Roblox
   ([specs/benchmark-harness.md](specs/benchmark-harness.md) 6.6).
 - A transformer change that could break the generated code's types gets a
   `typeErrorsOfGeneratedCode` case in `transform.test.ts`, and one that
