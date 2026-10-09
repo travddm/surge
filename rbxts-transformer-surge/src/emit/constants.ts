@@ -109,3 +109,10 @@ export const ERROR_PREFIX = "@rbxts/surge: ";
  * or constant elements says so with a wider `DataType.Length`.
  */
 export const ZERO_SIZE_COUNT_CAP = 1 << 24;
+/**
+ * A variable-length count below this is one byte (Wire format 6.9 in
+ * docs/specs/wire-format.md). From it up to `U16_COUNT_MAX` it is this
+ * marker and a `u16`, and above that the marker after it and a `u32`.
+ */
+export const LONG_COUNT_MARKER = 254;
+export const U16_COUNT_MAX = 65535;

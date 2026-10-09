@@ -18,7 +18,7 @@ import type ts from "typescript";
 import type { CountSpec, Field, ObjectFieldEntry } from "../field";
 import { LOCALS_PER_BLOCK, TERMS_PER_SUM, WIDTH_BYTES } from "./constants";
 import type { EmitContext, SizeBinding } from "./context";
-import { exactCount, fixedBytes, holdsBlob, isAllPackedBits, lengthWidth, packedBits, tagKeyOf } from "./layout";
+import { countWidth, exactCount, fixedBytes, holdsBlob, isAllPackedBits, packedBits, tagKeyOf } from "./layout";
 import { fieldToTypeNode, objectShapeTypeNode } from "./types";
 import { guardFor, isLocal, literalCheck, severalEnums } from "./write";
 
@@ -152,7 +152,8 @@ function countBlobs(ctx: EmitContext, field: Field, value: ts.Expression): Size 
 			if (exact !== undefined) {
 				return constant(exact * each.constant);
 			}
-			const count = ctx.sizeOf(ctx.boundBySize(value)?.value ?? value);
+			const bound = ctx.boundBySize(value);
+			const count = bound?.len ?? ctx.sizeOf(bound?.value ?? value);
 			return {
 				constant: 0,
 				terms: [
@@ -388,10 +389,20 @@ function measureArray(
 		const bytes = constantBytes(ctx, field.element, total);
 		return bytes === undefined ? undefined : elements(ctx, field.length, ctx.sizeOf(value), bytes);
 	}
-	const arr = bind(ctx, bindings, "arr", value)?.value ?? value;
+	// A variable-length count reads the array's length more than once, so the
+	// length is bound with the array, and the write reads both.
+	const bound = bind(
+		ctx,
+		bindings,
+		"arr",
+		value,
+		countWidth(field.length) === undefined ? (local) => ctx.sizeOf(local) : undefined,
+	);
+	const arr = bound?.value ?? value;
+	const count = bound?.len ?? ctx.sizeOf(arr);
 	const bytes = fixedBytes(field.element);
 	if (bytes !== undefined) {
-		return elements(ctx, field.length, ctx.sizeOf(arr), bytes);
+		return elements(ctx, field.length, count, bytes);
 	}
 	const item = ctx.fresh("item");
 	const element = measure(ctx, field.element, item, total, undefined);
@@ -399,7 +410,7 @@ function measureArray(
 		return undefined;
 	}
 	if (!readsValue(element)) {
-		return elements(ctx, field.length, ctx.sizeOf(arr), element.constant);
+		return elements(ctx, field.length, count, element.constant);
 	}
 	if (
 		field.element.kind !== "taggedUnion" &&
@@ -411,7 +422,7 @@ function measureArray(
 	}
 	// The bytes every element writes, such as a union's index, are added once
 	// for all of them, ahead of the loop, which adds only what varies.
-	return add(elements(ctx, field.length, ctx.sizeOf(arr), element.constant), {
+	return add(elements(ctx, field.length, count, element.constant), {
 		constant: 0,
 		terms: [],
 		loops: [loopOver(ctx, total, item, arr, { ...element, constant: 0 })],
@@ -546,8 +557,8 @@ function constant(bytes: number): Size {
 }
 
 /**
- * A `str`'s or a `buffer`'s bytes: its count's width and its length, which
- * `len` takes from its value, or its exact length alone.
+ * A `str`'s or a `buffer`'s bytes: its count's and its length, which `len`
+ * takes from its value, or its exact length alone.
  */
 function counted(
 	ctx: EmitContext,
@@ -562,7 +573,16 @@ function counted(
 		return constant(exact);
 	}
 	const bound = bind(ctx, bindings, base, value, len);
-	return { constant: WIDTH_BYTES[lengthWidth(length)], terms: [bound?.len ?? len(value)], loops: [] };
+	const bytes = bound?.len ?? len(value);
+	return add(countSize(ctx, length, bytes), { constant: 0, terms: [bytes], loops: [] });
+}
+
+/** The bytes the count of `count` takes: its width's, or a variable-length count's, which depend on it. */
+function countSize(ctx: EmitContext, length: CountSpec | undefined, count: ts.Expression): Size {
+	const width = countWidth(length);
+	return width === undefined
+		? { constant: 0, terms: [ctx.variableCountBytes(count)], loops: [] }
+		: constant(WIDTH_BYTES[width]);
 }
 
 /** `count` elements of `bytes` each, after the count itself unless the count is exact. */
@@ -571,15 +591,15 @@ function elements(ctx: EmitContext, length: CountSpec | undefined, count: ts.Exp
 	if (exact !== undefined) {
 		return constant(exact * bytes);
 	}
-	const width = WIDTH_BYTES[lengthWidth(length)];
+	const head = countSize(ctx, length, count);
 	if (bytes === 0) {
-		return constant(width);
+		return head;
 	}
 	const term =
 		bytes === 1
 			? count
 			: ctx.factory.createBinaryExpression(count, ctx.ts_.SyntaxKind.AsteriskToken, ctx.num(bytes));
-	return { constant: width, terms: [term], loops: [] };
+	return add(head, { constant: 0, terms: [term], loops: [] });
 }
 
 function add(left: Size, right: Size): Size {

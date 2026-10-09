@@ -1,7 +1,7 @@
 # Transformer specification
 
 Status: current
-Applies to: commit `067d228` (no tagged release yet)
+Applies to: commit `ca5e2ba` (no tagged release yet)
 
 ## 1. Scope
 
@@ -241,8 +241,12 @@ declare. A tuple's consecutive fixed-size elements share a reservation, as an
 object's properties do.
 
 **5.6** A `dict`'s count is reserved before its entries, the entries are
-counted as they are written, and the count is written back once known. Every
-other count is written before its contents, from the size of the value.
+counted as they are written, and the count is written back once known. A
+variable-length count (5.28) is reserved at one byte. Where the count needs a
+long form, the write reserves the bytes that form adds at the end of the
+entries, moves the entries along by them, and writes the count where they
+started. Every other count is written before its contents, from the size of
+the value.
 
 **5.7** A count-driven read loop is emitted as `for (const i of $range(1, count))`,
 which roblox-ts lowers to a Luau numeric `for`.
@@ -342,9 +346,10 @@ reservation's bound (5.10) replaces one per element. A tuple's rest element
 reserves each element on its own.
 
 **5.19** A `str` or a `buffer` that writes a count takes the value's length once
-and reserves the count and the bytes at once. The read side reads the count,
-then moves the read cursor past the count and the bytes in one step. The
-exact form, which writes no count, reserves its bytes alone.
+and reserves the count and the bytes at once; the bytes a variable-length
+count takes (5.28) are bound to a local from the length. The read side reads
+the count, then moves the read cursor past the count and the bytes in one
+step. The exact form, which writes no count, reserves its bytes alone.
 
 **5.20** A `serialize` whose shape can be sized from its value before it is
 written creates its result at that size and writes into it. The size is one
@@ -363,9 +368,11 @@ element, if it has one, is of a constant size. An element of a constant size
 is fixed-size, or is such a shape whose size reads nothing of its value, such
 as an `object` that holds a `blob` and fixed-size properties: a `blob` is not
 fixed-size, so the object is not either. Such an `array` is sized by its count
-times that size. An `array` of unions, of objects whose size varies, or of
-arrays, is sized by a loop over its elements ahead of the result, which iterates them as
-the write does. The bytes every element writes, such as a union's index, are
+times that size. Each count adds the bytes it takes: its width's, or, for a
+variable-length count, what 5.28 computes from it. An `array` of unions, of
+objects whose size varies, or of arrays, is sized by a loop over its elements
+ahead of the result, which iterates them as the write does. The bytes every
+element writes, such as a union's index, are
 added once for all of them, ahead of the loop, which adds only what varies. A union
 adds its index and the size of the variant its write picks, chosen by the
 write's own tests in the write's order: a tag's comparisons or a guarded
@@ -384,12 +391,13 @@ and faster on an array of objects that hold a string
 and on an array of arrays
 ([research/array-of-arrays-loop.md](../research/array-of-arrays-loop.md)).
 Ahead of the result, the size binds to locals what the write binds outside a
-loop or a branch: an object's value (5.23), an `array`'s or a tuple's value,
-a `str`'s or a `buffer`'s value and its length (5.19), and a `taggedUnion`'s
+loop or a branch: an object's value (5.23), an `array`'s value, and its
+length where its count is variable-length, a tuple's value, a `str`'s or a
+`buffer`'s value and its length (5.19), and a `taggedUnion`'s
 tag that it compares more than once, until those locals number 32. It reads
 the value through them, and the write reads the same locals instead of
-binding its own. The write takes an `array`'s or a tuple's
-length again. What the size reads inside a loop or a branch, such as an
+binding its own. The write takes again an `array`'s length that the
+size did not bind, and a tuple's. What the size reads inside a loop or a branch, such as an
 optional's or a union's bytes, or past the 32 locals, the write reads again,
 and the size's loops visit each element, and the write visits it again.
 
@@ -442,6 +450,16 @@ its position and a unit quaternion, which the read computes from the
 axis-angle of Wire format 4.8: the quaternion's vector part is the axis-angle
 scaled by `sin(angle / 2) / angle`, or by `0.5` at an angle of at most
 `1e-6`, and its scalar part is `cos(angle / 2)`.
+
+**5.28** A variable-length count (Wire format 6.9) is written and read with
+its one-byte form inline. The write compares the count with 254, writes one
+byte below it, and calls `writeLongCount` otherwise. The read reads one byte
+and, at 254 or more, calls `readLongCount` for the count and the position
+after it; under `readChecks: true`, it bounds the long form before the call.
+Where a reservation or a size needs the bytes the count takes, they are a
+conditional expression of the count. The count of an `array` or a tuple's
+rest is bound to a local first where it is not one, since the write reads it
+more than once.
 
 ## 6. Injected imports
 
@@ -546,7 +564,7 @@ of `rbxts-transformer-surge`, cited by `describe` block. Source paths are in
 | 5.3       | `emit`: `Emitter read-side checks` (the read state), `Emitter read state`; `test/golden.test.mjs`: a deserialize that reaches no recursion helper holds its input and cursor in locals, a recursion helper's write takes the write cursor and returns it; `transform`: `transform injected imports` (the scratch buffer). Source only for the state a side with no bytes omits: `writeStateDecls` and `readStateDecls` in `src/emit/context.ts`; a cursor codec: `transform`: a cursor codec's generated code passes the type check, and takes its state from the cursor, `test/golden.test.mjs`: a cursor codec writes into the caller's buffer and gives its state back, `tests/src/tests/cursor.spec.ts`                                                                                                                                                                                                                                                                                                                                                                       |
 | 5.4       | `emit`: `Emitter per-kind write/read snapshots` (the inline reservation); `transform`: `transform (end-to-end)` (the `finishWrite` import). Source only for the `buffer.create(0)` return: `finishWriteExpression` in `src/emit/context.ts`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 | 5.5       | `emit`: `Emitter shared reservations`, `Emitter local-register ceiling` (the bound on a run's locals, and each kind's count against what the emitter declares), and `Emitter bit sets` for a `bitSet`; `tests/src/tests/coverage.spec.ts`: `roundTripsRunsOfCFramesNextToBoundStrings`; `test/golden.test.mjs`: consecutive fixed-size fields share one reservation, and a nested object of fixed-size fields shares the reservation around it; `tests/src/tests/bytes.spec.ts`: `pinsANestedObjectInNameOrder`; `tests/src/tests/basic.spec.ts`: `roundTripsANestedObjectOfFixedSizeFields`; tuples: `emit`: `Emitter element reservations` (a tuple's fixed-size elements share a reservation), `test/golden.test.mjs`: a tuple of fixed-size elements shares the reservation around it, and is read into one table, `tests/src/tests/collections.spec.ts`: `roundTripsTuplesOfFixedSizeElementsInARunAndInAnArray`                                                                                                                                                             |
-| 5.6       | `tests/src/tests/bytes.spec.ts`: `pinsContainers` (each count ahead of its contents). Source only for the `dict` count written back: `writeDict` in `src/emit/write.ts`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| 5.6       | `tests/src/tests/bytes.spec.ts`: `pinsContainers` (each count ahead of its contents). The `dict` count written back, and widened to a long form: `tests/src/tests/bytes.spec.ts`: `pinsTheLongFormsOfACount`; `tests/src/tests/counts.spec.ts`: `roundTripsEachKindAtTheEdgesOfTheLongForms`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | 5.7       | `test/golden.test.mjs`: a count-driven read is a numeric for loop                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 | 5.8       | `emit`: `Emitter local-register ceiling`; `transform`: `transform generated code` (runs through nested objects, past the local budget); `tests/src/tests/coverage.spec.ts`: `roundTripsAnObjectWiderThanTheLocalRegisterLimit`, `roundTripsNestedObjectsWiderThanTheLocalRegisterLimit`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
 | 5.9       | `transform`: `transform (end-to-end)` (no blob field, a blob field, and a blob reachable only through a recursion helper); `test/golden.test.mjs`: a shape with no blob field pays nothing for the blob side channel, and a blob list is created at the most blobs its value appends; `tests/src/tests/roblox.spec.ts`: `roundTripsARecursiveTypeThatHoldsABlobOnEachCall`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
@@ -568,6 +586,7 @@ of `rbxts-transformer-surge`, cited by `describe` block. Source paths are in
 | 5.25      | `emit`: `Emitter union writes`, `Emitter packed tag bit`, `Emitter exact sizing` (the write reads the tag the size bound); `test/golden.test.mjs`: a union is sized by the variant its write picks, with the write's own tests, and a size that compares a tag more than once reads it once; every round trip in `tests/src/tests/unions.spec.ts` and `tests/src/tests/bytes.spec.ts`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 | 5.26      | `emit`: `Emitter datatype values`, `Emitter local-register ceiling` (runLocals counts at least what one more `vector2`, `vector3`, `color3` or datatype declares), and the snapshots of `Emitter shared reservations` and `Emitter exact sizing`; `test/golden.test.mjs`: a datatype reads its value once, not once per component, inside a run; every round trip in `tests/src/tests/bytes.spec.ts`, `tests/src/tests/roblox.spec.ts` and `tests/src/tests/coverage.spec.ts`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 | 5.27      | `emit`: `Emitter cframe reads`; `test/golden.test.mjs`: an unpacked CFrame is read into one constructor from a quaternion; `tests/src/tests/roblox.spec.ts`: `roundTripsACFrameRotationWithinF32Precision`, `roundTripsAQuantizedRotationWithinItsStep`; `tests/src/tests/bytes.spec.ts`: `pinsACFrameWithNoRotation`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| 5.28      | `emit`: `Emitter count widths` (a variable-length count with no branded width, and a four-byte one at `u32`), `Emitter counted bytes`, `Emitter element reservations` (the long form's bound under `readChecks`); `transform`: `transform (end-to-end)` (the two imports); `tests/src/tests/counts.spec.ts`: `roundTripsEachKindAtTheEdgesOfTheLongForms`; `tests/src/tests/checks.spec.ts`: `rejectsAStringCutInItsCountOrItsBytes`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | 6.1, 6.2  | `transform`: `transform injected imports`, and in `transform (end-to-end)` the single shared import and the same-named local function; `tests/src/tests/coverage.spec.ts`: `leavesAUserDeclarationNamedAfterAnInjectedImportAlone`; `test/golden.test.mjs`: generated code imports its helpers from the package's abi module                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | 6.3       | `test/golden.test.mjs`: a file directive survives the transformer's injected imports; `transform`: `transform generated code` (the three directive tests)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
 | 6.4       | `transform`: `transform injected imports` (a `createDeserializer` call site)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
@@ -580,6 +599,10 @@ of `rbxts-transformer-surge`, cited by `describe` block. Source paths are in
 
 ## Changes
 
+- `ca5e2ba`: adds 5.28 (a variable-length count, Wire format 6.9). 5.6
+  widens a `dict`'s count where it needs a long form, 5.19 binds the bytes a
+  `str`'s or a `buffer`'s count takes, and 5.20 adds each count's bytes and
+  binds an `array`'s length where its count is variable-length.
 - `067d228`: withdraws 5.28 (a `cframe` written from `GetComponents`); 5.5
   counts five locals for a `cframe` again, and 5.8 has no exception.
 - `28a5b03`: withdraws 5.27 (an `enum`'s write by the item's `Value`), so

@@ -14,3 +14,9 @@ export declare function beginReadBlobs(blobs: Array<defined> | undefined): void;
 export declare function nextBlob(): defined;
 export declare function writePackedCFrame(buf: buffer, pos: number, value: CFrame): number;
 export declare function readPackedCFrame(buf: buffer, pos: number): LuaTuple<[value: CFrame, size: number]>;
+export declare function writeLongCount(target: buffer, offset: number, count: number): void;
+export declare function readLongCount(
+	source: buffer,
+	offset: number,
+	marker: number,
+): LuaTuple<[count: number, end: number]>;

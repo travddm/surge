@@ -2,7 +2,7 @@
 import type ts from "typescript";
 
 import { FIXED_DATATYPES } from "../datatypes";
-import type { ComponentWidths, CountSpec, Field, FieldKey, ObjectFieldEntry } from "../field";
+import type { ComponentWidths, CountSpec, Field, FieldKey, LengthWidth, ObjectFieldEntry } from "../field";
 import {
 	DEFAULT_COMPONENTS,
 	LOCALS_PER_BLOCK,
@@ -21,10 +21,10 @@ import {
 	cframeBytes,
 	componentBytes,
 	componentsOf,
+	countWidth,
 	elementBytes,
 	exactCount,
 	fixedBytes,
-	lengthWidth,
 	minBytes,
 	packedBits,
 	tagKeyOf,
@@ -107,7 +107,7 @@ function readStr(ctx: EmitContext, field: Extract<Field, { kind: "str" }>, out: 
 		out.push(...statements);
 		return ctx.bufferCall("readstring", [buf, pos, ctx.num(exact)]);
 	}
-	const { len, bytes } = ctx.readCountedBytes(lengthWidth(field.length), out);
+	const { len, bytes } = ctx.readCountedBytes(countWidth(field.length), out);
 	return ctx.bufferCall("readstring", [bytes.buf, ctx.at(bytes, 0), len]);
 }
 
@@ -129,7 +129,7 @@ function readBuffer(ctx: EmitContext, field: Extract<Field, { kind: "buffer" }>,
 		);
 		return exactResult;
 	}
-	const { len, bytes } = ctx.readCountedBytes(lengthWidth(field.length), out);
+	const { len, bytes } = ctx.readCountedBytes(countWidth(field.length), out);
 	// A copy: the input buffer holds the whole payload, and the caller owns the result.
 	const result = ctx.fresh("bytes");
 	out.push(ctx.constStatement(result, ctx.bufferCall("create", [len])));
@@ -254,12 +254,28 @@ function readCount(
 	if (exact !== undefined) {
 		return ctx.num(exact);
 	}
-	const width = lengthWidth(length);
-	const { buf, pos, statements } = ctx.destructureAlloc("readAlloc", WIDTH_BYTES[width]);
+	const count = readCountValue(ctx, countWidth(length), out);
+	checkCount(ctx, count, element, out);
+	return count;
+}
+
+/**
+ * Reserves and reads a count ahead of a loop: at its width, or a
+ * variable-length count's first byte, then the rest of a long form, which
+ * moves the read cursor on past it.
+ */
+function readCountValue(ctx: EmitContext, width: LengthWidth | undefined, out: ts.Statement[]): ts.Identifier {
+	const { buf, pos, statements } = ctx.destructureAlloc("readAlloc", width === undefined ? 1 : WIDTH_BYTES[width]);
 	out.push(...statements);
 	const count = ctx.fresh("count");
-	out.push(ctx.constStatement(count, ctx.readNumberAt(width, buf, pos)));
-	checkCount(ctx, count, element, out);
+	if (width !== undefined) {
+		out.push(ctx.constStatement(count, ctx.readNumberAt(width, buf, pos)));
+		return count;
+	}
+	out.push(
+		ctx.letLocal(count, ctx.bufferCall("readu8", [buf, pos])),
+		ctx.readLongCountInto(pos, count, ctx.factory.createIdentifier(READ_CURSOR)),
+	);
 	return count;
 }
 
@@ -766,11 +782,7 @@ function literalFromIndexExpr(
 function readDict(ctx: EmitContext, field: Extract<Field, { kind: "dict" }>, out: ts.Statement[]): ts.Expression {
 	const f = ctx.factory;
 	const isSet = field.value === undefined;
-	const countWidth = lengthWidth(field.length);
-	const { buf, pos, statements } = ctx.destructureAlloc("readAlloc", WIDTH_BYTES[countWidth]);
-	out.push(...statements);
-	const count = ctx.fresh("count");
-	out.push(ctx.constStatement(count, ctx.readNumberAt(countWidth, buf, pos)));
+	const count = readCountValue(ctx, countWidth(field.length), out);
 	checkEntryCount(ctx, count, field, out);
 	const result = ctx.fresh("result");
 	// Reconstructed as a `Map` or `Set` whatever `field.source` is, because

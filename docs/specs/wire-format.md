@@ -1,8 +1,7 @@
 # Wire format specification
 
 Status: current
-Applies to: `@rbxts/surge` at commit `324c701`, `rbxts-transformer-surge` at
-commit `e6325ac` (no tagged release yet)
+Applies to: commit `ca5e2ba` (no tagged release yet)
 
 ## 1. Scope
 
@@ -175,10 +174,11 @@ constituent of the union, is the last, whatever its kind name.
 ## 6. Counts and `Length<T, L>`
 
 **6.1** `str`, `buffer`, `array`, `dict` and a tuple's rest element write a
-count. Its width is `u32` unless `DataType.Length<T, L>` sets it.
+count. It is the variable-length count of 6.9 unless `DataType.Length<T, L>`
+sets it.
 
 **6.2** With `L` a width — `u8`, `u16`, `u24` or `u32` — the count is written
-at that width. `Length<T>` and `Length<T, u32>` produce the same bytes as `T`.
+at that width. `Length<T, L>` has no default `L`.
 
 **6.3** With `L` a whole number literal, no count is written and both sides
 use exactly `L` bytes (for `str` and `buffer`) or elements (for `array` and a
@@ -222,6 +222,12 @@ before anything is written ([runtime-api.md](runtime-api.md) 3.10).
 wraps, and the read side reads the wrapped count: 256 elements under a `u8`
 count read back as none. With `writeChecks`, such a count raises
 ([runtime-api.md](runtime-api.md) 3.10).
+
+**6.9** A variable-length count below 254 is one byte holding it. A count
+from 254 to 65535 is the byte 254, then the count as a `u16`. A larger count
+is the byte 255, then the count as a `u32`. The write uses the shortest form
+that holds the count. The read accepts any form, so the byte 254 followed by
+a `u16` below 254 reads as that count.
 
 ## 7. Per-component widths
 
@@ -357,13 +363,14 @@ in `@rbxts/surge`.
 | 5.6                | `bytes.spec.ts`: `pinsATaggedUnion`; the choice of tag: `walk.test.ts`, `TypeWalker wire-format determinism`                                                                                                                                                                                                                                                                                                            |
 | 5.7                | `bytes.spec.ts`: `pinsAGuardedUnion`, `pinsAnEnumNextToAnotherType`, `pinsItemsOfTwoEnums`, `pinsAnEnumItemAsNoBytes`; `roblox.spec.ts`: `writesAnOpaqueUnionMemberAsTheLastVariantAndABlob`; the `literalConst` and `datatype` order: `walk.test.ts`, `TypeWalker wire-format determinism` and `TypeWalker classification with fixture packages`. The `u16` index: source only, `writeGuardedUnion` in `emit/write.ts` |
 | 5.8                | Source only: `ensureHelper` in `emit/index.ts` builds the helper from the write functions an inlined field uses; `recursion.spec.ts` round-trips recursive shapes                                                                                                                                                                                                                                                       |
-| 6.2                | `bytes.spec.ts`: `pinsBoundedContainers`, `pinsDefaultedLengthAsUnbranded`                                                                                                                                                                                                                                                                                                                                              |
+| 6.2                | `bytes.spec.ts`: `pinsBoundedContainers`, `pinsU32LengthAsFourBytes`                                                                                                                                                                                                                                                                                                                                                    |
 | 6.3                | `bytes.spec.ts`: `pinsExactLengthContainers`. Truncation and a shorter `str` or `buffer`: source only, `writeStr`, `writeBuffer`, `writeArray` and `writeTuple` in `emit/write.ts` write exactly `L`                                                                                                                                                                                                                    |
 | 6.4                | `walk.test.ts`, `TypeWalker Length<T, L>`                                                                                                                                                                                                                                                                                                                                                                               |
 | 6.5                | `bytes.spec.ts`: `pinsBoundedContainers`                                                                                                                                                                                                                                                                                                                                                                                |
 | 6.6                | An `optional`: `collections.spec.ts`: `padsAShortExactArrayOfOptionalsInsteadOfRaising`. A `literal`: source only, `literalIndexExpr` in `emit/write.ts` maps `nil` to the last index                                                                                                                                                                                                                                   |
 | 6.7                | Source only: `writeBool`, `literalIndexExpr` and `writeGuardedUnion` in `emit/write.ts`; `pushBlob` in `rbxts-transformer-surge` `src/emit/context.ts` stores a blob only when it is not `nil`. With `writeChecks`: `checks.spec.ts`: `rejectsAnExactLengthValueOfAnyOtherLength`                                                                                                                                       |
 | 6.8                | `checks.spec.ts`: `wrapsACountPastItsWidthWithoutWriteChecks`, `rejectsACountPastItsWidth`                                                                                                                                                                                                                                                                                                                              |
+| 6.9                | `bytes.spec.ts`: `pinsTheLongFormsOfACount`, and the one-byte form in every pin of a count; `counts.spec.ts`: `roundTripsEachKindAtTheEdgesOfTheLongForms`; the read of a long form of a short count: `checks.spec.ts`: `rejectsAStringCutInItsCountOrItsBytes`                                                                                                                                                         |
 | 7.1, 7.2           | `bytes.spec.ts`: `pinsPerComponentWidths`, `pinsThatDefaultedComponentWidthsMoveNoBytes`                                                                                                                                                                                                                                                                                                                                |
 | 7.3                | Source only: `writeNumberAt` in `emit/context.ts` passes the component unconverted to Luau's `buffer` writes and `bit32`                                                                                                                                                                                                                                                                                                |
 | 7.4                | `bytes.spec.ts`: `pinsAQuantizedRotation`; `roblox.spec.ts`: `roundTripsAQuantizedRotationWithinItsStep`                                                                                                                                                                                                                                                                                                                |
@@ -380,6 +387,9 @@ in `@rbxts/surge`.
 
 ## Changes
 
+- `ca5e2ba`: adds 6.9 (the variable-length count); 6.1 makes it the count of
+  an unbranded container, where it was a `u32`, and 6.2 gives `L` no
+  default.
 - `324c701` / `e6325ac`: no statement changes. The 6.7 row names how `pushBlob`
   leaves out a `nil` blob.
 - `a99101d` / `6bf86ea`: 4.12 and 4.14 write one enum item as a

@@ -131,8 +131,8 @@ class CollectionsTest {
 	public roundTripsEmptyDictionaries(): void {
 		const value: WithDictionaries = { byId: {}, readonlyMap: new Map(), readonlySet: new Set(), indexed: {} };
 		const buf = dictionariesSerializer.serialize(value);
-		// Four u32 counts and nothing else.
-		Assert.equal(4 * 4, buffer.len(buf));
+		// Four one-byte counts and nothing else.
+		Assert.equal(4, buffer.len(buf));
 		Assert.equal(undefined, difference(value, dictionariesSerializer.deserialize(buf)));
 	}
 
@@ -163,8 +163,8 @@ class CollectionsTest {
 		}
 		const value: WithFixedTuples = { id: 4_000_000_000, pair: [255, 65535], points };
 		const buf = fixedTuplesSerializer.serialize(value);
-		// `id` and `pair` in one reservation, then the count and six bytes a point.
-		Assert.equal(4 + 3 + 4 + 20 * 6, buffer.len(buf));
+		// `id` and `pair` in one reservation, then the one-byte count and six bytes a point.
+		Assert.equal(4 + 3 + 1 + 20 * 6, buffer.len(buf));
 		Assert.equal(undefined, difference(value, fixedTuplesSerializer.deserialize(buf)));
 	}
 

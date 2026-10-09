@@ -763,7 +763,7 @@ describe("Emitter element reservations", () => {
 
 	test("an array of fixed-size elements reserves every element once, ahead of its loop", () => {
 		const output = emitSnapshot({ kind: "array", element: { kind: "num", width: "u16" } });
-		expect(output).toContain("__surge_cursor = pos4 + arr1.size() * 2;");
+		expect(output).toMatch(/__surge_cursor = pos\d+ \+ count\d+ \* 2;/);
 		expect(output).toMatch(/__surge_readCursor = pos\d+ \+ count\d+ \* 2;/);
 		for (const section of ["write", "read"] as const) {
 			const body = loopBody(output, section);
@@ -785,7 +785,7 @@ describe("Emitter element reservations", () => {
 			},
 		});
 		expect(output).toMatchSnapshot();
-		expect(output).toContain("arr1.size() * 3;");
+		expect(output).toMatch(/count\d+ \* 3;/);
 		// The read waits for the store, so the element moves on after it.
 		expect(loopBody(output, "read")).toMatch(/\] = \{[^]*\};\s+element\d+ \+= 3;\s+\}\s+return /);
 	});
@@ -810,7 +810,7 @@ describe("Emitter element reservations", () => {
 				rest: undefined,
 			},
 		});
-		expect(array).toContain("arr1.size() * 6;");
+		expect(array).toMatch(/count\d+ \* 6;/);
 		for (const section of ["write", "read"] as const) {
 			const body = loopBody(array, section);
 			expect(body).not.toContain("__surge_cursor");
@@ -850,8 +850,9 @@ describe("Emitter element reservations", () => {
 			readChecks: true,
 		});
 		expect(loopBody(output, "read")).not.toContain("__surge_inputLength");
-		// The count's own reservation, the count bound, and the elements' reservation.
-		expect(output.match(/__surge_inputLength/g)).toHaveLength(3);
+		// The count's own reservation, its long form's bound, the count bound, and the
+		// elements' reservation.
+		expect(output.match(/__surge_inputLength/g)).toHaveLength(4);
 	});
 });
 
@@ -868,10 +869,10 @@ describe("Emitter counted bytes", () => {
 	])("a %s reserves its count and its bytes at once", (_label, field) => {
 		const output = emitSnapshot(field);
 		expect(cursorMoves(output, "write", "__surge_cursor")).toEqual([
-			expect.stringMatching(/^__surge_cursor = pos\d+ \+ \(len\d+ \+ 4\);$/),
+			expect.stringMatching(/^__surge_cursor = pos\d+ \+ \(len\d+ \+ head\d+\);$/),
 		]);
 		expect(cursorMoves(output, "read", "__surge_readCursor")).toEqual([
-			expect.stringMatching(/^__surge_readCursor = pos\d+ \+ 4 \+ len\d+;$/),
+			expect.stringMatching(/^__surge_readCursor = at\d+ \+ len\d+;$/),
 		]);
 	});
 
@@ -883,8 +884,8 @@ describe("Emitter counted bytes", () => {
 	test("with readChecks, the count is bounded before it is read and the bytes after", () => {
 		const output = emitSnapshot({ kind: "str" }, new Map(), { readChecks: true });
 		const read = output.split("// read\n")[1];
-		const countBound = read.search(/pos\d+ \+ 4 > __surge_inputLength/);
-		const countRead = read.indexOf("buffer.readu32");
+		const countBound = read.search(/pos\d+ \+ 1 > __surge_inputLength/);
+		const countRead = read.indexOf("buffer.readu8");
 		const bytesBound = read.search(/__surge_readCursor > __surge_inputLength/);
 		expect(countBound).toBeGreaterThan(-1);
 		expect(countBound).toBeLessThan(countRead);
@@ -1147,6 +1148,9 @@ describe("Emitter exact sizing", () => {
 		expect(output).toMatch(/return __surge_scratch;$/m);
 	});
 
+	/** The pattern of the bytes a variable-length count of `count`, a pattern itself, takes (Wire format 6.9). */
+	const countBytes = (count: string): string => String.raw`\(${count} < 254 \? 1 : ${count} <= 65535 \? 3 : 5\)`;
+
 	test("a size is its lengths and counts, read from the value, and one constant", () => {
 		const output = serializeBody({
 			kind: "object",
@@ -1159,10 +1163,15 @@ describe("Emitter exact sizing", () => {
 			],
 		});
 		expect(output).toMatchSnapshot();
-		// 4 (list count) + 4 (name count) + 1 (nick flag) + 1 + 1 (pair) + 1 (tag).
-		// The optional's string is read in a branch, so it is read by its path.
+		// 1 (nick flag) + 1 + 1 (pair) + 1 (tag), and each variable-length count
+		// by its count. The optional's string is read in a branch, so it is read
+		// by its path.
+		const nick = String.raw`value\.nick!\.size\(\)`;
 		expect(output).toMatch(
-			/buffer\.create\(arr\d+\.size\(\) \* 2 \+ len\d+ \+ \(value\.nick !== undefined \? value\.nick!\.size\(\) \+ 4 : 0\) \+ \(tup\d+\.size\(\) - 1\) \+ 12\)/,
+			new RegExp(
+				String.raw`buffer\.create\(${countBytes(String.raw`(len\d+)`)} \+ \1 \* 2 \+ ${countBytes(String.raw`(len\d+)`)} \+ \3 \+ ` +
+					String.raw`\(value\.nick !== undefined \? ${countBytes(nick)} \+ ${nick} : 0\) \+ \(tup\d+\.size\(\) - 1\) \+ 4\)`,
+			),
 		);
 	});
 
@@ -1177,7 +1186,12 @@ describe("Emitter exact sizing", () => {
 		const second = object(["count", { kind: "num", width: "u16" }], ["inner", third]);
 		const output = serializeBody(object(["root", object(["inner", second], ["label", str])], ["version", u8]));
 		expect(output).toMatch(
-			/^const (obj\d+) = value\.root;\nconst (obj\d+) = \1\.inner;\nconst (obj\d+) = \2\.inner;\nconst (obj\d+) = \3\.leaf;\nconst (s\d+) = \4\.name;\nconst (len\d+) = \5\.size\(\);\nconst (s\d+) = \1\.label;\nconst (len\d+) = \7\.size\(\);\nconst __surge_scratch = buffer\.create\(\6 \+ \8 \+ 16\);/,
+			new RegExp(
+				String.raw`^const (obj\d+) = value\.root;\nconst (obj\d+) = \1\.inner;\nconst (obj\d+) = \2\.inner;\n` +
+					String.raw`const (obj\d+) = \3\.leaf;\nconst (s\d+) = \4\.name;\nconst (len\d+) = \5\.size\(\);\n` +
+					String.raw`const (s\d+) = \1\.label;\nconst (len\d+) = \7\.size\(\);\n` +
+					String.raw`const __surge_scratch = buffer\.create\(${countBytes(String.raw`\6`)} \+ \6 \+ ${countBytes(String.raw`\8`)} \+ \8 \+ 8\);`,
+			),
 		);
 		expect(output.match(/\bconst obj\d+ =/g)).toHaveLength(4);
 		expect(output.match(/\.size\(\)/g)).toHaveLength(2);
@@ -1190,8 +1204,9 @@ describe("Emitter exact sizing", () => {
 		});
 		const create = /buffer\.create\((.*)\);/.exec(output)![1];
 		// Two locals a string: sixteen are bound, and the last four are read.
-		expect(create.match(/len\d+/g)).toHaveLength(16);
-		expect(create).toContain("value.s16.size() + value.s17.size() + value.s18.size() + value.s19.size()");
+		// Each length is read three times: twice for its count's bytes.
+		expect(create.match(/len\d+/g)).toHaveLength(48);
+		expect(create).toContain("(value.s19.size() < 254 ? 1 : value.s19.size() <= 65535 ? 3 : 5) + value.s19.size()");
 		expect(output.match(/\bconst len\d+ =/g)).toHaveLength(20);
 	});
 
@@ -1215,10 +1230,11 @@ describe("Emitter exact sizing", () => {
 			const source = ts.createSourceFile("size.ts", `(${size});`, ts.ScriptTarget.Latest);
 			return plusDepth((source.statements[0] as ts.ExpressionStatement).expression);
 		};
-		// Twenty strings and the constant are one chain of 21 terms.
-		expect(depthOf(20)).toBe(20);
-		// 300 strings and the constant are ten chains, added in four rounds of pairs.
-		expect(depthOf(300)).toBe(TERMS_PER_SUM - 1 + 4);
+		// Each string is two terms, its count's bytes and its length. Ten strings
+		// are one chain of 20 terms.
+		expect(depthOf(10)).toBe(19);
+		// 150 strings are 300 terms: ten chains, added in four rounds of pairs.
+		expect(depthOf(150)).toBe(TERMS_PER_SUM - 1 + 4);
 	});
 
 	test("a packed region counts as its bytes, and a packed optional adds no flag byte", () => {
@@ -1237,7 +1253,10 @@ describe("Emitter exact sizing", () => {
 	test("an array of unions is sized by a loop over them, ahead of the result", () => {
 		const output = serializeBody({ kind: "array", element: either });
 		expect(output).toMatch(
-			/^const (arr\d+) = value;\nlet (size\d+) = \1\.size\(\) \+ 4;\nfor \(const (item\d+) of \1\) \{\n\s+\2 \+= \(typeIs\(\3, "number"\) \? 8 : /,
+			new RegExp(
+				String.raw`^const (arr\d+) = value;\nconst (len\d+) = \1\.size\(\);\nlet (size\d+) = ${countBytes(String.raw`\2`)} \+ \2;\n` +
+					String.raw`for \(const (item\d+) of \1\) \{\n\s+\3 \+= \(typeIs\(\4, "number"\) \? 8 : `,
+			),
 		);
 		expect(output).toMatch(/\nconst __surge_scratch = buffer\.create\(size\d+\);/);
 		expect(output).not.toContain("__surge_capacity");
@@ -1255,7 +1274,11 @@ describe("Emitter exact sizing", () => {
 			},
 		});
 		expect(output).toMatch(
-			/^const (arr\d+) = value;\nlet (size\d+) = \1\.size\(\) \* 8 \+ 4;\nfor \(const (item\d+) of \1\) \{\n\s+\2 \+= \3\.name\.size\(\);\n\}\nconst __surge_scratch = buffer\.create\(\2\);/,
+			new RegExp(
+				String.raw`^const (arr\d+) = value;\nconst (len\d+) = \1\.size\(\);\nlet (size\d+) = ${countBytes(String.raw`\2`)} \+ \2 \* 4;\n` +
+					String.raw`for \(const (item\d+) of \1\) \{\n\s+\3 \+= ${countBytes(String.raw`\4\.name\.size\(\)`)} \+ \4\.name\.size\(\);\n\}\n` +
+					String.raw`const __surge_scratch = buffer\.create\(\3\);`,
+			),
 		);
 		expect(output).not.toContain("__surge_capacity");
 	});
@@ -1266,7 +1289,11 @@ describe("Emitter exact sizing", () => {
 			element: { kind: "array", element: { kind: "num", width: "u16" } },
 		});
 		expect(output).toMatch(
-			/^const (arr\d+) = value;\nlet (size\d+) = \1\.size\(\) \* 4 \+ 4;\nfor \(const (item\d+) of \1\) \{\n\s+\2 \+= \3\.size\(\) \* 2;\n\}\nconst __surge_scratch = buffer\.create\(\2\);/,
+			new RegExp(
+				String.raw`^const (arr\d+) = value;\nconst (len\d+) = \1\.size\(\);\nlet (size\d+) = ${countBytes(String.raw`\2`)};\n` +
+					String.raw`for \(const (item\d+) of \1\) \{\n\s+\3 \+= ${countBytes(String.raw`\4\.size\(\)`)} \+ \4\.size\(\) \* 2;\n\}\n` +
+					String.raw`const __surge_scratch = buffer\.create\(\3\);`,
+			),
 		);
 		expect(output).not.toContain("__surge_capacity");
 	});
@@ -1280,7 +1307,10 @@ describe("Emitter exact sizing", () => {
 			],
 		};
 		expect(serializeBody({ kind: "array", element: holder })).toMatch(
-			/^const (arr\d+) = value;\nconst __surge_scratch = buffer\.create\(\1\.size\(\) \* 2 \+ 4\);/,
+			new RegExp(
+				String.raw`^const (arr\d+) = value;\nconst (len\d+) = \1\.size\(\);\n` +
+					String.raw`const __surge_scratch = buffer\.create\(${countBytes(String.raw`\2`)} \+ \2 \* 2\);`,
+			),
 		);
 		expect(serializeBody({ kind: "array", element: holder, length: 3 })).toMatch(
 			/^const __surge_scratch = buffer\.create\(6\);/,
@@ -1343,7 +1373,7 @@ describe("Emitter exact sizing", () => {
 	test("a size that compares a tag more than once reads it into a local once, in a loop and out of one", () => {
 		const array = serializeBody({ kind: "array", element: threeTags() });
 		expect(array).toMatch(
-			/for \(const (item\d+) of arr\d+\) \{\n\s+const (tag\d+) = \1\.kind;\n\s+size\d+ \+= \(\2 === "a" \? 1 : \2 === "b" \? [^]*?\.s\.size\(\) \+ 4 : 0\);\n\}/,
+			/for \(const (item\d+) of arr\d+\) \{\n\s+const (tag\d+) = \1\.kind;\n\s+size\d+ \+= \(\2 === "a" \? 1 : \2 === "b" \? [^]*?\.s\.size\(\) : 0\);\n\}/,
 		);
 		// The write reads the tag again inside its own loop.
 		expect(array.match(/\.kind;/g)).toHaveLength(2);
@@ -1603,12 +1633,21 @@ describe("Emitter count widths", () => {
 		expect(output).not.toContain("buffer.readu32");
 	});
 
-	// Rule 4 of DataType brands in docs/coding-standards.md,
-	// on the bytes rather than on the IR: the walker records the default as
-	// absence, and the emitter has to turn that absence back into exactly the
-	// u32 every one of these wrote before.
-	test.each(counted)("a %s with no branded width emits what it always did", (_label, build) => {
-		expect(emitSnapshot(build())).toBe(emitSnapshot(build("u32")));
+	// Wire format 6.9: one byte inline, and the long form through the package.
+	test.each(counted)("a %s with no branded width writes and reads a variable-length count", (_label, build) => {
+		const output = emitSnapshot(build());
+		expect(output).toMatch(/if \(\w+ < 254\) \{\s+buffer\.writeu8\(/);
+		expect(output).toContain("__surge_writeLongCount(");
+		expect(output).toMatch(/if \(\w+ >= 254\) \{\s+\[\w+, \w+\] = __surge_readLongCount\(/);
+		expect(output).not.toContain("buffer.writeu32");
+		expect(output).not.toContain("buffer.readu32");
+	});
+
+	test.each(counted)("a %s with a u32 width writes and reads a four-byte count", (_label, build) => {
+		const output = emitSnapshot(build("u32"));
+		expect(output).toContain("buffer.writeu32");
+		expect(output).toContain("buffer.readu32");
+		expect(output).not.toContain("LongCount");
 	});
 
 	// Luau's `buffer` has no 24-bit call, so a u24 count is the same two

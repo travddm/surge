@@ -1,7 +1,7 @@
 # Runtime API specification
 
 Status: current
-Applies to: commit `dcf78f4` (no tagged release yet)
+Applies to: commit `ca5e2ba` (no tagged release yet)
 
 ## 1. Scope
 
@@ -243,12 +243,14 @@ the table, any input but a table whose `buffer` is a buffer and whose
 `out/abi` module, which it imports as `@rbxts/surge/out/abi`. Their
 signatures are part of the coupling in section 6.
 
-| Export              | Called                                            | Contract                                                                                                                                         |
-| ------------------- | ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `grow`              | when a reservation passes the capacity            | `grow(current, live, needed)` returns a buffer of at least `needed` bytes whose first `live` bytes are `current`'s. `current` may have no bytes. |
-| `finishWrite`       | once per `serialize`, except as 5.4 and 5.9 state | `finishWrite(written, size)` returns a new buffer of exactly `size` bytes holding `written`'s first `size`.                                      |
-| `writePackedCFrame` | per `CFrame` inside `Packed<T>`                   | writes the packed form at the given offset and returns the bytes it used.                                                                        |
-| `readPackedCFrame`  | per `CFrame` inside `Packed<T>`                   | reads the packed form at the given offset and returns the value and the bytes it used.                                                           |
+| Export              | Called                                                    | Contract                                                                                                                                           |
+| ------------------- | --------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `grow`              | when a reservation passes the capacity                    | `grow(current, live, needed)` returns a buffer of at least `needed` bytes whose first `live` bytes are `current`'s. `current` may have no bytes.   |
+| `finishWrite`       | once per `serialize`, except as 5.4 and 5.9 state         | `finishWrite(written, size)` returns a new buffer of exactly `size` bytes holding `written`'s first `size`.                                        |
+| `writePackedCFrame` | per `CFrame` inside `Packed<T>`                           | writes the packed form at the given offset and returns the bytes it used.                                                                          |
+| `readPackedCFrame`  | per `CFrame` inside `Packed<T>`                           | reads the packed form at the given offset and returns the value and the bytes it used.                                                             |
+| `writeLongCount`    | per variable-length count of 254 or more                  | `writeLongCount(target, offset, count)` writes the long form of Wire format 6.9 at `offset`: the marker byte, then a `u16` or a `u32`.             |
+| `readLongCount`     | per variable-length count whose first byte is 254 or more | `readLongCount(source, offset, marker)` reads the long form whose marker, at `offset`, is `marker`, and returns the count and the offset after it. |
 
 **5.2** The package owns no scratch buffer and no byte cursor. Each generated
 serializer declares, in the closure it is emitted into, the scratch buffer,
@@ -366,7 +368,7 @@ A test file named `*.spec.ts` is under `tests/src/tests/`. A path starting
 | 4.9                         | `checks.spec.ts`: `rejectsAnEnumIndexPastItsItems`, `rejectsAPackedRotationCodeThatNamesNoRotation`                                                                                                                                                                                                                                                                                                                                                       |
 | 4.10                        | Source only: `enumFromIndexExpr` in `emit/read.ts`; `readPackedCFrame` in `src/cframe.ts`                                                                                                                                                                                                                                                                                                                                                                 |
 | 4.11                        | `checks.spec.ts`: `rejectsAnythingButABufferForAShapeWithNoBlob`, `rejectsAnythingButItsTableForAShapeWithABlob`; `test/golden.test.mjs`: a serializer with `readChecks` carries them. Source only for the order: `buildCheckedDeserialize` in `src/index.ts` of `rbxts-transformer-surge` checks before the body                                                                                                                                         |
-| 5.1                         | `test/golden.test.mjs`: generated code imports its helpers from the package's abi module. Source: the calls the emitter makes under `emit/`, and the exports of `src/abi.ts`; a buffer of no bytes: `cursor.spec.ts`: `growsTheBufferAndKeepsTheBytesBeforeTheValue`                                                                                                                                                                                      |
+| 5.1                         | `test/golden.test.mjs`: generated code imports its helpers from the package's abi module. Source: the calls the emitter makes under `emit/`, and the exports of `src/abi.ts`; a buffer of no bytes: `cursor.spec.ts`: `growsTheBufferAndKeepsTheBytesBeforeTheValue`; the long counts: `counts.spec.ts`: `roundTripsEachKindAtTheEdgesOfTheLongForms`                                                                                                     |
 | 5.2                         | `test/golden.test.mjs`: consecutive fixed-size fields share one reservation, inline, and a deserialize that reaches no recursion helper holds its input and cursor in locals; a cursor codec: `rbxts-transformer-surge` `test/transform.test.ts`, a cursor codec's generated code                                                                                                                                                                         |
 | 5.3                         | `test/golden.test.mjs`: a packed region is written and read inline, with no per-bit helper                                                                                                                                                                                                                                                                                                                                                                |
 | 5.4                         | Source only: `finishWriteExpression` and `writeStateDecls` in `emit/context.ts`                                                                                                                                                                                                                                                                                                                                                                           |
@@ -379,6 +381,8 @@ A test file named `*.spec.ts` is under `tests/src/tests/`. A path starting
 
 ## Changes
 
+- `ca5e2ba`: 5.1 adds `writeLongCount` and `readLongCount`, the long forms of
+  Wire format 6.9.
 - `dcf78f4`: adds 3.19 (`createCursor`) and names it in 3.13, and section 2
   names `createCursorCodec` among the factories.
 - `d3fd281` / `fbdc265`: 5.6 forbids overlapping calls into one cursor, and

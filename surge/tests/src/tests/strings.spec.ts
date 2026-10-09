@@ -2,7 +2,7 @@
 import { Assert, Fact, InlineData, Theory } from "@rbxts/runit";
 import { DataType, createCodec } from "@rbxts/surge";
 
-import { Rng, difference } from "../support";
+import { Rng, countBytes, difference } from "../support";
 
 interface WithStrings {
 	single: string;
@@ -11,7 +11,7 @@ interface WithStrings {
 }
 const stringsSerializer = createCodec<WithStrings>();
 
-// A `buffer` is encoded like a string: a u32 length, then the bytes.
+// A `buffer` is encoded like a string: a count of its bytes, then the bytes.
 interface WithBuffers {
 	raw: buffer;
 	rawOrText: buffer | string;
@@ -53,9 +53,10 @@ class StringsTest {
 	public prefixesAStringWithItsByteLengthNotItsCharacterCount(): void {
 		const value: WithStrings = { single: "é", list: [], byName: new Map() };
 		const buf = stringsSerializer.serialize(value);
-		// Fields in name order: byName (u32 count), list (u32 count), single (u32 length + 2 bytes of UTF-8).
-		Assert.equal(4 + 4 + 4 + 2, buffer.len(buf));
-		Assert.equal(2, buffer.readu32(buf, 8));
+		// Fields in name order: byName (count), list (count), single (count + 2 bytes of UTF-8), each
+		// count one byte.
+		Assert.equal(1 + 1 + 1 + 2, buffer.len(buf));
+		Assert.equal(2, buffer.readu8(buf, 2));
 	}
 
 	@Fact
@@ -78,7 +79,7 @@ class StringsTest {
 		const rng = new Rng(16);
 		for (const _ of $range(1, FUZZ_ITERATIONS)) {
 			const entries = new Array<WithNamedEntries["entries"][number]>();
-			let bytes = 4;
+			let bytes = 0;
 			for (const __ of $range(1, rng.int(0, 5))) {
 				const entry = {
 					name: rng.str(),
@@ -86,9 +87,15 @@ class StringsTest {
 					title: rng.bool() ? rng.str() : undefined,
 				};
 				entries.push(entry);
-				// The name's length and bytes, the score, the title's presence byte, and its length and bytes.
-				bytes += 4 + entry.name.size() + 4 + 1 + (entry.title === undefined ? 0 : 4 + entry.title.size());
+				// The name's count and bytes, the score, the title's presence byte, and its count and bytes.
+				bytes +=
+					countBytes(entry.name.size()) +
+					entry.name.size() +
+					4 +
+					1 +
+					(entry.title === undefined ? 0 : countBytes(entry.title.size()) + entry.title.size());
 			}
+			bytes += countBytes(entries.size());
 			const value: WithNamedEntries = { entries };
 			const buf = namedEntriesSerializer.serialize(value);
 			Assert.equal(bytes, buffer.len(buf));

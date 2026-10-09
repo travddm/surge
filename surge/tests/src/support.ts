@@ -78,6 +78,11 @@ export function unhex(digits: string): buffer {
 	return result;
 }
 
+/** The bytes an unbranded count of `count` takes: Wire format 6.9 in docs/specs/wire-format.md. */
+export function countBytes(count: number): number {
+	return count < 254 ? 1 : count <= 65535 ? 3 : 5;
+}
+
 const PARK_MILLER_MODULUS = 2147483647;
 const PARK_MILLER_MULTIPLIER = 48271;
 

@@ -8,12 +8,14 @@ import {
 	INITIAL_CAPACITY,
 	LOCALS_BUDGET,
 	LOCALS_PER_BLOCK,
+	LONG_COUNT_MARKER,
 	READ_BLOBS,
 	READ_BLOB_INDEX,
 	READ_BUFFER,
 	READ_CURSOR,
 	READ_LENGTH,
 	SCRATCH,
+	U16_COUNT_MAX,
 	WIDTH_BYTES,
 	WRITE_BLOBS,
 	WRITE_BLOB_COUNT,
@@ -925,49 +927,64 @@ export abstract class EmitContext {
 	 * Reads the count a `str` or a `buffer` writes ahead of its bytes, and
 	 * reserves the count and the bytes with one move of the read cursor. The
 	 * count is read before the cursor moves, so under `readChecks` it is
-	 * bounded first, and the bytes after the move. Returns the count and where
-	 * the bytes start.
+	 * bounded first, and the bytes after the move. A variable-length count
+	 * (`width` `undefined`) reads its first byte, and the rest of a long form
+	 * where that byte is a marker. Returns the count and where the bytes start.
 	 */
-	public readCountedBytes(width: LengthWidth, out: ts.Statement[]): { len: ts.Identifier; bytes: Slot } {
+	public readCountedBytes(width: LengthWidth | undefined, out: ts.Statement[]): { len: ts.Identifier; bytes: Slot } {
 		if (this.run !== undefined) {
 			throw new Error("surge: a field inside an alloc run reserved on its own");
 		}
 		this.usesReadBytes = true;
 		const f = this.factory;
 		const syntax = this.ts_.SyntaxKind;
-		const countBytes = WIDTH_BYTES[width];
+		const countBytes = width === undefined ? 1 : WIDTH_BYTES[width];
 		const pos = this.fresh("pos");
 		out.push(this.constStatement(pos, f.createIdentifier(READ_CURSOR)));
-		if (this.readChecks) {
-			out.push(
-				this.throwIf(
-					f.createBinaryExpression(
-						this.offsetFrom(pos, countBytes),
-						syntax.GreaterThanToken,
-						f.createIdentifier(READ_LENGTH),
-					),
-					"deserialize read past the end of the input buffer",
-				),
+		const pastEnd = (end: ts.Expression) =>
+			this.throwIf(
+				f.createBinaryExpression(end, syntax.GreaterThanToken, f.createIdentifier(READ_LENGTH)),
+				"deserialize read past the end of the input buffer",
 			);
+		if (this.readChecks) {
+			out.push(pastEnd(this.offsetFrom(pos, countBytes)));
 		}
 		const len = this.fresh("len");
-		out.push(this.constStatement(len, this.readNumberAt(width, f.createIdentifier(READ_BUFFER), pos)));
-		out.push(
-			this.assign(READ_CURSOR, f.createBinaryExpression(this.offsetFrom(pos, countBytes), syntax.PlusToken, len)),
-		);
-		if (this.readChecks) {
+		let bytes: Slot;
+		if (width === undefined) {
+			const at = this.fresh("at");
 			out.push(
-				this.throwIf(
-					f.createBinaryExpression(
-						f.createIdentifier(READ_CURSOR),
-						syntax.GreaterThanToken,
-						f.createIdentifier(READ_LENGTH),
-					),
-					"deserialize read past the end of the input buffer",
+				this.letLocal(len, this.bufferCall("readu8", [f.createIdentifier(READ_BUFFER), pos])),
+				this.letLocal(at, this.offsetFrom(pos, 1)),
+				this.readLongCountInto(pos, len, at),
+				this.assign(READ_CURSOR, f.createBinaryExpression(at, syntax.PlusToken, len)),
+			);
+			bytes = { buf: f.createIdentifier(READ_BUFFER), pos: at, offset: 0 };
+		} else {
+			out.push(
+				this.constStatement(len, this.readNumberAt(width, f.createIdentifier(READ_BUFFER), pos)),
+				this.assign(
+					READ_CURSOR,
+					f.createBinaryExpression(this.offsetFrom(pos, countBytes), syntax.PlusToken, len),
 				),
 			);
+			bytes = { buf: f.createIdentifier(READ_BUFFER), pos, offset: countBytes };
 		}
-		return { len, bytes: { buf: f.createIdentifier(READ_BUFFER), pos, offset: countBytes } };
+		if (this.readChecks) {
+			out.push(pastEnd(f.createIdentifier(READ_CURSOR)));
+		}
+		return { len, bytes };
+	}
+
+	/** `let <name> = <initializer>`, for a local a later statement assigns. */
+	public letLocal(name: ts.Identifier, initializer: ts.Expression): ts.Statement {
+		return this.factory.createVariableStatement(
+			undefined,
+			this.factory.createVariableDeclarationList(
+				[this.factory.createVariableDeclaration(name, undefined, undefined, initializer)],
+				this.ts_.NodeFlags.Let,
+			),
+		);
 	}
 
 	/**
@@ -1140,6 +1157,100 @@ export abstract class EmitContext {
 			f.createExpressionStatement(this.bufferCall("writeu16", [buf, pos, low])),
 			f.createExpressionStatement(this.bufferCall("writeu8", [buf, this.offsetFrom(pos, 2), high])),
 		];
+	}
+
+	/**
+	 * The bytes a variable-length count of `count` takes (Wire format 6.9 in
+	 * docs/specs/wire-format.md): one below `LONG_COUNT_MARKER`, three up to
+	 * `U16_COUNT_MAX`, and five above. Parenthesized, as a term of a sum.
+	 */
+	public variableCountBytes(count: ts.Expression): ts.Expression {
+		const f = this.factory;
+		const syntax = this.ts_.SyntaxKind;
+		return f.createParenthesizedExpression(
+			f.createConditionalExpression(
+				f.createBinaryExpression(count, syntax.LessThanToken, this.num(LONG_COUNT_MARKER)),
+				undefined,
+				this.num(1),
+				undefined,
+				f.createConditionalExpression(
+					f.createBinaryExpression(count, syntax.LessThanEqualsToken, this.num(U16_COUNT_MAX)),
+					undefined,
+					this.num(3),
+					undefined,
+					this.num(5),
+				),
+			),
+		);
+	}
+
+	/**
+	 * Writes `count` at `pos`: at `width`, or, where `width` is `undefined`, as
+	 * a variable-length count, one byte inline and a longer one through
+	 * `writeLongCount`. `count` is read more than once, so it is a local.
+	 */
+	public writeCountAt(
+		width: LengthWidth | undefined,
+		buf: ts.Expression,
+		pos: ts.Expression,
+		count: ts.Expression,
+	): ts.Statement[] {
+		if (width !== undefined) {
+			return this.writeNumberAt(width, buf, pos, count);
+		}
+		const f = this.factory;
+		return [
+			f.createIfStatement(
+				f.createBinaryExpression(count, this.ts_.SyntaxKind.LessThanToken, this.num(LONG_COUNT_MARKER)),
+				f.createBlock([f.createExpressionStatement(this.bufferCall("writeu8", [buf, pos, count]))], true),
+				f.createBlock([f.createExpressionStatement(this.call("writeLongCount", [buf, pos, count]))], true),
+			),
+		];
+	}
+
+	/**
+	 * Reads the rest of a variable-length count whose first byte, at `pos`, is
+	 * in `count`: when that byte is a marker, `count` and `end` take the long
+	 * form's count and the position after it from `readLongCount`. Under
+	 * `readChecks`, the long form is bounded before it is read.
+	 */
+	public readLongCountInto(pos: ts.Expression, count: ts.Identifier, end: ts.Expression): ts.Statement {
+		const f = this.factory;
+		const syntax = this.ts_.SyntaxKind;
+		const body: ts.Statement[] = [];
+		if (this.readChecks) {
+			const longBytes = f.createParenthesizedExpression(
+				f.createConditionalExpression(
+					f.createBinaryExpression(count, syntax.EqualsEqualsEqualsToken, this.num(LONG_COUNT_MARKER)),
+					undefined,
+					this.num(3),
+					undefined,
+					this.num(5),
+				),
+			);
+			body.push(
+				this.throwIf(
+					f.createBinaryExpression(
+						f.createBinaryExpression(pos, syntax.PlusToken, longBytes),
+						syntax.GreaterThanToken,
+						f.createIdentifier(READ_LENGTH),
+					),
+					"deserialize read past the end of the input buffer",
+				),
+			);
+		}
+		body.push(
+			f.createExpressionStatement(
+				f.createAssignment(
+					f.createArrayLiteralExpression([count, end]),
+					this.call("readLongCount", [f.createIdentifier(READ_BUFFER), pos, count]),
+				),
+			),
+		);
+		return f.createIfStatement(
+			f.createBinaryExpression(count, syntax.GreaterThanEqualsToken, this.num(LONG_COUNT_MARKER)),
+			f.createBlock(body, true),
+		);
 	}
 
 	public readNumberAt(width: NumWidth, buf: ts.Expression, pos: ts.Expression): ts.Expression {

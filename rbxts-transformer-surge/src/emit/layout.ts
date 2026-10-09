@@ -5,7 +5,6 @@
  */
 import { FIXED_DATATYPES } from "../datatypes";
 import type { ComponentWidths, CountSpec, Field, FieldKey, LengthWidth, ObjectFieldEntry } from "../field";
-import { DEFAULT_LENGTH_WIDTH } from "../field";
 import {
 	ALLOC_RUN_LOCALS,
 	DEFAULT_COMPONENTS,
@@ -25,13 +24,13 @@ export interface PackedBit {
 }
 
 /**
- * The width of the count a variable-length kind writes ahead of its
- * contents. Absent means `u32`, which is what all five of them wrote
- * before `DataType.Length<T, L>` existed, so an unbranded shape's bytes
- * do not move (see field.ts).
+ * The fixed width of the count a counted kind writes ahead of its contents,
+ * or `undefined` for the variable-length count of an unbranded one (Wire
+ * format 6.9 in docs/specs/wire-format.md). Not for the exact form, which
+ * writes no count: callers test {@link exactCount} first.
  */
-export function lengthWidth(length: CountSpec | undefined): LengthWidth {
-	return typeof length === "number" ? DEFAULT_LENGTH_WIDTH : (length ?? DEFAULT_LENGTH_WIDTH);
+export function countWidth(length: CountSpec | undefined): LengthWidth | undefined {
+	return typeof length === "number" ? undefined : length;
 }
 
 /**
@@ -47,9 +46,17 @@ export function exactCount(length: CountSpec | undefined): number | undefined {
 	return typeof length === "number" ? length : undefined;
 }
 
-/** The bytes a count of its own costs: none in the exact form, which writes no count. */
+/**
+ * The fewest bytes a count of its own costs: none in the exact form, which
+ * writes no count, its width's at a fixed width, and one for a
+ * variable-length count.
+ */
 function countBytes(length: CountSpec | undefined): number {
-	return exactCount(length) === undefined ? WIDTH_BYTES[lengthWidth(length)] : 0;
+	if (exactCount(length) !== undefined) {
+		return 0;
+	}
+	const width = countWidth(length);
+	return width === undefined ? 1 : WIDTH_BYTES[width];
 }
 
 /** The widths a `vector3`'s or a `cframe` position's components are stored at, with absence resolved. */

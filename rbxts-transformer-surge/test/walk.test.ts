@@ -1187,14 +1187,18 @@ describe("TypeWalker Length<T, L>", () => {
 	// Rule 4 of DataType brands in docs/coding-standards.md:
 	// a fully defaulted brand has to encode exactly what the unbranded type
 	// encodes, so it must leave no `length` behind for the emitter to act on.
-	test("the default argument leaves the field identical to the unbranded one", () => {
+	// An unbranded count is variable-length, which no width names, so a `u32`
+	// width is a width like the others and not the default (Wire format 6.9).
+	test("a u32 width is recorded, where an unbranded container records none", () => {
 		const { field: branded } = walkDeclaration(
-			`import { DataType } from "@rbxts/surge"; interface T { arr: DataType.Length<Array<string>>; }`,
+			`import { DataType } from "@rbxts/surge"; interface T { arr: DataType.Length<Array<string>, DataType.u32>; }`,
 			"T",
 			{ surge: true },
 		);
 		const { field: bare } = walkDeclaration("interface T { arr: Array<string>; }", "T", { surge: true });
-		expect(branded).toEqual(bare);
+		if (branded.kind !== "object" || bare.kind !== "object") throw new Error("expected objects");
+		expect(branded.fields[0].field).toEqual({ kind: "array", element: { kind: "str" }, length: "u32" });
+		expect(bare.fields[0].field).toEqual({ kind: "array", element: { kind: "str" } });
 	});
 
 	// The brand belongs to the container it wraps, not to the subtree under

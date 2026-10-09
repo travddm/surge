@@ -33,7 +33,7 @@ for (const _ of $range(1, ROWS)) {
 
 export const nestedArrays: Fixture = {
 	name: "nested arrays",
-	note: `${ROWS} rows of up to ${MAX_LENGTH} u16 elements, each row with a u32 count`,
+	note: `${ROWS} rows of up to ${MAX_LENGTH} u16 elements, each row with its own count`,
 	entries: [
 		defineEntry<NestedArrays>("surge", { rows }, surgeAdapter(serializer)),
 		defineEntry<FbsNestedArrays>("fbs", { rows }, fbsAdapter(fbsSerializer)),

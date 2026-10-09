@@ -10,7 +10,7 @@ export interface FbsLargeArray {
 	values: Fbs.u16[];
 }
 
-/** serio's plain array is a `List` with a u32 length prefix, the width the other two also take. */
+/** serio's plain array is a `List` with a u32 length prefix, the width fbs also takes. */
 export interface SerioLargeArray {
 	values: Serio.u16[];
 }

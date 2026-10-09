@@ -139,7 +139,7 @@ class PackedTest {
 		const value: Profile = { name: "ab", verified: true };
 		const { buffer: buf, blobs } = profileSerializer.serialize(value);
 		// The packed region (6 bits), then `name`. No absent optional costs a byte.
-		Assert.equal(1 + 4 + 2, buffer.len(buf));
+		Assert.equal(1 + 1 + 2, buffer.len(buf));
 		// `verified` is the last of the bits, which are in name order: extra,
 		// level, muted (present, value), nickname, verified.
 		Assert.equal(32, buffer.readu8(buf, 0));
@@ -237,7 +237,7 @@ class PackedTest {
 		};
 		const buf = deviceSerializer.serialize(value);
 		// The packed region (2 tag bits), `name`, the level of `secondary`, and the index byte of `source`.
-		Assert.equal(1 + 4 + 1 + 1, buffer.len(buf));
+		Assert.equal(1 + 1 + 1 + 1, buffer.len(buf));
 		// Bit 0 is `primary` (off, the first variant), bit 1 is `secondary` (on, the second).
 		Assert.equal(2, buffer.readu8(buf, 0));
 		Assert.equal(undefined, difference(value, deviceSerializer.deserialize(buf)));
@@ -292,9 +292,9 @@ class PackedTest {
 				each,
 			};
 			const bytes = bitSetsSerializer.serialize(value);
-			// A presence bit, two bytes of letters, a u32 count, a byte per
+			// A presence bit, two bytes of letters, a one-byte count, a byte per
 			// element, and a byte of modes when present.
-			Assert.equal(1 + 2 + 4 + each.size() + (value.modes === undefined ? 0 : 1), buffer.len(bytes));
+			Assert.equal(1 + 2 + 1 + each.size() + (value.modes === undefined ? 0 : 1), buffer.len(bytes));
 			Assert.equal(undefined, difference(value, bitSetsSerializer.deserialize(bytes)));
 		}
 	}

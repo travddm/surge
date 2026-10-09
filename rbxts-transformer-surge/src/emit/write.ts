@@ -7,8 +7,10 @@ import {
 	ALLOC_RUN_LOCALS,
 	CURSOR,
 	DEFAULT_COMPONENTS,
+	LONG_COUNT_MARKER,
 	PACKED_CFRAME_MAX_BYTES,
 	QUANTIZED_ROTATION_SCALE,
+	U16_COUNT_MAX,
 	WIDTH_BYTES,
 } from "./constants";
 import type { EmitContext, ScopedItem, Slot } from "./context";
@@ -19,11 +21,11 @@ import {
 	cframeBytes,
 	componentBytes,
 	componentsOf,
+	countWidth,
 	elementBytes,
 	exactCount,
 	fixedBytes,
 	isAllPackedBits,
-	lengthWidth,
 	packedBits,
 	runLocals,
 	tagKeyOf,
@@ -150,8 +152,9 @@ function writeBool(ctx: EmitContext, value: ts.Expression, out: ts.Statement[]):
 }
 
 /**
- * The largest count each narrower width holds. A `u32` count is not checked:
- * no Luau string, buffer or table comes near it.
+ * The largest count each narrower width holds. A `u32` count, and a
+ * variable-length one, are not checked: no Luau string, buffer or table comes
+ * near what they hold.
  */
 const COUNT_LIMITS: Partial<Readonly<Record<LengthWidth, number>>> = { u8: 255, u16: 65535, u24: 16777215 };
 
@@ -159,8 +162,13 @@ const COUNT_LIMITS: Partial<Readonly<Record<LengthWidth, number>>> = { u8: 255, 
  * Under `writeChecks`, raises when `count` does not fit its width. Unchecked,
  * the width's `buffer` write wraps it, and the read side reads that many.
  */
-function checkCountFits(ctx: EmitContext, width: LengthWidth, count: ts.Expression, out: ts.Statement[]): void {
-	const limit = COUNT_LIMITS[width];
+function checkCountFits(
+	ctx: EmitContext,
+	width: LengthWidth | undefined,
+	count: ts.Expression,
+	out: ts.Statement[],
+): void {
+	const limit = width === undefined ? undefined : COUNT_LIMITS[width];
 	if (!ctx.writeChecks || limit === undefined) {
 		return;
 	}
@@ -214,7 +222,6 @@ function padsAsAbsent(element: Field): boolean {
 	);
 }
 
-/** Reserves and writes the count a variable-length kind puts ahead of its contents. */
 /**
  * `const <base>N = <value>`, and the new local. Where the size of 5.20 has
  * bound the value already, the caller takes that local from
@@ -236,34 +243,52 @@ function readOnce(ctx: EmitContext, base: string, value: ts.Expression, out: ts.
 	return isLocal(ctx, value) ? value : bindLocal(ctx, base, value, out);
 }
 
-function writeCount(ctx: EmitContext, length: CountSpec | undefined, count: ts.Expression, out: ts.Statement[]): void {
-	const width = lengthWidth(length);
+/**
+ * Reserves and writes the count a variable-length kind puts ahead of its
+ * contents, and returns what the rest of the write reads the count from: a
+ * variable-length count reads it more than once, so it binds a local.
+ */
+function writeCount(
+	ctx: EmitContext,
+	length: CountSpec | undefined,
+	count: ts.Expression,
+	out: ts.Statement[],
+): ts.Expression {
+	const width = countWidth(length);
 	checkCountFits(ctx, width, count, out);
-	const { buf, pos, statements } = ctx.destructureAlloc("alloc", WIDTH_BYTES[width]);
-	out.push(...statements);
-	out.push(...ctx.writeNumberAt(width, buf, pos, count));
+	if (width !== undefined) {
+		const { buf, pos, statements } = ctx.destructureAlloc("alloc", WIDTH_BYTES[width]);
+		out.push(...statements, ...ctx.writeNumberAt(width, buf, pos, count));
+		return count;
+	}
+	const n = isLocal(ctx, count) ? count : bindLocal(ctx, "count", count, out);
+	const { buf, pos, statements } = ctx.destructureAlloc("alloc", ctx.variableCountBytes(n));
+	out.push(...statements, ...ctx.writeCountAt(undefined, buf, pos, n));
+	return n;
 }
 
 /**
  * Reserves the count a `str` or a `buffer` writes and the `len` bytes after
- * it at once, writes the count, and returns where the bytes go.
+ * it at once, writes the count, and returns where the bytes go. A
+ * variable-length count's bytes depend on `len`, so they are bound to a local.
  */
 function writeCountedBytes(
 	ctx: EmitContext,
 	length: CountSpec | undefined,
 	len: ts.Identifier,
 	out: ts.Statement[],
-): Slot {
-	const width = lengthWidth(length);
+): { buf: ts.Identifier; at: ts.Expression } {
+	const f = ctx.factory;
+	const width = countWidth(length);
 	checkCountFits(ctx, width, len, out);
-	const countBytes = WIDTH_BYTES[width];
+	const countBytes =
+		width === undefined ? bindLocal(ctx, "head", ctx.variableCountBytes(len), out) : ctx.num(WIDTH_BYTES[width]);
 	const { buf, pos, statements } = ctx.destructureAlloc(
 		"alloc",
-		ctx.factory.createBinaryExpression(len, ctx.ts_.SyntaxKind.PlusToken, ctx.num(countBytes)),
+		f.createBinaryExpression(len, ctx.ts_.SyntaxKind.PlusToken, countBytes),
 	);
-	out.push(...statements);
-	out.push(...ctx.writeNumberAt(width, buf, pos, len));
-	return { buf, pos, offset: countBytes };
+	out.push(...statements, ...ctx.writeCountAt(width, buf, pos, len));
+	return { buf, at: f.createBinaryExpression(pos, ctx.ts_.SyntaxKind.PlusToken, countBytes) };
 }
 
 function writeStr(
@@ -288,7 +313,7 @@ function writeStr(
 	}
 	const len = bound?.len ?? bindLocal(ctx, "len", lenExpr, out);
 	const bytes = writeCountedBytes(ctx, field.length, len, out);
-	out.push(f.createExpressionStatement(ctx.bufferCall("writestring", [bytes.buf, ctx.at(bytes, 0), s])));
+	out.push(f.createExpressionStatement(ctx.bufferCall("writestring", [bytes.buf, bytes.at, s])));
 }
 
 function writeBuffer(
@@ -312,9 +337,7 @@ function writeBuffer(
 	}
 	const len = bound?.len ?? bindLocal(ctx, "len", ctx.bufferCall("len", [source]), out);
 	const bytes = writeCountedBytes(ctx, field.length, len, out);
-	out.push(
-		f.createExpressionStatement(ctx.bufferCall("copy", [bytes.buf, ctx.at(bytes, 0), source, ctx.num(0), len])),
-	);
+	out.push(f.createExpressionStatement(ctx.bufferCall("copy", [bytes.buf, bytes.at, source, ctx.num(0), len])));
 }
 
 function writeVector3(
@@ -393,7 +416,8 @@ function writeArray(
 	out: ts.Statement[],
 ): void {
 	const f = ctx.factory;
-	const arr = ctx.boundBySize(value)?.value ?? bindLocal(ctx, "arr", value, out);
+	const bound = ctx.boundBySize(value);
+	const arr = bound?.value ?? bindLocal(ctx, "arr", value, out);
 	const exact = exactCount(field.length);
 	if (exact !== undefined) {
 		// Indexed rather than `for...of`, so exactly this many are
@@ -413,10 +437,10 @@ function writeArray(
 		out.push(ctx.indexedLoop(i, 0, ctx.num(exact), body));
 		return;
 	}
-	writeCount(ctx, field.length, ctx.sizeOf(arr), out);
+	const count = writeCount(ctx, field.length, bound?.len ?? ctx.sizeOf(arr), out);
 	const item = ctx.fresh("item");
 	const body: ts.Statement[] = [];
-	writeElement(ctx, field.element, item, ctx.sizeOf(arr), out, body);
+	writeElement(ctx, field.element, item, count, out, body);
 	out.push(
 		f.createForOfStatement(
 			undefined,
@@ -938,8 +962,14 @@ function writeDict(
 	const isSet = field.value === undefined;
 	const dictTmp = ctx.fresh("dict");
 	out.push(ctx.constStatement(dictTmp, value));
-	const countWidth = lengthWidth(field.length);
-	const { buf: cbuf, pos: cpos, statements: cstmt } = ctx.destructureAlloc("alloc", WIDTH_BYTES[countWidth]);
+	const width = countWidth(field.length);
+	// A variable-length count is reserved at one byte, before the entries are
+	// counted, and widened after them if it needs the long form.
+	const {
+		buf: cbuf,
+		pos: cpos,
+		statements: cstmt,
+	} = ctx.destructureAlloc("alloc", width === undefined ? 1 : WIDTH_BYTES[width]);
 	out.push(...cstmt);
 	const count = ctx.fresh("count");
 	out.push(
@@ -987,8 +1017,62 @@ function writeDict(
 			),
 		);
 	}
-	checkCountFits(ctx, countWidth, count, out);
-	out.push(...ctx.writeNumberAt(countWidth, cbuf, cpos, count));
+	checkCountFits(ctx, width, count, out);
+	if (width !== undefined) {
+		out.push(...ctx.writeNumberAt(width, cbuf, cpos, count));
+		return;
+	}
+	out.push(
+		f.createIfStatement(
+			f.createBinaryExpression(count, ctx.ts_.SyntaxKind.LessThanToken, ctx.num(LONG_COUNT_MARKER)),
+			f.createBlock([f.createExpressionStatement(ctx.bufferCall("writeu8", [cbuf, cpos, count]))], true),
+			f.createBlock(widenDictCount(ctx, cpos, count), true),
+		),
+	);
+}
+
+/**
+ * Makes room for a `dict`'s long count where one byte was reserved for it:
+ * reserves the bytes the long form adds at the end, moves the entries along
+ * by them, and writes the count where they started. `buffer.copy` moves an
+ * overlapping range within one buffer as if through a copy of it.
+ */
+function widenDictCount(ctx: EmitContext, cpos: ts.Identifier, count: ts.Identifier): ts.Statement[] {
+	const f = ctx.factory;
+	const syntax = ctx.ts_.SyntaxKind;
+	const statements: ts.Statement[] = [];
+	const head = bindLocal(
+		ctx,
+		"head",
+		f.createConditionalExpression(
+			f.createBinaryExpression(count, syntax.LessThanEqualsToken, ctx.num(U16_COUNT_MAX)),
+			undefined,
+			ctx.num(3),
+			undefined,
+			ctx.num(5),
+		),
+		statements,
+	);
+	const {
+		buf,
+		pos: end,
+		statements: reserve,
+	} = ctx.destructureAlloc("alloc", f.createBinaryExpression(head, syntax.MinusToken, ctx.num(1)));
+	statements.push(...reserve);
+	const entriesStart = f.createBinaryExpression(cpos, syntax.PlusToken, ctx.num(1));
+	statements.push(
+		f.createExpressionStatement(
+			ctx.bufferCall("copy", [
+				buf,
+				f.createBinaryExpression(cpos, syntax.PlusToken, head),
+				buf,
+				entriesStart,
+				f.createBinaryExpression(end, syntax.MinusToken, entriesStart),
+			]),
+		),
+		f.createExpressionStatement(ctx.call("writeLongCount", [buf, cpos, count])),
+	);
+	return statements;
 }
 
 function writeObject(

@@ -251,9 +251,12 @@ describe("transform (end-to-end)", () => {
 		try {
 			// No blob field, so nothing from the blob side channel is imported. A
 			// recursive type, written through a helper, keeps the scratch buffer
-			// (Transformer 5.20), which imports both of its helpers.
+			// (Transformer 5.20), which imports both of its helpers, and the
+			// string array's variable-length counts import the long form's two.
 			expect(printed).toContain(
-				'import { finishWrite as __surge_finishWrite, grow as __surge_grow } from "@rbxts/surge/out/abi";',
+				"import { finishWrite as __surge_finishWrite, grow as __surge_grow, " +
+					"readLongCount as __surge_readLongCount, writeLongCount as __surge_writeLongCount } " +
+					'from "@rbxts/surge/out/abi";',
 			);
 			expect(printed).toContain("const s = function () {");
 			expect(printed).toContain("serialize:");

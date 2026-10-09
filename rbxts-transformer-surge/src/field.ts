@@ -16,23 +16,20 @@
 export type NumWidth = "f32" | "f64" | "u8" | "u16" | "u24" | "u32" | "i8" | "i16" | "i24" | "i32";
 
 /**
- * The width of the count a variable-length kind writes ahead of its contents,
- * set by `DataType.Length<T, L>` (Wire format 6 in docs/specs/wire-format.md
- *). Unsigned only: a count is never negative and never
- * fractional.
- *
- * Absent on a field means `u32`, which is what every one of these kinds wrote
- * before the brand existed, so an unbranded shape's bytes do not move.
+ * A fixed width for the count a variable-length kind writes ahead of its
+ * contents, set by `DataType.Length<T, L>` (Wire format 6 in
+ * docs/specs/wire-format.md). Unsigned only: a count is never negative and
+ * never fractional.
  */
 export type LengthWidth = "u8" | "u16" | "u24" | "u32";
 export const LENGTH_WIDTHS: ReadonlySet<string> = new Set<LengthWidth>(["u8", "u16", "u24", "u32"]);
-export const DEFAULT_LENGTH_WIDTH: LengthWidth = "u32";
 
 /**
  * How a variable-length kind says how much follows. A `LengthWidth` writes a
  * count of that width ahead of the contents; a number writes no count at all
  * and both sides use exactly that many elements or bytes, which is Blink's
- * and Zap's exact form. Absent is the default width.
+ * and Zap's exact form. Absent is the variable-length count of Wire format
+ * 6.9: one byte below 254, and a marker and a `u16` or a `u32` above.
  */
 export type CountSpec = LengthWidth | number;
 

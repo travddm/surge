@@ -20,7 +20,7 @@ import type {
 	ObjectFieldEntry,
 	SetMember,
 } from "./field";
-import { DEFAULT_COMPONENT_WIDTH, DEFAULT_LENGTH_WIDTH, LENGTH_WIDTHS } from "./field";
+import { DEFAULT_COMPONENT_WIDTH, LENGTH_WIDTHS } from "./field";
 
 export interface WalkDiagnostic {
 	readonly message: string;
@@ -537,9 +537,13 @@ export class TypeWalker {
 		}
 		const field = this.walk(innerType, node, packed);
 		if (widthType === undefined) {
-			// The kind is still checked, so a brand with no argument left to
-			// read is not a brand that silently does nothing.
-			return this.withLength(field, DEFAULT_LENGTH_WIDTH, node);
+			this.report(
+				`"DataType.Length" needs its second argument: "DataType.u8", "DataType.u16", "DataType.u24", ` +
+					`"DataType.u32", or a whole number literal for the exact form. Without the brand, a count ` +
+					`is variable-length.`,
+				node,
+			);
+			return field;
 		}
 
 		// A numeric literal is the exact form: no count is written at all and
@@ -571,19 +575,17 @@ export class TypeWalker {
 	}
 
 	/**
-	 * The default width is recorded as absence rather than as itself, so a
-	 * fully defaulted brand walks to the very same field the unbranded type
-	 * does -- rule 4 of DataType brands in docs/coding-standards.md in the surge
-	 * repo, checkable on the IR and not only on the bytes. The kind is still
-	 * checked either way, so
-	 * `Length<number, u32>` is a diagnostic and not a brand that does nothing.
+	 * Every width is recorded, `u32` included: absence is the variable-length
+	 * count an unbranded container writes (Wire format 6.9 in
+	 * docs/specs/wire-format.md), which no width brand names, so `Length` has
+	 * no default (rule 4 of DataType brands in docs/coding-standards.md).
 	 */
 	private withLength(field: Field, length: CountSpec, node: ts.Node): Field {
 		switch (field.kind) {
 			case "str":
 			case "buffer":
 			case "array":
-				return length === DEFAULT_LENGTH_WIDTH ? field : { ...field, length };
+				return { ...field, length };
 			case "dict": {
 				if (typeof length === "number") {
 					this.report(
@@ -594,7 +596,7 @@ export class TypeWalker {
 					);
 					return field;
 				}
-				return length === DEFAULT_LENGTH_WIDTH ? field : { ...field, length };
+				return { ...field, length };
 			}
 			case "tuple": {
 				if (field.rest === undefined) {
@@ -605,7 +607,7 @@ export class TypeWalker {
 					);
 					return field;
 				}
-				return length === DEFAULT_LENGTH_WIDTH ? field : { ...field, length };
+				return { ...field, length };
 			}
 			case "bitSet":
 				this.report(

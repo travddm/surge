@@ -42,9 +42,9 @@ interface Containers {
 }
 const containersSerializer = createCodec<Containers>();
 
-// The same five count-writing kinds as `Containers`, each with a narrower
-// count. `record`'s key stays unbranded, so its own u32 length prefix is the
-// check that `Length` applies to the container it wraps and not to the
+// The same five count-writing kinds as `Containers`, each with a fixed-width
+// count. `record`'s key stays unbranded, so its own variable-length count is
+// the check that `Length` applies to the container it wraps and not to the
 // subtree under it.
 interface Bounded {
 	bytes: DataType.Length<buffer, DataType.u8>;
@@ -65,15 +65,18 @@ interface Exact {
 }
 const exactSerializer = createCodec<Exact>();
 
-// Every argument defaulted. Rule 4 of the brand convention in
-// docs/coding-standards.md says this has to write exactly what `Containers`
-// writes.
-interface DefaultedContainers {
-	list: DataType.Length<DataType.u16[]>;
+// A `u32` width is a fixed four-byte count, as the other widths are fixed:
+// only an unbranded container writes the variable-length count.
+interface U32Containers {
+	list: DataType.Length<DataType.u16[], DataType.u32>;
 	pair: DataType.Length<[DataType.u8, boolean, ...DataType.u8[]], DataType.u32>;
-	record: DataType.Length<Record<string, DataType.u8>>;
+	record: DataType.Length<Record<string, DataType.u8>, DataType.u32>;
 }
-const defaultedSerializer = createCodec<DefaultedContainers>();
+const u32Serializer = createCodec<U32Containers>();
+
+// One of each kind that writes a count, for the long forms of Wire format 6.9.
+const numbersSerializer = createCodec<DataType.u8[]>();
+const shortsSerializer = createCodec<Set<DataType.u16>>();
 
 interface WithOptional {
 	n?: DataType.u8;
@@ -172,8 +175,8 @@ class BytesTest {
 	@Fact
 	public pinsPrimitivesInNameOrder(): void {
 		const buffer = primitivesSerializer.serialize({ a: 7, b: -2, c: true, d: "hi" });
-		// a: u8 | b: i16 | c: bool | d: u32 length + bytes
-		Assert.equal("07" + "feff" + "01" + "02000000" + "6869", hex(buffer));
+		// a: u8 | b: i16 | c: bool | d: one-byte count + bytes
+		Assert.equal("07" + "feff" + "01" + "02" + "6869", hex(buffer));
 	}
 
 	@Fact
@@ -194,11 +197,12 @@ class BytesTest {
 	public pinsContainers(): void {
 		// One record entry: the order of several entries is not specified.
 		const buffer = containersSerializer.serialize({ list: [1, 258], pair: [9, true, 4, 5], record: { k: 3 } });
-		const list = "02000000" + "0100" + "0201";
-		// Fixed elements, then a u32 count of rest elements.
-		const pair = "09" + "01" + "02000000" + "04" + "05";
-		// u32 count, then key (u32 length + bytes) and value per entry.
-		const record = "01000000" + "01000000" + "6b" + "03";
+		// Each count below 254 is one byte (Wire format 6.9).
+		const list = "02" + "0100" + "0201";
+		// Fixed elements, then the count of rest elements.
+		const pair = "09" + "01" + "02" + "04" + "05";
+		// The count, then key (count + bytes) and value per entry.
+		const record = "01" + "01" + "6b" + "03";
 		Assert.equal(list + pair + record, hex(buffer));
 	}
 
@@ -215,8 +219,8 @@ class BytesTest {
 		const bytes = "02" + "aabb";
 		const list = "02" + "0100" + "0201";
 		const pair = "09" + "01" + "02" + "04" + "05";
-		// The dict's own count is a u8; the key string's length is still a u32.
-		const record = "01" + "01000000" + "6b" + "03";
+		// The dict's own count is a u8; the key string's is variable-length.
+		const record = "01" + "01" + "6b" + "03";
 		const text = "0200" + "6869";
 		Assert.equal(bytes + list + pair + record + text, hex(buf));
 	}
@@ -234,9 +238,38 @@ class BytesTest {
 	}
 
 	@Fact
-	public pinsDefaultedLengthAsUnbranded(): void {
-		const value: Containers = { list: [1, 258], pair: [9, true, 4, 5], record: { k: 3 } };
-		Assert.equal(hex(containersSerializer.serialize(value)), hex(defaultedSerializer.serialize(value)));
+	public pinsU32LengthAsFourBytes(): void {
+		const buf = u32Serializer.serialize({ list: [1, 258], pair: [9, true, 4, 5], record: { k: 3 } });
+		const list = "02000000" + "0100" + "0201";
+		const pair = "09" + "01" + "02000000" + "04" + "05";
+		// The key string keeps its variable-length count.
+		const record = "01000000" + "01" + "6b" + "03";
+		Assert.equal(list + pair + record, hex(buf));
+	}
+
+	@Fact
+	public pinsTheLongFormsOfACount(): void {
+		// The first bytes of a buffer of `size` bytes: its count, then the bytes.
+		const head = (size: number, bytes: number) =>
+			hex(rawSerializer.serialize(buffer.create(size))).sub(1, bytes * 2);
+		Assert.equal("fd" + "00", head(253, 2));
+		// 254 is the first count past one byte: the marker 254, then a u16.
+		Assert.equal("fe" + "fe00" + "00", head(254, 4));
+		Assert.equal("fe" + "ffff" + "00", head(65535, 4));
+		// Past a u16: the marker 255, then a u32.
+		Assert.equal("ff" + "00000100" + "00", head(65536, 6));
+		const numbers = new Array<number>(300, 7);
+		Assert.equal("fe" + "2c01" + "07", hex(numbersSerializer.serialize(numbers)).sub(1, 8));
+		// A dict counts its entries as it writes them, into one reserved byte,
+		// so 300 entries move along to make room for the long form.
+		const shorts = new Set<number>();
+		for (const i of $range(1, 300)) {
+			shorts.add(i);
+		}
+		const set = shortsSerializer.serialize(shorts);
+		Assert.equal(3 + 600, buffer.len(set));
+		Assert.equal("fe" + "2c01", hex(set).sub(1, 6));
+		Assert.equal(300, shortsSerializer.deserialize(set).size());
 	}
 
 	@Fact
@@ -273,7 +306,7 @@ class BytesTest {
 	public pinsAGuardedUnion(): void {
 		// Variants in `Field` kind order: num, str.
 		Assert.equal("00" + "0000000000004540", hex(guardedSerializer.serialize(42)));
-		Assert.equal("01" + "02000000" + "6869", hex(guardedSerializer.serialize("hi")));
+		Assert.equal("01" + "02" + "6869", hex(guardedSerializer.serialize("hi")));
 	}
 
 	@Fact
@@ -284,7 +317,7 @@ class BytesTest {
 		Assert.equal("00" + "02", hex(item));
 		Assert.equal(Enum.SortOrder.Name, orderOrTextSerializer.deserialize(item));
 		const text = orderOrTextSerializer.serialize("hi");
-		Assert.equal("01" + "02000000" + "6869", hex(text));
+		Assert.equal("01" + "02" + "6869", hex(text));
 		Assert.equal("hi", orderOrTextSerializer.deserialize(text));
 	}
 
@@ -298,7 +331,7 @@ class BytesTest {
 		const item = itemOrTextSerializer.serialize(Enum.SortOrder.Name);
 		Assert.equal("00", hex(item));
 		Assert.equal(Enum.SortOrder.Name, itemOrTextSerializer.deserialize(item));
-		Assert.equal("01" + "02000000" + "6869", hex(itemOrTextSerializer.serialize("hi")));
+		Assert.equal("01" + "02" + "6869", hex(itemOrTextSerializer.serialize("hi")));
 	}
 
 	@Fact
@@ -312,7 +345,7 @@ class BytesTest {
 		// Variant 1 | index 0 of Custom, LayoutOrder, Name
 		Assert.equal("01" + "00", hex(order));
 		Assert.equal(Enum.SortOrder.Custom, orderOrRigSerializer.deserialize(order));
-		Assert.equal("02" + "02000000" + "6869", hex(orderOrRigSerializer.serialize("hi")));
+		Assert.equal("02" + "02" + "6869", hex(orderOrRigSerializer.serialize("hi")));
 	}
 
 	@Fact
@@ -372,8 +405,8 @@ class BytesTest {
 
 	@Fact
 	public pinsABuffer(): void {
-		// u32 length + bytes
-		Assert.equal("03000000" + "0102ff", hex(rawSerializer.serialize(buffer.fromstring(string.char(1, 2, 255)))));
+		// One-byte count + bytes
+		Assert.equal("03" + "0102ff", hex(rawSerializer.serialize(buffer.fromstring(string.char(1, 2, 255)))));
 	}
 
 	@Fact
@@ -467,11 +500,11 @@ class BytesTest {
 		// The packed region is first. Bits in name order: count present, flag,
 		// maybeFlag present, maybeFlag value. Then count: u8, and text.
 		const present = packedOptionalsSerializer.serialize({ count: 9, flag: true, maybeFlag: false, text: "a" });
-		Assert.equal("07" + "09" + "01000000" + "61", hex(present));
+		Assert.equal("07" + "09" + "01" + "61", hex(present));
 		const absent = packedOptionalsSerializer.serialize({ flag: false, text: "" });
-		Assert.equal("00" + "00000000", hex(absent));
+		Assert.equal("00" + "00", hex(absent));
 		const flagged = packedOptionalsSerializer.serialize({ flag: false, maybeFlag: true, text: "" });
-		Assert.equal("0c" + "00000000", hex(flagged));
+		Assert.equal("0c" + "00", hex(flagged));
 	}
 
 	@Fact
