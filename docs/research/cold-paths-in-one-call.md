@@ -285,3 +285,23 @@ string-heavy row, outside the range of four runs of its unchanged code.
   with this paper.
 - The figures above were computed from the `.tsv` files, with the recorder's
   own median, spread and noise rule.
+
+## Correction, 2026-10-09
+
+This corrects three figures in the Results and states which changes the
+count of four names.
+
+- The Method names the hand-written column as a control, but `D` was
+  computed without it. With it, as the Method states, the encode of the two
+  rows whose code did not change is highest at 0.991×, where the Results say
+  0.989×. The decode is highest at 1.024×, on the instance references, where
+  they say 1.020×. The tree's decode is 0.984× adjusted, where they say
+  0.981×. The encode of the nineteen rows whose code changed still spans
+  0.970× to 1.073×. The large array, `Blink: Booleans`, the string-heavy row
+  and the enum row have no hand-written cell, so their figures, and those of
+  the run of `1ad50a6`, do not change, and neither does the conclusion.
+- The Abstract and the Conclusion count four changes, and the Abstract's
+  first clause holds two of them: a `str`'s or a `buffer`'s long form in one
+  call, with its bytes, and a count's long form in one call, which returns
+  the offset after it. The Background describes both under "A string's long
+  form".

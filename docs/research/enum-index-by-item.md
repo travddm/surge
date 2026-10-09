@@ -162,3 +162,13 @@ its bytes.
   `359c8e1`.
 - The figures above were computed from the `.tsv` files, with the recorder's
   own median, spread and noise rule.
+
+## Correction, 2026-10-09
+
+This corrects the range of the unchanged rows' encode in the Results. The
+Method names the hand-written column as a control, but `D` was computed
+without it. With it, as the Method states, surge's quiet rows whose code did
+not change moved between 0.964× and 1.018× adjusted on encode, where the
+Results say 0.965× and 1.017×. The decode's range does not change. The enum
+row has no hand-written cell, so its 3.709× on encode and its 0.974× on
+decode do not change, and neither does the conclusion.
