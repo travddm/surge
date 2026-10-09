@@ -154,3 +154,13 @@ invocation pair can now read together.
   nine trials.
 - The branch `probe-tagged-union-variants` holds the four commits named above
   in the surge repository's local history; it is not merged.
+
+## Correction, 2026-10-08
+
+This corrects the last line of the Data. The branch
+`probe-tagged-union-variants` is not kept, so the four commits it held are in
+no history of the repository. The code the runs used is kept in this paper
+and its data: `writers.luau` in
+[data/tagged-union-variants/](data/tagged-union-variants/) holds every writer
+that ran, and the table under Columns names the column each one ran in for
+each design.
