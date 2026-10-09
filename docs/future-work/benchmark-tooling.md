@@ -38,6 +38,20 @@ client and server is Blink's own benchmark method, and the only measure that
 includes remote overhead and batching, so a networking library and a bare
 serializer would meet on one axis.
 
+**Zap's output from one run to the next.** `zap` 0.6.29 writes the type
+declarations of its modules in another order on each run: three runs on an
+unchanged `catalog.zap` gave three different `server.luau` and
+`tooling.luau`. `mise run bench:definitions` therefore changes the checked-in
+Zap modules when no definition changed, and that diff can hide one that
+matters.
+
+**Two stale statements about the benchmark files.** The notes the size and
+speed recorders write above their tables say the baseline writes surge's
+bytes on five rows, where Benchmark harness 4.5 in
+[specs/benchmark-harness.md](../specs/benchmark-harness.md) gives it ten. The
+generated-files table in [coding-standards.md](../coding-standards.md) does not
+list `docs/benchmarks/code-size.md`, which `mise run bench:code` writes.
+
 **A Zap-shaped timing.** Zap has no callable encoder, so it is a size column
 only (Benchmark harness 4.3 in
 [specs/benchmark-harness.md](../specs/benchmark-harness.md)). A hand-written
@@ -52,6 +66,12 @@ nothing yet asks what a serializer costs on the wire once a networking layer
 batches it, and [networking.md](networking.md) is where that would come from.
 A Zap-shaped timing has no driver either, and a transcription would measure
 the transcription as much as Zap.
+
+Zap's order and the two stale statements change no number. A regeneration
+that changed no definition can be reverted, and the spec states the
+baseline's rows. The two statements are read wherever the tables and the
+standards are, so they are worth correcting before the documentation site
+publishes them.
 
 A stable fbs and serio column and a readable `Blink: Booleans` encode cell
 land before the first release, after the documentation site
@@ -79,3 +99,8 @@ booleans`) across several Studio processes, and look for what differs
    comparison cannot answer.
 4. A Zap-shaped timing only if Zap's speed becomes a question Blink's column,
    the other IDL compiler, cannot answer.
+5. Look for a `zap` option or a later version that orders its output.
+   Otherwise, have `bench:definitions` leave the Zap modules as they are when
+   `catalog.zap` has not changed.
+6. Have the recorders' notes count the baseline's rows from the catalog rather
+   than state a number, and add `code-size.md` to the generated-files table.

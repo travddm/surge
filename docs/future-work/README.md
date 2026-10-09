@@ -30,6 +30,9 @@ time:
   the transformer's suites could read surge's own declarations.
 - [shared-configs.md](shared-configs.md): the root and each package keep
   their own copies of the Prettier, markdownlint and cspell configs.
+- In [benchmark-tooling.md](benchmark-tooling.md): Zap's output, which
+  changes order from one run to the next, and two stale statements about the
+  benchmark files.
 
 ## After the first release
 
