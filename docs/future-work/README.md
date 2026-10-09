@@ -55,10 +55,9 @@ above depends on them:
   left of the generated code's speed. Every catalog row with a hand-written
   codec is within the band of it but the `CFrame` array's decode, where the
   hand-written codec holds the rotation in three numbers and surge in a
-  `Vector3`, and the encode of four rows, where the generated code reads a
-  length or compares a variable-length count twice. What else is left needs
-  a catalog row of a kind the catalog lacks, such as a sequence or a tuple
-  with a rest, or is smaller than the speed tier reads.
+  `Vector3`. What else is left needs a catalog row of a kind the catalog
+  lacks, such as a sequence or a tuple with a rest, or is smaller than the
+  speed tier reads.
 - [networking.md](networking.md): the `surge-net` transport layer.
   Serializer-layer work is complete without it.
 - [schema-versioning.md](schema-versioning.md): schema evolution. Only

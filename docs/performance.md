@@ -76,14 +76,10 @@ measured in
   [benchmarks/size.md](benchmarks/size.md).
 - **Against hand-written Luau** that writes the same bytes, on the ten
   shapes of the benchmark catalog that have a hand-written codec, surge's
-  decode runs within the speed tier's noise of it on all but a `CFrame`
-  array, where the hand-written codec is faster
-  ([research/baseline-cframe-read.md](research/baseline-cframe-read.md)).
-  surge's encode is behind it on nested arrays, a leaderboard, a tagged
-  union and a tree, where the generated code reads a length or compares a
-  count more often than the hand-written codec does, and within a few
-  percent of it on the other six
-  ([research/variable-length-counts.md](research/variable-length-counts.md)).
+  encode runs within a few percent of it on each, and its decode on each but
+  a `CFrame` array, where the hand-written codec is faster
+  ([research/count-read-once.md](research/count-read-once.md),
+  [research/baseline-cframe-read.md](research/baseline-cframe-read.md)).
   A shape that surge cannot size ahead of its write pays a cost once per
   call
   ([research/exact-sizing.md](research/exact-sizing.md),
