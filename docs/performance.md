@@ -83,10 +83,8 @@ measured in
   ([research/tagged-union-closed.md](research/tagged-union-closed.md),
   [research/tuple-reservations.md](research/tuple-reservations.md),
   [research/array-of-arrays-loop.md](research/array-of-arrays-loop.md)).
-  The exception is a `CFrame` array's decode, where surge is faster: it
-  builds each `CFrame` with one constructor, where the hand-written codec
-  takes two
-  ([research/enum-and-cframe-rows.md](research/enum-and-cframe-rows.md)).
+  The exception is a `CFrame` array's decode, where the hand-written codec
+  is faster ([research/baseline-cframe-read.md](research/baseline-cframe-read.md)).
   A shape that surge cannot size ahead of its write pays a cost once per
   call
   ([research/exact-sizing.md](research/exact-sizing.md),

@@ -77,6 +77,9 @@ code the transformer generates runs. What has been measured is under
   `CFrame` read into one constructor from a quaternion, and an enum write
   by `Value` and a `CFrame` write from `GetComponents`, which measured
   slower.
+- [baseline-cframe-read.md](../research/baseline-cframe-read.md) — the
+  hand-written codec's `CFrame` read through a quaternion, which leaves it
+  ahead of surge's on decode.
 
 This document holds what is still open.
 
@@ -86,9 +89,11 @@ This document holds what is still open.
 object and the `CFrame` array, surge's encode and decode are within the band
 that two runs of unchanged code disagree by
 ([size-and-read-locals.md](../research/size-and-read-locals.md)), except the
-`CFrame` array's decode, where surge is faster than the hand-written codec,
-which builds each `CFrame` in two steps where surge builds it in one
-([enum-and-cframe-rows.md](../research/enum-and-cframe-rows.md)). The gap had
+`CFrame` array's decode, where the hand-written codec is ahead
+([baseline-cframe-read.md](../research/baseline-cframe-read.md)). The one
+difference left in that read is the `Vector3` surge reads the rotation
+into, where the hand-written codec holds three numbers; three numbers
+would take two more locals than 5.5 counts for a `cframe`. The gap had
 a part paid once per call and a part paid per element
 ([generated-code-against-hand-written.md](../research/generated-code-against-hand-written.md)
 and its correction), and the papers listed above measured each change that
