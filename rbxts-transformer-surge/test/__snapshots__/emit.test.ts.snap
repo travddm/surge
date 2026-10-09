@@ -6,7 +6,8 @@ const set1 = value as unknown as Set<"a" | "b" | "c" | "d" | "e" | "f" | "g" | "
 const pos2 = __surge_cursor;
 __surge_cursor = pos2 + 2;
 if (__surge_cursor > __surge_capacity) {
-    [__surge_scratch, __surge_capacity] = __surge_grow(__surge_scratch, pos2, __surge_cursor);
+    __surge_scratch = __surge_grow(__surge_scratch, pos2, __surge_cursor);
+    __surge_capacity = buffer.len(__surge_scratch);
 }
 buffer.writeu8(__surge_scratch, pos2, (set1.has("a") ? 1 : 0) + (set1.has("b") ? 2 : 0) + (set1.has("c") ? 4 : 0) + (set1.has("d") ? 8 : 0) + (set1.has("e") ? 16 : 0) + (set1.has("f") ? 32 : 0) + (set1.has("g") ? 64 : 0) + (set1.has("h") ? 128 : 0));
 buffer.writeu8(__surge_scratch, pos2 + 1, set1.has("i") ? 1 : 0);
@@ -43,7 +44,8 @@ exports[`Emitter component widths a CFrame narrows its position and leaves its r
 const pos1 = __surge_cursor;
 __surge_cursor = pos1 + 18;
 if (__surge_cursor > __surge_capacity) {
-    [__surge_scratch, __surge_capacity] = __surge_grow(__surge_scratch, pos1, __surge_cursor);
+    __surge_scratch = __surge_grow(__surge_scratch, pos1, __surge_cursor);
+    __surge_capacity = buffer.len(__surge_scratch);
 }
 const position2 = value.Position;
 buffer.writei16(__surge_scratch, pos1, position2.X);
@@ -69,7 +71,8 @@ exports[`Emitter component widths a Vector3 writes each component at its own wid
 const pos1 = __surge_cursor;
 __surge_cursor = pos1 + 8;
 if (__surge_cursor > __surge_capacity) {
-    [__surge_scratch, __surge_capacity] = __surge_grow(__surge_scratch, pos1, __surge_cursor);
+    __surge_scratch = __surge_grow(__surge_scratch, pos1, __surge_cursor);
+    __surge_capacity = buffer.len(__surge_scratch);
 }
 buffer.writeu8(__surge_scratch, pos1, value.X);
 buffer.writeu16(__surge_scratch, pos1 + 1, value.Y & 65535);
@@ -87,7 +90,8 @@ exports[`Emitter component widths a quantized CFrame writes its rotation as thre
 const pos1 = __surge_cursor;
 __surge_cursor = pos1 + 18;
 if (__surge_cursor > __surge_capacity) {
-    [__surge_scratch, __surge_capacity] = __surge_grow(__surge_scratch, pos1, __surge_cursor);
+    __surge_scratch = __surge_grow(__surge_scratch, pos1, __surge_cursor);
+    __surge_capacity = buffer.len(__surge_scratch);
 }
 const position2 = value.Position;
 buffer.writef32(__surge_scratch, pos1, position2.X);
@@ -116,7 +120,8 @@ if (count2 < 254) {
     const pos3 = __surge_cursor;
     __surge_cursor = pos3 + 1;
     if (__surge_cursor > __surge_capacity) {
-        [__surge_scratch, __surge_capacity] = __surge_grow(__surge_scratch, pos3, __surge_cursor);
+        __surge_scratch = __surge_grow(__surge_scratch, pos3, __surge_cursor);
+        __surge_capacity = buffer.len(__surge_scratch);
     }
     buffer.writeu8(__surge_scratch, pos3, count2);
 }
@@ -126,7 +131,8 @@ else {
 const pos5 = __surge_cursor;
 __surge_cursor = pos5 + count2 * 3;
 if (__surge_cursor > __surge_capacity) {
-    [__surge_scratch, __surge_capacity] = __surge_grow(__surge_scratch, pos5, __surge_cursor);
+    __surge_scratch = __surge_grow(__surge_scratch, pos5, __surge_cursor);
+    __surge_capacity = buffer.len(__surge_scratch);
 }
 let element6 = pos5;
 for (const item4 of arr1) {
@@ -246,7 +252,8 @@ exports[`Emitter packed boolean padding packed booleans write one computed byte 
 const pos1 = __surge_cursor;
 __surge_cursor = pos1 + 1;
 if (__surge_cursor > __surge_capacity) {
-    [__surge_scratch, __surge_capacity] = __surge_grow(__surge_scratch, pos1, __surge_cursor);
+    __surge_scratch = __surge_grow(__surge_scratch, pos1, __surge_cursor);
+    __surge_capacity = buffer.len(__surge_scratch);
 }
 buffer.writeu8(__surge_scratch, pos1, (value.a ? 1 : 0) + (value.b ? 2 : 0) + (value.c ? 4 : 0));
 
@@ -266,7 +273,8 @@ exports[`Emitter packed region a packed optional is a presence bit at the head o
 const pos1 = __surge_cursor;
 __surge_cursor = pos1 + 1;
 if (__surge_cursor > __surge_capacity) {
-    [__surge_scratch, __surge_capacity] = __surge_grow(__surge_scratch, pos1, __surge_cursor);
+    __surge_scratch = __surge_grow(__surge_scratch, pos1, __surge_cursor);
+    __surge_capacity = buffer.len(__surge_scratch);
 }
 buffer.writeu8(__surge_scratch, pos1, (value.count !== undefined ? 1 : 0) + (value.flag ? 2 : 0) + (value.maybeFlag !== undefined ? 4 : 0) + (value.maybeFlag === true ? 8 : 0));
 const opt2 = value.count;
@@ -274,7 +282,8 @@ if (opt2 !== undefined) {
     const pos3 = __surge_cursor;
     __surge_cursor = pos3 + 1;
     if (__surge_cursor > __surge_capacity) {
-        [__surge_scratch, __surge_capacity] = __surge_grow(__surge_scratch, pos3, __surge_cursor);
+        __surge_scratch = __surge_grow(__surge_scratch, pos3, __surge_cursor);
+        __surge_capacity = buffer.len(__surge_scratch);
     }
     buffer.writeu8(__surge_scratch, pos3, opt2);
 }
@@ -284,7 +293,8 @@ if (len5 < 254) {
     const pos6 = __surge_cursor;
     __surge_cursor = pos6 + (len5 + 1);
     if (__surge_cursor > __surge_capacity) {
-        [__surge_scratch, __surge_capacity] = __surge_grow(__surge_scratch, pos6, __surge_cursor);
+        __surge_scratch = __surge_grow(__surge_scratch, pos6, __surge_cursor);
+        __surge_capacity = buffer.len(__surge_scratch);
     }
     buffer.writeu8(__surge_scratch, pos6, len5);
     buffer.writestring(__surge_scratch, pos6 + 1, s4);
@@ -323,7 +333,8 @@ exports[`Emitter packed tag bit a packed two-variant tagged union property is on
 const pos1 = __surge_cursor;
 __surge_cursor = pos1 + 1;
 if (__surge_cursor > __surge_capacity) {
-    [__surge_scratch, __surge_capacity] = __surge_grow(__surge_scratch, pos1, __surge_cursor);
+    __surge_scratch = __surge_grow(__surge_scratch, pos1, __surge_cursor);
+    __surge_capacity = buffer.len(__surge_scratch);
 }
 buffer.writeu8(__surge_scratch, pos1, value.shape.kind === "b" ? 1 : 0);
 const tag2 = value.shape.kind;
@@ -331,7 +342,8 @@ if (tag2 === "a") {
     const pos4 = __surge_cursor;
     __surge_cursor = pos4 + 1;
     if (__surge_cursor > __surge_capacity) {
-        [__surge_scratch, __surge_capacity] = __surge_grow(__surge_scratch, pos4, __surge_cursor);
+        __surge_scratch = __surge_grow(__surge_scratch, pos4, __surge_cursor);
+        __surge_capacity = buffer.len(__surge_scratch);
     }
     buffer.writeu8(__surge_scratch, pos4, (value.shape as unknown as {
         n: number;
@@ -341,7 +353,8 @@ else {
     const pos3 = __surge_cursor;
     __surge_cursor = pos3 + 1;
     if (__surge_cursor > __surge_capacity) {
-        [__surge_scratch, __surge_capacity] = __surge_grow(__surge_scratch, pos3, __surge_cursor);
+        __surge_scratch = __surge_grow(__surge_scratch, pos3, __surge_cursor);
+        __surge_capacity = buffer.len(__surge_scratch);
     }
     buffer.writeu8(__surge_scratch, pos3, (value.shape as unknown as {
         n: number;
@@ -389,7 +402,8 @@ if (count2 < 254) {
     const pos3 = __surge_cursor;
     __surge_cursor = pos3 + 1;
     if (__surge_cursor > __surge_capacity) {
-        [__surge_scratch, __surge_capacity] = __surge_grow(__surge_scratch, pos3, __surge_cursor);
+        __surge_scratch = __surge_grow(__surge_scratch, pos3, __surge_cursor);
+        __surge_capacity = buffer.len(__surge_scratch);
     }
     buffer.writeu8(__surge_scratch, pos3, count2);
 }
@@ -399,7 +413,8 @@ else {
 const pos5 = __surge_cursor;
 __surge_cursor = pos5 + count2 * 8;
 if (__surge_cursor > __surge_capacity) {
-    [__surge_scratch, __surge_capacity] = __surge_grow(__surge_scratch, pos5, __surge_cursor);
+    __surge_scratch = __surge_grow(__surge_scratch, pos5, __surge_cursor);
+    __surge_capacity = buffer.len(__surge_scratch);
 }
 let element6 = pos5;
 for (const item4 of arr1) {
@@ -431,7 +446,8 @@ const set1 = value as unknown as Set<false | -1 | "a">;
 const pos2 = __surge_cursor;
 __surge_cursor = pos2 + 1;
 if (__surge_cursor > __surge_capacity) {
-    [__surge_scratch, __surge_capacity] = __surge_grow(__surge_scratch, pos2, __surge_cursor);
+    __surge_scratch = __surge_grow(__surge_scratch, pos2, __surge_cursor);
+    __surge_capacity = buffer.len(__surge_scratch);
 }
 buffer.writeu8(__surge_scratch, pos2, (set1.has(false) ? 1 : 0) + (set1.has(-1) ? 2 : 0) + (set1.has("a") ? 4 : 0));
 
@@ -473,7 +489,8 @@ exports[`Emitter per-kind write/read snapshots bool 1`] = `
 const pos1 = __surge_cursor;
 __surge_cursor = pos1 + 1;
 if (__surge_cursor > __surge_capacity) {
-    [__surge_scratch, __surge_capacity] = __surge_grow(__surge_scratch, pos1, __surge_cursor);
+    __surge_scratch = __surge_grow(__surge_scratch, pos1, __surge_cursor);
+    __surge_capacity = buffer.len(__surge_scratch);
 }
 buffer.writeu8(__surge_scratch, pos1, value ? 1 : 0);
 
@@ -491,7 +508,8 @@ if (len2 < 254) {
     const pos3 = __surge_cursor;
     __surge_cursor = pos3 + (len2 + 1);
     if (__surge_cursor > __surge_capacity) {
-        [__surge_scratch, __surge_capacity] = __surge_grow(__surge_scratch, pos3, __surge_cursor);
+        __surge_scratch = __surge_grow(__surge_scratch, pos3, __surge_cursor);
+        __surge_capacity = buffer.len(__surge_scratch);
     }
     buffer.writeu8(__surge_scratch, pos3, len2);
     buffer.copy(__surge_scratch, pos3 + 1, src1, 0, len2);
@@ -518,7 +536,8 @@ exports[`Emitter per-kind write/read snapshots cframe 1`] = `
 const pos1 = __surge_cursor;
 __surge_cursor = pos1 + 24;
 if (__surge_cursor > __surge_capacity) {
-    [__surge_scratch, __surge_capacity] = __surge_grow(__surge_scratch, pos1, __surge_cursor);
+    __surge_scratch = __surge_grow(__surge_scratch, pos1, __surge_cursor);
+    __surge_capacity = buffer.len(__surge_scratch);
 }
 const position2 = value.Position;
 buffer.writef32(__surge_scratch, pos1, position2.X);
@@ -544,7 +563,8 @@ exports[`Emitter per-kind write/read snapshots cframe inside Packed 1`] = `
 const pos1 = __surge_cursor;
 __surge_cursor = pos1 + 25;
 if (__surge_cursor > __surge_capacity) {
-    [__surge_scratch, __surge_capacity] = __surge_grow(__surge_scratch, pos1, __surge_cursor);
+    __surge_scratch = __surge_grow(__surge_scratch, pos1, __surge_cursor);
+    __surge_capacity = buffer.len(__surge_scratch);
 }
 __surge_cursor = pos1 + __surge_writePackedCFrame(__surge_scratch, pos1, value);
 
@@ -559,7 +579,8 @@ exports[`Emitter per-kind write/read snapshots color3 1`] = `
 const pos1 = __surge_cursor;
 __surge_cursor = pos1 + 3;
 if (__surge_cursor > __surge_capacity) {
-    [__surge_scratch, __surge_capacity] = __surge_grow(__surge_scratch, pos1, __surge_cursor);
+    __surge_scratch = __surge_grow(__surge_scratch, pos1, __surge_cursor);
+    __surge_capacity = buffer.len(__surge_scratch);
 }
 buffer.writeu8(__surge_scratch, pos1, math.floor(value.R * 255));
 buffer.writeu8(__surge_scratch, pos1 + 1, math.floor(value.G * 255));
@@ -577,20 +598,23 @@ const keypoints1 = value.Keypoints;
 const pos2 = __surge_cursor;
 __surge_cursor = pos2 + 1;
 if (__surge_cursor > __surge_capacity) {
-    [__surge_scratch, __surge_capacity] = __surge_grow(__surge_scratch, pos2, __surge_cursor);
+    __surge_scratch = __surge_grow(__surge_scratch, pos2, __surge_cursor);
+    __surge_capacity = buffer.len(__surge_scratch);
 }
 buffer.writeu8(__surge_scratch, pos2, keypoints1.size());
 for (const kp3 of keypoints1) {
     const pos4 = __surge_cursor;
     __surge_cursor = pos4 + 4;
     if (__surge_cursor > __surge_capacity) {
-        [__surge_scratch, __surge_capacity] = __surge_grow(__surge_scratch, pos4, __surge_cursor);
+        __surge_scratch = __surge_grow(__surge_scratch, pos4, __surge_cursor);
+        __surge_capacity = buffer.len(__surge_scratch);
     }
     buffer.writef32(__surge_scratch, pos4, kp3.Time);
     const pos5 = __surge_cursor;
     __surge_cursor = pos5 + 3;
     if (__surge_cursor > __surge_capacity) {
-        [__surge_scratch, __surge_capacity] = __surge_grow(__surge_scratch, pos5, __surge_cursor);
+        __surge_scratch = __surge_grow(__surge_scratch, pos5, __surge_cursor);
+        __surge_capacity = buffer.len(__surge_scratch);
     }
     const color6 = kp3.Value;
     buffer.writeu8(__surge_scratch, pos5, math.floor(color6.R * 255));
@@ -619,7 +643,8 @@ exports[`Emitter per-kind write/read snapshots datatype BrickColor 1`] = `
 const pos1 = __surge_cursor;
 __surge_cursor = pos1 + 2;
 if (__surge_cursor > __surge_capacity) {
-    [__surge_scratch, __surge_capacity] = __surge_grow(__surge_scratch, pos1, __surge_cursor);
+    __surge_scratch = __surge_grow(__surge_scratch, pos1, __surge_cursor);
+    __surge_capacity = buffer.len(__surge_scratch);
 }
 buffer.writeu16(__surge_scratch, pos1, value.Number);
 
@@ -634,7 +659,8 @@ exports[`Emitter per-kind write/read snapshots datatype DateTime 1`] = `
 const pos1 = __surge_cursor;
 __surge_cursor = pos1 + 8;
 if (__surge_cursor > __surge_capacity) {
-    [__surge_scratch, __surge_capacity] = __surge_grow(__surge_scratch, pos1, __surge_cursor);
+    __surge_scratch = __surge_grow(__surge_scratch, pos1, __surge_cursor);
+    __surge_capacity = buffer.len(__surge_scratch);
 }
 buffer.writef64(__surge_scratch, pos1, value.UnixTimestampMillis);
 
@@ -649,7 +675,8 @@ exports[`Emitter per-kind write/read snapshots datatype NumberRange 1`] = `
 const pos1 = __surge_cursor;
 __surge_cursor = pos1 + 8;
 if (__surge_cursor > __surge_capacity) {
-    [__surge_scratch, __surge_capacity] = __surge_grow(__surge_scratch, pos1, __surge_cursor);
+    __surge_scratch = __surge_grow(__surge_scratch, pos1, __surge_cursor);
+    __surge_capacity = buffer.len(__surge_scratch);
 }
 buffer.writef32(__surge_scratch, pos1, value.Min);
 buffer.writef32(__surge_scratch, pos1 + 4, value.Max);
@@ -665,7 +692,8 @@ exports[`Emitter per-kind write/read snapshots datatype Rect 1`] = `
 const pos1 = __surge_cursor;
 __surge_cursor = pos1 + 16;
 if (__surge_cursor > __surge_capacity) {
-    [__surge_scratch, __surge_capacity] = __surge_grow(__surge_scratch, pos1, __surge_cursor);
+    __surge_scratch = __surge_grow(__surge_scratch, pos1, __surge_cursor);
+    __surge_capacity = buffer.len(__surge_scratch);
 }
 buffer.writef32(__surge_scratch, pos1, value.Min.X);
 buffer.writef32(__surge_scratch, pos1 + 4, value.Min.Y);
@@ -683,7 +711,8 @@ exports[`Emitter per-kind write/read snapshots datatype UDim 1`] = `
 const pos1 = __surge_cursor;
 __surge_cursor = pos1 + 8;
 if (__surge_cursor > __surge_capacity) {
-    [__surge_scratch, __surge_capacity] = __surge_grow(__surge_scratch, pos1, __surge_cursor);
+    __surge_scratch = __surge_grow(__surge_scratch, pos1, __surge_cursor);
+    __surge_capacity = buffer.len(__surge_scratch);
 }
 buffer.writef32(__surge_scratch, pos1, value.Scale);
 buffer.writei32(__surge_scratch, pos1 + 4, value.Offset);
@@ -699,7 +728,8 @@ exports[`Emitter per-kind write/read snapshots datatype UDim2 1`] = `
 const pos1 = __surge_cursor;
 __surge_cursor = pos1 + 16;
 if (__surge_cursor > __surge_capacity) {
-    [__surge_scratch, __surge_capacity] = __surge_grow(__surge_scratch, pos1, __surge_cursor);
+    __surge_scratch = __surge_grow(__surge_scratch, pos1, __surge_cursor);
+    __surge_capacity = buffer.len(__surge_scratch);
 }
 buffer.writef32(__surge_scratch, pos1, value.X.Scale);
 buffer.writei32(__surge_scratch, pos1 + 4, value.X.Offset);
@@ -717,7 +747,8 @@ exports[`Emitter per-kind write/read snapshots datatype Vector3int16 1`] = `
 const pos1 = __surge_cursor;
 __surge_cursor = pos1 + 6;
 if (__surge_cursor > __surge_capacity) {
-    [__surge_scratch, __surge_capacity] = __surge_grow(__surge_scratch, pos1, __surge_cursor);
+    __surge_scratch = __surge_grow(__surge_scratch, pos1, __surge_cursor);
+    __surge_capacity = buffer.len(__surge_scratch);
 }
 buffer.writei16(__surge_scratch, pos1, value.X);
 buffer.writei16(__surge_scratch, pos1 + 2, value.Y);
@@ -735,7 +766,8 @@ const dict1 = value;
 const pos2 = __surge_cursor;
 __surge_cursor = pos2 + 1;
 if (__surge_cursor > __surge_capacity) {
-    [__surge_scratch, __surge_capacity] = __surge_grow(__surge_scratch, pos2, __surge_cursor);
+    __surge_scratch = __surge_grow(__surge_scratch, pos2, __surge_cursor);
+    __surge_capacity = buffer.len(__surge_scratch);
 }
 let count3 = 0;
 for (const [k4, v8] of dict1 as unknown as Map<string, number>) {
@@ -745,7 +777,8 @@ for (const [k4, v8] of dict1 as unknown as Map<string, number>) {
         const pos7 = __surge_cursor;
         __surge_cursor = pos7 + (len6 + 1);
         if (__surge_cursor > __surge_capacity) {
-            [__surge_scratch, __surge_capacity] = __surge_grow(__surge_scratch, pos7, __surge_cursor);
+            __surge_scratch = __surge_grow(__surge_scratch, pos7, __surge_cursor);
+            __surge_capacity = buffer.len(__surge_scratch);
         }
         buffer.writeu8(__surge_scratch, pos7, len6);
         buffer.writestring(__surge_scratch, pos7 + 1, s5);
@@ -756,7 +789,8 @@ for (const [k4, v8] of dict1 as unknown as Map<string, number>) {
     const pos9 = __surge_cursor;
     __surge_cursor = pos9 + 8;
     if (__surge_cursor > __surge_capacity) {
-        [__surge_scratch, __surge_capacity] = __surge_grow(__surge_scratch, pos9, __surge_cursor);
+        __surge_scratch = __surge_grow(__surge_scratch, pos9, __surge_cursor);
+        __surge_capacity = buffer.len(__surge_scratch);
     }
     buffer.writef64(__surge_scratch, pos9, v8);
     count3++;
@@ -769,7 +803,8 @@ else {
     const pos11 = __surge_cursor;
     __surge_cursor = pos11 + (head10 - 1);
     if (__surge_cursor > __surge_capacity) {
-        [__surge_scratch, __surge_capacity] = __surge_grow(__surge_scratch, pos11, __surge_cursor);
+        __surge_scratch = __surge_grow(__surge_scratch, pos11, __surge_cursor);
+        __surge_capacity = buffer.len(__surge_scratch);
     }
     buffer.copy(__surge_scratch, pos2 + head10, __surge_scratch, pos2 + 1, pos11 - (pos2 + 1));
     __surge_writeLongCount(__surge_scratch, pos2, count3);
@@ -804,7 +839,8 @@ const dict1 = value;
 const pos2 = __surge_cursor;
 __surge_cursor = pos2 + 1;
 if (__surge_cursor > __surge_capacity) {
-    [__surge_scratch, __surge_capacity] = __surge_grow(__surge_scratch, pos2, __surge_cursor);
+    __surge_scratch = __surge_grow(__surge_scratch, pos2, __surge_cursor);
+    __surge_capacity = buffer.len(__surge_scratch);
 }
 let count3 = 0;
 for (const k4 of dict1 as unknown as Set<string>) {
@@ -814,7 +850,8 @@ for (const k4 of dict1 as unknown as Set<string>) {
         const pos7 = __surge_cursor;
         __surge_cursor = pos7 + (len6 + 1);
         if (__surge_cursor > __surge_capacity) {
-            [__surge_scratch, __surge_capacity] = __surge_grow(__surge_scratch, pos7, __surge_cursor);
+            __surge_scratch = __surge_grow(__surge_scratch, pos7, __surge_cursor);
+            __surge_capacity = buffer.len(__surge_scratch);
         }
         buffer.writeu8(__surge_scratch, pos7, len6);
         buffer.writestring(__surge_scratch, pos7 + 1, s5);
@@ -832,7 +869,8 @@ else {
     const pos9 = __surge_cursor;
     __surge_cursor = pos9 + (head8 - 1);
     if (__surge_cursor > __surge_capacity) {
-        [__surge_scratch, __surge_capacity] = __surge_grow(__surge_scratch, pos9, __surge_cursor);
+        __surge_scratch = __surge_grow(__surge_scratch, pos9, __surge_cursor);
+        __surge_capacity = buffer.len(__surge_scratch);
     }
     buffer.copy(__surge_scratch, pos2 + head8, __surge_scratch, pos2 + 1, pos9 - (pos2 + 1));
     __surge_writeLongCount(__surge_scratch, pos2, count3);
@@ -864,7 +902,8 @@ exports[`Emitter per-kind write/read snapshots enum 1`] = `
 const pos1 = __surge_cursor;
 __surge_cursor = pos1 + 1;
 if (__surge_cursor > __surge_capacity) {
-    [__surge_scratch, __surge_capacity] = __surge_grow(__surge_scratch, pos1, __surge_cursor);
+    __surge_scratch = __surge_grow(__surge_scratch, pos1, __surge_cursor);
+    __surge_capacity = buffer.len(__surge_scratch);
 }
 buffer.writeu8(__surge_scratch, pos1, surge_SortOrder_1_index.get(value)!);
 
@@ -888,7 +927,8 @@ if (typeIs(value, "number")) {
     const pos5 = __surge_cursor;
     __surge_cursor = pos5 + 9;
     if (__surge_cursor > __surge_capacity) {
-        [__surge_scratch, __surge_capacity] = __surge_grow(__surge_scratch, pos5, __surge_cursor);
+        __surge_scratch = __surge_grow(__surge_scratch, pos5, __surge_cursor);
+        __surge_capacity = buffer.len(__surge_scratch);
     }
     buffer.writeu8(__surge_scratch, pos5, 0);
     const pos6 = pos5 + 1;
@@ -898,7 +938,8 @@ else {
     const pos1 = __surge_cursor;
     __surge_cursor = pos1 + 1;
     if (__surge_cursor > __surge_capacity) {
-        [__surge_scratch, __surge_capacity] = __surge_grow(__surge_scratch, pos1, __surge_cursor);
+        __surge_scratch = __surge_grow(__surge_scratch, pos1, __surge_cursor);
+        __surge_capacity = buffer.len(__surge_scratch);
     }
     buffer.writeu8(__surge_scratch, pos1, 1);
     const s2 = value as unknown as string;
@@ -907,7 +948,8 @@ else {
         const pos4 = __surge_cursor;
         __surge_cursor = pos4 + (len3 + 1);
         if (__surge_cursor > __surge_capacity) {
-            [__surge_scratch, __surge_capacity] = __surge_grow(__surge_scratch, pos4, __surge_cursor);
+            __surge_scratch = __surge_grow(__surge_scratch, pos4, __surge_cursor);
+            __surge_capacity = buffer.len(__surge_scratch);
         }
         buffer.writeu8(__surge_scratch, pos4, len3);
         buffer.writestring(__surge_scratch, pos4 + 1, s2);
@@ -945,7 +987,8 @@ exports[`Emitter per-kind write/read snapshots literal 1`] = `
 const pos1 = __surge_cursor;
 __surge_cursor = pos1 + 1;
 if (__surge_cursor > __surge_capacity) {
-    [__surge_scratch, __surge_capacity] = __surge_grow(__surge_scratch, pos1, __surge_cursor);
+    __surge_scratch = __surge_grow(__surge_scratch, pos1, __surge_cursor);
+    __surge_capacity = buffer.len(__surge_scratch);
 }
 buffer.writeu8(__surge_scratch, pos1, value === "a" ? 0 : value === "b" ? 1 : 2);
 
@@ -969,7 +1012,8 @@ exports[`Emitter per-kind write/read snapshots num 1`] = `
 const pos1 = __surge_cursor;
 __surge_cursor = pos1 + 4;
 if (__surge_cursor > __surge_capacity) {
-    [__surge_scratch, __surge_capacity] = __surge_grow(__surge_scratch, pos1, __surge_cursor);
+    __surge_scratch = __surge_grow(__surge_scratch, pos1, __surge_cursor);
+    __surge_capacity = buffer.len(__surge_scratch);
 }
 buffer.writef32(__surge_scratch, pos1, value);
 
@@ -984,7 +1028,8 @@ exports[`Emitter per-kind write/read snapshots num i24 1`] = `
 const pos1 = __surge_cursor;
 __surge_cursor = pos1 + 3;
 if (__surge_cursor > __surge_capacity) {
-    [__surge_scratch, __surge_capacity] = __surge_grow(__surge_scratch, pos1, __surge_cursor);
+    __surge_scratch = __surge_grow(__surge_scratch, pos1, __surge_cursor);
+    __surge_capacity = buffer.len(__surge_scratch);
 }
 buffer.writeu16(__surge_scratch, pos1, value & 65535);
 buffer.writeu8(__surge_scratch, pos1 + 2, (value >>> 16) & 255);
@@ -1000,7 +1045,8 @@ exports[`Emitter per-kind write/read snapshots num u24 1`] = `
 const pos1 = __surge_cursor;
 __surge_cursor = pos1 + 3;
 if (__surge_cursor > __surge_capacity) {
-    [__surge_scratch, __surge_capacity] = __surge_grow(__surge_scratch, pos1, __surge_cursor);
+    __surge_scratch = __surge_grow(__surge_scratch, pos1, __surge_cursor);
+    __surge_capacity = buffer.len(__surge_scratch);
 }
 buffer.writeu16(__surge_scratch, pos1, value & 65535);
 buffer.writeu8(__surge_scratch, pos1 + 2, (value >>> 16) & 255);
@@ -1017,20 +1063,23 @@ const keypoints1 = value.Keypoints;
 const pos2 = __surge_cursor;
 __surge_cursor = pos2 + 1;
 if (__surge_cursor > __surge_capacity) {
-    [__surge_scratch, __surge_capacity] = __surge_grow(__surge_scratch, pos2, __surge_cursor);
+    __surge_scratch = __surge_grow(__surge_scratch, pos2, __surge_cursor);
+    __surge_capacity = buffer.len(__surge_scratch);
 }
 buffer.writeu8(__surge_scratch, pos2, keypoints1.size());
 for (const kp3 of keypoints1) {
     const pos4 = __surge_cursor;
     __surge_cursor = pos4 + 4;
     if (__surge_cursor > __surge_capacity) {
-        [__surge_scratch, __surge_capacity] = __surge_grow(__surge_scratch, pos4, __surge_cursor);
+        __surge_scratch = __surge_grow(__surge_scratch, pos4, __surge_cursor);
+        __surge_capacity = buffer.len(__surge_scratch);
     }
     buffer.writef32(__surge_scratch, pos4, kp3.Time);
     const pos5 = __surge_cursor;
     __surge_cursor = pos5 + 8;
     if (__surge_cursor > __surge_capacity) {
-        [__surge_scratch, __surge_capacity] = __surge_grow(__surge_scratch, pos5, __surge_cursor);
+        __surge_scratch = __surge_grow(__surge_scratch, pos5, __surge_cursor);
+        __surge_capacity = buffer.len(__surge_scratch);
     }
     buffer.writef32(__surge_scratch, pos5, kp3.Value);
     buffer.writef32(__surge_scratch, pos5 + 4, kp3.Envelope);
@@ -1057,7 +1106,8 @@ exports[`Emitter per-kind write/read snapshots object 1`] = `
 const pos1 = __surge_cursor;
 __surge_cursor = pos1 + 8;
 if (__surge_cursor > __surge_capacity) {
-    [__surge_scratch, __surge_capacity] = __surge_grow(__surge_scratch, pos1, __surge_cursor);
+    __surge_scratch = __surge_grow(__surge_scratch, pos1, __surge_cursor);
+    __surge_capacity = buffer.len(__surge_scratch);
 }
 buffer.writef64(__surge_scratch, pos1, value.a);
 const s2 = value.b;
@@ -1066,7 +1116,8 @@ if (len3 < 254) {
     const pos4 = __surge_cursor;
     __surge_cursor = pos4 + (len3 + 1);
     if (__surge_cursor > __surge_capacity) {
-        [__surge_scratch, __surge_capacity] = __surge_grow(__surge_scratch, pos4, __surge_cursor);
+        __surge_scratch = __surge_grow(__surge_scratch, pos4, __surge_cursor);
+        __surge_capacity = buffer.len(__surge_scratch);
     }
     buffer.writeu8(__surge_scratch, pos4, len3);
     buffer.writestring(__surge_scratch, pos4 + 1, s2);
@@ -1097,14 +1148,16 @@ const opt1 = value;
 const pos2 = __surge_cursor;
 __surge_cursor = pos2 + 1;
 if (__surge_cursor > __surge_capacity) {
-    [__surge_scratch, __surge_capacity] = __surge_grow(__surge_scratch, pos2, __surge_cursor);
+    __surge_scratch = __surge_grow(__surge_scratch, pos2, __surge_cursor);
+    __surge_capacity = buffer.len(__surge_scratch);
 }
 buffer.writeu8(__surge_scratch, pos2, opt1 !== undefined ? 1 : 0);
 if (opt1 !== undefined) {
     const pos3 = __surge_cursor;
     __surge_cursor = pos3 + 8;
     if (__surge_cursor > __surge_capacity) {
-        [__surge_scratch, __surge_capacity] = __surge_grow(__surge_scratch, pos3, __surge_cursor);
+        __surge_scratch = __surge_grow(__surge_scratch, pos3, __surge_cursor);
+        __surge_capacity = buffer.len(__surge_scratch);
     }
     buffer.writef64(__surge_scratch, pos3, opt1);
 }
@@ -1139,7 +1192,8 @@ function surge_Node_1_write(value: surge_Node_1_Type, __surge_cursor: number): n
     const pos1 = __surge_cursor;
     __surge_cursor = pos1 + 8;
     if (__surge_cursor > __surge_capacity) {
-        [__surge_scratch, __surge_capacity] = __surge_grow(__surge_scratch, pos1, __surge_cursor);
+        __surge_scratch = __surge_grow(__surge_scratch, pos1, __surge_cursor);
+        __surge_capacity = buffer.len(__surge_scratch);
     }
     buffer.writef64(__surge_scratch, pos1, value.value);
     __surge_cursor = surge_Node_1_write(value.next, __surge_cursor);
@@ -1164,7 +1218,8 @@ if (len2 < 254) {
     const pos3 = __surge_cursor;
     __surge_cursor = pos3 + (len2 + 1);
     if (__surge_cursor > __surge_capacity) {
-        [__surge_scratch, __surge_capacity] = __surge_grow(__surge_scratch, pos3, __surge_cursor);
+        __surge_scratch = __surge_grow(__surge_scratch, pos3, __surge_cursor);
+        __surge_capacity = buffer.len(__surge_scratch);
     }
     buffer.writeu8(__surge_scratch, pos3, len2);
     buffer.writestring(__surge_scratch, pos3 + 1, s1);
@@ -1191,7 +1246,8 @@ if (tag1 === "a") {
     const pos6 = __surge_cursor;
     __surge_cursor = pos6 + 9;
     if (__surge_cursor > __surge_capacity) {
-        [__surge_scratch, __surge_capacity] = __surge_grow(__surge_scratch, pos6, __surge_cursor);
+        __surge_scratch = __surge_grow(__surge_scratch, pos6, __surge_cursor);
+        __surge_capacity = buffer.len(__surge_scratch);
     }
     buffer.writeu8(__surge_scratch, pos6, 0);
     const pos7 = pos6 + 1;
@@ -1203,7 +1259,8 @@ else {
     const pos2 = __surge_cursor;
     __surge_cursor = pos2 + 1;
     if (__surge_cursor > __surge_capacity) {
-        [__surge_scratch, __surge_capacity] = __surge_grow(__surge_scratch, pos2, __surge_cursor);
+        __surge_scratch = __surge_grow(__surge_scratch, pos2, __surge_cursor);
+        __surge_capacity = buffer.len(__surge_scratch);
     }
     buffer.writeu8(__surge_scratch, pos2, 1);
     const s3 = (value as unknown as {
@@ -1214,7 +1271,8 @@ else {
         const pos5 = __surge_cursor;
         __surge_cursor = pos5 + (len4 + 1);
         if (__surge_cursor > __surge_capacity) {
-            [__surge_scratch, __surge_capacity] = __surge_grow(__surge_scratch, pos5, __surge_cursor);
+            __surge_scratch = __surge_grow(__surge_scratch, pos5, __surge_cursor);
+            __surge_capacity = buffer.len(__surge_scratch);
         }
         buffer.writeu8(__surge_scratch, pos5, len4);
         buffer.writestring(__surge_scratch, pos5 + 1, s3);
@@ -1267,7 +1325,8 @@ if (len2 < 254) {
     const pos3 = __surge_cursor;
     __surge_cursor = pos3 + (len2 + 1);
     if (__surge_cursor > __surge_capacity) {
-        [__surge_scratch, __surge_capacity] = __surge_grow(__surge_scratch, pos3, __surge_cursor);
+        __surge_scratch = __surge_grow(__surge_scratch, pos3, __surge_cursor);
+        __surge_capacity = buffer.len(__surge_scratch);
     }
     buffer.writeu8(__surge_scratch, pos3, len2);
     buffer.writestring(__surge_scratch, pos3 + 1, s1);
@@ -1280,7 +1339,8 @@ if (count4 < 254) {
     const pos5 = __surge_cursor;
     __surge_cursor = pos5 + 1;
     if (__surge_cursor > __surge_capacity) {
-        [__surge_scratch, __surge_capacity] = __surge_grow(__surge_scratch, pos5, __surge_cursor);
+        __surge_scratch = __surge_grow(__surge_scratch, pos5, __surge_cursor);
+        __surge_capacity = buffer.len(__surge_scratch);
     }
     buffer.writeu8(__surge_scratch, pos5, count4);
 }
@@ -1291,7 +1351,8 @@ for (let i6 = 1; i6 < value.size(); i6++) {
     const pos7 = __surge_cursor;
     __surge_cursor = pos7 + 8;
     if (__surge_cursor > __surge_capacity) {
-        [__surge_scratch, __surge_capacity] = __surge_grow(__surge_scratch, pos7, __surge_cursor);
+        __surge_scratch = __surge_grow(__surge_scratch, pos7, __surge_cursor);
+        __surge_capacity = buffer.len(__surge_scratch);
     }
     buffer.writef64(__surge_scratch, pos7, value[i6] as unknown as number);
 }
@@ -1328,7 +1389,8 @@ exports[`Emitter per-kind write/read snapshots vector2 1`] = `
 const pos1 = __surge_cursor;
 __surge_cursor = pos1 + 8;
 if (__surge_cursor > __surge_capacity) {
-    [__surge_scratch, __surge_capacity] = __surge_grow(__surge_scratch, pos1, __surge_cursor);
+    __surge_scratch = __surge_grow(__surge_scratch, pos1, __surge_cursor);
+    __surge_capacity = buffer.len(__surge_scratch);
 }
 buffer.writef32(__surge_scratch, pos1, value.X);
 buffer.writef32(__surge_scratch, pos1 + 4, value.Y);
@@ -1344,7 +1406,8 @@ exports[`Emitter per-kind write/read snapshots vector3 1`] = `
 const pos1 = __surge_cursor;
 __surge_cursor = pos1 + 12;
 if (__surge_cursor > __surge_capacity) {
-    [__surge_scratch, __surge_capacity] = __surge_grow(__surge_scratch, pos1, __surge_cursor);
+    __surge_scratch = __surge_grow(__surge_scratch, pos1, __surge_cursor);
+    __surge_capacity = buffer.len(__surge_scratch);
 }
 buffer.writef32(__surge_scratch, pos1, value.X);
 buffer.writef32(__surge_scratch, pos1 + 4, value.Y);
@@ -1368,7 +1431,8 @@ exports[`Emitter read-order for side-effecting fields a blob field followed by a
 const pos2 = __surge_cursor;
 __surge_cursor = pos2 + 8;
 if (__surge_cursor > __surge_capacity) {
-    [__surge_scratch, __surge_capacity] = __surge_grow(__surge_scratch, pos2, __surge_cursor);
+    __surge_scratch = __surge_grow(__surge_scratch, pos2, __surge_cursor);
+    __surge_capacity = buffer.len(__surge_scratch);
 }
 buffer.writef64(__surge_scratch, pos2, value.b);
 
@@ -1395,7 +1459,8 @@ __surge_cursor = surge_Tree_1_write(value.inner, __surge_cursor);
 const pos13 = __surge_cursor;
 __surge_cursor = pos13 + 8;
 if (__surge_cursor > __surge_capacity) {
-    [__surge_scratch, __surge_capacity] = __surge_grow(__surge_scratch, pos13, __surge_cursor);
+    __surge_scratch = __surge_grow(__surge_scratch, pos13, __surge_cursor);
+    __surge_capacity = buffer.len(__surge_scratch);
 }
 buffer.writef64(__surge_scratch, pos13, value.zebra);
 
@@ -1419,7 +1484,8 @@ function surge_Tree_1_write(value: surge_Tree_1_Type, __surge_cursor: number): n
         const pos3 = __surge_cursor;
         __surge_cursor = pos3 + 1;
         if (__surge_cursor > __surge_capacity) {
-            [__surge_scratch, __surge_capacity] = __surge_grow(__surge_scratch, pos3, __surge_cursor);
+            __surge_scratch = __surge_grow(__surge_scratch, pos3, __surge_cursor);
+            __surge_capacity = buffer.len(__surge_scratch);
         }
         buffer.writeu8(__surge_scratch, pos3, count2);
     }
@@ -1429,7 +1495,8 @@ function surge_Tree_1_write(value: surge_Tree_1_Type, __surge_cursor: number): n
     const pos5 = __surge_cursor;
     __surge_cursor = pos5 + count2 * 8;
     if (__surge_cursor > __surge_capacity) {
-        [__surge_scratch, __surge_capacity] = __surge_grow(__surge_scratch, pos5, __surge_cursor);
+        __surge_scratch = __surge_grow(__surge_scratch, pos5, __surge_cursor);
+        __surge_capacity = buffer.len(__surge_scratch);
     }
     let element6 = pos5;
     for (const item4 of arr1) {
@@ -1505,7 +1572,8 @@ exports[`Emitter shared reservations a nested object of fixed-size properties jo
 const pos1 = __surge_cursor;
 __surge_cursor = pos1 + 8;
 if (__surge_cursor > __surge_capacity) {
-    [__surge_scratch, __surge_capacity] = __surge_grow(__surge_scratch, pos1, __surge_cursor);
+    __surge_scratch = __surge_grow(__surge_scratch, pos1, __surge_cursor);
+    __surge_capacity = buffer.len(__surge_scratch);
 }
 buffer.writeu32(__surge_scratch, pos1, value.id);
 const pos2 = pos1 + 4;
@@ -1538,7 +1606,8 @@ exports[`Emitter shared reservations consecutive fixed-size fields share one all
 const pos1 = __surge_cursor;
 __surge_cursor = pos1 + 17;
 if (__surge_cursor > __surge_capacity) {
-    [__surge_scratch, __surge_capacity] = __surge_grow(__surge_scratch, pos1, __surge_cursor);
+    __surge_scratch = __surge_grow(__surge_scratch, pos1, __surge_cursor);
+    __surge_capacity = buffer.len(__surge_scratch);
 }
 buffer.writeu8(__surge_scratch, pos1, value.flag ? 1 : 0);
 const pos2 = pos1 + 1;
@@ -1570,7 +1639,8 @@ if (!(n1 >= -100 && n1 <= 100) || n1 % 1 !== 0) {
 const pos2 = __surge_cursor;
 __surge_cursor = pos2 + 1;
 if (__surge_cursor > __surge_capacity) {
-    [__surge_scratch, __surge_capacity] = __surge_grow(__surge_scratch, pos2, __surge_cursor);
+    __surge_scratch = __surge_grow(__surge_scratch, pos2, __surge_cursor);
+    __surge_capacity = buffer.len(__surge_scratch);
 }
 buffer.writei8(__surge_scratch, pos2, n1);
 

@@ -61,7 +61,8 @@ export function writeLongBuffer(target: buffer, offset: number, source: buffer, 
 function reserve(target: buffer, capacity: number, offset: number, count: number, bytes: number): Reserved {
 	const needed = offset + (count <= U16_MAX ? 3 : 5) + bytes;
 	if (needed > capacity) {
-		return grow(target, offset, needed);
+		target = grow(target, offset, needed);
+		capacity = buffer.len(target);
 	}
 	// eslint-disable-next-line roblox-ts/no-user-defined-lua-tuple -- the sanctioned way to return one.
 	return $tuple(target, capacity);

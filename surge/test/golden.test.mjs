@@ -78,15 +78,6 @@ test("an enum of more than five items fills its item list and its index from one
 	);
 });
 
-test("a reservation past the capacity grows the buffer and takes its capacity in one assignment", () => {
-	const luau = readCompiledLuau("tests/bytes.spec.luau");
-	assert.match(
-		luau,
-		/if __surge_cursor > __surge_capacity then\n\s+__surge_scratch, __surge_capacity = __surge_grow[(]__surge_scratch, pos[0-9]+, __surge_cursor[)]\n\s+end$/m,
-	);
-	assert.doesNotMatch(luau, /__surge_grow[(][^\n]*\n\s+__surge_capacity = buffer[.]len/);
-});
-
 test("a packed region is written and read inline, with no per-bit helper", () => {
 	const luau = readCompiledLuau("tests/coverage.spec.luau");
 	assert.doesNotMatch(luau, /packBit\(/i);

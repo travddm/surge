@@ -1054,10 +1054,11 @@ export abstract class EmitContext {
 					),
 					f.createBlock(
 						[
-							this.assignAll(
-								[SCRATCH, CAPACITY],
+							this.assign(
+								SCRATCH,
 								this.call("grow", [f.createIdentifier(SCRATCH), pos, f.createIdentifier(CURSOR)]),
 							),
+							this.assign(CAPACITY, this.bufferCall("len", [f.createIdentifier(SCRATCH)])),
 						],
 						true,
 					),
