@@ -391,6 +391,17 @@ describe("Emitter enum index width and lookup table", () => {
 			/const (\w+_index) = new Map<EnumItem, number>\(\);\nfor \(const (i\d+) of \$range\(1, 3\)\) \{\n\s+\1\.set\((\w+_items)\[\2 - 1\], \2 - 1\);\n\}/,
 		);
 	});
+
+	test("an enum of more than three items fills its index to the list's length, which Luau does not unroll", () => {
+		const output = emitSnapshot({
+			kind: "enum",
+			enumName: "NormalId",
+			members: ["Back", "Bottom", "Front", "Left"],
+		});
+		expect(output).toMatch(
+			/for \(const (i\d+) of \$range\(1, (\w+_items)\.size\(\)\)\) \{\n\s+\w+_index\.set\(\2\[\1 - 1\], \1 - 1\);/,
+		);
+	});
 });
 
 describe("Emitter cframe reads", () => {

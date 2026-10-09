@@ -44,6 +44,13 @@ export const ALLOC_RUN_LOCALS = LOCALS_PER_BLOCK - 1;
 // to compile. A size sums at most this many terms in one chain, and adds the
 // chains in pairs (`sum` in size.ts).
 export const TERMS_PER_SUM = 32;
+// An enum's index is filled by a loop over its item list (`ensureEnumTable`
+// in context.ts). Luau's compiler unrolls a loop with a literal bound of up to
+// a few dozen iterations, which for this body costs bytecode for each item:
+// at 24 items the unrolled loop was about 400 bytes larger than one bounded by
+// `#items`, which it does not unroll (Lune's `luau.compile` at level 2). Up to
+// this many items, the unrolled loop is the smaller of the two.
+export const ENUM_UNROLLED_ITEMS = 3;
 
 /**
  * The module of `@rbxts/surge` that holds the helpers generated code calls

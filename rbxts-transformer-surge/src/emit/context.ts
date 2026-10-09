@@ -4,6 +4,7 @@ import type { ConstValue, Field, FieldKey, LengthWidth, NumWidth } from "../fiel
 import {
 	CAPACITY,
 	CURSOR,
+	ENUM_UNROLLED_ITEMS,
 	ERROR_PREFIX,
 	INITIAL_CAPACITY,
 	LOCALS_BUDGET,
@@ -1408,8 +1409,12 @@ export abstract class EmitContext {
 		);
 		const i = this.fresh("i");
 		const position = f.createBinaryExpression(i, this.ts_.SyntaxKind.MinusToken, this.num(1));
+		const count =
+			members.length <= ENUM_UNROLLED_ITEMS
+				? this.num(members.length)
+				: f.createCallExpression(f.createPropertyAccessExpression(items, "size"), undefined, []);
 		this.helperDecls.push(
-			this.countedLoop(i, this.num(members.length), [
+			this.countedLoop(i, count, [
 				f.createExpressionStatement(
 					f.createCallExpression(f.createPropertyAccessExpression(index, "set"), undefined, [
 						f.createElementAccessExpression(items, position),
