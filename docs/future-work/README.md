@@ -50,7 +50,7 @@ above depends on them:
 
 - [generated-code-performance.md](generated-code-performance.md): what is
   left of the generated code's speed. Every catalog row with a hand-written
-  codec is within the band of it, and what is left needs a catalog row of a
+  codec is within the band of it or faster than it, and what is left needs a catalog row of a
   kind the catalog lacks, such as a sequence or a tuple with a rest, or is
   smaller than the speed tier reads.
 - [networking.md](networking.md): the `surge-net` transport layer.

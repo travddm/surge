@@ -78,7 +78,10 @@ measured in
   and decode run within the speed tier's noise of it on a flat struct, a
   nested object, a `CFrame` array and a `Packed<T>` object
   ([research/size-and-read-locals.md](research/size-and-read-locals.md),
-  [research/packed-bits-read-in-place.md](research/packed-bits-read-in-place.md)).
+  [research/packed-bits-read-in-place.md](research/packed-bits-read-in-place.md)),
+  except a `CFrame` array's decode, where surge is faster: it builds each
+  `CFrame` with one constructor, where the hand-written codec takes two
+  ([research/enum-and-cframe-rows.md](research/enum-and-cframe-rows.md)).
   It is slower at a tagged union's encode
   ([research/datatype-values.md](research/datatype-values.md)).
   A shape that surge cannot size ahead of its write pays a cost once per

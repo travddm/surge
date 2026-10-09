@@ -73,6 +73,10 @@ code the transformer generates runs. What has been measured is under
   fixed-size elements in one reservation, and a tuple of them fixed-size.
 - [array-of-arrays-loop.md](../research/array-of-arrays-loop.md) — an array
   of arrays sized by a loop over its rows.
+- [enum-and-cframe-rows.md](../research/enum-and-cframe-rows.md) — a
+  `CFrame` read into one constructor from a quaternion, and an enum write
+  by `Value` and a `CFrame` write from `GetComponents`, which measured
+  slower.
 
 This document holds what is still open.
 
@@ -81,7 +85,10 @@ This document holds what is still open.
 **The per-call gap to hand-written Luau.** On the flat struct, the nested
 object and the `CFrame` array, surge's encode and decode are within the band
 that two runs of unchanged code disagree by
-([size-and-read-locals.md](../research/size-and-read-locals.md)). The gap had
+([size-and-read-locals.md](../research/size-and-read-locals.md)), except the
+`CFrame` array's decode, where surge is faster than the hand-written codec,
+which builds each `CFrame` in two steps where surge builds it in one
+([enum-and-cframe-rows.md](../research/enum-and-cframe-rows.md)). The gap had
 a part paid once per call and a part paid per element
 ([generated-code-against-hand-written.md](../research/generated-code-against-hand-written.md)
 and its correction), and the papers listed above measured each change that
