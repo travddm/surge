@@ -1,13 +1,13 @@
 //!optimize 2
 import { Assert, Fact } from "@rbxts/runit";
 import type { Cursor } from "@rbxts/surge";
-import { DataType, createCodec, createCursorCodec } from "@rbxts/surge";
+import { DataType, createCodec, createCursor, createCursorCodec } from "@rbxts/surge";
 
 import { difference, hex } from "../support";
 
 // A cursor codec (Runtime API 3.15 to 3.18 in docs/specs/runtime-api.md)
 // writes into and reads from a cursor the caller owns, which several codecs
-// share in a batch.
+// share in a batch. Every cursor here comes from `createCursor` (3.19).
 
 interface Move {
 	id: DataType.u16;
@@ -50,7 +50,7 @@ interface Counted {
 const countedChecked = createCursorCodec<Counted>({ readChecks: true });
 
 function cursorOf(size: number): Cursor {
-	return { buffer: buffer.create(size), offset: 0, blobs: [], blobIndex: 0 };
+	return createCursor(buffer.create(size));
 }
 
 /** The bytes a cursor holds up to its offset. */
@@ -62,10 +62,32 @@ function written(cursor: Cursor): buffer {
 
 /** A cursor to read back what `cursor` wrote. */
 function reading(cursor: Cursor): Cursor {
-	return { buffer: cursor.buffer, offset: 0, blobs: cursor.blobs, blobIndex: 0 };
+	return createCursor(cursor.buffer, cursor.blobs);
 }
 
 class CursorTest {
+	@Fact
+	public createsACursorAtTheStartOfItsBufferAndBlobs(): void {
+		const out = createCursor();
+		Assert.equal(0, buffer.len(out.buffer));
+		Assert.equal(0, out.offset);
+		Assert.equal(0, out.blobs.size());
+		Assert.equal(0, out.blobIndex);
+		// Each call creates a list of its own.
+		createCursor().blobs.push("other");
+		Assert.equal(0, out.blobs.size());
+		const model = new Instance("Part");
+		spawned.write(out, { model, health: 3 });
+		// It holds the buffer and the list it is given, not copies.
+		const input = createCursor(out.buffer, out.blobs);
+		Assert.equal(true, input.buffer === out.buffer);
+		Assert.equal(true, input.blobs === out.blobs);
+		const back = spawned.read(input);
+		Assert.equal(model, back.model);
+		Assert.equal(3, back.health);
+		Assert.equal(out.offset, input.offset);
+	}
+
 	@Fact
 	public writesTwoCodecsIntoOneCursorAndReadsThemBackInOrder(): void {
 		const first: Move = { id: 7, at: new Vector3(1, 2, 3) };

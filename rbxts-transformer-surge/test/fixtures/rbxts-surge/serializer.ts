@@ -117,6 +117,10 @@ export interface Cursor {
 	blobIndex: number;
 }
 
+export function createCursor(bytes: buffer = buffer.create(0), blobs: Array<defined> = []): Cursor {
+	return { buffer: bytes, offset: 0, blobs, blobIndex: 0 };
+}
+
 export interface CursorCodec<in out T> {
 	write: (cursor: Cursor, value: T) => void;
 	read: (cursor: Cursor) => T;
