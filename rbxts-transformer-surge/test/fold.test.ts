@@ -142,26 +142,33 @@ describe("cursor fold", () => {
 		);
 	});
 
-	test("leaves a loop's body to set the cursor each pass, and keeps what a later pass reads", () => {
+	test("leaves a loop's body as it was written, but for the positions known before the loop", () => {
 		const folded = fold(`
 			let __surge_cursor = 0;
+			const pos0 = __surge_cursor;
+			__surge_cursor = pos0 + 4;
+			buffer.writeu32(scratch, pos0, value.id);
 			for (const item of list) {
 				const pos1 = __surge_cursor;
 				__surge_cursor = pos1 + 2;
 				buffer.writeu8(scratch, pos1, item.a);
 				const pos2 = pos1 + 1;
 				buffer.writeu8(scratch, pos2, item.b);
+				buffer.writeu8(scratch, pos0, item.c);
 			}
 			return scratch;
 		`);
 		expect(folded).toBe(
 			[
-				"let __surge_cursor = 0;",
+				"let __surge_cursor = 4;",
+				"buffer.writeu32(scratch, 0, value.id);",
 				"for (const item of list) {",
 				"    const pos1 = __surge_cursor;",
-				"    buffer.writeu8(scratch, pos1, item.a);",
-				"    buffer.writeu8(scratch, pos1 + 1, item.b);",
 				"    __surge_cursor = pos1 + 2;",
+				"    buffer.writeu8(scratch, pos1, item.a);",
+				"    const pos2 = pos1 + 1;",
+				"    buffer.writeu8(scratch, pos2, item.b);",
+				"    buffer.writeu8(scratch, 0, item.c);",
 				"}",
 				"return scratch;",
 			].join("\n"),

@@ -10,9 +10,15 @@
  * A position local read from a cursor whose value it knows becomes that
  * offset, and so does one computed from such a local; a move of the cursor
  * by a constant is dropped. The cursor is assigned its value only where
- * something assigns it otherwise, or where a branch or a loop begins or ends.
- * Two adjacent reservations then move the cursor once, and the fixed bytes at
- * the head of a function are written at numbers.
+ * something assigns it otherwise, where a branch begins or ends, or before a
+ * loop. Two adjacent reservations then move the cursor once, and the fixed
+ * bytes at the head of a function are written at numbers. Then an
+ * assignment of the cursor that nothing reads goes.
+ *
+ * A loop's body is left as the emitter wrote it. Folded, it measured slower
+ * on the two rows whose loops it changed most, the instance references'
+ * encode and the guarded union's decode, by more than unchanged code moves
+ * (docs/research/cursor-known-values.md).
  *
  * Anything it does not recognize, it leaves as it is: a statement that
  * assigns the cursor in another form ends what it knows. It runs only where
@@ -223,9 +229,9 @@ class CursorFold {
 	}
 
 	/**
-	 * A loop. Its body runs with the cursor at a value no number says, and
-	 * ends each pass with the cursor set; its header is read with the cursor
-	 * as the loop leaves it.
+	 * A loop, entered with the cursor set. Its body and its header are left as
+	 * the emitter wrote them, but for the positions known before the loop,
+	 * which they read as their values.
 	 */
 	private loop(statement: ts.IterationStatement): ts.Statement {
 		const f = this.ctx.factory;
@@ -233,7 +239,8 @@ class CursorFold {
 		const unknown: State = { at: undefined, synced: true };
 		const header = (node: ts.Expression | undefined) =>
 			node === undefined ? undefined : (this.substitute(node, unknown, false) as ts.Expression);
-		const body = this.branch(statement.statement, undefined);
+		const kept = this.substitute(statement.statement, unknown, false)!;
+		const body = t.isBlock(kept) ? kept : f.createBlock([kept], true);
 		if (t.isForOfStatement(statement)) {
 			return f.updateForOfStatement(
 				statement,
@@ -267,7 +274,7 @@ class CursorFold {
 		return f.updateDoStatement(doStatement, body, header(doStatement.expression)!);
 	}
 
-	/** One branch or loop body, entered with the cursor holding `entry`, left with the cursor set. */
+	/** One branch, entered with the cursor holding `entry`, left with the cursor set. */
 	private branch(statement: ts.Statement, entry: Offset | undefined): ts.Block {
 		const t = this.ctx.ts_;
 		const f = this.ctx.factory;

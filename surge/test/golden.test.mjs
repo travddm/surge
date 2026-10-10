@@ -237,11 +237,12 @@ test("a union is sized by the variant its write picks, with the write's own test
 		),
 	);
 	// The write reads the tag once and tests it once, and the branch it takes
-	// writes the variant's index in one reservation with the `u8` after it,
-	// moving the cursor once, past both.
+	// writes the variant's index in one reservation with the `u8` after it.
+	// In a loop's body, the reservation is as the emitter wrote it
+	// (Transformer 5.30).
 	assert.match(
 		luau,
-		/local (tag[0-9]+) = item[0-9]+[.]kind\n\s+if \1 == "level" then\n\s+local (pos[0-9]+) = __surge_cursor\n\s+buffer[.]writeu8[(]__surge_scratch, \2, 0[)]\n\s+buffer[.]writeu8[(]__surge_scratch, \2 [+] 1, item[0-9]+[.]level[)]\n\s+__surge_cursor = \2 [+] 2$/m,
+		/local (tag[0-9]+) = item[0-9]+[.]kind\n\s+if \1 == "level" then\n\s+local (pos[0-9]+) = __surge_cursor\n\s+__surge_cursor = \2 [+] 2\n\s+buffer[.]writeu8[(]__surge_scratch, \2, 0[)]$/m,
 	);
 	assert.doesNotMatch(luau, /local idx[0-9]+ = if /);
 });
