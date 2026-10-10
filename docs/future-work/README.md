@@ -36,6 +36,8 @@ time:
 - [enum-name-keys.md](enum-name-keys.md): an option for an enum's write
   keyed by the item's `Name`, for generated code run outside Roblox, where
   the default write keyed by the item finds no index.
+- [squash-column.md](squash-column.md): Squash, the most used standalone
+  Luau serializer, as a column of the benchmark, once its version is chosen.
 
 ## After the first release
 
