@@ -522,8 +522,11 @@ function whenPresent(
 	if (size.constant === 0 && !readsValue(size)) {
 		return EMPTY;
 	}
+	// A value of fixed size is bound ahead of the result, where the size,
+	// a packed presence bit and the write would each read its path.
+	const tested = readsValue(size) ? value : (bind(ctx, scope, "opt", value)?.value ?? value);
 	const isPresent = f.createBinaryExpression(
-		value,
+		tested,
 		ctx.ts_.SyntaxKind.ExclamationEqualsEqualsToken,
 		f.createIdentifier("undefined"),
 	);

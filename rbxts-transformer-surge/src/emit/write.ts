@@ -1331,8 +1331,9 @@ function packedByteExpr(ctx: EmitContext, bits: ReadonlyArray<PackedBit>, value:
 				ctx.literalValueExpr(entry.field.variants[1].tagValue),
 			);
 		} else if (role === "present") {
+			// The size ahead of the result may have bound the optional's value (`whenPresent` in size.ts).
 			condition = f.createBinaryExpression(
-				property,
+				ctx.boundBySize(property)?.value ?? property,
 				ctx.ts_.SyntaxKind.ExclamationEqualsEqualsToken,
 				f.createIdentifier("undefined"),
 			);

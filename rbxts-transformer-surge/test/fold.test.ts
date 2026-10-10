@@ -1,15 +1,16 @@
 import * as ts from "typescript";
 
 import { Emitter } from "../src/emit";
-import { CURSOR } from "../src/emit/constants";
+import { CAPACITY, CURSOR, INITIAL_CAPACITY } from "../src/emit/constants";
+import type { Capacity } from "../src/emit/fold";
 import { foldCursor } from "../src/emit/fold";
 
 /** Folds the cursor through the statements of `source`, and prints them. */
-function fold(source: string): string {
+function fold(source: string, capacity?: Capacity): string {
 	const file = ts.createSourceFile("fold.ts", source, ts.ScriptTarget.ES2019, false, ts.ScriptKind.TS);
 	const emitter = new Emitter(ts, ts.factory, new Map(), {});
 	const printer = ts.createPrinter({ newLine: ts.NewLineKind.LineFeed });
-	return foldCursor(emitter, [...file.statements], CURSOR)
+	return foldCursor(emitter, [...file.statements], CURSOR, capacity)
 		.map((statement) => printer.printNode(ts.EmitHint.Unspecified, statement, file))
 		.join("\n");
 }
@@ -36,6 +37,37 @@ describe("cursor fold", () => {
 				"return scratch;",
 			].join("\n"),
 		);
+	});
+
+	test("drops a capacity check at a number the buffer always holds, and keeps one past it", () => {
+		const source = `
+			__surge_cursor = 0;
+			const pos1 = __surge_cursor;
+			__surge_cursor = pos1 + 64;
+			if (__surge_cursor > __surge_capacity) {
+				[__surge_scratch, __surge_capacity] = grow(__surge_scratch, pos1, __surge_cursor);
+			}
+			buffer.writef64(__surge_scratch, pos1, value.a);
+			const pos2 = __surge_cursor;
+			__surge_cursor = pos2 + 1;
+			if (__surge_cursor > __surge_capacity) {
+				[__surge_scratch, __surge_capacity] = grow(__surge_scratch, pos2, __surge_cursor);
+			}
+			buffer.writeu8(__surge_scratch, pos2, value.b);
+			return finishWrite(__surge_scratch, __surge_cursor);
+		`;
+		expect(fold(source, { name: CAPACITY, floor: INITIAL_CAPACITY })).toBe(
+			[
+				"buffer.writef64(__surge_scratch, 0, value.a);",
+				"if (65 > __surge_capacity) {",
+				"    [__surge_scratch, __surge_capacity] = grow(__surge_scratch, 64, 65);",
+				"}",
+				"buffer.writeu8(__surge_scratch, 64, value.b);",
+				"return finishWrite(__surge_scratch, 65);",
+			].join("\n"),
+		);
+		// A cursor's buffer may hold fewer bytes than the scratch buffer starts with.
+		expect(fold(source)).toContain("if (64 > __surge_capacity) {");
 	});
 
 	test("moves the cursor once for adjacent reservations past a position it does not know", () => {

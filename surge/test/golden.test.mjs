@@ -199,6 +199,9 @@ test("an array of fixed-size elements reserves them all once, ahead of its loop"
 
 /** The pattern of the bytes a variable-length count of `count`, a pattern itself, takes (Wire format 6.9). */
 const countBytes = (count) => `[(]if ${count} < 254 then 1 elseif ${count} <= 65535 then 3 else 5[)]`;
+// What follows a serializer's name: its closure, or its functions alone where the closure would
+// declare nothing (Transformer 5.1).
+const opens = String.raw`(?:[(]function[(][)]|[{])\n`;
 
 test("a string reserves its count and its bytes at once", () => {
 	const luau = readCompiledLuau("tests/basic.spec.luau");
@@ -362,6 +365,25 @@ test("a shape sized exactly creates its result at that size and checks no capaci
 	assert.match(recursion, /__surge_finishWrite[(]__surge_scratch, __surge_cursor[)]/);
 });
 
+test("a serializer whose closure would declare nothing is its functions alone", () => {
+	// `Basic` is sized exactly, and holds no enum and no recursive type.
+	const luau = readCompiledLuau("tests/basic.spec.luau");
+	assert.match(luau, /^local basicSerializer = \{\n\s+serialize = function[(]value[)]$/m);
+	// A positive control: a shape that keeps the scratch buffer declares it in its closure.
+	const bytes = readCompiledLuau("tests/bytes.spec.luau");
+	assert.match(
+		bytes,
+		/^local wideHeadSerializer = [(]function[(][)]\n\s+local __surge_scratch = buffer[.]create[(]64[)]$/m,
+	);
+});
+
+test("a reservation known to end within the scratch buffer's 64 bytes checks no capacity", () => {
+	const luau = readCompiledLuau("tests/bytes.spec.luau");
+	assert.doesNotMatch(luau, /if (?:[0-9]|[1-5][0-9]|6[0-4]) > __surge_capacity then/);
+	// A positive control: `WideHead` writes 80 bytes ahead of its strings.
+	assert.match(luau, /if 80 > __surge_capacity then/);
+});
+
 // Regression check for the read state held in locals. What it was measured as
 // worth is in docs/research/size-and-read-locals.md.
 test("a deserialize that reaches no recursion helper holds its input and cursor in locals", () => {
@@ -399,7 +421,7 @@ test("an array of unions, objects or arrays is sized by a loop, and an array of 
 	assert.match(
 		strings,
 		new RegExp(
-			String.raw`local namedEntriesSerializer = [(]function[(][)]\n[^]*?for _, (item[0-9]+) in arr[0-9]+ do\n` +
+			String.raw`local namedEntriesSerializer = ${opens}[^]*?for _, (item[0-9]+) in arr[0-9]+ do\n` +
 				String.raw`\s+local (len[0-9]+) = #\1[.]name\n[^]*?size[0-9]+ [+]= ${countBytes(String.raw`\2`)} [+] \2\n`,
 		),
 	);
@@ -409,7 +431,7 @@ test("an array of unions, objects or arrays is sized by a loop, and an array of 
 	assert.match(
 		collections,
 		new RegExp(
-			String.raw`local gridSerializer = [(]function[(][)]\n[^]*?local (len[0-9]+) = #(arr[0-9]+)\n` +
+			String.raw`local gridSerializer = ${opens}[^]*?local (len[0-9]+) = #(arr[0-9]+)\n` +
 				String.raw`\s+local (size[0-9]+) = ${countBytes(String.raw`\1`)}\n\s+for _, (item[0-9]+) in \2 do\n` +
 				String.raw`\s+local (len[0-9]+) = #\4\n\s+\3 [+]= ${countBytes(String.raw`\5`)} [+] \5 [*] 8\n\s+end$`,
 			"m",
@@ -432,7 +454,7 @@ test("an array of objects that hold a blob is sized by its count", () => {
 	assert.match(
 		luau,
 		new RegExp(
-			String.raw`local blobArraySerializer = [(]function[(][)]\n[^]*?local (arr[0-9]+) = value[.]entries\n` +
+			String.raw`local blobArraySerializer = ${opens}[^]*?local (arr[0-9]+) = value[.]entries\n` +
 				String.raw`\s+local (len[0-9]+) = #\1\n\s+local __surge_scratch = buffer[.]create[(]${countBytes(String.raw`\2`)} [+] \2 [*] 2[)]$`,
 			"m",
 		),
@@ -494,7 +516,10 @@ test("a blob list is created at the most blobs its value appends", () => {
 	// has bound the array's length.
 	assert.match(
 		luau,
-		/local blobArraySerializer = [(]function[(][)]\n[^]*?local __surge_writeBlobs = table[.]create[(]len[0-9]+[)]$/m,
+		new RegExp(
+			String.raw`local blobArraySerializer = ${opens}[^]*?local __surge_writeBlobs = table[.]create[(]len[0-9]+[)]$`,
+			"m",
+		),
 	);
 	// `WithAbsentUnknowns` has three optional blobs and an array of them, each
 	// counted as present.

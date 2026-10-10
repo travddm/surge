@@ -571,13 +571,17 @@ export default function transform(program: ts.Program, _config: unknown, extras:
 
 				emitter.usedImports.forEach((name) => usedImports.add(name));
 
-				const iifeBody = [
+				const closureDecls = [
 					...(needsWrite ? emitter.writeStateDecls() : []),
 					...(needsRead ? emitter.readStateDecls() : []),
 					...emitter.blobStateDecls(),
 					...emitter.getHelperDecls(),
-					f.createReturnStatement(resultValue),
 				];
+				// A closure that would declare nothing is not emitted (Transformer 5.1).
+				if (closureDecls.length === 0) {
+					return resultValue;
+				}
+				const iifeBody = [...closureDecls, f.createReturnStatement(resultValue)];
 				const iife = f.createCallExpression(
 					f.createFunctionExpression(
 						undefined,

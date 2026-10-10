@@ -1294,7 +1294,11 @@ describe("Emitter exact sizing", () => {
 				{ name: "n", field: { kind: "optional", inner: { kind: "num", width: "i16" }, packed: true } },
 			],
 		});
-		expect(output).toContain("buffer.create((value.n !== undefined ? 2 : 0) + 1)");
+		expect(output).toMatch(
+			/^const (opt\d+) = value\.n;\nconst __surge_scratch = buffer\.create\(\(\1 !== undefined \? 2 : 0\) \+ 1\);/,
+		);
+		// The presence bit and the write test the size's local, and read the path no more.
+		expect(output.match(/value\.n\b/g)).toHaveLength(1);
 	});
 
 	const either: Field = { kind: "guardedUnion", variants: [{ kind: "num", width: "f64" }, { kind: "str" }] };

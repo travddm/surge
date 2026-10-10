@@ -12,8 +12,9 @@
  * by a constant is dropped. The cursor is assigned its value only where
  * something assigns it otherwise, where a branch begins or ends, or before a
  * loop. Two adjacent reservations then move the cursor once, and the fixed
- * bytes at the head of a function are written at numbers. Then an
- * assignment of the cursor that nothing reads goes.
+ * bytes at the head of a function are written at numbers. A capacity check
+ * at a number the buffer always holds goes. Then an assignment of the cursor
+ * that nothing reads goes.
  *
  * A loop's body is left as the emitter wrote it. Folded, it measured slower
  * on two cells, the instance references' encode and the guarded union's
@@ -35,6 +36,12 @@ interface Offset {
 	readonly offset: number;
 }
 
+/** The local that holds the write buffer's capacity, and the fewest bytes it can hold. */
+export interface Capacity {
+	readonly name: string;
+	readonly floor: number;
+}
+
 /** What a block knows of the cursor at the statement being folded. */
 interface State {
 	/** The cursor's value, or `undefined` where nothing since its last assignment says it. */
@@ -54,6 +61,7 @@ class CursorFold {
 	public constructor(
 		private readonly ctx: EmitContext,
 		private readonly cursor: string,
+		private readonly capacity: Capacity | undefined,
 	) {}
 
 	public fold(body: ReadonlyArray<ts.Statement>): ts.Statement[] {
@@ -143,7 +151,7 @@ class CursorFold {
 				this.materialize(state, out);
 			}
 			const substituted = this.substitute(statement, state, this.substitutes(state));
-			if (substituted !== undefined) {
+			if (substituted !== undefined && !this.passesCapacity(substituted)) {
 				if (this.readsCursorAtAll(substituted)) {
 					this.sinceInit = false;
 				}
@@ -565,6 +573,23 @@ class CursorFold {
 		return t.forEachChild(node, (child) => this.readsCursorAtAll(child) || undefined) ?? false;
 	}
 
+	/** `if (12 > capacity) { ... }`, the check of a reservation that ends at a number the capacity already holds. */
+	private passesCapacity(statement: ts.Statement): boolean {
+		const t = this.ctx.ts_;
+		if (this.capacity === undefined || !t.isIfStatement(statement) || statement.elseStatement !== undefined) {
+			return false;
+		}
+		const condition = statement.expression;
+		return (
+			t.isBinaryExpression(condition) &&
+			condition.operatorToken.kind === t.SyntaxKind.GreaterThanToken &&
+			t.isNumericLiteral(condition.left) &&
+			Number(condition.left.text) <= this.capacity.floor &&
+			t.isIdentifier(condition.right) &&
+			condition.right.text === this.capacity.name
+		);
+	}
+
 	/** Whether `node` leaves the loop around it early, past where the loop's body sets the cursor. */
 	private jumps(node: ts.Node): boolean {
 		const t = this.ctx.ts_;
@@ -759,7 +784,16 @@ function isAssignment(t: typeof ts, kind: ts.SyntaxKind): boolean {
 	return kind >= t.SyntaxKind.FirstAssignment && kind <= t.SyntaxKind.LastAssignment;
 }
 
-/** Folds the cursor named `cursor` through `body`, the statements of one function. */
-export function foldCursor(ctx: EmitContext, body: ReadonlyArray<ts.Statement>, cursor: string): ts.Statement[] {
-	return new CursorFold(ctx, cursor).fold(body);
+/**
+ * Folds the cursor named `cursor` through `body`, the statements of one
+ * function. With `capacity`, a check that a reservation ending at a number
+ * fits the buffer goes where the buffer always holds that many bytes.
+ */
+export function foldCursor(
+	ctx: EmitContext,
+	body: ReadonlyArray<ts.Statement>,
+	cursor: string,
+	capacity?: Capacity,
+): ts.Statement[] {
+	return new CursorFold(ctx, cursor, capacity).fold(body);
 }

@@ -275,9 +275,23 @@ describe("transform (end-to-end)", () => {
 			const s = createSerializer<P>();`,
 		);
 		try {
-			expect(printed).toContain("const s = function () {");
+			expect(printed).toContain("const s = (value: P) => {");
 			expect(printed).not.toContain("serialize:");
 			expect(printed).not.toContain("deserialize:");
+		} finally {
+			cleanup();
+		}
+	});
+
+	test("a call site whose closure would declare nothing is replaced by the functions alone", () => {
+		const { printed, cleanup } = runTransform(
+			`import { createCodec } from "@rbxts/surge";
+			interface P { x: number; name: string; }
+			const s = createCodec<P>();`,
+		);
+		try {
+			expect(printed).toContain("const s = { serialize: (value: P) => {");
+			expect(printed).not.toContain("function () {");
 		} finally {
 			cleanup();
 		}
@@ -709,6 +723,11 @@ describe("transform generated code", () => {
 		[
 			"an optional string whose presence is a packed bit",
 			"type T = DataType.Packed<{ on: boolean; nick?: string }>;",
+		],
+		["an optional of fixed size", "interface T { id: DataType.u32; offset?: DataType.i16; }"],
+		[
+			"an optional of fixed size whose presence is a packed bit",
+			"type T = DataType.Packed<{ on: boolean; offset?: DataType.i16 }>;",
 		],
 		["an array of strings, on the scratch buffer", "interface T { id: DataType.u32; names: string[]; }"],
 	])("the generated code for %s passes the type check under a consumer's noUnusedLocals", (_name, declarations) => {

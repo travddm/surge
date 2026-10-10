@@ -8,7 +8,7 @@
 import type ts from "typescript";
 
 import type { Field } from "../field";
-import { CURSOR, READ_CURSOR } from "./constants";
+import { CAPACITY, CURSOR, INITIAL_CAPACITY, READ_CURSOR } from "./constants";
 import { EmitContext } from "./context";
 import { foldCursor } from "./fold";
 import { readField, readObjectInline } from "./read";
@@ -144,10 +144,17 @@ export class Emitter extends EmitContext {
 	 * The statements of a `serialize` or a `deserialize`, with its cursor
 	 * folded (Transformer 5.30). A codec with a recursion helper keeps them as
 	 * they are: a helper's read moves the closure's read cursor with nothing
-	 * in the caller's statements to show it.
+	 * in the caller's statements to show it. A `serialize`'s scratch buffer
+	 * holds at least the bytes it was created with, since it only grows; a
+	 * cursor's buffer may hold fewer.
 	 */
 	public foldCursor(body: ts.Statement[], side: "write" | "read"): ts.Statement[] {
-		return this.helperFields.size > 0 ? body : foldCursor(this, body, side === "write" ? CURSOR : READ_CURSOR);
+		if (this.helperFields.size > 0) {
+			return body;
+		}
+		return side === "write"
+			? foldCursor(this, body, CURSOR, this.cursor ? undefined : { name: CAPACITY, floor: INITIAL_CAPACITY })
+			: foldCursor(this, body, READ_CURSOR);
 	}
 
 	public getHelperDecls(): ts.Statement[] {
