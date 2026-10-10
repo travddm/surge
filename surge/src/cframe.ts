@@ -69,8 +69,11 @@ function axisFromCode(code: number): Vector3 {
  */
 function rotationIndex(value: CFrame): number {
 	const xCode = axisCode(value.XVector);
+	if (xCode === -1) {
+		return GENERAL_ROTATION;
+	}
 	const yCode = axisCode(value.YVector);
-	if (xCode === -1 || yCode === -1) {
+	if (yCode === -1) {
 		return GENERAL_ROTATION;
 	}
 	const firstCodeOnXAxis = xCode.idiv(2) * 2;
@@ -144,14 +147,22 @@ export function readPackedCFrame(buf: buffer, pos: number): LuaTuple<[value: CFr
 		// eslint-disable-next-line roblox-ts/no-user-defined-lua-tuple -- the sanctioned way to return one.
 		return $tuple(ALIGNED_ROTATIONS[rotationCode].add(position), size);
 	}
-	const scaled = new Vector3(
-		buffer.readf32(buf, pos + size),
-		buffer.readf32(buf, pos + size + 4),
-		buffer.readf32(buf, pos + size + 8),
+	// One constructor from a unit quaternion, as the byte-aligned form reads (Transformer 5.27 in
+	// docs/specs/transformer.md), where `fromAxisAngle` and `add` would construct two.
+	const x = buffer.readf32(buf, pos + size);
+	const y = buffer.readf32(buf, pos + size + 4);
+	const z = buffer.readf32(buf, pos + size + 8);
+	const angle = math.sqrt(x * x + y * y + z * z);
+	const scale = angle > 1e-6 ? math.sin(angle * 0.5) / angle : 0.5;
+	const value = new CFrame(
+		position.X,
+		position.Y,
+		position.Z,
+		x * scale,
+		y * scale,
+		z * scale,
+		math.cos(angle * 0.5),
 	);
-	const angle = scaled.Magnitude;
-	// The same rule as the byte-aligned form: no axis to recover from a zero rotation.
-	const value = CFrame.fromAxisAngle(angle > 1e-6 ? scaled.Unit : Vector3.zAxis, angle).add(position);
 	// eslint-disable-next-line roblox-ts/no-user-defined-lua-tuple -- the sanctioned way to return one.
 	return $tuple(value, size + 12);
 }
