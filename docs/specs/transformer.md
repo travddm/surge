@@ -1,7 +1,7 @@
 # Transformer specification
 
 Status: current
-Applies to: commit `db9b531` (no tagged release yet)
+Applies to: commit `0615ba4` (no tagged release yet)
 
 ## 1. Scope
 
@@ -401,8 +401,9 @@ absent, and a `taggedUnion`'s
 tag that it compares more than once, until those locals number 32. It reads
 the value through them, and the write reads the same locals instead of
 binding its own. The write takes again an `array`'s length that the
-size did not bind, and a tuple's. What the size reads inside a loop or a branch, such as an
-optional's or a union's bytes, or past the 32 locals, the write reads again,
+size did not bind, and a tuple's. What the size reads inside a loop or a branch, such as a
+union's bytes, or an `optional`'s other than those above, or past the 32
+locals, the write reads again,
 and the size's loops visit each element, and the write visits it again.
 In a loop's body, and in a branch inside one, the size reads the length that
 a variable-length count's bytes read more than once into a local declared
@@ -646,6 +647,8 @@ of `rbxts-transformer-surge`, cited by `describe` block. Source paths are in
 
 ## Changes
 
+- `0615ba4`: 5.20 no longer counts an `optional` `str` or `buffer` among what
+  the write reads again.
 - `db9b531`: 5.20 binds an `optional` `str`'s or `buffer`'s value and length
   ahead of the result.
 - `c9a8a6a`: 5.3 declares a `serialize`'s or a `deserialize`'s own cursor only

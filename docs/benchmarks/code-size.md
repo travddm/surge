@@ -28,8 +28,8 @@ level 1; another compiler version can give another count.
 | leaderboard              | 2107  | 846 (0.40×)  | 860 (0.41×)  | 3304 (1.57×) |
 | nested-arrays            | 1831  | 659 (0.36×)  | 679 (0.37×)  | 2855 (1.56×) |
 | nested-object            | 2367  | 1229 (0.52×) | 1247 (0.53×) | 4506 (1.90×) |
-| packed-struct (packed)   | 2925  | 1388 (0.47×) | 1381 (0.47×) | —            |
-| packed-struct (unpacked) | 3403  | 1356 (0.40×) | 1349 (0.40×) | 4803 (1.41×) |
+| packed-struct (packed)   | 2885  | 1388 (0.48×) | 1381 (0.48×) | —            |
+| packed-struct (unpacked) | 3363  | 1356 (0.40×) | 1349 (0.40×) | 4803 (1.43×) |
 | small-flat-struct        | 958   | 836 (0.87×)  | 798 (0.83×)  | 1361 (1.42×) |
 | string-heavy             | 2608  | 755 (0.29×)  | 825 (0.32×)  | 3160 (1.21×) |
 | tagged-union             | 3558  | 1399 (0.39×) | 1494 (0.42×) | 4834 (1.36×) |

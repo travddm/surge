@@ -92,6 +92,8 @@ code the transformer generates runs. What has been measured is under
 - [cursor-known-values.md](../research/cursor-known-values.md) — each
   reservation at the cursor's known value, outside a loop's body, and why
   not inside one.
+- [optional-length-once.md](../research/optional-length-once.md) — an
+  optional string's value and length bound once, ahead of the result.
 
 This document holds what is still open.
 
@@ -130,7 +132,8 @@ the three candidates a shape sized exactly (Transformer 5.20 in
 check. A nested object inside a run of Transformer 5.5 still reads its path
 once per property. A sized write reads twice the length of an array whose
 count has a fixed width, and what its size reads inside a loop or a branch,
-such as an optional's or a union's bytes, its write reads again.
+such as a union's bytes, or an optional's other than a `str`'s or a
+`buffer`'s, its write reads again.
 
 One design the `finishWrite` probe did not reach: handing the caller a buffer
 surge owns and reuses, which removes the allocation as well as the copy. It
