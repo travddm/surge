@@ -511,6 +511,10 @@ function whenPresent(
 	scope: Scope,
 ): Size | undefined {
 	const f = ctx.factory;
+	const counted = presentCounted(ctx, inner, value, scope);
+	if (counted !== undefined) {
+		return counted;
+	}
 	const size = measure(ctx, inner, f.createNonNullExpression(value), total, branchOf(scope));
 	if (size === undefined) {
 		return undefined;
@@ -533,6 +537,49 @@ function whenPresent(
 	return {
 		constant: 0,
 		terms: [f.createConditionalExpression(isPresent, undefined, sum(ctx, size), undefined, ctx.num(0))],
+		loops: [],
+	};
+}
+
+/**
+ * An optional `str` or `buffer` with a variable-length count, ahead of the
+ * result: its value, and its length or 0 where it is absent, bound once,
+ * where the size would read the value's path and its length three times each.
+ * The write reads both too: the optional's write binds no value of its own,
+ * and the inner write finds the length by the value's local.
+ */
+function presentCounted(ctx: EmitContext, inner: Field, value: ts.Expression, scope: Scope): Size | undefined {
+	if (
+		(inner.kind !== "str" && inner.kind !== "buffer") ||
+		countWidth(inner.length) !== undefined ||
+		exactCount(inner.length) !== undefined ||
+		scope === undefined ||
+		"loopBody" in scope
+	) {
+		return undefined;
+	}
+	const f = ctx.factory;
+	const isPresent = (local: ts.Expression) =>
+		f.createBinaryExpression(
+			local,
+			ctx.ts_.SyntaxKind.ExclamationEqualsEqualsToken,
+			f.createIdentifier("undefined"),
+		);
+	const lengthOf = (local: ts.Expression) =>
+		inner.kind === "str" ? ctx.sizeOf(local) : ctx.bufferCall("len", [local]);
+	const bound = bind(ctx, scope, "opt", value, (local) =>
+		f.createConditionalExpression(isPresent(local), undefined, lengthOf(local), undefined, ctx.num(0)),
+	);
+	if (bound?.len === undefined) {
+		return undefined;
+	}
+	scope.byPath.set(bound.value.text, bound);
+	const bytes = add(countSize(ctx, inner.length, bound.len), { constant: 0, terms: [bound.len], loops: [] });
+	return {
+		constant: 0,
+		terms: [
+			f.createConditionalExpression(isPresent(bound.value), undefined, sum(ctx, bytes), undefined, ctx.num(0)),
+		],
 		loops: [],
 	};
 }

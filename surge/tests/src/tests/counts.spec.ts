@@ -26,6 +26,16 @@ const sizedChecked = createCodec<Sized>({ readChecks: true });
 
 const EDGES = [253, 254, 65535, 65536];
 
+// An optional `buffer` and `str`, whose value and length the size binds ahead
+// of the result and the write reads (Transformer 5.20).
+interface Optionals {
+	data?: buffer;
+	note?: string;
+}
+
+const optionals = createCodec<Optionals>();
+const optionalsChecked = createCodec<Optionals>({ readChecks: true });
+
 function countedOf(count: number): Counted {
 	const list = new Array<number>(count, 7);
 	const rest: [number, ...Array<number>] = [9];
@@ -58,6 +68,22 @@ class CountsTest {
 				const buf = codec.serialize(without);
 				Assert.equal(4 * head + count + count + 1 + count + count, buffer.len(buf));
 				Assert.equal(undefined, difference(without, codec.deserialize(buf)));
+			}
+		}
+	}
+
+	@Fact
+	public roundTripsOptionalsAtTheEdgesOfTheLongForms(): void {
+		for (const count of EDGES) {
+			const value: Optionals = { data: buffer.create(count), note: string.rep("b", count) };
+			for (const codec of [optionals, optionalsChecked]) {
+				const buf = codec.serialize(value);
+				// Two flags, and each value's count and bytes.
+				Assert.equal(2 + 2 * countBytes(count) + 2 * count, buffer.len(buf));
+				Assert.equal(undefined, difference(value, codec.deserialize(buf)));
+				const absent = codec.serialize({});
+				Assert.equal(2, buffer.len(absent));
+				Assert.equal(undefined, difference({}, codec.deserialize(absent)));
 			}
 		}
 	}

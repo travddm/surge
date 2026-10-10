@@ -705,6 +705,11 @@ describe("transform generated code", () => {
 		],
 		["an array of fixed-size elements, last", "interface T { id: DataType.u32; list: DataType.u16[]; }"],
 		["an optional string, last", "interface T { id: DataType.u32; nick?: string; }"],
+		["an optional buffer", "interface T { data?: buffer; id: DataType.u32; }"],
+		[
+			"an optional string whose presence is a packed bit",
+			"type T = DataType.Packed<{ on: boolean; nick?: string }>;",
+		],
 		["an array of strings, on the scratch buffer", "interface T { id: DataType.u32; names: string[]; }"],
 	])("the generated code for %s passes the type check under a consumer's noUnusedLocals", (_name, declarations) => {
 		for (const options of ["", "{ readChecks: true }"]) {

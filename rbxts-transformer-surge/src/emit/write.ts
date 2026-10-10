@@ -1251,9 +1251,14 @@ function writeOptional(
 	// check on that local (not a separately-computed boolean), which is
 	// what lets TS narrow it to non-optional for the inner write below --
 	// narrowing a repeated property-access expression like `value.x`
-	// doesn't survive being routed through an intermediate variable.
-	const tmp = ctx.fresh("opt");
-	out.push(ctx.constStatement(tmp, value));
+	// doesn't survive being routed through an intermediate variable. A size
+	// ahead of the result may have bound it already (`presentCounted` in
+	// size.ts).
+	let tmp = ctx.boundBySize(value)?.value;
+	if (tmp === undefined) {
+		tmp = ctx.fresh("opt");
+		out.push(ctx.constStatement(tmp, value));
+	}
 	const isPresent = (expr: ts.Expression) =>
 		f.createBinaryExpression(
 			expr,
