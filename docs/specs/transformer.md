@@ -1,7 +1,7 @@
 # Transformer specification
 
 Status: current
-Applies to: commit `75d3107` (no tagged release yet)
+Applies to: commit `c9a8a6a` (no tagged release yet)
 
 ## 1. Scope
 
@@ -199,10 +199,11 @@ its write and read cursors, declared in the closure it is generated into.
 The runtime package owns none of them. A factory that returns one function
 declares only that side's state, and a side that reserves no bytes declares
 none: a shape of only `blob` fields declares no state at all. A `serialize`
-sized exactly (5.20) declares its buffer and write cursor in itself instead. A
-`deserialize` that reaches no recursion helper (5.2) declares its input
-buffer and read cursor in itself, and under `readChecks: true` the input's
-length (5.10) as well. A cursor codec's `write` declares the scratch
+sized exactly (5.20) declares its buffer and write cursor in itself instead,
+the cursor only where 5.31 leaves it declared. A `deserialize` that reaches
+no recursion helper (5.2) declares its input buffer and read cursor in
+itself, the cursor only where 5.31 leaves it declared, and under
+`readChecks: true` the input's length (5.10) as well. A cursor codec's `write` declares the scratch
 buffer, its capacity and the write cursor from the cursor's buffer, that
 buffer's length and the cursor's offset, and its `read` the read state from
 the cursor's buffer and offset, as locals where the shape reaches no
@@ -643,6 +644,8 @@ of `rbxts-transformer-surge`, cited by `describe` block. Source paths are in
 
 ## Changes
 
+- `c9a8a6a`: 5.3 declares a `serialize`'s or a `deserialize`'s own cursor only
+  where 5.31 leaves it declared.
 - `75d3107`: 5.30 leaves a loop's body as the emitter wrote it.
 - `62d4ea2`: adds 5.30 (a reservation at the cursor's known value) and 5.31
   (no assignment of the cursor that nothing reads).

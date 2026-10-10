@@ -16,8 +16,8 @@
  * assignment of the cursor that nothing reads goes.
  *
  * A loop's body is left as the emitter wrote it. Folded, it measured slower
- * on the two rows whose loops it changed most, the instance references'
- * encode and the guarded union's decode, by more than unchanged code moves
+ * on two cells, the instance references' encode and the guarded union's
+ * decode, by more than unchanged code moves
  * (docs/research/cursor-known-values.md).
  *
  * Anything it does not recognize, it leaves as it is: a statement that
