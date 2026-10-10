@@ -89,6 +89,9 @@ code the transformer generates runs. What has been measured is under
   index keyed by the item itself, with no read of its `Name`.
 - [cold-paths-in-one-call.md](../research/cold-paths-in-one-call.md) — the
   generated code made smaller where it runs rarely or once.
+- [cursor-known-values.md](../research/cursor-known-values.md) — each
+  reservation at the cursor's known value, outside a loop's body, and why
+  not inside one.
 
 This document holds what is still open.
 
@@ -173,34 +176,26 @@ fixed-size elements, and a tuple of only those (Transformer 5.5). An array of
 fixed-size
 elements reserves all of them at once (Transformer 5.18), and a `str` or a
 `buffer` its count and its bytes (Transformer 5.19), and a union variant's
-index the fixed-size bytes that start the variant (Transformer 5.25). Nothing
-else shares a reservation. The places below reserve more often than the bytes require.
-Merging reservations changes no byte, because reservation order is byte order
-either way. On a shape sized exactly, a reservation checks no capacity, so
-what merging still saves there is a move of the cursor.
+index the fixed-size bytes that start the variant (Transformer 5.25). Outside
+a loop's body, adjacent reservations move the cursor once, and at a known
+offset read no position from it (Transformer 5.30), which crosses the
+boundary of a nested object: the deeply nested object's `count` and `flag`
+are written at 0 and 2. The places below reserve more often than the bytes
+require. Merging reservations changes no byte, because reservation order is
+byte order either way.
 
-- **Through a nested object of mixed sizes.** A nested object with a
-  variable-size property, such as a `str`, ends the run, and so does the end
-  of that object. The deeply nested object reserves six times per call, and
-  the hand-written codec for the same bytes allocates once. Its `count` and
-  `flag` are consecutive in the bytes but belong to two objects, so they
-  reserve apart. A run that crossed the boundary would stay open across the
-  emission of more than one object, and would still have to end where a block
-  of Transformer 5.8 does.
+- **In a loop's body.** Folded the same way, loop bodies measured slower on
+  the instance references' encode, by about a tenth, and on the guarded
+  union's decode, by more than unchanged code moved, for what is not known
+  ([cursor-known-values.md](../research/cursor-known-values.md)). A loop's
+  body is left as the emitter wrote it.
 - **A tuple's rest.** A tuple's fixed-size rest elements still reserve one at
   a time, where an array's reserve all at once (Transformer 5.18), with
   `reserveElements`. Sharing the fixed elements' reservation paid
   ([tuple-reservations.md](../research/tuple-reservations.md)), but the
   tuples row has no rest, and no catalog row has a tuple with one.
 
-**Smaller items.** A `serialize` sized exactly still moves its cursor past
-its last reservation, where nothing reads it again, and a shape whose
-reservations all merge could write at constant offsets with no cursor at all,
-as the hand-written codec does. Each of these, and merging the reservations
-of a nested object of mixed sizes, saves a few nanoseconds a call at most,
-less than two runs of one build disagree by on the rows it would reach
-([noise-in-the-speed-tier.md](../research/noise-in-the-speed-tier.md)), so
-none can be measured with the speed tier as it is. The scratch buffer only grows, so one large
+**Smaller items.** The scratch buffer only grows, so one large
 payload pins its memory for the module's lifetime. An object large enough to be emitted in
 blocks is read as `const result = {}` plus one assignment per field, so its
 table grows by rehashing instead of being sized once by a table constructor.
