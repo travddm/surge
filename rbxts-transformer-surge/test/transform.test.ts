@@ -688,6 +688,36 @@ describe("transform generated code", () => {
 		expect(errors.filter((error) => !error.startsWith("'createCodec' is declared"))).toEqual([]);
 	});
 
+	// The cursor fold (Transformer 5.30) drops each assignment of the cursor that
+	// nothing reads, and the cursor itself where nothing reads it at all.
+	test.each([
+		[
+			"a shape of fixed size",
+			"interface T { id: DataType.u32; spot: { x: number; y: DataType.i16 }; tag: DataType.u8; }",
+		],
+		[
+			"a union of objects of fixed size",
+			'type T = { kind: "a"; x: number } | { kind: "b"; y: DataType.u8; z: DataType.u16 };',
+		],
+		[
+			"a string with a count of fixed width, last",
+			"interface T { id: DataType.u32; name: DataType.Length<string, DataType.u16>; }",
+		],
+		["an array of fixed-size elements, last", "interface T { id: DataType.u32; list: DataType.u16[]; }"],
+		["an optional string, last", "interface T { id: DataType.u32; nick?: string; }"],
+		["an array of strings, on the scratch buffer", "interface T { id: DataType.u32; names: string[]; }"],
+	])("the generated code for %s passes the type check under a consumer's noUnusedLocals", (_name, declarations) => {
+		for (const options of ["", "{ readChecks: true }"]) {
+			const errors = typeErrorsOfGeneratedCode(
+				`import { DataType, createCodec } from "@rbxts/surge";
+				${declarations}
+				export const s = createCodec<T>(${options});`,
+				{ noUnusedLocals: true },
+			);
+			expect(errors.filter((error) => !error.startsWith("'createCodec' is declared"))).toEqual([]);
+		}
+	});
+
 	test("the generated code of a shape written exactly passes the type check", () => {
 		// Every kind the size is read from: counted and exact strings, buffers
 		// and arrays, a tuple with a string and a rest, optionals, keys that are

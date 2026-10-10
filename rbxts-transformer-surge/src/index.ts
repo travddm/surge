@@ -310,7 +310,7 @@ export default function transform(program: ts.Program, _config: unknown, extras:
 						[valueParam],
 						undefined,
 						f.createToken(typescript.SyntaxKind.EqualsGreaterThanToken),
-						f.createBlock(writeBody, true),
+						f.createBlock(emitter.foldCursor(writeBody, "write"), true),
 					);
 				};
 
@@ -372,7 +372,7 @@ export default function transform(program: ts.Program, _config: unknown, extras:
 						[inputParam],
 						undefined,
 						f.createToken(typescript.SyntaxKind.EqualsGreaterThanToken),
-						f.createBlock(readBody, true),
+						f.createBlock(emitter.foldCursor(readBody, "read"), true),
 					);
 				};
 
@@ -455,7 +455,7 @@ export default function transform(program: ts.Program, _config: unknown, extras:
 						],
 						undefined,
 						f.createToken(typescript.SyntaxKind.EqualsGreaterThanToken),
-						f.createBlock(readBody, true),
+						f.createBlock(emitter.foldCursor(readBody, "read"), true),
 					);
 				};
 
@@ -505,12 +505,15 @@ export default function transform(program: ts.Program, _config: unknown, extras:
 					const [parameter, cursor] = cursorParam(emitter.usesWriteBytes || emitter.usesWriteBlobs);
 					return arrow(
 						[parameter, valueParam],
-						[
-							...emitter.beginCursorWriteStatements(cursor),
-							...emitter.beginCursorWriteBlobsStatements(cursor),
-							...writeStatements,
-							...emitter.endCursorWriteStatements(cursor),
-						],
+						emitter.foldCursor(
+							[
+								...emitter.beginCursorWriteStatements(cursor),
+								...emitter.beginCursorWriteBlobsStatements(cursor),
+								...writeStatements,
+								...emitter.endCursorWriteStatements(cursor),
+							],
+							"write",
+						),
 					);
 				};
 
@@ -519,19 +522,22 @@ export default function transform(program: ts.Program, _config: unknown, extras:
 					const [parameter, cursor] = cursorParam(emitter.usesReadBytes || emitter.usesReadBlobs);
 					return arrow(
 						[parameter],
-						[
-							...emitter.beginReadStatements(
-								f.createPropertyAccessExpression(cursor, "buffer"),
-								f.createPropertyAccessExpression(cursor, "offset"),
-							),
-							...emitter.beginReadBlobsStatements(
-								f.createPropertyAccessExpression(cursor, "blobs"),
-								f.createPropertyAccessExpression(cursor, "blobIndex"),
-							),
-							...readStatements,
-							...emitter.endCursorReadStatements(cursor),
-							f.createReturnStatement(f.createAsExpression(resultExpr!, typeArgumentNode)),
-						],
+						emitter.foldCursor(
+							[
+								...emitter.beginReadStatements(
+									f.createPropertyAccessExpression(cursor, "buffer"),
+									f.createPropertyAccessExpression(cursor, "offset"),
+								),
+								...emitter.beginReadBlobsStatements(
+									f.createPropertyAccessExpression(cursor, "blobs"),
+									f.createPropertyAccessExpression(cursor, "blobIndex"),
+								),
+								...readStatements,
+								...emitter.endCursorReadStatements(cursor),
+								f.createReturnStatement(f.createAsExpression(resultExpr!, typeArgumentNode)),
+							],
+							"read",
+						),
 					);
 				};
 

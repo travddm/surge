@@ -42,6 +42,26 @@ interface Containers {
 }
 const containersSerializer = createCodec<Containers>();
 
+// Ten `number`s, 80 bytes, past the 64 the scratch buffer starts at, ahead of a
+// `string[]`, which keeps the scratch buffer (Transformer 5.20). Their
+// reservation grows the buffer from a position known as a number (Transformer
+// 5.30).
+interface WideHead {
+	f0: number;
+	f1: number;
+	f2: number;
+	f3: number;
+	f4: number;
+	f5: number;
+	f6: number;
+	f7: number;
+	f8: number;
+	f9: number;
+	names: string[];
+}
+
+const wideHeadSerializer = createCodec<WideHead>();
+
 // The same five count-writing kinds as `Containers`, each with a fixed-width
 // count. `record`'s key stays unbranded, so its own variable-length count is
 // the check that `Length` applies to the container it wraps and not to the
@@ -533,6 +553,33 @@ class BytesTest {
 		Assert.equal("01" + "07", hex(on));
 		const off = packedTagSerializer.serialize({ first: { mode: "off" }, flag: true });
 		Assert.equal("02", hex(off));
+	}
+	@Fact
+	public roundTripsAHeadWiderThanTheScratchBufferStartsAt(): void {
+		const value: WideHead = {
+			f0: 0.5,
+			f1: 1.5,
+			f2: 2.5,
+			f3: 3.5,
+			f4: 4.5,
+			f5: 5.5,
+			f6: 6.5,
+			f7: 7.5,
+			f8: 8.5,
+			f9: 9.5,
+			names: ["a", "bc"],
+		};
+		// The first call grows the buffer; the second writes into it as grown.
+		for (const _ of $range(1, 2)) {
+			const buf = wideHeadSerializer.serialize(value);
+			Assert.equal(80 + 1 + 2 + 3, buffer.len(buf));
+			const result = wideHeadSerializer.deserialize(buf);
+			Assert.equal(value.f0, result.f0);
+			Assert.equal(value.f9, result.f9);
+			Assert.equal(2, result.names.size());
+			Assert.equal("a", result.names[0]);
+			Assert.equal("bc", result.names[1]);
+		}
 	}
 }
 

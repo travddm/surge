@@ -1,7 +1,7 @@
 # Transformer specification
 
 Status: current
-Applies to: commit `d4a7eab` (no tagged release yet)
+Applies to: commit `62d4ea2` (no tagged release yet)
 
 ## 1. Scope
 
@@ -483,6 +483,23 @@ the enum admits more than five items, the list is not written out: one
 string holds the items' names in index order, and the loop over its words
 looks up each item by its name and fills both the list and the table.
 
+**5.30** In a `serialize`, a `deserialize` or a cursor codec's `write` or
+`read` whose codec has no recursion helper (5.2), each reservation's
+position is the cursor's value where the transformer knows it: a number,
+from where the function sets the cursor to one until a size it does not
+know moves the cursor, or a position read from the cursor plus a number.
+Such a reservation reads no position from the cursor, and a position
+computed from a known one is written as its value. The cursor is set to
+the value it is known as only before a statement that assigns it in
+another form or reads it as a position plus a number, before a branch or a
+loop that assigns it, and at the end of a branch, a loop's body or a block
+that moved it. A read of a cursor known as a number reads the number.
+
+**5.31** In a function of 5.30, an assignment of the cursor that nothing
+reads before the cursor is assigned again or the function returns is not
+emitted, except inside a loop. Where it held a call, the call is emitted on
+its own. A cursor that nothing reads or assigns is not declared.
+
 ## 6. Injected imports
 
 **6.1** The transformer adds one import of `@rbxts/surge/out/abi`, the
@@ -556,7 +573,7 @@ throws only on a broken internal invariant.
 
 ## 8. Conformance
 
-`walk`, `emit`, `transform` and `detect` below are the `test/*.test.ts` files
+`walk`, `emit`, `fold`, `transform` and `detect` below are the `test/*.test.ts` files
 of `rbxts-transformer-surge`, cited by `describe` block. Source paths are in
 `rbxts-transformer-surge` unless they name `@rbxts/surge`.
 
@@ -610,6 +627,8 @@ of `rbxts-transformer-surge`, cited by `describe` block. Source paths are in
 | 5.27      | `emit`: `Emitter cframe reads`; `test/golden.test.mjs`: an unpacked CFrame is read into one constructor from a quaternion; `tests/src/tests/roblox.spec.ts`: `roundTripsACFrameRotationWithinF32Precision`, `roundTripsAQuantizedRotationWithinItsStep`; `tests/src/tests/bytes.spec.ts`: `pinsACFrameWithNoRotation`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 | 5.28      | `emit`: `Emitter count widths` (a variable-length count with no branded width, and a four-byte one at `u32`), `Emitter counted bytes`; `test/golden.test.mjs`: a string reserves its count and its bytes at once; `Emitter element reservations` (the long form's bound under `readChecks`); `transform`: `transform (end-to-end)` (the long forms' three imports); `tests/src/tests/counts.spec.ts`: `roundTripsEachKindAtTheEdgesOfTheLongForms`; `tests/src/tests/checks.spec.ts`: `rejectsAStringCutInItsCountOrItsBytes`; the long form's one call: `emit`: `Emitter counted bytes`, `test/golden.test.mjs`: a string reserves its count and its bytes at once                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
 | 5.29      | `emit`: `Emitter enum index width and lookup table` (the table keyed by the item, filled from the items; the bound of an enum of more than three items), `Emitter enum guards` (the index of each enum guards it); `test/golden.test.mjs`: an enum index is an O(1) table lookup keyed by the item; under Lune, through the stand-in `Enum` of Test harness 4.3, `tests/src/tests/bytes.spec.ts`: `pinsLiteralAndEnumIndexes`, `pinsItemsOfTwoEnums`; in Roblox, the round-trip check of Benchmark harness 6.6 on the `enum-heavy` row; `transform`: `transform generated code` (an enum of three, of five and of more than five items under `noUncheckedIndexedAccess`); the string of names: `emit`: `Emitter enum index width and lookup table` (more than five items), `test/golden.test.mjs`: an enum of more than five items fills its item list and its index from one string of names, `transform`: the type checks of an enum of many items and of a union of six items of one enum, and under Lune `tests/src/tests/checks.spec.ts`: `rejectsAnEnumIndexPastItsItems`, which round-trips an `Enum.Material` |
+| 5.30      | `fold`: `cursor fold`; `test/golden.test.mjs`: consecutive fixed-size fields share one reservation, a nested object of fixed-size fields shares the reservation around it, a string reserves its count and its bytes at once, a union is sized by the variant its write picks, with the write's own tests; `tests/src/tests/bytes.spec.ts`: `roundTripsAHeadWiderThanTheScratchBufferStartsAt`; every round trip of the Lune suite                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| 5.31      | `fold`: `cursor fold` (a head of fixed size, a branch, a loop); `transform`: `transform generated code` (the shapes whose cursor is folded, under `noUnusedLocals`); `test/golden.test.mjs`: a nested object of fixed-size fields shares the reservation around it                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 | 6.1, 6.2  | `transform`: `transform injected imports`, and in `transform (end-to-end)` the single shared import and the same-named local function; `tests/src/tests/coverage.spec.ts`: `leavesAUserDeclarationNamedAfterAnInjectedImportAlone`; `test/golden.test.mjs`: generated code imports its helpers from the package's abi module                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 | 6.3       | `test/golden.test.mjs`: a file directive survives the transformer's injected imports; `transform`: `transform generated code` (the three directive tests)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 | 6.4       | `transform`: `transform injected imports` (a `createDeserializer` call site)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
@@ -622,6 +641,8 @@ of `rbxts-transformer-surge`, cited by `describe` block. Source paths are in
 
 ## Changes
 
+- `62d4ea2`: adds 5.30 (a reservation at the cursor's known value) and 5.31
+  (no assignment of the cursor that nothing reads).
 - `d4a7eab`: 4.4's Conformance adds the type check of a union of several
   enums in a tagged union's variant.
 - `f8e089d`: 5.29's Conformance adds the type check of an enum's index

@@ -66,7 +66,7 @@ test("an enum index is an O(1) table lookup keyed by the item, filled from the i
 	);
 	assert.match(
 		luau,
-		/local (_rig) = value[.]rig\n\s+buffer[.]writeu8[(]__surge_scratch, pos[0-9]+, surge_HumanoidRigType_[0-9]+_index\[\1\][)]$/m,
+		/local (_rig) = value[.]rig\n\s+buffer[.]writeu8[(]__surge_scratch, [0-9]+, surge_HumanoidRigType_[0-9]+_index\[\1\][)]$/m,
 	);
 });
 
@@ -91,10 +91,7 @@ test("a packed region is written and read inline, with no per-bit helper", () =>
 	const luau = readCompiledLuau("tests/coverage.spec.luau");
 	assert.doesNotMatch(luau, /packBit\(/i);
 	// Each byte of the region is read once, and each bit tested against it.
-	assert.match(
-		luau,
-		/local (bits[0-9]+) = buffer[.]readu8[(]__surge_input, pos[0-9]+[)]\n[^]*?bit32[.]btest[(]\1, 2[)]/,
-	);
+	assert.match(luau, /local (bits[0-9]+) = buffer[.]readu8[(]__surge_input, 0[)]\n[^]*?bit32[.]btest[(]\1, 2[)]/);
 });
 
 // Regression check for the read loop of Transformer 5.7 in
@@ -123,17 +120,15 @@ test("a tagged-union read builds the variant literal with its tag, not a copy of
 // docs/research/generated-code-against-hand-written.md.
 test("an unpacked CFrame reserves its 24 bytes once, not 12 bytes twice", () => {
 	const luau = readCompiledLuau("tests/coverage.spec.luau");
-	// A reservation is inline now: the cursor advances by 24 in one step,
-	// where two would advance by 12 twice. On the write side the `CFrame`
-	// variant of `PlacementOrLabel` shares the reservation with its index, so
-	// the step is 25.
-	assert.match(luau, /__surge_cursor = pos[0-9]+ [+] 25$/m);
-	assert.match(luau, /__surge_readCursor = pos[0-9]+ [+] 24$/m);
 	// The rotation vector's last component, written into the same reservation
 	// the position was: an offset of 20 exists only when the two halves share
 	// one reservation.
 	assert.match(luau, /buffer[.]writef32[(]__surge_scratch, pos[0-9]+ [+] 20,/);
 	assert.match(luau, /buffer[.]readf32[(]__surge_input, pos[0-9]+ [+] 20[)]/);
+	// The `CFrame` variant of `PlacementOrLabel` shares its reservation with
+	// its index, at the head of the buffer, so its last component is at 21.
+	assert.match(luau, /buffer[.]writef32[(]__surge_scratch, 21, rv[0-9]+[.]Z[)]$/m);
+	assert.match(luau, /buffer[.]readf32[(]__surge_input, 21[)][)]$/m);
 });
 
 // Regression check for the single read of a CFrame's position. What it was
@@ -161,28 +156,43 @@ test("an unpacked CFrame is read into one constructor from a quaternion", () => 
 test("consecutive fixed-size fields share one reservation", () => {
 	const luau = readCompiledLuau("tests/basic.spec.luau");
 	// `Basic` starts with a `number` (f64, 8 bytes) and a `boolean` (1), so
-	// those two share one 9-byte reservation instead of taking one each.
-	assert.match(luau, /__surge_cursor = pos[0-9]+ [+] 9$/m);
-	assert.match(luau, /__surge_readCursor = pos[0-9]+ [+] 9$/m);
-	// A position computed from the shared one, which is what a run looks like.
-	assert.match(luau, /local pos[0-9]+ = pos[0-9]+ [+] [0-9]+$/m);
-	assert.match(luau, /local pos\d+ = pos\d+ \+ \d+/);
+	// those two share one 9-byte reservation instead of taking one each. At
+	// the head of the buffer, its fields are written at numbers and the
+	// cursor is set once, past both (Transformer 5.30).
+	assert.match(
+		luau,
+		/local __surge_cursor = 9\n\s+buffer[.]writef64[(]__surge_scratch, 0, value[.]a[)]\n\s+buffer[.]writeu8[(]__surge_scratch, 8, /m,
+	);
+	assert.match(
+		luau,
+		/a = buffer[.]readf64[(]__surge_input, 0[)],\n\s+flag = buffer[.]readu8[(]__surge_input, 8[)] ~= 0,$/m,
+	);
+	// Past a string, a field is written at an offset from the position the
+	// reservation read, which is what a run looks like there.
+	assert.match(luau, /buffer[.]write[a-z0-9]+[(]__surge_scratch, pos[0-9]+ [+] [0-9]+, /);
 });
 
 test("a nested object of fixed-size fields shares the reservation around it", () => {
 	const luau = readCompiledLuau("tests/basic.spec.luau");
 	// `Placed` is a u32, a nested f64 and i16, and a u8: one 15-byte
 	// reservation on each side, not one before the nested object, one for it
-	// and one after it.
-	assert.match(luau, /__surge_cursor = pos[0-9]+ [+] 15$/m);
-	assert.match(luau, /__surge_readCursor = pos[0-9]+ [+] 15$/m);
+	// and one after it. Of a fixed size, it is written and read at numbers,
+	// with no cursor at all.
+	assert.match(
+		luau,
+		/local __surge_scratch = buffer[.]create[(]15[)]\n\s+buffer[.]writeu32[(]__surge_scratch, 0, value[.]id[)]\n\s+buffer[.]writef64[(]__surge_scratch, 4, value[.]spot[.]x[)]\n\s+buffer[.]writei16[(]__surge_scratch, 12, value[.]spot[.]y[)]\n\s+buffer[.]writeu8[(]__surge_scratch, 14, value[.]tag[)]\n\s+return __surge_scratch$/m,
+	);
+	assert.match(
+		luau,
+		/spot = \{\n\s+x = buffer[.]readf64[(]__surge_input, 4[)],\n\s+y = buffer[.]readi16[(]__surge_input, 12[)],\n\s+\},\n\s+tag = buffer[.]readu8[(]__surge_input, 14[)],$/m,
+	);
 });
 
 test("an array of fixed-size elements reserves them all once, ahead of its loop", () => {
 	const luau = readCompiledLuau("tests/bytes.spec.luau");
 	// `Containers.list` is a `u16[]`: one reservation of two bytes per
 	// element on each side, and a position each element moves on.
-	assert.match(luau, /__surge_cursor = pos[0-9]+ [+] #arr[0-9]+ [*] 2$/m);
+	assert.match(luau, /__surge_cursor = pos[0-9]+ [+] count[0-9]+ [*] 2$/m);
 	assert.match(luau, /__surge_readCursor = pos[0-9]+ [+] count[0-9]+ [*] 2$/m);
 	assert.match(luau, /element[0-9]+ [+]= 2$/m);
 });
@@ -195,13 +205,14 @@ test("a string reserves its count and its bytes at once", () => {
 	// `Basic.name` is a string: in its count's one-byte form, one reservation
 	// of its length and the count's byte, in its long form one call that
 	// reserves and writes both, and one move of the read cursor past both.
+	// It starts at 9, a number the cursor's value is known as there.
 	assert.match(
 		luau,
-		/^\s+if (len[0-9]+) < 254 then\n\s+local (pos[0-9]+) = __surge_cursor\n\s+__surge_cursor = \2 [+] [(]\1 [+] 1[)]$/m,
+		/^\s+if (len[0-9]+) < 254 then\n\s+__surge_cursor = \1 [+] 10\n\s+buffer[.]writeu8[(]__surge_scratch, 9, \1[)]\n\s+buffer[.]writestring[(]__surge_scratch, 10, s[0-9]+[)]$/m,
 	);
 	assert.match(
 		luau,
-		/^\s+else\n\s+__surge_cursor = __surge_writeLongString[(]__surge_scratch, __surge_cursor, (s[0-9]+), (len[0-9]+)[)]$/m,
+		/^\s+else\n\s+__surge_cursor = __surge_writeLongString[(]__surge_scratch, 9, (s[0-9]+), (len[0-9]+)[)]$/m,
 	);
 	assert.match(luau, /__surge_readCursor = at[0-9]+ [+] len[0-9]+$/m);
 });
@@ -226,10 +237,11 @@ test("a union is sized by the variant its write picks, with the write's own test
 		),
 	);
 	// The write reads the tag once and tests it once, and the branch it takes
-	// writes the variant's index in one reservation with the `u8` after it.
+	// writes the variant's index in one reservation with the `u8` after it,
+	// moving the cursor once, past both.
 	assert.match(
 		luau,
-		/local (tag[0-9]+) = item[0-9]+[.]kind\n\s+if \1 == "level" then\n\s+local (pos[0-9]+) = __surge_cursor\n\s+__surge_cursor = \2 [+] 2\n\s+buffer[.]writeu8[(]__surge_scratch, \2, 0[)]$/m,
+		/local (tag[0-9]+) = item[0-9]+[.]kind\n\s+if \1 == "level" then\n\s+local (pos[0-9]+) = __surge_cursor\n\s+buffer[.]writeu8[(]__surge_scratch, \2, 0[)]\n\s+buffer[.]writeu8[(]__surge_scratch, \2 [+] 1, item[0-9]+[.]level[)]\n\s+__surge_cursor = \2 [+] 2$/m,
 	);
 	assert.doesNotMatch(luau, /local idx[0-9]+ = if /);
 });
@@ -263,16 +275,18 @@ test("a size that compares a tag more than once reads it once", () => {
 // What it was measured as worth is in docs/research/tuple-reservations.md.
 test("a tuple of fixed-size elements shares the reservation around it, and is read into one table", () => {
 	const luau = readCompiledLuau("tests/collections.spec.luau");
-	// `WithFixedTuples.pair` joins `id` in one reservation of seven bytes.
+	// `WithFixedTuples.pair` joins `id` in one reservation of seven bytes, at
+	// the head of the buffer, so the cursor is set once, past both.
 	assert.match(
 		luau,
-		/__surge_cursor = (pos[0-9]+) [+] 7\n\s+buffer[.]writeu32[(]__surge_scratch, \1, value[.]id[)]\n\s+local (pos[0-9]+) = \1 [+] 4\n\s+buffer[.]writeu8[(]__surge_scratch, \2, value[.]pair\[1\][)]$/m,
+		/local __surge_cursor = 7\n\s+buffer[.]writeu32[(]__surge_scratch, 0, value[.]id[)]\n\s+buffer[.]writeu8[(]__surge_scratch, 4, value[.]pair\[1\][)]\n\s+buffer[.]writeu16[(]__surge_scratch, 5, value[.]pair\[2\][)]$/m,
 	);
 	// `WithFixedTuples.points` reserves every element once, and reads each into
-	// one table constructor.
+	// one table constructor. It is the last field, so nothing reads the read
+	// cursor past its elements.
 	assert.match(
 		luau,
-		/__surge_readCursor = pos[0-9]+ [+] (count[0-9]+) [*] 6\n[^]*?for i[0-9]+ = 1, \1 do\n[^]*?result[0-9]+\[i[0-9]+\] = \{ buffer[.]readu16[(]/,
+		/local (pos[0-9]+) = __surge_readCursor\n\s+local (element[0-9]+) = \1\n\s+for i[0-9]+ = 1, count[0-9]+ do\n[^]*?result[0-9]+\[i[0-9]+\] = \{ buffer[.]readu16[(]__surge_input, \2[)]/,
 	);
 });
 
@@ -280,15 +294,13 @@ test("a tuple of fixed-size elements shares the reservation around it, and is re
 // worth is in docs/research/tagged-union-closed.md.
 test("a datatype reads its value once, not once per component, inside a run", () => {
 	const luau = readCompiledLuau("tests/bytes.spec.luau");
-	// `Datatypes` is a `Color3`, a `Vector2` and a `Vector3` in one reservation.
+	// `Datatypes` is a `Color3`, a `Vector2` and a `Vector3` in one reservation,
+	// of a fixed size, so written at numbers.
 	assert.match(
 		luau,
-		/__surge_cursor = (pos[0-9]+) [+] 23\n\s+local (vec[0-9]+) = value[.]offset\n\s+buffer[.]writef32[(]__surge_scratch, \1, \2[.]X[)]$/m,
+		/local __surge_scratch = buffer[.]create[(]23[)]\n\s+local (vec[0-9]+) = value[.]offset\n\s+buffer[.]writef32[(]__surge_scratch, 0, \1[.]X[)]$/m,
 	);
-	assert.match(
-		luau,
-		/local (vec[0-9]+) = value[.]position\n\s+buffer[.]writef32[(]__surge_scratch, pos[0-9]+, \1[.]X[)]$/m,
-	);
+	assert.match(luau, /local (vec[0-9]+) = value[.]position\n\s+buffer[.]writef32[(]__surge_scratch, 8, \1[.]X[)]$/m);
 	assert.match(luau, /local (color[0-9]+) = value[.]tint\n\s+buffer[.]writeu8[(][^\n]*\1[.]R /m);
 	assert.doesNotMatch(luau, /value[.](offset|position|tint)[.][XYZRGB]\b/);
 });
@@ -314,8 +326,8 @@ test("a size binds the locals its write reads, ahead of the result", () => {
 		new RegExp(
 			String.raw`local (obj[0-9]+) = value[.]settings\n[^]*?local (s[0-9]+) = \1[.]label\n\s+local (len[0-9]+) = #\2\n` +
 				String.raw`\s+local __surge_scratch = buffer[.]create[(]${countBytes(String.raw`\3`)} [+] \3 [+] 11[)]\n[^]*?` +
-				String.raw`if \3 < 254 then\n[^]*?__surge_cursor = pos[0-9]+ [+] [(]\3 [+] 1[)]\n[^]*?` +
-				String.raw`buffer[.]writestring[(]__surge_scratch, pos[0-9]+ [+] 1, \2[)]$`,
+				String.raw`if \3 < 254 then\n\s+buffer[.]writeu8[(]__surge_scratch, 11, \3[)]\n` +
+				String.raw`\s+buffer[.]writestring[(]__surge_scratch, 12, \2[)]$`,
 			"m",
 		),
 	);

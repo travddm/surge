@@ -8,8 +8,9 @@
 import type ts from "typescript";
 
 import type { Field } from "../field";
-import { CURSOR } from "./constants";
+import { CURSOR, READ_CURSOR } from "./constants";
 import { EmitContext } from "./context";
+import { foldCursor } from "./fold";
 import { readField, readObjectInline } from "./read";
 import { blobCount, exactSize } from "./size";
 import { fieldToTypeNode, objectShapeTypeNode } from "./types";
@@ -137,6 +138,16 @@ export class Emitter extends EmitContext {
 			);
 		}
 		this.liveLocals = callerLocals;
+	}
+
+	/**
+	 * The statements of a `serialize` or a `deserialize`, with its cursor
+	 * folded (Transformer 5.30). A codec with a recursion helper keeps them as
+	 * they are: a helper's read moves the closure's read cursor with nothing
+	 * in the caller's statements to show it.
+	 */
+	public foldCursor(body: ts.Statement[], side: "write" | "read"): ts.Statement[] {
+		return this.helperFields.size > 0 ? body : foldCursor(this, body, side === "write" ? CURSOR : READ_CURSOR);
 	}
 
 	public getHelperDecls(): ts.Statement[] {
