@@ -54,6 +54,21 @@ class FactoriesTest {
 		Assert.equal(undefined, difference(value, aliasedCodec.deserialize(buffer)));
 	}
 
+	// Transformer 5.1: a call site whose closure would declare nothing is the
+	// functions alone, so a factory's result used in place is a table or a
+	// function where it was a call, which roblox-ts must parenthesize. The
+	// results are read into locals first: Flamework's transformer fails on a
+	// call to a macro such as `Assert.equal` whose arguments hold a node another
+	// transformer replaced, since the rebuilt call has no source file.
+	@Fact
+	public roundTripsThroughFactoriesCalledInPlace(): void {
+		const value: Reading = { sensor: "in place", values: [7, -1.5] };
+		const fromCodec = createCodec<Reading>().deserialize(createCodec<Reading>().serialize(value));
+		const fromFunctions = createDeserializer<Reading>()(createSerializer<Reading>()(value));
+		Assert.equal(undefined, difference(value, fromCodec));
+		Assert.equal(undefined, difference(value, fromFunctions));
+	}
+
 	@Fact
 	public passesTheBufferAloneForAShapeWithNoBlob(): void {
 		const value: Reading = { sensor: "s", values: [4] };

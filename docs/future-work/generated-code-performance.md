@@ -204,7 +204,9 @@ byte order either way.
   tuples row has no rest, and no catalog row has a tuple with one.
 
 **Smaller items.** The scratch buffer only grows, so one large
-payload pins its memory for the module's lifetime. An object large enough to be emitted in
+payload pins its memory for the module's lifetime. A change that shrinks it
+must leave it at least the 64 bytes it is created with: a reservation known
+to end within them checks no capacity (Transformer 5.30). An object large enough to be emitted in
 blocks is read as `const result = {}` plus one assignment per field, so its
 table grows by rehashing instead of being sized once by a table constructor.
 A tuple's table is created at the number of its fixed elements (Transformer

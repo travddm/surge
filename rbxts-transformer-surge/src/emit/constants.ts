@@ -94,7 +94,12 @@ export const WRITE_BLOBS = importAlias("writeBlobs");
 export const WRITE_BLOB_COUNT = importAlias("writeBlobCount");
 export const READ_BLOBS = importAlias("readBlobs");
 export const READ_BLOB_INDEX = importAlias("readBlobIndex");
-/** What a serializer starts with, doubled by `grow` from there. */
+/**
+ * What a serializer starts with, doubled by `grow` from there. The cursor fold
+ * drops a capacity check where a reservation is known to end within this many
+ * bytes (Transformer 5.30), so a `serialize`'s scratch buffer must never hold
+ * fewer.
+ */
 export const INITIAL_CAPACITY = 64;
 /** The largest form `writePackedCFrame` can write: header, position, rotation. */
 export const PACKED_CFRAME_MAX_BYTES = 25;
