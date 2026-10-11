@@ -96,6 +96,9 @@ code the transformer generates runs. What has been measured is under
   optional string's value and length bound once, ahead of the result.
 - [packed-cframe-quaternion.md](../research/packed-cframe-quaternion.md) — a
   packed `CFrame`'s general rotation read through a quaternion.
+- [empty-closure-and-dead-checks.md](../research/empty-closure-and-dead-checks.md)
+  — no closure where it would declare nothing, no capacity check that cannot
+  fire, and a fixed-size optional read once.
 
 This document holds what is still open.
 
