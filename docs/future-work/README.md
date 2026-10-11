@@ -38,6 +38,9 @@ time:
   the default write keyed by the item finds no index.
 - [squash-column.md](squash-column.md): Squash, the most used standalone
   Luau serializer, as a column of the benchmark, once its version is chosen.
+- [flamework-macro-interop.md](flamework-macro-interop.md): a factory call
+  inside the arguments of a Flamework macro that takes caller metadata, such
+  as runit's `Assert.equal`, makes Flamework's transformer fail.
 
 ## After the first release
 
