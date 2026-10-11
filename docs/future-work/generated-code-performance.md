@@ -94,6 +94,8 @@ code the transformer generates runs. What has been measured is under
   not inside one.
 - [optional-length-once.md](../research/optional-length-once.md) — an
   optional string's value and length bound once, ahead of the result.
+- [packed-cframe-quaternion.md](../research/packed-cframe-quaternion.md) — a
+  packed `CFrame`'s general rotation read through a quaternion.
 
 This document holds what is still open.
 
