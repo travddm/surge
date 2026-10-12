@@ -1486,6 +1486,56 @@ describe("TypeWalker Vector<X, Y, Z> and Transform<X, Y, Z>", () => {
 	});
 });
 
+describe("TypeWalker Width", () => {
+	test("a type over widths walks to the width it is instantiated with", () => {
+		const { field, diagnostics } = walkDeclaration(
+			`import { DataType } from "@rbxts/surge";
+			interface Sample<W extends DataType.Width> { x: W; y: W; }
+			interface T { s: Sample<DataType.i16>; }`,
+			"T",
+			{ surge: true },
+		);
+		expect(diagnostics).toEqual([]);
+		expect(field).toEqual({
+			kind: "object",
+			fields: [
+				{
+					name: "s",
+					field: {
+						kind: "object",
+						fields: [
+							{ name: "x", field: { kind: "num", width: "i16" } },
+							{ name: "y", field: { kind: "num", width: "i16" } },
+						],
+					},
+				},
+			],
+		});
+	});
+
+	test("a property typed as the union itself is a diagnostic that names the widths", () => {
+		const { diagnostics } = walkDeclaration(
+			`import { DataType } from "@rbxts/surge"; interface T { w: DataType.Width; }`,
+			"T",
+			{ surge: true },
+		);
+		expect(diagnostics).toHaveLength(1);
+		expect(diagnostics[0].message).toContain('"DataType.Width" is the union of the number widths');
+		expect(diagnostics[0].message).toContain('"DataType.u8"');
+		expect(diagnostics[0].node.getText()).toBe("w: DataType.Width;");
+	});
+
+	test("the union as a Length width is Length's own diagnostic", () => {
+		const { diagnostics } = walkDeclaration(
+			`import { DataType } from "@rbxts/surge"; interface T { s: DataType.Length<string, DataType.Width>; }`,
+			"T",
+			{ surge: true },
+		);
+		expect(diagnostics).toHaveLength(1);
+		expect(diagnostics[0].message).toContain(`"DataType.Length"'s second argument must be`);
+	});
+});
+
 describe("TypeWalker Range<T, Min, Max>", () => {
 	/** The field a one-property `T` walks its property `n` to, with no diagnostic expected. */
 	function rangeField(type: string): Field {

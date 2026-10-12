@@ -68,8 +68,12 @@ export namespace DataType {
 	 */
 	export type Length<T, L extends u8 | u16 | u24 | u32> = T & { readonly _surge_length?: [T, L] };
 
-	/** Every width brand above, and the constraint a per-component width takes. */
-	type Width = f32 | f64 | u8 | u16 | u24 | u32 | i8 | i16 | i24 | i32;
+	/**
+	 * Every width brand above: the constraint a per-component width takes, and
+	 * one a type over widths can take, as in `Sample<W extends DataType.Width>`.
+	 * A property typed `Width` itself is a diagnostic, since it names no width.
+	 */
+	export type Width = f32 | f64 | u8 | u16 | u24 | u32 | i8 | i16 | i24 | i32;
 
 	/**
 	 * States the values a number takes: from `Min` to `Max`, both number

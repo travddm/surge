@@ -37,6 +37,10 @@ An integer width truncates a fraction toward zero and wraps a value outside
 its range. A `u8` given 300 reads back 44. Choose a width that holds every
 value the field takes, or state the range and let surge choose.
 
+`DataType.Width` is the union of these, for a type that takes a width as a
+parameter: `interface Sample<W extends DataType.Width> { x: W }`. A property
+typed `DataType.Width` itself is a build error, since it names no width.
+
 ## Ranges: `Range<T, Min, Max>`
 
 `DataType.Range<T, Min, Max>` states the values a number takes, from `Min` to

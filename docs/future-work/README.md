@@ -32,8 +32,6 @@ time:
   the transformer's suites could read surge's own declarations.
 - [shared-configs.md](shared-configs.md): the root and each package keep
   their own copies of the Prettier, markdownlint and cspell configs.
-- [width-export.md](width-export.md): `DataType.Width` exported, with the
-  diagnostic for a property typed as it.
 - In [benchmark-tooling.md](benchmark-tooling.md): Zap's output, which
   changes order from one run to the next.
 - [enum-name-keys.md](enum-name-keys.md): an option for an enum's write

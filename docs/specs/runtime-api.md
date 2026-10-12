@@ -1,7 +1,7 @@
 # Runtime API specification
 
 Status: current
-Applies to: commit `e189678` (no tagged release yet)
+Applies to: commit `15cc851` (no tagged release yet)
 
 ## 1. Scope
 
@@ -87,8 +87,10 @@ them what to emit. Each defaults to `false`. `readChecks` governs
 3.11).
 
 **3.9** The package exports the `DataType` namespace of width, length, range,
-quantization and packing brands. What each brand does to the bytes is in
-[wire-format.md](wire-format.md).
+quantization and packing brands, and `DataType.Width`, the union of the width
+brands, for a type over widths to take as a constraint. What each brand does
+to the bytes is in [wire-format.md](wire-format.md). A property typed
+`DataType.Width` itself is a diagnostic (Transformer 7.2).
 
 **3.10** With `writeChecks`, `serialize` raises a string beginning
 `@rbxts/surge:` for a value that does not fit its type: a value in the exact
@@ -386,6 +388,7 @@ A test file named `*.spec.ts` is under `tests/src/tests/`. A path starting
 
 ## Changes
 
+- `15cc851`: 3.9 names `DataType.Width` among the exports.
 - `e189678`: 2 and 5.1 name the helper module `abi`, imported as
   `@rbxts/surge/abi`, a subpath mapped to `out/abi`, where they named
   `out/abi` itself.

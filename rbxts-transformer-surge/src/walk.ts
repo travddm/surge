@@ -268,6 +268,18 @@ export class TypeWalker {
 		if (surgeBrand && NUM_BRAND_WIDTHS.has(surgeBrand.name)) {
 			return { kind: "num", width: surgeBrand.name as NumWidth };
 		}
+		// The union of the widths is exported as a constraint for a type over
+		// them. As a property's type it names no width, and left alone it would
+		// reach the union rows and be reported as ten constituents of one
+		// runtime type, which says nothing about widths.
+		if (surgeBrand?.name === "Width") {
+			this.report(
+				`"DataType.Width" is the union of the number widths, not one of them -- give the property one ` +
+					`width: ${[...NUM_BRAND_WIDTHS].map((width) => `"DataType.${width}"`).join(", ")}.`,
+				node,
+			);
+			return { kind: "num", width: "f64" };
+		}
 
 		if ((type.flags & ts_.TypeFlags.Union) !== 0) {
 			return this.walkUnion(type as ts.UnionType, node, packed);
