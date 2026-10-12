@@ -33,6 +33,9 @@ Every column but serio runs with `--!native` and `--!optimize 2`.
 On every call, its `deserialize` checks each count against the bytes left,
 raises on a union tag it does not know, and raises unless it read the whole
 buffer; surge's examines its input only under `readChecks`.
+
+`surge (cursor)` is surge's cursor codec, writing every value into one
+`Cursor` it reuses.
 `surge (readChecks)` is surge's codec with `readChecks: true`, timed on
 decode only, since its encode is surge's: the encode tables have no column
 for it.

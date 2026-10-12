@@ -17,9 +17,12 @@ loss in the library or in this runner, which
 [research/serialized-size-across-libraries.md](../research/serialized-size-across-libraries.md)
 explains.
 
-Blink and Zap are smaller than surge only on a count of 254 or more, which
-surge writes in three bytes and they in the two of their default `u16` count.
-Below 254, surge's count is one byte.
+Blink and Zap are smaller than surge on a count of 254 or more, which surge
+writes in three bytes and they in the two of their default `u16` count.
+Below 254, surge's count is one byte. Zap is also smaller on the sparse
+updates: it writes an update's four presence flags and its enum in one byte,
+where surge writes a byte for each optional and one for the enum where it is
+present.
 
 `flamework2` is `Flamework.createSerializer` of `@flamework-experimental/core` 2.0.0-alpha.8,
 an experimental Flamework 2. It writes each count and length as a varint, one

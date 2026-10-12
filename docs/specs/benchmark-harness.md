@@ -1,7 +1,7 @@
 # Benchmark harness specification
 
 Status: current
-Applies to: commit `3d804d1` (no tagged release yet)
+Applies to: commit `cd61fe7` (no tagged release yet)
 
 ## 1. Scope
 
@@ -119,13 +119,13 @@ sources in `tests/flamework2/src/` carry both. serio's modules carry neither.
 **4.8** An adapter uses what a library returns the way that library's own
 documentation shows, and does no other work in a timed call. surge's adapter
 keeps what `serialize` returns as the payload, and passes it to `deserialize`
-unchanged. fbs's keeps the table `serialize`
-returns and passes its `buffer` and `blobs` to `deserialize`. serio's keeps the `SerializedData`
-`serialize` returns and passes it to `deserialize`. Blink's and the
-baseline's keep what their write function returns: the buffer, or for the
-baseline's instance references, the table of the buffer and the blobs, which
-its read function takes back. Flamework 2's keeps the buffer `serialize`
-returns and passes it to `deserialize`. On the instance references, where
+unchanged. fbs's keeps the table `serialize` returns and passes its `buffer`
+and `blobs` to `deserialize`. serio's keeps the `SerializedData` `serialize`
+returns and passes it to `deserialize`. Blink's and the baseline's keep what
+their write function returns: the buffer, or for the baseline's instance
+references, the table of the buffer and the blobs, which its read function
+takes back. Flamework 2's keeps the buffer `serialize` returns and passes it
+to `deserialize`. On the instance references and the sequences, where
 `serialize` returns the buffer and the blob list as two values, its adapter
 creates a table of the two to carry them to `decode`: the one table an
 adapter creates in a timed call. The cursor column's adapter resets the
@@ -284,7 +284,7 @@ form `<name>=<value>`:
 - `halves=`: `encode`, `decode`, or both, comma-separated.
 - `runs=`: how many runs, two by default, as a full invocation runs (6.1).
 - `out=`: a directory outside `docs/benchmarks/` to write the run's tables
-  and trials into.
+  and trials into. A relative path is read from the repository root.
 
 **9.3** A scoped speed run keeps surge's column and the baseline's on every
 row it selects. It stops without measuring where the columns it keeps leave a
@@ -295,11 +295,11 @@ a change to surge leaves as it is.
 **9.4** A scoped run prints its tables and writes nothing under
 `docs/benchmarks/`. With `out=`, a scoped speed run writes its tables to
 `speed.md` and its trials to `speed-trials.tsv` in that directory, as 8.3 and
-8.4 describe them, with its scope among their facts.
+8.4 describe them, and both state its scope.
 
 **9.5** A `:only` task given nothing to narrow by, or a pattern or a column
 name that selects nothing, stops without measuring. A pattern narrows both
-tiers; `columns=` and `halves=` narrow the speed tier.
+tiers; `columns=`, and `halves=` naming one half, narrow the speed tier.
 
 ## 10. Rebuilding before a run
 
@@ -358,6 +358,9 @@ version, since another compiler version can give another count.
 
 ## Changes
 
+- `cd61fe7`: 4.8 names the sequences row's Flamework 2 adapter; 9.2 reads a
+  relative `out=` from the repository root; 9.4 says both files state the
+  scope; 9.5's `halves=` narrows only where it names one half.
 - `3d804d1`: adds 8.8 (a half's tables leave out a column with no cell in
   that half).
 - `9da6b2c`: 9.3's Conformance names a test of the columns a scoped run

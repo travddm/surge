@@ -21,8 +21,10 @@ The change:
 - both are stored back to the closure, so the next call starts from a grown
   buffer.
 
-The rows it touches are string-heavy, the large record, and both packed
-`CFrame` rows, which share one module.
+The rows it touches are string-heavy, the large record, the set, the tuples
+with a rest, the sequences, and both packed `CFrame` rows, which share one
+module. The tree's `serialize` is not sized either, but it reaches a
+recursion helper (see Constraints).
 
 **A string's reservation joined with the fixed-size bytes beside it.** A
 `str` reserves its count and bytes at once (5.19), and a run of fixed-size
@@ -99,5 +101,3 @@ Each change is kept only if its measurement passes its keep rule.
   locals, and renaming the closure's, leaves most anchors as they are. A
   TypeScript `let` cannot read an outer variable of its own name in its
   initializer, so the two need different names.
-- A sequence is not sized (5.20), so the sequences row also uses the scratch
-  path.

@@ -145,7 +145,8 @@ under [research/](research/README.md).
 - `bench:speed:only` also takes `columns=fbs,serio` to keep only those
   columns beside surge's and the baseline's, `halves=encode` or
   `halves=decode`, `runs=1` for one run instead of two, and `out=<directory>`
-  to write its tables and trials there
+  to write its tables and trials there, such as
+  `out=docs/research/data/<paper>`, a path from the repository root
   ([specs/benchmark-harness.md](specs/benchmark-harness.md) 9). It stops
   where the columns kept leave a row fewer than two controls.
 

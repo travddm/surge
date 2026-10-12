@@ -57,6 +57,8 @@ const ROW_PREFIX = "BENCH_ROW:";
 const RESULT_PREFIX = "BENCH_RESULT:";
 const CHECK_PREFIX = "BENCH_CHECK:";
 
+/** The repository root, from tests/, where npm runs this file. */
+const REPOSITORY_ROOT = "../..";
 const OUTPUT_PATH = "../../docs/benchmarks/speed.md";
 /**
  * Every trial behind `OUTPUT_PATH`, one line each, under the facts of the run. That file carries a
@@ -140,23 +142,30 @@ if (columns !== undefined && columns.length === 0) {
 	console.error("columns= needs at least one column name.");
 	process.exit(2);
 }
-/** The halves `halves=` gives, or both. */
-const halves = options.has("halves") ? options.get("halves").split(",") : HALVES;
+/** The halves `halves=` gives, each once, or both. */
+const halves = options.has("halves") ? [...new Set(options.get("halves").split(","))] : HALVES;
 if (halves.length === 0 || halves.some((half) => !HALVES.includes(half))) {
 	console.error(`halves= takes encode, decode, or both, comma-separated; it was given "${options.get("halves")}".`);
 	process.exit(2);
 }
-if (scoped && patterns.length === 0 && columns === undefined && !options.has("halves")) {
-	console.error(`${SCOPE_FLAG} needs a row pattern, columns= or halves= to narrow the run.`);
+if (scoped && patterns.length === 0 && columns === undefined && halves.length === HALVES.length) {
+	console.error(`${SCOPE_FLAG} needs a row pattern, columns= or one half in halves= to narrow the run.`);
 	process.exit(2);
 }
-/** Where `out=` writes a scoped run's tables and trials, or `undefined` to print them only. */
-const outDirectory = options.get("out");
+if (options.get("out") === "") {
+	console.error("out= needs a directory.");
+	process.exit(2);
+}
+/**
+ * Where `out=` writes a scoped run's tables and trials, or `undefined` to print them only. A
+ * relative path is read from the repository root, as the documentation's paths are, and not from
+ * tests/, where npm runs this file.
+ */
+const outDirectory = options.has("out") ? resolve(REPOSITORY_ROOT, options.get("out")) : undefined;
 // On another drive, `relative` is the absolute path itself.
-const fromBenchmarks =
-	outDirectory === undefined ? ".." : relative(resolve(dirname(OUTPUT_PATH)), resolve(outDirectory));
+const fromBenchmarks = outDirectory === undefined ? ".." : relative(resolve(dirname(OUTPUT_PATH)), outDirectory);
 if (!fromBenchmarks.startsWith("..") && !isAbsolute(fromBenchmarks)) {
-	console.error(`out= must name a directory outside ${dirname(OUTPUT_PATH)}, which holds full runs only.`);
+	console.error("out= must name a directory outside docs/benchmarks/, which holds full runs only.");
 	process.exit(2);
 }
 if (rendering && argv.length > 1) {
@@ -447,28 +456,35 @@ if (rendering) {
 }
 
 /**
- * Every half a cell reported in any run, reported in every run, and surge's cell in every half its
- * row reported, or the file would record a measurement it does not have. A column times the halves
- * its row's run times, but for one the suite times only one half of.
+ * Each column's cell in every run of every half its row reported that the column is timed in on
+ * some row, and surge's cell in every half its row reported, or the file would record a
+ * measurement it does not have. A column the suite times on one half only, `surge (readChecks)`,
+ * is timed in no other half on any row.
  */
 function requireEveryCell() {
-	for (const [name, byLibrary] of fixtures) {
-		const rowHalves = new Set();
+	const timedIn = new Map();
+	for (const byLibrary of fixtures.values()) {
 		for (const [library, byHalf] of byLibrary) {
-			for (const [half, perRun] of byHalf) {
-				rowHalves.add(half);
-				for (let index = 0; index < runs; index += 1) {
-					if (perRun[index] === undefined) {
-						console.error(`\n${name} (${library}) reported no ${half} row in run ${index + 1}.`);
-						process.exit(1);
-					}
-				}
-			}
+			if (!timedIn.has(library)) timedIn.set(library, new Set());
+			for (const half of byHalf.keys()) timedIn.get(library).add(half);
 		}
+	}
+
+	for (const [name, byLibrary] of fixtures) {
+		const rowHalves = new Set([...byLibrary.values()].flatMap((byHalf) => [...byHalf.keys()]));
 		for (const half of rowHalves) {
 			if (byLibrary.get(BASELINE)?.get(half) === undefined) {
 				console.error(`\n${name} reported no ${BASELINE} ${half} row, so its column has nothing to divide by.`);
 				process.exit(1);
+			}
+			for (const [library, byHalf] of byLibrary) {
+				if (!timedIn.get(library).has(half)) continue;
+				for (let index = 0; index < runs; index += 1) {
+					if (byHalf.get(half)?.[index] === undefined) {
+						console.error(`\n${name} (${library}) reported no ${half} row in run ${index + 1}.`);
+						process.exit(1);
+					}
+				}
 			}
 		}
 	}
@@ -768,9 +784,9 @@ function halfSection(cells, half) {
 /** What a scoped run measured, in one sentence: its rows, its columns, its halves and its runs. */
 function scopeDescription(cells) {
 	const rows = `${cells.size} ${cells.size === 1 ? "row" : "rows"}`;
-	const selectedBy = patterns.length === 0 ? "every row" : `the patterns ${patterns.join(", ")}`;
+	const selectedBy = patterns.length === 0 ? "" : ` by the patterns ${patterns.join(", ")}`;
 	const kept = columns === undefined ? "every column" : `surge, the baseline and ${columns.join(", ")}`;
-	return `Scoped to ${rows} by ${selectedBy}, with ${kept}, timing ${halves.join(" and ")}, in ${runs === 1 ? "one run" : `${runs} runs back to back`}.`;
+	return `Scoped to ${rows}${selectedBy}, with ${kept}, timing ${halves.join(" and ")}, in ${runs === 1 ? "one run" : `${runs} runs back to back`}.`;
 }
 
 /**
@@ -885,6 +901,9 @@ function write(facts) {
 		"On every call, its `deserialize` checks each count against the bytes left,",
 		"raises on a union tag it does not know, and raises unless it read the whole",
 		"buffer; surge's examines its input only under `readChecks`.",
+		"",
+		"`surge (cursor)` is surge's cursor codec, writing every value into one",
+		"`Cursor` it reuses.",
 		"`surge (readChecks)` is surge's codec with `readChecks: true`, timed on",
 		"decode only, since its encode is surge's: the encode tables have no column",
 		"for it.",

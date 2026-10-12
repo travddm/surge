@@ -1,6 +1,5 @@
 //!native
 //!optimize 2
-import type { DataType } from "@rbxts/surge";
 import { createCursorCodec } from "@rbxts/surge";
 
 import type { QuantizedTransforms } from "./shapes";
