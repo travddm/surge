@@ -1,7 +1,7 @@
 # Benchmark harness specification
 
 Status: current
-Applies to: commit `9da6b2c` (no tagged release yet)
+Applies to: commit `3d804d1` (no tagged release yet)
 
 ## 1. Scope
 
@@ -263,6 +263,10 @@ geometric mean of that column's throughput over surge's, across the rows
 where both have a cell and neither cell is marked. It states how many of the
 rows both have that mean covers.
 
+**8.8** Each half's throughput, time and ratio tables give a column only to a
+column with a cell in that half, so a column timed on decode only, such as
+4.13's, has none in the encode tables.
+
 ## 9. Scoped runs
 
 **9.1** `mise run bench:size:only` and `mise run bench:speed:only` take
@@ -347,13 +351,15 @@ version, since another compiler version can give another count.
 | 6.2–6.5   | Source: the constants and comment block of `tests/src/bench/speed.spec.ts`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | 6.6       | Source: `check` and `timed` in `tests/src/bench/speed.spec.ts`, and `readCheck`, `recordedRoundTrips` and `requireEveryCheck` in `tests/scripts/record-speed-benchmarks.mjs`. No test runs the comparison; a full or scoped `bench:speed` run exercises it                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | 7.1–7.3   | Source: `tests/src/bench/speed.spec.ts`, and `run` and `runBenchmarks` in `tests/src/index.ts`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
-| 8.1–8.7   | Source: `tests/scripts/record-speed-benchmarks.mjs` (`RUNS`, `NOISY`, `summarize`, `summaryTable`)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| 8.1–8.8   | Source: `tests/scripts/record-speed-benchmarks.mjs` (`RUNS`, `NOISY`, `summarize`, `summaryTable`, `librariesIn`)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 | 9.1–9.5   | `tests/src/tests/selection.spec.ts`: `SelectionTest` (9.2's column names and 9.3's controls). Source: `matching` and `keptEntries` in `tests/src/bench/selection.ts`, the options and `report` in the recorder, and `tests/scripts/lune-size-runner.luau`; a scoped run exercises the rest                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | 10.1      | Source: the `bench:prepare` script in `package.json`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
 | 11.1–11.5 | Source: `tests/scripts/lune-code-size-runner.luau`; a regenerated `code-size.md` with no diff                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
 
 ## Changes
 
+- `3d804d1`: adds 8.8 (a half's tables leave out a column with no cell in
+  that half).
 - `9da6b2c`: 9.3's Conformance names a test of the columns a scoped run
   keeps.
 - `b8ac287`: 3.1 adds six rows: tuples with a rest, a set, sparse updates,

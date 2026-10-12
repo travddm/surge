@@ -34,7 +34,8 @@ On every call, its `deserialize` checks each count against the bytes left,
 raises on a union tag it does not know, and raises unless it read the whole
 buffer; surge's examines its input only under `readChecks`.
 `surge (readChecks)` is surge's codec with `readChecks: true`, timed on
-decode only, since its encode is surge's.
+decode only, since its encode is surge's: the encode tables have no column
+for it.
 
 Each number is one shape in a warm loop, on one machine on one day, not
 an application profile; compare columns within this file only.
@@ -56,99 +57,99 @@ The run:
 
 ## Encode throughput
 
-| Fixture                             | surge        | surge (cursor) | surge (readChecks) | fbs        | serio       | flamework2   | blink       | baseline   |
-| ----------------------------------- | ------------ | -------------- | ------------------ | ---------- | ----------- | ------------ | ----------- | ---------- |
-| small flat struct                   | 5.38M ±8%    | 5.80M ±11%†    | —                  | 2.35M ±8%  | 811.3k ±3%  | 5.45M ±7%    | 2.34M ±7%   | 5.51M ±5%  |
-| deeply nested object                | 4.26M ±6%    | 4.76M ±5%      | —                  | 1.77M ±4%  | 466.6k ±3%  | 2.77M ±10%†  | 1.94M ±6%   | 4.37M ±4%  |
-| wide struct                         | 2.45M ±8%    | 3.86M ±5%      | —                  | 730.9k ±3% | 116.8k ±3%  | 2.52M ±6%    | 1.09M ±8%   | —          |
-| large array                         | 199.8k ±6%   | 455.5k ±4%     | —                  | 65.3k ±3%  | 8.0k ±1.0%  | 178.8k ±6%   | 91.9k ±9%   | —          |
-| nested arrays                       | 787.6k ±3%   | 1.17M ±14%†    | —                  | 258.5k ±5% | 35.5k ±2%   | 756.9k ±4%   | 339.2k ±5%  | 763.9k ±2% |
-| tuples                              | 1.13M ±9%    | 1.95M ±10%     | —                  | 275.8k ±4% | 33.4k ±1%   | 1.06M ±8%    | —           | 1.12M ±10% |
-| tuples with a rest                  | 361.6k ±4%   | 774.0k ±3%     | —                  | 137.7k ±3% | —           | 344.1k ±3%   | —           | —          |
-| large record                        | 127.2k ±3%   | 213.0k ±5%     | —                  | 82.5k ±7%  | 11.8k ±2%   | 99.4k ±10%   | 38.2k ±31%† | —          |
-| set                                 | 514.9k ±4%   | 1.03M ±4%      | —                  | 267.3k ±3% | 37.3k ±1%   | 436.0k ±6%   | —           | —          |
-| string-heavy                        | 200.9k ±5%   | 497.3k ±3%     | —                  | 152.5k ±9% | 30.3k ±3%   | 164.7k ±4%   | 64.1k ±12%† | —          |
-| leaderboard                         | 255.2k ±8%   | 799.6k ±6%     | —                  | 138.2k ±3% | 26.0k ±5%   | 193.7k ±4%   | 92.2k ±7%   | 258.5k ±6% |
-| sparse updates                      | 117.5k ±7%   | 219.4k ±5%     | —                  | 40.6k ±4%  | 7.0k ±2%    | 100.0k ±5%   | 48.6k ±9%   | —          |
-| enum-heavy                          | 1.14M ±3%    | 1.26M ±1%      | —                  | 85.1k ±2%  | 42.3k ±2%   | 527.0k ±3%   | —           | —          |
-| tagged union                        | 216.6k ±5%   | 579.5k ±4%     | —                  | 79.0k ±4%  | 13.2k ±4%   | 157.0k ±5%   | 71.8k ±9%   | 217.6k ±4% |
-| guarded union                       | 563.0k ±5%   | 1.02M ±3%      | —                  | 74.0k ±3%  | 20.0k ±2%   | 442.0k ±3%   | —           | —          |
-| tree                                | 465.2k ±4%   | 516.3k ±6%     | —                  | —          | —           | 280.7k ±1%   | —           | 453.7k ±1% |
-| instance references                 | 894.7k ±10%† | 1.72M ±2%      | —                  | 243.2k ±3% | 47.7k ±9%   | 546.2k ±9%   | —           | 848.9k ±9% |
-| toggles (unpacked)                  | 4.30M ±6%    | 4.69M ±8%      | —                  | 1.48M ±3%  | 410.9k ±4%  | 3.48M ±3%    | 1.95M ±10%  | —          |
-| toggles (packed)                    | 4.49M ±8%    | 4.82M ±6%      | —                  | 1.30M ±3%  | 330.7k ±7%  | —            | —           | 4.34M ±10% |
-| CFrame array                        | 181.4k ±5%   | 324.1k ±7%     | —                  | 154.0k ±6% | 17.0k ±4%   | 201.1k ±8%   | 125.6k ±5%  | 179.4k ±7% |
-| CFrame array (packed, axis-aligned) | 178.2k ±3%   | 204.2k ±3%     | —                  | 31.1k ±3%  | 5.5k ±2%    | —            | —           | —          |
-| CFrame array (packed, arbitrary)    | 135.1k ±5%   | 201.6k ±6%     | —                  | 29.4k ±5%  | 5.4k ±2%    | —            | —           | —          |
-| CFrame array (quantized)            | 263.1k ±4%   | 316.0k ±2%     | —                  | 152.9k ±4% | 17.0k ±4%   | —            | —           | —          |
-| layout                              | 92.4k ±7%    | 119.7k ±5%     | —                  | 134.0k ±7% | 12.3k ±3%   | 90.5k ±6%    | —           | —          |
-| sequences                           | 46.0k ±7%    | 57.3k ±8%      | —                  | 34.9k ±6%  | 9.3k ±2%    | 703.6k ±10%† | —           | —          |
-| Blink: Booleans                     | 202.3k ±13%† | 252.1k ±10%    | —                  | 51.5k ±5%  | 10.4k ±2%   | 119.7k ±33%† | 93.6k ±11%† | —          |
-| Blink: Entities                     | 495.2k ±4%   | 622.0k ±2%     | —                  | 80.8k ±3%  | 11.2k ±0.9% | 452.5k ±2%   | 271.0k ±6%  | —          |
+| Fixture                             | surge        | surge (cursor) | fbs        | serio       | flamework2   | blink       | baseline   |
+| ----------------------------------- | ------------ | -------------- | ---------- | ----------- | ------------ | ----------- | ---------- |
+| small flat struct                   | 5.38M ±8%    | 5.80M ±11%†    | 2.35M ±8%  | 811.3k ±3%  | 5.45M ±7%    | 2.34M ±7%   | 5.51M ±5%  |
+| deeply nested object                | 4.26M ±6%    | 4.76M ±5%      | 1.77M ±4%  | 466.6k ±3%  | 2.77M ±10%†  | 1.94M ±6%   | 4.37M ±4%  |
+| wide struct                         | 2.45M ±8%    | 3.86M ±5%      | 730.9k ±3% | 116.8k ±3%  | 2.52M ±6%    | 1.09M ±8%   | —          |
+| large array                         | 199.8k ±6%   | 455.5k ±4%     | 65.3k ±3%  | 8.0k ±1.0%  | 178.8k ±6%   | 91.9k ±9%   | —          |
+| nested arrays                       | 787.6k ±3%   | 1.17M ±14%†    | 258.5k ±5% | 35.5k ±2%   | 756.9k ±4%   | 339.2k ±5%  | 763.9k ±2% |
+| tuples                              | 1.13M ±9%    | 1.95M ±10%     | 275.8k ±4% | 33.4k ±1%   | 1.06M ±8%    | —           | 1.12M ±10% |
+| tuples with a rest                  | 361.6k ±4%   | 774.0k ±3%     | 137.7k ±3% | —           | 344.1k ±3%   | —           | —          |
+| large record                        | 127.2k ±3%   | 213.0k ±5%     | 82.5k ±7%  | 11.8k ±2%   | 99.4k ±10%   | 38.2k ±31%† | —          |
+| set                                 | 514.9k ±4%   | 1.03M ±4%      | 267.3k ±3% | 37.3k ±1%   | 436.0k ±6%   | —           | —          |
+| string-heavy                        | 200.9k ±5%   | 497.3k ±3%     | 152.5k ±9% | 30.3k ±3%   | 164.7k ±4%   | 64.1k ±12%† | —          |
+| leaderboard                         | 255.2k ±8%   | 799.6k ±6%     | 138.2k ±3% | 26.0k ±5%   | 193.7k ±4%   | 92.2k ±7%   | 258.5k ±6% |
+| sparse updates                      | 117.5k ±7%   | 219.4k ±5%     | 40.6k ±4%  | 7.0k ±2%    | 100.0k ±5%   | 48.6k ±9%   | —          |
+| enum-heavy                          | 1.14M ±3%    | 1.26M ±1%      | 85.1k ±2%  | 42.3k ±2%   | 527.0k ±3%   | —           | —          |
+| tagged union                        | 216.6k ±5%   | 579.5k ±4%     | 79.0k ±4%  | 13.2k ±4%   | 157.0k ±5%   | 71.8k ±9%   | 217.6k ±4% |
+| guarded union                       | 563.0k ±5%   | 1.02M ±3%      | 74.0k ±3%  | 20.0k ±2%   | 442.0k ±3%   | —           | —          |
+| tree                                | 465.2k ±4%   | 516.3k ±6%     | —          | —           | 280.7k ±1%   | —           | 453.7k ±1% |
+| instance references                 | 894.7k ±10%† | 1.72M ±2%      | 243.2k ±3% | 47.7k ±9%   | 546.2k ±9%   | —           | 848.9k ±9% |
+| toggles (unpacked)                  | 4.30M ±6%    | 4.69M ±8%      | 1.48M ±3%  | 410.9k ±4%  | 3.48M ±3%    | 1.95M ±10%  | —          |
+| toggles (packed)                    | 4.49M ±8%    | 4.82M ±6%      | 1.30M ±3%  | 330.7k ±7%  | —            | —           | 4.34M ±10% |
+| CFrame array                        | 181.4k ±5%   | 324.1k ±7%     | 154.0k ±6% | 17.0k ±4%   | 201.1k ±8%   | 125.6k ±5%  | 179.4k ±7% |
+| CFrame array (packed, axis-aligned) | 178.2k ±3%   | 204.2k ±3%     | 31.1k ±3%  | 5.5k ±2%    | —            | —           | —          |
+| CFrame array (packed, arbitrary)    | 135.1k ±5%   | 201.6k ±6%     | 29.4k ±5%  | 5.4k ±2%    | —            | —           | —          |
+| CFrame array (quantized)            | 263.1k ±4%   | 316.0k ±2%     | 152.9k ±4% | 17.0k ±4%   | —            | —           | —          |
+| layout                              | 92.4k ±7%    | 119.7k ±5%     | 134.0k ±7% | 12.3k ±3%   | 90.5k ±6%    | —           | —          |
+| sequences                           | 46.0k ±7%    | 57.3k ±8%      | 34.9k ±6%  | 9.3k ±2%    | 703.6k ±10%† | —           | —          |
+| Blink: Booleans                     | 202.3k ±13%† | 252.1k ±10%    | 51.5k ±5%  | 10.4k ±2%   | 119.7k ±33%† | 93.6k ±11%† | —          |
+| Blink: Entities                     | 495.2k ±4%   | 622.0k ±2%     | 80.8k ±3%  | 11.2k ±0.9% | 452.5k ±2%   | 271.0k ±6%  | —          |
 
 ## Encode time per value
 
-| Fixture                             | surge    | surge (cursor) | surge (readChecks) | fbs     | serio   | flamework2 | blink    | baseline |
-| ----------------------------------- | -------- | -------------- | ------------------ | ------- | ------- | ---------- | -------- | -------- |
-| small flat struct                   | 0.19 µs  | 0.17 µs†       | —                  | 0.43 µs | 1.23 µs | 0.18 µs    | 0.43 µs  | 0.18 µs  |
-| deeply nested object                | 0.23 µs  | 0.21 µs        | —                  | 0.56 µs | 2.14 µs | 0.36 µs†   | 0.52 µs  | 0.23 µs  |
-| wide struct                         | 0.41 µs  | 0.26 µs        | —                  | 1.37 µs | 8.56 µs | 0.40 µs    | 0.91 µs  | —        |
-| large array                         | 5.01 µs  | 2.20 µs        | —                  | 15.3 µs | 124 µs  | 5.59 µs    | 10.9 µs  | —        |
-| nested arrays                       | 1.27 µs  | 0.86 µs†       | —                  | 3.87 µs | 28.2 µs | 1.32 µs    | 2.95 µs  | 1.31 µs  |
-| tuples                              | 0.89 µs  | 0.51 µs        | —                  | 3.63 µs | 29.9 µs | 0.94 µs    | —        | 0.89 µs  |
-| tuples with a rest                  | 2.77 µs  | 1.29 µs        | —                  | 7.26 µs | —       | 2.91 µs    | —        | —        |
-| large record                        | 7.86 µs  | 4.69 µs        | —                  | 12.1 µs | 84.9 µs | 10.1 µs    | 26.2 µs† | —        |
-| set                                 | 1.94 µs  | 0.97 µs        | —                  | 3.74 µs | 26.8 µs | 2.29 µs    | —        | —        |
-| string-heavy                        | 4.98 µs  | 2.01 µs        | —                  | 6.56 µs | 33.0 µs | 6.07 µs    | 15.6 µs† | —        |
-| leaderboard                         | 3.92 µs  | 1.25 µs        | —                  | 7.23 µs | 38.5 µs | 5.16 µs    | 10.8 µs  | 3.87 µs  |
-| sparse updates                      | 8.51 µs  | 4.56 µs        | —                  | 24.6 µs | 144 µs  | 10.0 µs    | 20.6 µs  | —        |
-| enum-heavy                          | 0.88 µs  | 0.79 µs        | —                  | 11.8 µs | 23.6 µs | 1.90 µs    | —        | —        |
-| tagged union                        | 4.62 µs  | 1.73 µs        | —                  | 12.7 µs | 75.8 µs | 6.37 µs    | 13.9 µs  | 4.60 µs  |
-| guarded union                       | 1.78 µs  | 0.98 µs        | —                  | 13.5 µs | 50.0 µs | 2.26 µs    | —        | —        |
-| tree                                | 2.15 µs  | 1.94 µs        | —                  | —       | —       | 3.56 µs    | —        | 2.20 µs  |
-| instance references                 | 1.12 µs† | 0.58 µs        | —                  | 4.11 µs | 21.0 µs | 1.83 µs    | —        | 1.18 µs  |
-| toggles (unpacked)                  | 0.23 µs  | 0.21 µs        | —                  | 0.68 µs | 2.43 µs | 0.29 µs    | 0.51 µs  | —        |
-| toggles (packed)                    | 0.22 µs  | 0.21 µs        | —                  | 0.77 µs | 3.02 µs | —          | —        | 0.23 µs  |
-| CFrame array                        | 5.51 µs  | 3.09 µs        | —                  | 6.49 µs | 58.7 µs | 4.97 µs    | 7.96 µs  | 5.57 µs  |
-| CFrame array (packed, axis-aligned) | 5.61 µs  | 4.90 µs        | —                  | 32.2 µs | 183 µs  | —          | —        | —        |
-| CFrame array (packed, arbitrary)    | 7.40 µs  | 4.96 µs        | —                  | 34.1 µs | 184 µs  | —          | —        | —        |
-| CFrame array (quantized)            | 3.80 µs  | 3.16 µs        | —                  | 6.54 µs | 58.7 µs | —          | —        | —        |
-| layout                              | 10.8 µs  | 8.35 µs        | —                  | 7.46 µs | 81.4 µs | 11.0 µs    | —        | —        |
-| sequences                           | 21.8 µs  | 17.5 µs        | —                  | 28.6 µs | 108 µs  | 1.42 µs†   | —        | —        |
-| Blink: Booleans                     | 4.94 µs† | 3.97 µs        | —                  | 19.4 µs | 96.4 µs | 8.35 µs†   | 10.7 µs† | —        |
-| Blink: Entities                     | 2.02 µs  | 1.61 µs        | —                  | 12.4 µs | 89.0 µs | 2.21 µs    | 3.69 µs  | —        |
+| Fixture                             | surge    | surge (cursor) | fbs     | serio   | flamework2 | blink    | baseline |
+| ----------------------------------- | -------- | -------------- | ------- | ------- | ---------- | -------- | -------- |
+| small flat struct                   | 0.19 µs  | 0.17 µs†       | 0.43 µs | 1.23 µs | 0.18 µs    | 0.43 µs  | 0.18 µs  |
+| deeply nested object                | 0.23 µs  | 0.21 µs        | 0.56 µs | 2.14 µs | 0.36 µs†   | 0.52 µs  | 0.23 µs  |
+| wide struct                         | 0.41 µs  | 0.26 µs        | 1.37 µs | 8.56 µs | 0.40 µs    | 0.91 µs  | —        |
+| large array                         | 5.01 µs  | 2.20 µs        | 15.3 µs | 124 µs  | 5.59 µs    | 10.9 µs  | —        |
+| nested arrays                       | 1.27 µs  | 0.86 µs†       | 3.87 µs | 28.2 µs | 1.32 µs    | 2.95 µs  | 1.31 µs  |
+| tuples                              | 0.89 µs  | 0.51 µs        | 3.63 µs | 29.9 µs | 0.94 µs    | —        | 0.89 µs  |
+| tuples with a rest                  | 2.77 µs  | 1.29 µs        | 7.26 µs | —       | 2.91 µs    | —        | —        |
+| large record                        | 7.86 µs  | 4.69 µs        | 12.1 µs | 84.9 µs | 10.1 µs    | 26.2 µs† | —        |
+| set                                 | 1.94 µs  | 0.97 µs        | 3.74 µs | 26.8 µs | 2.29 µs    | —        | —        |
+| string-heavy                        | 4.98 µs  | 2.01 µs        | 6.56 µs | 33.0 µs | 6.07 µs    | 15.6 µs† | —        |
+| leaderboard                         | 3.92 µs  | 1.25 µs        | 7.23 µs | 38.5 µs | 5.16 µs    | 10.8 µs  | 3.87 µs  |
+| sparse updates                      | 8.51 µs  | 4.56 µs        | 24.6 µs | 144 µs  | 10.0 µs    | 20.6 µs  | —        |
+| enum-heavy                          | 0.88 µs  | 0.79 µs        | 11.8 µs | 23.6 µs | 1.90 µs    | —        | —        |
+| tagged union                        | 4.62 µs  | 1.73 µs        | 12.7 µs | 75.8 µs | 6.37 µs    | 13.9 µs  | 4.60 µs  |
+| guarded union                       | 1.78 µs  | 0.98 µs        | 13.5 µs | 50.0 µs | 2.26 µs    | —        | —        |
+| tree                                | 2.15 µs  | 1.94 µs        | —       | —       | 3.56 µs    | —        | 2.20 µs  |
+| instance references                 | 1.12 µs† | 0.58 µs        | 4.11 µs | 21.0 µs | 1.83 µs    | —        | 1.18 µs  |
+| toggles (unpacked)                  | 0.23 µs  | 0.21 µs        | 0.68 µs | 2.43 µs | 0.29 µs    | 0.51 µs  | —        |
+| toggles (packed)                    | 0.22 µs  | 0.21 µs        | 0.77 µs | 3.02 µs | —          | —        | 0.23 µs  |
+| CFrame array                        | 5.51 µs  | 3.09 µs        | 6.49 µs | 58.7 µs | 4.97 µs    | 7.96 µs  | 5.57 µs  |
+| CFrame array (packed, axis-aligned) | 5.61 µs  | 4.90 µs        | 32.2 µs | 183 µs  | —          | —        | —        |
+| CFrame array (packed, arbitrary)    | 7.40 µs  | 4.96 µs        | 34.1 µs | 184 µs  | —          | —        | —        |
+| CFrame array (quantized)            | 3.80 µs  | 3.16 µs        | 6.54 µs | 58.7 µs | —          | —        | —        |
+| layout                              | 10.8 µs  | 8.35 µs        | 7.46 µs | 81.4 µs | 11.0 µs    | —        | —        |
+| sequences                           | 21.8 µs  | 17.5 µs        | 28.6 µs | 108 µs  | 1.42 µs†   | —        | —        |
+| Blink: Booleans                     | 4.94 µs† | 3.97 µs        | 19.4 µs | 96.4 µs | 8.35 µs†   | 10.7 µs† | —        |
+| Blink: Entities                     | 2.02 µs  | 1.61 µs        | 12.4 µs | 89.0 µs | 2.21 µs    | 3.69 µs  | —        |
 
 ## Encode against surge
 
-| Fixture                             | surge (cursor) | surge (readChecks) | fbs    | serio  | flamework2 | blink  | baseline |
-| ----------------------------------- | -------------- | ------------------ | ------ | ------ | ---------- | ------ | -------- |
-| small flat struct                   | 1.08×†         | —                  | 0.44×  | 0.15×  | 1.01×      | 0.44×  | 1.03×    |
-| deeply nested object                | 1.12×          | —                  | 0.42×  | 0.11×  | 0.65×†     | 0.45×  | 1.03×    |
-| wide struct                         | 1.58×          | —                  | 0.30×  | 0.05×  | 1.03×      | 0.45×  | —        |
-| large array                         | 2.28×          | —                  | 0.33×  | 0.04×  | 0.89×      | 0.46×  | —        |
-| nested arrays                       | 1.48×†         | —                  | 0.33×  | 0.05×  | 0.96×      | 0.43×  | 0.97×    |
-| tuples                              | 1.73×          | —                  | 0.24×  | 0.03×  | 0.94×      | —      | 0.99×    |
-| tuples with a rest                  | 2.14×          | —                  | 0.38×  | —      | 0.95×      | —      | —        |
-| large record                        | 1.67×          | —                  | 0.65×  | 0.09×  | 0.78×      | 0.30×† | —        |
-| set                                 | 1.99×          | —                  | 0.52×  | 0.07×  | 0.85×      | —      | —        |
-| string-heavy                        | 2.47×          | —                  | 0.76×  | 0.15×  | 0.82×      | 0.32×† | —        |
-| leaderboard                         | 3.13×          | —                  | 0.54×  | 0.10×  | 0.76×      | 0.36×  | 1.01×    |
-| sparse updates                      | 1.87×          | —                  | 0.35×  | 0.06×  | 0.85×      | 0.41×  | —        |
-| enum-heavy                          | 1.10×          | —                  | 0.07×  | 0.04×  | 0.46×      | —      | —        |
-| tagged union                        | 2.67×          | —                  | 0.36×  | 0.06×  | 0.72×      | 0.33×  | 1.00×    |
-| guarded union                       | 1.81×          | —                  | 0.13×  | 0.04×  | 0.79×      | —      | —        |
-| tree                                | 1.11×          | —                  | —      | —      | 0.60×      | —      | 0.98×    |
-| instance references                 | 1.93×†         | —                  | 0.27×† | 0.05×† | 0.61×†     | —      | 0.95×†   |
-| toggles (unpacked)                  | 1.09×          | —                  | 0.34×  | 0.10×  | 0.81×      | 0.45×  | —        |
-| toggles (packed)                    | 1.07×          | —                  | 0.29×  | 0.07×  | —          | —      | 0.97×    |
-| CFrame array                        | 1.79×          | —                  | 0.85×  | 0.09×  | 1.11×      | 0.69×  | 0.99×    |
-| CFrame array (packed, axis-aligned) | 1.15×          | —                  | 0.17×  | 0.03×  | —          | —      | —        |
-| CFrame array (packed, arbitrary)    | 1.49×          | —                  | 0.22×  | 0.04×  | —          | —      | —        |
-| CFrame array (quantized)            | 1.20×          | —                  | 0.58×  | 0.06×  | —          | —      | —        |
-| layout                              | 1.30×          | —                  | 1.45×  | 0.13×  | 0.98×      | —      | —        |
-| sequences                           | 1.25×          | —                  | 0.76×  | 0.20×  | 15.31×†    | —      | —        |
-| Blink: Booleans                     | 1.25×†         | —                  | 0.25×† | 0.05×† | 0.59×†     | 0.46×† | —        |
-| Blink: Entities                     | 1.26×          | —                  | 0.16×  | 0.02×  | 0.91×      | 0.55×  | —        |
+| Fixture                             | surge (cursor) | fbs    | serio  | flamework2 | blink  | baseline |
+| ----------------------------------- | -------------- | ------ | ------ | ---------- | ------ | -------- |
+| small flat struct                   | 1.08×†         | 0.44×  | 0.15×  | 1.01×      | 0.44×  | 1.03×    |
+| deeply nested object                | 1.12×          | 0.42×  | 0.11×  | 0.65×†     | 0.45×  | 1.03×    |
+| wide struct                         | 1.58×          | 0.30×  | 0.05×  | 1.03×      | 0.45×  | —        |
+| large array                         | 2.28×          | 0.33×  | 0.04×  | 0.89×      | 0.46×  | —        |
+| nested arrays                       | 1.48×†         | 0.33×  | 0.05×  | 0.96×      | 0.43×  | 0.97×    |
+| tuples                              | 1.73×          | 0.24×  | 0.03×  | 0.94×      | —      | 0.99×    |
+| tuples with a rest                  | 2.14×          | 0.38×  | —      | 0.95×      | —      | —        |
+| large record                        | 1.67×          | 0.65×  | 0.09×  | 0.78×      | 0.30×† | —        |
+| set                                 | 1.99×          | 0.52×  | 0.07×  | 0.85×      | —      | —        |
+| string-heavy                        | 2.47×          | 0.76×  | 0.15×  | 0.82×      | 0.32×† | —        |
+| leaderboard                         | 3.13×          | 0.54×  | 0.10×  | 0.76×      | 0.36×  | 1.01×    |
+| sparse updates                      | 1.87×          | 0.35×  | 0.06×  | 0.85×      | 0.41×  | —        |
+| enum-heavy                          | 1.10×          | 0.07×  | 0.04×  | 0.46×      | —      | —        |
+| tagged union                        | 2.67×          | 0.36×  | 0.06×  | 0.72×      | 0.33×  | 1.00×    |
+| guarded union                       | 1.81×          | 0.13×  | 0.04×  | 0.79×      | —      | —        |
+| tree                                | 1.11×          | —      | —      | 0.60×      | —      | 0.98×    |
+| instance references                 | 1.93×†         | 0.27×† | 0.05×† | 0.61×†     | —      | 0.95×†   |
+| toggles (unpacked)                  | 1.09×          | 0.34×  | 0.10×  | 0.81×      | 0.45×  | —        |
+| toggles (packed)                    | 1.07×          | 0.29×  | 0.07×  | —          | —      | 0.97×    |
+| CFrame array                        | 1.79×          | 0.85×  | 0.09×  | 1.11×      | 0.69×  | 0.99×    |
+| CFrame array (packed, axis-aligned) | 1.15×          | 0.17×  | 0.03×  | —          | —      | —        |
+| CFrame array (packed, arbitrary)    | 1.49×          | 0.22×  | 0.04×  | —          | —      | —        |
+| CFrame array (quantized)            | 1.20×          | 0.58×  | 0.06×  | —          | —      | —        |
+| layout                              | 1.30×          | 1.45×  | 0.13×  | 0.98×      | —      | —        |
+| sequences                           | 1.25×          | 0.76×  | 0.20×  | 15.31×†    | —      | —        |
+| Blink: Booleans                     | 1.25×†         | 0.25×† | 0.05×† | 0.59×†     | 0.46×† | —        |
+| Blink: Entities                     | 1.26×          | 0.16×  | 0.02×  | 0.91×      | 0.55×  | —        |
 
 ## Decode throughput
 

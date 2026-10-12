@@ -613,45 +613,55 @@ function markdownTable(header, rows) {
 	];
 }
 
+/**
+ * The columns with a cell in `half` on some row, in `libraries` order. A column the suite times on
+ * one half only, such as `surge (readChecks)`, would be a column of empty cells in the other.
+ */
+function librariesIn(cells, half) {
+	return libraries.filter((library) => [...cells.values()].some((byLibrary) => byLibrary.get(library)?.has(half)));
+}
+
 /** Every column's throughput, with its spread, marked where the cell is noisy. */
 function throughputTable(cells, half) {
+	const columns = librariesIn(cells, half);
 	const rows = [];
 	for (const [name, byLibrary] of cells) {
 		referenceOf(name, byLibrary, half);
-		const columns = [name];
-		for (const library of libraries) {
+		const row = [name];
+		for (const library of columns) {
 			const cell = byLibrary.get(library)?.get(half);
 			if (cell === undefined) {
-				columns.push(EMPTY);
+				row.push(EMPTY);
 				continue;
 			}
 			// Per cell rather than per row: the noise here is concentrated in a few
 			// measurements, and a row-wide figure would put their doubt on cells that
 			// do not carry it.
-			columns.push(`${formatRate(cell.median)} ±${formatSpread(cell.spread)}${cell.noisy ? FLAG : ""}`);
+			row.push(`${formatRate(cell.median)} ±${formatSpread(cell.spread)}${cell.noisy ? FLAG : ""}`);
 		}
-		rows.push(columns);
+		rows.push(row);
 	}
-	return markdownTable(["Fixture", ...libraries], rows);
+	return markdownTable(["Fixture", ...columns], rows);
 }
 
 /** Every column's time per value: the throughput table again, as microseconds per call. */
 function timeTable(cells, half) {
+	const columns = librariesIn(cells, half);
 	const rows = [];
 	for (const [name, byLibrary] of cells) {
-		const columns = [name];
-		for (const library of libraries) {
+		const row = [name];
+		for (const library of columns) {
 			const cell = byLibrary.get(library)?.get(half);
-			columns.push(cell === undefined ? EMPTY : `${formatMicroseconds(cell.median)}${cell.noisy ? FLAG : ""}`);
+			row.push(cell === undefined ? EMPTY : `${formatMicroseconds(cell.median)}${cell.noisy ? FLAG : ""}`);
 		}
-		rows.push(columns);
+		rows.push(row);
 	}
-	return markdownTable(["Fixture", ...libraries], rows);
+	return markdownTable(["Fixture", ...columns], rows);
 }
 
 /** Every other column against surge, marked where either side of the ratio is noisy. */
 function ratioTable(cells, half) {
-	const others = libraries.filter((library) => library !== BASELINE);
+	const others = librariesIn(cells, half).filter((library) => library !== BASELINE);
 	const rows = [];
 	for (const [name, byLibrary] of cells) {
 		const reference = referenceOf(name, byLibrary, half);
@@ -876,7 +886,8 @@ function write(facts) {
 		"raises on a union tag it does not know, and raises unless it read the whole",
 		"buffer; surge's examines its input only under `readChecks`.",
 		"`surge (readChecks)` is surge's codec with `readChecks: true`, timed on",
-		"decode only, since its encode is surge's.",
+		"decode only, since its encode is surge's: the encode tables have no column",
+		"for it.",
 		"",
 		"Each number is one shape in a warm loop, on one machine on one day, not",
 		"an application profile; compare columns within this file only.",
