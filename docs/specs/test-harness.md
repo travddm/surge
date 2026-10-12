@@ -1,7 +1,7 @@
 # Test harness specification
 
 Status: current
-Applies to: commit `a89553b` (no tagged release yet)
+Applies to: commit `9da6b2c` (no tagged release yet)
 
 ## 1. Scope
 
@@ -46,6 +46,9 @@ compare otherwise:
 - Part of `checks.spec.ts` decodes hand-written payloads that no `serialize`
   writes, and asserts what the read accepts or rejects.
 - `support.spec.ts` tests `difference` itself.
+- `selection.spec.ts` runs no generated code: it tests which columns a scoped
+  benchmark run keeps (Benchmark harness 9.3 in
+  [benchmark-harness.md](benchmark-harness.md)).
 
 **3.4** `tests/src/tests/` and `tests/src/bench/` are sibling roots. The
 round-trip runner passes only `tests` to the test runner, so no benchmark
@@ -151,7 +154,7 @@ file in its `lib/` for the snapshot to copy.
 | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 3.1       | `rbxts-transformer-surge` `test/`: `walk.test.ts`, `emit.test.ts`, `transform.test.ts`, `detect.test.ts`                                                                                                                                                                                                                                                                                                                                                                                                      |
 | 3.2       | `test/golden.test.mjs`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
-| 3.3       | `tests/src/tests/*.spec.ts`; `tests/src/tests/support.spec.ts` tests the whole-value comparison itself. The exceptions: `basic.spec.ts`, `coverage.spec.ts`, the `CFrame` comparisons in `roblox.spec.ts` and `packed.spec.ts`, and `checks.spec.ts`                                                                                                                                                                                                                                                          |
+| 3.3       | `tests/src/tests/*.spec.ts`; `tests/src/tests/support.spec.ts` tests the whole-value comparison itself. The exceptions: `basic.spec.ts`, `coverage.spec.ts`, the `CFrame` comparisons in `roblox.spec.ts` and `packed.spec.ts`, `checks.spec.ts`, and `selection.spec.ts`                                                                                                                                                                                                                                     |
 | 3.4       | Source: `main()` in `tests/src/index.ts` runs only `script.WaitForChild("tests")`                                                                                                                                                                                                                                                                                                                                                                                                                             |
 | 3.5       | `tests/src/tests/bytes.spec.ts`. Unverified: that every encoding [wire-format.md](wire-format.md) treats as final has a fact there                                                                                                                                                                                                                                                                                                                                                                            |
 | 4.1–4.3   | Source: `tests/scripts/lune-test-runner.luau` and `tests/scripts/lune-roblox-shim.luau`; every round-trip run exercises them                                                                                                                                                                                                                                                                                                                                                                                  |
@@ -166,6 +169,8 @@ file in its `lib/` for the snapshot to copy.
 
 ## Changes
 
+- `9da6b2c`: 3.3 adds `selection.spec.ts` among the facts that compare
+  otherwise.
 - `a89553b`: 4.3 adds the `Enum` stand-in, and 4.5 no longer gives Lune's
   `EnumItem` as a reason no round trip keys a table by one.
 - `a564714` / `642062d`: 3.2 counts the golden check that reads the

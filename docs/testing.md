@@ -63,7 +63,8 @@ file the new version would reorder.
 - Compare whole values: assert `difference(value, result) === undefined`,
   with `difference` from `tests/src/support.ts`. It returns the path of the
   first difference, treats `NaN` as equal to `NaN`, and tells `0` from `-0`.
-  `support.spec.ts` tests `difference` itself.
+  `support.spec.ts` tests `difference` itself, and `selection.spec.ts` the
+  columns a scoped benchmark run keeps.
 - Fixed cases are a `@Theory` with `@InlineData` for plain values, and a
   `@Fact` over a list where a case is a table or a datatype.
 - Random cases loop over values from the seeded `Rng` in
