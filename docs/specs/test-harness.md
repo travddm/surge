@@ -1,7 +1,7 @@
 # Test harness specification
 
 Status: current
-Applies to: commit `9da6b2c` (no tagged release yet)
+Applies to: commit `ea6d802` (no tagged release yet)
 
 ## 1. Scope
 
@@ -154,7 +154,7 @@ file in its `lib/` for the snapshot to copy.
 | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 3.1       | `rbxts-transformer-surge` `test/`: `walk.test.ts`, `emit.test.ts`, `transform.test.ts`, `detect.test.ts`                                                                                                                                                                                                                                                                                                                                                                                                      |
 | 3.2       | `test/golden.test.mjs`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
-| 3.3       | `tests/src/tests/*.spec.ts`; `tests/src/tests/support.spec.ts` tests the whole-value comparison itself. The exceptions: `basic.spec.ts`, `coverage.spec.ts`, the `CFrame` comparisons in `roblox.spec.ts` and `packed.spec.ts`, `checks.spec.ts`, and `selection.spec.ts`                                                                                                                                                                                                                                     |
+| 3.3       | `tests/src/tests/*.spec.ts`; `tests/src/tests/support.spec.ts` tests the whole-value comparison itself. The exceptions: `basic.spec.ts`, part of `coverage.spec.ts`, the `CFrame` comparisons in `roblox.spec.ts` and `packed.spec.ts`, part of `checks.spec.ts`, and `selection.spec.ts`                                                                                                                                                                                                                     |
 | 3.4       | Source: `main()` in `tests/src/index.ts` runs only `script.WaitForChild("tests")`                                                                                                                                                                                                                                                                                                                                                                                                                             |
 | 3.5       | `tests/src/tests/bytes.spec.ts`. Unverified: that every encoding [wire-format.md](wire-format.md) treats as final has a fact there                                                                                                                                                                                                                                                                                                                                                                            |
 | 4.1–4.3   | Source: `tests/scripts/lune-test-runner.luau` and `tests/scripts/lune-roblox-shim.luau`; every round-trip run exercises them                                                                                                                                                                                                                                                                                                                                                                                  |
@@ -169,6 +169,8 @@ file in its `lib/` for the snapshot to copy.
 
 ## Changes
 
+- `ea6d802`: no statement changes. The 3.3 row names part of `coverage.spec.ts`
+  and part of `checks.spec.ts` among the exceptions, as 3.3 does.
 - `9da6b2c`: 3.3 adds `selection.spec.ts` among the facts that compare
   otherwise.
 - `a89553b`: 4.3 adds the `Enum` stand-in, and 4.5 no longer gives Lune's
