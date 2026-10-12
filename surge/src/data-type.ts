@@ -101,8 +101,8 @@ export namespace DataType {
 	 * so an all-default `Vector` and a `Vector3` produce the same bytes.
 	 *
 	 * An integer width truncates a component toward zero and wraps it modulo
-	 * its range, and nothing checks the value, with or without `writeChecks`.
-	 * A width states a range the shape is known to keep.
+	 * its range. With `writeChecks`, a component the width cannot hold raises
+	 * instead (Runtime API 3.10 in docs/specs/runtime-api.md).
 	 */
 	export type Vector<X extends Width = f32, Y extends Width = X, Z extends Width = X> = Vector3 & {
 		readonly _surge_vector?: [X, Y, Z];

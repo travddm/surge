@@ -5,6 +5,7 @@
  */
 import { FIXED_DATATYPES } from "../datatypes";
 import type { ComponentWidths, CountSpec, Field, FieldKey, LengthWidth, ObjectFieldEntry } from "../field";
+import { widthRange } from "../field";
 import {
 	ALLOC_RUN_LOCALS,
 	DEFAULT_COMPONENTS,
@@ -240,23 +241,24 @@ export function fixedBytes(field: Field): number | undefined {
 
 /**
  * How many locals `field` declares in an alloc run, in the Luau roblox-ts
- * compiles it to, on whichever side and under whichever check option
- * declares more: the position it takes from the run, and what its write or
+ * compiles it to, on whichever side declares more, under the call site's
+ * `writeChecks`: the position it takes from the run, and what its write or
  * read binds besides. A nested object declares what the properties it holds
  * at any depth declare.
  */
-export function runLocals(field: Field): number {
+export function runLocals(field: Field, writeChecks: boolean): number {
 	switch (field.kind) {
 		case "object":
-			return field.fields.reduce((total, entry) => total + runLocals(entry.field), 0);
+			return field.fields.reduce((total, entry) => total + runLocals(entry.field, writeChecks), 0);
 		case "tuple":
 			// What its elements declare: inside a run, a tuple binds nothing and
 			// is read into one table constructor.
-			return field.fixed.reduce((total, element) => total + runLocals(element), 0);
+			return field.fixed.reduce((total, element) => total + runLocals(element, writeChecks), 0);
 		case "cframe":
-			// `position`, `axis`, `angle` and `rv` on the write side, and a local
-			// roblox-ts hoists out of a quantized rotation's product.
-			return field.quantized ? 6 : 5;
+			// `position`, `axis`, `angle` and `rv` on the write side, a local
+			// roblox-ts hoists out of a quantized rotation's product, and under
+			// `writeChecks` each position component of an integer width.
+			return (field.quantized ? 6 : 5) + (writeChecks ? checkedComponents(field.position) : 0);
 		case "bitSet":
 			// The read's set, and one local for each byte it reads.
 			return 2 + bitSetBytes(field);
@@ -266,10 +268,14 @@ export function runLocals(field: Field): number {
 			// enum's write.
 			return 2;
 		case "num":
-			// The value `writeChecks` binds to check against a range.
-			return field.range === undefined ? 1 : 2;
-		case "vector2":
+			// The value `writeChecks` binds to check against its range or its
+			// integer width (Transformer 5.14).
+			return writeChecks && (field.range !== undefined || widthRange(field.width) !== undefined) ? 2 : 1;
 		case "vector3":
+			// The value the write reads its components from, read once, and under
+			// `writeChecks` each component of an integer width.
+			return 2 + (writeChecks ? checkedComponents(field.components) : 0);
+		case "vector2":
 		case "color3":
 			// The value the write reads its components from, read once.
 			return 2;
@@ -309,6 +315,11 @@ export function holdsBlob(field: Field): boolean {
 	}
 }
 
+/** How many components of `widths` are of an integer width, which `writeChecks` binds to check. */
+function checkedComponents(widths: ComponentWidths | undefined): number {
+	return widths === undefined ? 0 : widths.filter((width) => widthRange(width) !== undefined).length;
+}
+
 /**
  * The bytes each element of an array reserves when one reservation covers
  * all of them, or `undefined`: an element without a constant size, one of
@@ -316,9 +327,9 @@ export function holdsBlob(field: Field): boolean {
  * element is a run, so the bound on a run applies to it, and an element past
  * the bound reserves on its own, where its fields can be emitted in blocks.
  */
-export function elementBytes(element: Field): number | undefined {
+export function elementBytes(element: Field, writeChecks: boolean): number | undefined {
 	const bytes = fixedBytes(element);
-	return bytes === undefined || bytes === 0 || runLocals(element) > ALLOC_RUN_LOCALS ? undefined : bytes;
+	return bytes === undefined || bytes === 0 || runLocals(element, writeChecks) > ALLOC_RUN_LOCALS ? undefined : bytes;
 }
 
 /**
@@ -332,12 +343,13 @@ export function allocRuns<T>(
 	entries: ReadonlyArray<T>,
 	shareable: (entry: T) => boolean,
 	fieldOf: (entry: T) => Field,
+	writeChecks: boolean,
 ): Array<Array<T>> {
 	const groups: Array<Array<T>> = [];
 	let lastLocals = 0;
 	for (const entry of entries) {
 		const last = groups[groups.length - 1];
-		const locals = runLocals(fieldOf(entry));
+		const locals = runLocals(fieldOf(entry), writeChecks);
 		if (last !== undefined && lastLocals + locals <= ALLOC_RUN_LOCALS && shareable(entry) && shareable(last[0])) {
 			last.push(entry);
 			lastLocals += locals;

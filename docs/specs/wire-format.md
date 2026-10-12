@@ -1,7 +1,7 @@
 # Wire format specification
 
 Status: current
-Applies to: commit `ca5e2ba` (no tagged release yet)
+Applies to: commit `8e086a1` (no tagged release yet)
 
 ## 1. Scope
 
@@ -119,9 +119,11 @@ canonical literal order.
 enum item, is a constant of the type on both sides.
 
 **4.15** An integer width truncates a number toward zero and wraps it modulo
-its range, as 7.3 states for a component. Nothing raises, with or without
-`writeChecks` ([runtime-api.md](runtime-api.md) 3.11), except as 4.17 states
-for a number under `DataType.Range<T, Min, Max>`.
+its range, as 7.3 states for a component. Nothing raises without
+`writeChecks` ([runtime-api.md](runtime-api.md) 3.11). With it, a number the
+width cannot hold, or a fraction, raises before it is written, as 4.17 states
+for a number under `DataType.Range<T, Min, Max>`
+([runtime-api.md](runtime-api.md) 3.10).
 
 **4.16** `DataType.Range<T, Min, Max>` writes a `num` at a width that `T`
 chooses. With `T` a width brand, the width is that brand's. With `T`
@@ -239,7 +241,9 @@ same for a `CFrame`'s position, and leaves the rotation as in 4.8.
 produces the same bytes as the unbranded type.
 
 **7.3** An integer width truncates a component toward zero and wraps it
-modulo its range. Nothing raises.
+modulo its range. Nothing raises without `writeChecks`; with it, a component
+the width cannot hold, or a fraction, raises before it is written, as 4.15
+states for a number ([runtime-api.md](runtime-api.md) 3.10).
 
 **7.4** `DataType.Quantized<T>` writes a `cframe`'s rotation as 3×`i16` in
 place of the 3×`f32` of 4.8. Each is a component of the axis-angle vector,
@@ -356,7 +360,7 @@ in `@rbxts/surge`.
 | 4.12               | A whole enum: `bytes.spec.ts`: `pinsLiteralAndEnumIndexes`; `walk.test.ts`, `TypeWalker classification with fixture packages`. One item: `bytes.spec.ts`: `pinsAnEnumItemAsNoBytes`; `walk.test.ts`, `TypeWalker classification with fixture packages`. A union of some items: source only, `walkEnum` in `walk.ts` takes the members from the union's items                                                            |
 | 4.13               | `bytes.spec.ts`: `pinsLiteralAndEnumIndexes`; `walk.test.ts`, `TypeWalker wire-format determinism`                                                                                                                                                                                                                                                                                                                      |
 | 4.14               | `bytes.spec.ts`: `pinsLiteralAndEnumIndexes`; `literals.spec.ts`: `writesNoBytesForASingleLiteral`                                                                                                                                                                                                                                                                                                                      |
-| 4.15               | Source only: `writeNumberAt` in `emit/context.ts` passes the number unconverted to Luau's `buffer` writes and `bit32`. Under `DataType.Range`: `checks.spec.ts`: `wrapsANumberOutsideItsRangeWithoutWriteChecks`                                                                                                                                                                                                        |
+| 4.15               | Source only: `writeNumberAt` in `emit/context.ts` passes the number unconverted to Luau's `buffer` writes and `bit32`. Under `DataType.Range`: `checks.spec.ts`: `wrapsANumberOutsideItsRangeWithoutWriteChecks`; a width brand: `checks.spec.ts`: `wrapsANumberOutsideItsWidthWithoutWriteChecks`, `rejectsANumberItsWidthCannotHold`                                                                                  |
 | 4.16               | `bytes.spec.ts`: `pinsRangeWidths`; `numbers.spec.ts`: `roundTripsRangesAtTheirNarrowedWidths`; each width's edge: `walk.test.ts`, `TypeWalker Range<T, Min, Max>`                                                                                                                                                                                                                                                      |
 | 4.17               | `checks.spec.ts`: `rejectsANumberItsRangeDoesNotAdmit`                                                                                                                                                                                                                                                                                                                                                                  |
 | 5.4                | A `Record`: `bytes.spec.ts`: `pinsContainers`. A `Set`: source only, `writeDict` in `emit/write.ts` writes the key alone, and `readDict` in `emit/read.ts` sets it to `true`; `collections.spec.ts`: `roundTripsDictionaries` round-trips one                                                                                                                                                                           |
@@ -372,7 +376,7 @@ in `@rbxts/surge`.
 | 6.8                | `checks.spec.ts`: `wrapsACountPastItsWidthWithoutWriteChecks`, `rejectsACountPastItsWidth`                                                                                                                                                                                                                                                                                                                              |
 | 6.9                | `bytes.spec.ts`: `pinsTheLongFormsOfACount`, and the one-byte form in every pin of a count; `counts.spec.ts`: `roundTripsEachKindAtTheEdgesOfTheLongForms`; the read of a long form of a short count: `checks.spec.ts`: `rejectsAStringCutInItsCountOrItsBytes`                                                                                                                                                         |
 | 7.1, 7.2           | `bytes.spec.ts`: `pinsPerComponentWidths`, `pinsThatDefaultedComponentWidthsMoveNoBytes`                                                                                                                                                                                                                                                                                                                                |
-| 7.3                | Source only: `writeNumberAt` in `emit/context.ts` passes the component unconverted to Luau's `buffer` writes and `bit32`                                                                                                                                                                                                                                                                                                |
+| 7.3                | Source only: `writeNumberAt` in `emit/context.ts` passes the component unconverted to Luau's `buffer` writes and `bit32`; with `writeChecks`: `checks.spec.ts`: `rejectsANumberItsWidthCannotHold`, `wrapsANumberOutsideItsWidthWithoutWriteChecks`                                                                                                                                                                     |
 | 7.4                | `bytes.spec.ts`: `pinsAQuantizedRotation`; `roblox.spec.ts`: `roundTripsAQuantizedRotationWithinItsStep`                                                                                                                                                                                                                                                                                                                |
 | 8.1–8.4            | `bytes.spec.ts`: `pinsPackedBooleans`, `pinsPackedOptionals`, `pinsAPackedTagBit`                                                                                                                                                                                                                                                                                                                                       |
 | 8.5                | `bytes.spec.ts`: `pinsAPackedTagBit`                                                                                                                                                                                                                                                                                                                                                                                    |
@@ -387,6 +391,8 @@ in `@rbxts/surge`.
 
 ## Changes
 
+- `8e086a1`: 4.15 and 7.3 raise under `writeChecks` for a number or a component
+  its integer width cannot hold.
 - `ca5e2ba`: adds 6.9 (the variable-length count); 6.1 makes it the count of
   an unbranded container, where it was a `u32`, and 6.2 gives `L` no
   default.

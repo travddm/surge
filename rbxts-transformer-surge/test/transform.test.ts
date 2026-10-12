@@ -1083,6 +1083,22 @@ describe("transform writeChecks option", () => {
 		).toEqual([]);
 	});
 
+	test("a width brand and a Vector are checked under writeChecks, and the generated code type-checks", () => {
+		const source = `import { DataType, createCodec } from "@rbxts/surge";
+			interface P { health: DataType.u8; velocity: DataType.Vector<DataType.i16>; ratio: DataType.f32; }
+			const guarded = createCodec<P>({ writeChecks: true });`;
+		expect(typeErrorsOfGeneratedCode(source)).toEqual([]);
+		const { printed, diagnostics, cleanup } = runTransform(source);
+		try {
+			expect(diagnostics).toHaveLength(0);
+			expect(printed).toContain("DataType.u8 width cannot hold");
+			expect(printed.match(/DataType\.i16 width cannot hold/g)).toHaveLength(3);
+			expect(printed).not.toContain("DataType.f32 width");
+		} finally {
+			cleanup();
+		}
+	});
+
 	// There is no write path to check, so accepting it would say otherwise.
 	test("writeChecks on createDeserializer reports a diagnostic", () => {
 		const { diagnostics, cleanup } = runTransform(

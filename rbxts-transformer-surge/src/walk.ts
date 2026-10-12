@@ -20,7 +20,7 @@ import type {
 	ObjectFieldEntry,
 	SetMember,
 } from "./field";
-import { DEFAULT_COMPONENT_WIDTH, LENGTH_WIDTHS } from "./field";
+import { DEFAULT_COMPONENT_WIDTH, LENGTH_WIDTHS, WIDTH_LIMITS } from "./field";
 
 export interface WalkDiagnostic {
 	readonly message: string;
@@ -61,24 +61,6 @@ const RUNTIME_TYPE_TAGS: Partial<Record<Field["kind"], string>> = {
 	buffer: "buffer",
 	numberSequence: "NumberSequence",
 	enum: "EnumItem",
-};
-
-/**
- * The values each width holds exactly: every whole number between the two
- * bounds for an integer width, and every finite single-precision value for
- * `f32`.
- */
-const WIDTH_LIMITS: Readonly<Record<NumWidth, readonly [number, number]>> = {
-	u8: [0, 255],
-	u16: [0, 65535],
-	u24: [0, 16777215],
-	u32: [0, 4294967295],
-	i8: [-128, 127],
-	i16: [-32768, 32767],
-	i24: [-8388608, 8388607],
-	i32: [-2147483648, 2147483647],
-	f32: [-3.4028234663852886e38, 3.4028234663852886e38],
-	f64: [-Infinity, Infinity],
 };
 
 /**
