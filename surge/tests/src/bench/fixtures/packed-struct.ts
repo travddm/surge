@@ -22,7 +22,9 @@ import { serioPackedSerializer } from "../codecs/packed-struct/serio-packed";
 import { serioUnpackedSerializer } from "../codecs/packed-struct/serio-unpacked";
 import type { FbsToggles, SerioToggles, Toggles } from "../codecs/packed-struct/shapes";
 import { packedSerializer } from "../codecs/packed-struct/surge-packed";
+import { checkedPackedSerializer } from "../codecs/packed-struct/surge-packed-checked";
 import { unpackedSerializer } from "../codecs/packed-struct/surge-unpacked";
+import { checkedUnpackedSerializer } from "../codecs/packed-struct/surge-unpacked-checked";
 
 const value = {
 	a: true,
@@ -45,6 +47,7 @@ export const unpackedStruct: Fixture = {
 	note: "ten booleans, a u8, and two optionals, one byte per flag and per presence",
 	entries: [
 		defineEntry<Toggles>("surge", value, surgeAdapter(unpackedSerializer)),
+		defineEntry<Toggles>("surge (readChecks)", value, surgeAdapter(checkedUnpackedSerializer)),
 		defineEntry<FbsToggles>("fbs", value, fbsAdapter(fbsUnpackedSerializer)),
 		defineEntry<SerioToggles>("serio", value, serioAdapter(serioUnpackedSerializer)),
 		defineEntry<Toggles>("flamework2", value, flamework2Adapter(flamework2UnpackedSerializer)),
@@ -57,6 +60,7 @@ export const packedStruct: Fixture = {
 	note: "the same shape in `Packed<T>`: one bit per flag and per presence",
 	entries: [
 		defineEntry<DataType.Packed<Toggles>>("surge", value, surgeAdapter(packedSerializer)),
+		defineEntry<DataType.Packed<Toggles>>("surge (readChecks)", value, surgeAdapter(checkedPackedSerializer)),
 		defineEntry<Fbs.Packed<FbsToggles>>("fbs", value, fbsAdapter(fbsPackedSerializer)),
 		defineEntry<Serio.Packed<SerioToggles>>("serio", value, serioAdapter(serioPackedSerializer)),
 		defineEntry(

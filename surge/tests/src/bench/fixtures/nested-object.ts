@@ -16,6 +16,7 @@ import { flamework2Serializer } from "../codecs/nested-object/flamework2";
 import { serioSerializer } from "../codecs/nested-object/serio";
 import type { FbsNestedObject, NestedObject, SerioNestedObject } from "../codecs/nested-object/shapes";
 import { serializer } from "../codecs/nested-object/surge";
+import { checkedSerializer } from "../codecs/nested-object/surge-checked";
 
 const value = {
 	root: {
@@ -30,6 +31,7 @@ export const nestedObject: Fixture = {
 	note: "five levels of objects, one field each level",
 	entries: [
 		defineEntry<NestedObject>("surge", value, surgeAdapter(serializer)),
+		defineEntry<NestedObject>("surge (readChecks)", value, surgeAdapter(checkedSerializer)),
 		defineEntry<FbsNestedObject>("fbs", value, fbsAdapter(fbsSerializer)),
 		defineEntry<SerioNestedObject>("serio", value, serioAdapter(serioSerializer)),
 		defineEntry<NestedObject>("flamework2", value, flamework2Adapter(flamework2Serializer)),

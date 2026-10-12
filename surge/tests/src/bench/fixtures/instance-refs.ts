@@ -14,6 +14,7 @@ import { flamework2Serializer } from "../codecs/instance-refs/flamework2";
 import { serioSerializer } from "../codecs/instance-refs/serio";
 import type { FbsInstanceRefs, InstanceRef, InstanceRefs, SerioInstanceRefs } from "../codecs/instance-refs/shapes";
 import { serializer } from "../codecs/instance-refs/surge";
+import { checkedSerializer } from "../codecs/instance-refs/surge-checked";
 
 const COUNT = 50;
 
@@ -28,6 +29,7 @@ export const instanceRefs: Fixture = {
 	note: `${COUNT} entries of an Instance and a u16: one value beside the bytes each`,
 	entries: [
 		defineEntry<InstanceRefs>("surge", { entries }, surgeAdapter(serializer)),
+		defineEntry<InstanceRefs>("surge (readChecks)", { entries }, surgeAdapter(checkedSerializer)),
 		defineEntry<FbsInstanceRefs>("fbs", { entries }, fbsAdapter(fbsSerializer)),
 		defineEntry<SerioInstanceRefs>("serio", { entries }, serioAdapter(serioSerializer)),
 		defineEntry<InstanceRefs>("flamework2", { entries }, flamework2BlobAdapter(flamework2Serializer)),

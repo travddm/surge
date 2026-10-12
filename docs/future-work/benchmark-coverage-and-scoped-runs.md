@@ -5,17 +5,6 @@ Part of the [surge](../architecture.md) design. The harness is specified in
 
 ## What
 
-**A `surge (readChecks)` column, decode only.** The same declaration as each
-row's surge cell, through `createCodec<T>({ readChecks: true })`.
-[getting-started.md](../getting-started.md) and
-[errors-and-guarantees.md](../errors-and-guarantees.md) tell every server to
-read what a client sent this way. Flamework 2's `deserialize` checks its input
-on every call, so this column, not surge's unchecked one, is the like-for-like
-decode comparison. The column has been measured once, at surge `c295e5b`
-([read-checks-cost.md](../research/read-checks-cost.md)), and then removed
-(Benchmark harness, Changes). Encode runs the same code with and without the
-option, so the column has no encode cell.
-
 **Rows that open work in
 [generated-code-performance.md](generated-code-performance.md) needs:**
 
@@ -43,8 +32,7 @@ option, so the column has no encode cell.
 
 ## Why
 
-The rows give the open items a cell to be measured on, and the column prices
-what the documentation recommends for every server. Each addition makes a
+The rows give the open items a cell to be measured on. Each addition makes a
 full run longer; a scoped run (Benchmark harness 9) times only the cells a
 change touches.
 
@@ -83,14 +71,12 @@ baseline.
 
 ## Result
 
-- The columns and the rows in the catalog, recorded in `size.md`,
-  `code-size.md` and `speed.md`; the two columns in `speed.md` only.
+- The cursor column and the rows in the catalog, recorded in `size.md`,
+  `code-size.md` and `speed.md`; the cursor column in `speed.md` only.
 - Benchmark harness sections 3 and 4 updated to match.
 
 ## Notes
 
-- The checked column's first form was Benchmark harness 4.9, driven by
-  surge's adapter.
 - A row with a `DataType.Range` number or an exact `DataType.Length` would
   also give `writeChecks` code to generate. No row has either
   ([read-checks-cost.md](../research/read-checks-cost.md)).

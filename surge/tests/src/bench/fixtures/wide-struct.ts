@@ -14,6 +14,7 @@ import { flamework2Serializer } from "../codecs/wide-struct/flamework2";
 import { serioSerializer } from "../codecs/wide-struct/serio";
 import type { FbsWideStruct, SerioWideStruct, WideStruct } from "../codecs/wide-struct/shapes";
 import { serializer } from "../codecs/wide-struct/surge";
+import { checkedSerializer } from "../codecs/wide-struct/surge-checked";
 
 const value = {
 	f1: 1.5,
@@ -73,6 +74,7 @@ export const wideStruct: Fixture = {
 	note: "50 f32 fields, no container",
 	entries: [
 		defineEntry<WideStruct>("surge", value, surgeAdapter(serializer)),
+		defineEntry<WideStruct>("surge (readChecks)", value, surgeAdapter(checkedSerializer)),
 		defineEntry<FbsWideStruct>("fbs", value, fbsAdapter(fbsSerializer)),
 		defineEntry<SerioWideStruct>("serio", value, serioAdapter(serioSerializer)),
 		defineEntry<WideStruct>("flamework2", value, flamework2Adapter(flamework2Serializer)),

@@ -23,11 +23,13 @@ export interface Encoded {
 }
 
 /**
- * A column of the size table: the five comparison libraries, surge itself,
- * and the hand-written baseline, which is not a library at all but is driven
- * through the same interface (see section 4.5 of docs/specs/benchmark-harness.md).
+ * A column of the tables: the comparison libraries, surge itself, and the
+ * hand-written baseline, which is not a library at all but is driven through
+ * the same interface (see section 4.5 of docs/specs/benchmark-harness.md).
+ * `surge (readChecks)` is surge's codec with `readChecks` on (section 4.13),
+ * which only the speed table has: its bytes are surge's.
  */
-export type Library = "surge" | "fbs" | "serio" | "flamework2" | "blink" | "zap" | "baseline";
+export type Library = "surge" | "surge (readChecks)" | "fbs" | "serio" | "flamework2" | "blink" | "zap" | "baseline";
 
 /**
  * Column order of `docs/benchmarks/size.md`. surge comes first: the other
@@ -47,6 +49,13 @@ export const LIBRARIES: ReadonlyArray<Library> = ["surge", "fbs", "serio", "flam
  * section 4.3 of docs/specs/benchmark-harness.md.
  */
 export const SIZE_ONLY: ReadonlyArray<Library> = ["zap"];
+
+/**
+ * Columns the speed suite times on decode only. `surge (readChecks)` encodes
+ * through the same generated code as surge's column, so its encode would
+ * measure surge's again (section 4.13 of docs/specs/benchmark-harness.md).
+ */
+export const DECODE_ONLY: ReadonlyArray<Library> = ["surge (readChecks)"];
 
 /**
  * The columns whose code a change to surge leaves as it is, which a

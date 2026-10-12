@@ -258,7 +258,9 @@ function readCheck(line) {
 		process.exit(1);
 	}
 
-	const allowed = recorded.get(name).get(library) ?? 0;
+	// A surge column with an option, such as `surge (readChecks)`, writes surge's bytes, so the size
+	// table's surge figure is its own.
+	const allowed = recorded.get(name).get(library.startsWith(`${BASELINE} (`) ? BASELINE : library) ?? 0;
 	const [verdict, error] = roundTrip.split(" ");
 	// Luau prints an infinite difference as `inf`, which `Number` does not read. A cell recorded as
 	// exact fails on any difference, which includes `-0` for `0`, whose difference is 0.
@@ -865,6 +867,8 @@ function write(facts) {
 		"On every call, its `deserialize` checks each count against the bytes left,",
 		"raises on a union tag it does not know, and raises unless it read the whole",
 		"buffer; surge's examines its input only under `readChecks`.",
+		"`surge (readChecks)` is surge's codec with `readChecks: true`, timed on",
+		"decode only, since its encode is surge's.",
 		"",
 		"Each number is one shape in a warm loop, on one machine on one day, not",
 		"an application profile; compare columns within this file only.",

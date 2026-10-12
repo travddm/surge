@@ -14,6 +14,7 @@ import { flamework2Serializer } from "../codecs/tuples/flamework2";
 import { serioSerializer } from "../codecs/tuples/serio";
 import type { FbsSamples, Sample, Samples, SerioSamples } from "../codecs/tuples/shapes";
 import { serializer } from "../codecs/tuples/surge";
+import { checkedSerializer } from "../codecs/tuples/surge-checked";
 
 const COUNT = 50;
 
@@ -28,6 +29,7 @@ export const tuples: Fixture = {
 	note: `${COUNT} tuples of a u16 and two f32`,
 	entries: [
 		defineEntry<Samples>("surge", { samples }, surgeAdapter(serializer)),
+		defineEntry<Samples>("surge (readChecks)", { samples }, surgeAdapter(checkedSerializer)),
 		defineEntry<FbsSamples>("fbs", { samples }, fbsAdapter(fbsSerializer)),
 		defineEntry<SerioSamples>("serio", { samples }, serioAdapter(serioSerializer)),
 		defineEntry<Samples>("flamework2", { samples }, flamework2Adapter(flamework2Serializer)),

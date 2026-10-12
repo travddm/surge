@@ -2,7 +2,7 @@
 import { Fact } from "@rbxts/runit";
 
 import type { Entry, Fixture, Library } from "./adapter";
-import { SIZE_ONLY } from "./adapter";
+import { DECODE_ONLY, SIZE_ONLY } from "./adapter";
 import { CATALOG } from "./catalog";
 import { keptEntries, matching, scopedColumns, scopedHalves, scopedPatterns } from "./selection";
 
@@ -241,7 +241,9 @@ class SpeedBench {
 
 		for (const half of scopedHalves()) {
 			for (const fixture of fixtures) {
-				const entries = timed(fixture);
+				const entries = timed(fixture).filter(
+					(entry) => half === "decode" || !DECODE_ONLY.includes(entry.library),
+				);
 				const rates = entries.map(() => new Array<number>());
 
 				for (const entry of entries) {

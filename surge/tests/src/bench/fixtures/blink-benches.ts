@@ -18,7 +18,9 @@ import { serioBooleansSerializer } from "../codecs/blink-benches/serio-booleans"
 import { serioEntitiesSerializer } from "../codecs/blink-benches/serio-entities";
 import type { Booleans, Entities, Entity, FbsEntities, SerioEntities } from "../codecs/blink-benches/shapes";
 import { booleansSerializer } from "../codecs/blink-benches/surge-booleans";
+import { checkedBooleansSerializer } from "../codecs/blink-benches/surge-booleans-checked";
 import { entitiesSerializer } from "../codecs/blink-benches/surge-entities";
+import { checkedEntitiesSerializer } from "../codecs/blink-benches/surge-entities-checked";
 
 const BOOLEAN_COUNT = 1000;
 const ENTITY_COUNT = 100;
@@ -47,6 +49,7 @@ export const blinkBooleans: Fixture = {
 	note: `${BOOLEAN_COUNT} booleans in one array, a byte each, as Blink also writes them`,
 	entries: [
 		defineEntry<Booleans>("surge", { values }, surgeAdapter(booleansSerializer)),
+		defineEntry<Booleans>("surge (readChecks)", { values }, surgeAdapter(checkedBooleansSerializer)),
 		defineEntry<Booleans>("fbs", { values }, fbsAdapter(fbsBooleansSerializer)),
 		defineEntry<Booleans>("serio", { values }, serioAdapter(serioBooleansSerializer)),
 		defineEntry<Booleans>("flamework2", { values }, flamework2Adapter(flamework2BooleansSerializer)),
@@ -64,6 +67,7 @@ export const blinkEntities: Fixture = {
 	note: `${ENTITY_COUNT} structs of six u8 fields`,
 	entries: [
 		defineEntry<Entities>("surge", { entities }, surgeAdapter(entitiesSerializer)),
+		defineEntry<Entities>("surge (readChecks)", { entities }, surgeAdapter(checkedEntitiesSerializer)),
 		defineEntry<FbsEntities>("fbs", { entities }, fbsAdapter(fbsEntitiesSerializer)),
 		defineEntry<SerioEntities>("serio", { entities }, serioAdapter(serioEntitiesSerializer)),
 		defineEntry<Entities>("flamework2", { entities }, flamework2Adapter(flamework2EntitiesSerializer)),

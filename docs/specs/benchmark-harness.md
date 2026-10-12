@@ -1,7 +1,7 @@
 # Benchmark harness specification
 
 Status: current
-Applies to: commit `89c53ce` (no tagged release yet)
+Applies to: commit `a4cd40d` (no tagged release yet)
 
 ## 1. Scope
 
@@ -17,7 +17,8 @@ results file records. How to run a tier and read a result is in
 - **Row**: one shape in the catalog: a `Fixture` that a module under
   `tests/src/bench/fixtures/` exports. One module may export more than one
   row.
-- **Column**: one library, or the hand-written baseline.
+- **Column**: one library, a surge codec with an option (4.13), or the
+  hand-written baseline.
 - **Cell**: one column's measurement of one row. In the speed tier, a cell is
   also one half: encode or decode.
 - **Trial**: one timed measurement of a cell.
@@ -58,7 +59,9 @@ declaration. Blink's and Zap's declarations are in their definition files
 one statement of a module of its own, under
 `tests/src/bench/codecs/<fixture>/`: `surge.ts`, `fbs.ts` and `serio.ts`, with
 a suffix where a fixture has more than one shape, such as `surge-packed.ts`.
-Flamework 2's module for a row is the `flamework2.luau` there, with the same
+A surge column with an option (4.13) has a module of its own beside surge's,
+with the option's suffix last, such as `surge-checked.ts` and
+`surge-packed-checked.ts`. Flamework 2's module for a row is the `flamework2.luau` there, with the same
 suffixes, that 4.11 generates. A fixture's shapes are in the `shapes.ts`
 beside them, which holds types only.
 The fixture module under `tests/src/bench/fixtures/` holds the sample values
@@ -144,6 +147,13 @@ Flamework 2 cell. On every call, its `deserialize` checks each count against
 the bytes left in the buffer, raises on a union tag it does not know, and
 raises unless it read the buffer to its end. surge's `deserialize` examines
 its input only under `readChecks`.
+
+**4.13** The `surge (readChecks)` column is each row's surge declaration
+again, through `createCodec<T>({ readChecks: true })` in a `-checked` module
+(3.6) and surge's adapter. The speed suite times its decode only, since its
+encode runs the code surge's column runs. It has no cell in the size tier or
+the code-size tier, since its bytes are surge's, and its round-trip check
+(6.6) is held to surge's figure in the size table.
 
 ## 5. The size tier
 
@@ -285,7 +295,8 @@ for the reasons in section 6 of [test-harness.md](test-harness.md).
 `docs/benchmarks/code-size.md`.
 
 **11.2** A cell is the length in bytes of the Luau bytecode that `luau.compile`
-of the pinned Lune returns for one compiled codec module of 3.6, at
+of the pinned Lune returns for one compiled codec module of 3.6, other than
+a module of 4.13, at
 optimization level 2 and debug level 1. A row is one shape of one fixture, and
 the columns are surge, fbs, serio and Flamework 2.
 
@@ -315,6 +326,7 @@ version, since another compiler version can give another count.
 | 4.7       | Source: the first lines of `tests/src/bench/speed.spec.ts`, `adapter.ts` and `adapters/*.ts`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 | 4.8       | Source: `tests/src/bench/adapters/`. The documentation each follows: `docs/getting-started.md` for surge; the README of `@rbxts/flamework-binary-serializer` 0.7.0 and the comments on its `Serializer<T>`; the README of `@rbxts/serio` 1.2.7                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | 4.10–4.12 | Source: `tests/flamework2/`, `tests/scripts/copy-flamework2-codecs.mjs` and the `bench:definitions` script in `tests/package.json`; the `flamework2.luau` modules under `tests/src/bench/codecs/`; `docs/benchmarks/size.md`, where every Flamework 2 cell round-trips and the packed rows have none                                                                                                                                                                                                                                                                                                                                                                                                            |
+| 4.13      | Source: `DECODE_ONLY` in `tests/src/bench/adapter.ts`, the `-checked` modules under `tests/src/bench/codecs/`, `readCheck` in the recorder, and `SPEED_ONLY` in `tests/scripts/lune-code-size-runner.luau`; a scoped speed run exercises it                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 | 5.1–5.3   | Source: `tests/scripts/lune-size-runner.luau` and `tests/src/bench/size.ts`; a regenerated `size.md` with no diff                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 | 6.1       | Source: `RUNS` and `runOnce` in `tests/scripts/record-speed-benchmarks.mjs`, and the `bench:speed` scripts in `package.json` and `tests/package.json`; `main()` in `tests/src/index.ts` runs only `tests` ([test-harness.md](test-harness.md) 3.4)                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | 6.2–6.5   | Source: the constants and comment block of `tests/src/bench/speed.spec.ts`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
@@ -327,6 +339,8 @@ version, since another compiler version can give another count.
 
 ## Changes
 
+- `a4cd40d`: adds 4.13 (the `surge (readChecks)` column, timed on decode
+  only and in the speed tier only); 2 (Column), 3.6 and 11.2 follow it.
 - `89c53ce`: 9.2 to 9.5: a scoped speed run selects columns and halves
   as well as rows, keeps two controls on each row, runs twice, and writes its
   tables and trials where `out=` names; 2 (Scoped run) and 8.1 follow it.

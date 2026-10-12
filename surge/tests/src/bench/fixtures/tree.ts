@@ -10,6 +10,7 @@ import { tree as baselineCodec } from "../baseline/codecs";
 import { flamework2Serializer } from "../codecs/tree/flamework2";
 import type { TreeNode } from "../codecs/tree/shapes";
 import { serializer } from "../codecs/tree/surge";
+import { checkedSerializer } from "../codecs/tree/surge-checked";
 
 const BRANCHING = 4;
 const DEPTH = 3;
@@ -33,6 +34,7 @@ export const tree: Fixture = {
 	note: `85 nodes of a u16, ${BRANCHING} children each to a depth of ${DEPTH}, through a recursion helper`,
 	entries: [
 		defineEntry<TreeNode>("surge", value, surgeAdapter(serializer)),
+		defineEntry<TreeNode>("surge (readChecks)", value, surgeAdapter(checkedSerializer)),
 		defineEntry<TreeNode>("flamework2", value, flamework2Adapter(flamework2Serializer)),
 		defineEntry("baseline", value, baselineAdapter(baselineCodec)),
 	],

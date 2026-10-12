@@ -13,6 +13,7 @@ import { flamework2Serializer } from "../codecs/guarded-union/flamework2";
 import { serioSerializer } from "../codecs/guarded-union/serio";
 import type { GuardedUnion, SerioGuardedUnion } from "../codecs/guarded-union/shapes";
 import { serializer } from "../codecs/guarded-union/surge";
+import { checkedSerializer } from "../codecs/guarded-union/surge-checked";
 
 const COUNT = 100;
 
@@ -34,6 +35,7 @@ export const guardedUnion: Fixture = {
 	note: `${COUNT} values over string, number, and boolean`,
 	entries: [
 		defineEntry<GuardedUnion>("surge", { values }, surgeAdapter(serializer)),
+		defineEntry<GuardedUnion>("surge (readChecks)", { values }, surgeAdapter(checkedSerializer)),
 		defineEntry<GuardedUnion>("fbs", { values }, fbsAdapter(fbsSerializer)),
 		defineEntry<SerioGuardedUnion>("serio", { values }, serioAdapter(serioSerializer)),
 		defineEntry<GuardedUnion>("flamework2", { values }, flamework2Adapter(flamework2Serializer)),

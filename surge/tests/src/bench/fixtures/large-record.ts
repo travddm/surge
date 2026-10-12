@@ -15,6 +15,7 @@ import { flamework2Serializer } from "../codecs/large-record/flamework2";
 import { serioSerializer } from "../codecs/large-record/serio";
 import type { FbsLargeRecord, LargeRecord, SerioLargeRecord } from "../codecs/large-record/shapes";
 import { serializer } from "../codecs/large-record/surge";
+import { checkedSerializer } from "../codecs/large-record/surge-checked";
 
 const COUNT = 200;
 
@@ -32,6 +33,7 @@ export const largeRecord: Fixture = {
 	note: `${COUNT} string keys, each with a u8 value; a \`Map\` under fbs and serio`,
 	entries: [
 		defineEntry<LargeRecord>("surge", { entries }, surgeAdapter(serializer)),
+		defineEntry<LargeRecord>("surge (readChecks)", { entries }, surgeAdapter(checkedSerializer)),
 		defineEntry<FbsLargeRecord>("fbs", { entries: mapEntries }, fbsAdapter(fbsSerializer)),
 		defineEntry<SerioLargeRecord>("serio", { entries: mapEntries }, serioAdapter(serioSerializer)),
 		defineEntry<LargeRecord>("flamework2", { entries }, flamework2Adapter(flamework2Serializer)),

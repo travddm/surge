@@ -17,6 +17,7 @@ import { flamework2Serializer } from "../codecs/nested-arrays/flamework2";
 import { serioSerializer } from "../codecs/nested-arrays/serio";
 import type { FbsNestedArrays, NestedArrays, SerioNestedArrays } from "../codecs/nested-arrays/shapes";
 import { serializer } from "../codecs/nested-arrays/surge";
+import { checkedSerializer } from "../codecs/nested-arrays/surge-checked";
 
 const ROWS = 20;
 const MAX_LENGTH = 20;
@@ -36,6 +37,7 @@ export const nestedArrays: Fixture = {
 	note: `${ROWS} rows of up to ${MAX_LENGTH} u16 elements, each row with its own count`,
 	entries: [
 		defineEntry<NestedArrays>("surge", { rows }, surgeAdapter(serializer)),
+		defineEntry<NestedArrays>("surge (readChecks)", { rows }, surgeAdapter(checkedSerializer)),
 		defineEntry<FbsNestedArrays>("fbs", { rows }, fbsAdapter(fbsSerializer)),
 		defineEntry<SerioNestedArrays>("serio", { rows }, serioAdapter(serioSerializer)),
 		defineEntry<NestedArrays>("flamework2", { rows }, flamework2Adapter(flamework2Serializer)),

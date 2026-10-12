@@ -17,6 +17,7 @@ import { flamework2Serializer } from "../codecs/leaderboard/flamework2";
 import { serioSerializer } from "../codecs/leaderboard/serio";
 import type { FbsLeaderboard, Leaderboard, LeaderboardEntry, SerioLeaderboard } from "../codecs/leaderboard/shapes";
 import { serializer } from "../codecs/leaderboard/surge";
+import { checkedSerializer } from "../codecs/leaderboard/surge-checked";
 
 const COUNT = 50;
 
@@ -31,6 +32,7 @@ export const leaderboard: Fixture = {
 	note: `${COUNT} entries of a name of up to 20 bytes, a u32 and an f64`,
 	entries: [
 		defineEntry<Leaderboard>("surge", { entries }, surgeAdapter(serializer)),
+		defineEntry<Leaderboard>("surge (readChecks)", { entries }, surgeAdapter(checkedSerializer)),
 		defineEntry<FbsLeaderboard>("fbs", { entries }, fbsAdapter(fbsSerializer)),
 		defineEntry<SerioLeaderboard>("serio", { entries }, serioAdapter(serioSerializer)),
 		defineEntry<Leaderboard>("flamework2", { entries }, flamework2Adapter(flamework2Serializer)),
