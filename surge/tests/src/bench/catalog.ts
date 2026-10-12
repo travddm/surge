@@ -1,20 +1,30 @@
 //!optimize 2
 import type { Fixture } from "./adapter";
 import { blinkBooleans, blinkEntities } from "./fixtures/blink-benches";
-import { cframeArray, cframeArrayPackedAligned, cframeArrayPackedArbitrary } from "./fixtures/cframes";
+import {
+	cframeArray,
+	cframeArrayPackedAligned,
+	cframeArrayPackedArbitrary,
+	cframeArrayQuantized,
+} from "./fixtures/cframes";
 import { enumHeavy } from "./fixtures/enum-heavy";
 import { guardedUnion } from "./fixtures/guarded-union";
+import { idSet } from "./fixtures/id-set";
 import { instanceRefs } from "./fixtures/instance-refs";
 import { largeArray } from "./fixtures/large-array";
 import { largeRecord } from "./fixtures/large-record";
+import { layout } from "./fixtures/layout";
 import { leaderboard } from "./fixtures/leaderboard";
 import { nestedArrays } from "./fixtures/nested-arrays";
 import { nestedObject } from "./fixtures/nested-object";
 import { packedStruct, unpackedStruct } from "./fixtures/packed-struct";
+import { sequences } from "./fixtures/sequences";
 import { smallFlatStruct } from "./fixtures/small-flat-struct";
+import { sparseUpdates } from "./fixtures/sparse-updates";
 import { stringHeavy } from "./fixtures/string-heavy";
 import { taggedUnion } from "./fixtures/tagged-union";
 import { tree } from "./fixtures/tree";
+import { tupleRest } from "./fixtures/tuple-rest";
 import { tuples } from "./fixtures/tuples";
 import { wideStruct } from "./fixtures/wide-struct";
 
@@ -32,9 +42,12 @@ export const CATALOG: ReadonlyArray<Fixture> = [
 	largeArray,
 	nestedArrays,
 	tuples,
+	tupleRest,
 	largeRecord,
+	idSet,
 	stringHeavy,
 	leaderboard,
+	sparseUpdates,
 	enumHeavy,
 	taggedUnion,
 	guardedUnion,
@@ -45,6 +58,9 @@ export const CATALOG: ReadonlyArray<Fixture> = [
 	cframeArray,
 	cframeArrayPackedAligned,
 	cframeArrayPackedArbitrary,
+	cframeArrayQuantized,
+	layout,
+	sequences,
 	blinkBooleans,
 	blinkEntities,
 ];

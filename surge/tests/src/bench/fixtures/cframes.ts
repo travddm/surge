@@ -22,13 +22,16 @@ import { fbsPackedSerializer } from "../codecs/cframes/fbs-packed";
 import { flamework2Serializer } from "../codecs/cframes/flamework2";
 import { serioSerializer } from "../codecs/cframes/serio";
 import { serioPackedSerializer } from "../codecs/cframes/serio-packed";
-import type { Transforms } from "../codecs/cframes/shapes";
+import type { QuantizedTransforms, Transforms } from "../codecs/cframes/shapes";
 import { serializer } from "../codecs/cframes/surge";
 import { checkedSerializer } from "../codecs/cframes/surge-checked";
 import { cursorSerializer } from "../codecs/cframes/surge-cursor";
 import { packedSerializer } from "../codecs/cframes/surge-packed";
 import { checkedPackedSerializer } from "../codecs/cframes/surge-packed-checked";
 import { cursorPackedSerializer } from "../codecs/cframes/surge-packed-cursor";
+import { quantizedSerializer } from "../codecs/cframes/surge-quantized";
+import { checkedQuantizedSerializer } from "../codecs/cframes/surge-quantized-checked";
+import { cursorQuantizedSerializer } from "../codecs/cframes/surge-quantized-cursor";
 
 const COUNT = 50;
 
@@ -121,5 +124,25 @@ export const cframeArrayPackedArbitrary: Fixture = {
 		),
 		defineEntry<Fbs.Packed<Transforms>>("fbs", { list: arbitrary }, fbsAdapter(fbsPackedSerializer)),
 		defineEntry<Serio.Packed<Transforms>>("serio", { list: arbitrary }, serioAdapter(serioPackedSerializer)),
+	],
+};
+
+export const cframeArrayQuantized: Fixture = {
+	name: "CFrame array (quantized)",
+	note: `${COUNT} arbitrary rotations in \`Quantized<CFrame>\`: position plus a rotation of three i16`,
+	entries: [
+		defineEntry<QuantizedTransforms>("surge", { list: arbitrary }, surgeAdapter(quantizedSerializer)),
+		defineEntry<QuantizedTransforms>(
+			"surge (cursor)",
+			{ list: arbitrary },
+			cursorAdapter(cursorQuantizedSerializer),
+		),
+		defineEntry<QuantizedTransforms>(
+			"surge (readChecks)",
+			{ list: arbitrary },
+			surgeAdapter(checkedQuantizedSerializer),
+		),
+		defineEntry<Transforms>("fbs", { list: arbitrary }, fbsAdapter(fbsSerializer)),
+		defineEntry<Transforms>("serio", { list: arbitrary }, serioAdapter(serioSerializer)),
 	],
 };

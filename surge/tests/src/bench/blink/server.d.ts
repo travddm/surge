@@ -126,3 +126,13 @@ export declare const Booleans: BlinkCodec<{ values: Array<boolean> }>;
 export declare const Entities: BlinkCodec<{
 	entities: Array<{ a: number; b: number; c: number; d: number; e: number; f: number }>;
 }>;
+
+export declare const SparseUpdates: BlinkCodec<{
+	updates: Array<{
+		id: number;
+		health?: number;
+		name?: string;
+		position?: Vector3;
+		state?: "idle" | "walking" | "running" | "dead";
+	}>;
+}>;

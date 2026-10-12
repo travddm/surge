@@ -1,3 +1,5 @@
+import type { DataType } from "@rbxts/surge";
+
 /**
  * No width brands, so the unpacked shape is the same for all three; only the
  * `Packed<T>` wrapper comes from each library's own namespace. serio stores a
@@ -13,4 +15,13 @@
  */
 export interface Transforms {
 	list: CFrame[];
+}
+
+/**
+ * The same rotations in surge's 18-byte `Quantized` form. fbs and serio have
+ * no such brand, so their cells write their `CFrame` as the CFrame array's do:
+ * fbs at full width, serio quantized as it always is.
+ */
+export interface QuantizedTransforms {
+	list: Array<DataType.Quantized<CFrame>>;
 }

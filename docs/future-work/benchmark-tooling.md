@@ -52,6 +52,11 @@ bytes on five rows, where Benchmark harness 4.5 in
 generated-files table in [coding-standards.md](../coding-standards.md) does not
 list `docs/benchmarks/code-size.md`, which `mise run bench:code` writes.
 
+**A row that gives `writeChecks` code.** No row has a `DataType.Range`
+number or an exact `DataType.Length`, so `writeChecks` generates nothing on
+any of them, and what it costs a `serialize` is not measured
+([read-checks-cost.md](../research/read-checks-cost.md)).
+
 **A Zap-shaped timing.** Zap has no callable encoder, so it is a size column
 only (Benchmark harness 4.3 in
 [specs/benchmark-harness.md](../specs/benchmark-harness.md)). A hand-written
@@ -66,6 +71,9 @@ nothing yet asks what a serializer costs on the wire once a networking layer
 batches it, and [networking.md](networking.md) is where that would come from.
 A Zap-shaped timing has no driver either, and a transcription would measure
 the transcription as much as Zap.
+
+A `writeChecks` row has no driver: the option costs nothing on a type with
+neither brand, and nothing yet asks what it costs on one that has them.
 
 Zap's order and the two stale statements change no number. A regeneration
 that changed no definition can be reverted, and the spec states the
@@ -104,3 +112,5 @@ booleans`) across several Studio processes, and look for what differs
    `catalog.zap` has not changed.
 6. Have the recorders' notes count the baseline's rows from the catalog rather
    than state a number, and add `code-size.md` to the generated-files table.
+7. A `writeChecks` row, with a `surge (writeChecks)` column timed on encode
+   only, only if what the option costs becomes a question.

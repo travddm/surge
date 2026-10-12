@@ -52,9 +52,10 @@ read at offsets from the string's end. The rows it touches:
 ## Why deferred
 
 Both were found while reviewing the results of the `smaller-generated-code`
-branch. They come after
-[benchmark-coverage-and-scoped-runs.md](benchmark-coverage-and-scoped-runs.md),
-so that their measurements are scoped runs over the larger catalog.
+branch. They were put after the catalog gained its rows and its scoped runs
+(Benchmark harness 3.1 and 9 in
+[specs/benchmark-harness.md](../specs/benchmark-harness.md)), so that their
+measurements are scoped runs over the larger catalog.
 
 ## Constraints
 
@@ -98,6 +99,5 @@ Each change is kept only if its measurement passes its keep rule.
   locals, and renaming the closure's, leaves most anchors as they are. A
   TypeScript `let` cannot read an outer variable of its own name in its
   initializer, so the two need different names.
-- A sequence is not sized (5.20), so the sequence row in
-  [benchmark-coverage-and-scoped-runs.md](benchmark-coverage-and-scoped-runs.md)
-  also uses the scratch path.
+- A sequence is not sized (5.20), so the sequences row also uses the scratch
+  path.

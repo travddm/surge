@@ -20,20 +20,26 @@ level 1; another compiler version can give another count.
 | blink-benches (entities) | 1985  | 991 (0.50×)  | 986 (0.50×)  | 2933 (1.48×) |
 | cframes                  | 2264  | 637 (0.28×)  | 706 (0.31×)  | 3468 (1.53×) |
 | cframes (packed)         | 1514  | 677 (0.45×)  | 746 (0.49×)  | —            |
+| cframes (quantized)      | 2471  | —            | —            | —            |
 | enum-heavy               | 2405  | 800 (0.33×)  | 795 (0.33×)  | 2901 (1.21×) |
 | guarded-union            | 2341  | 1115 (0.48×) | 1135 (0.48×) | 3875 (1.66×) |
+| id-set                   | 1626  | 631 (0.39×)  | 627 (0.39×)  | 2283 (1.40×) |
 | instance-refs            | 1769  | 781 (0.44×)  | 776 (0.44×)  | 2681 (1.52×) |
 | large-array              | 1312  | 636 (0.48×)  | 631 (0.48×)  | 2335 (1.78×) |
 | large-record             | 2048  | 668 (0.33×)  | 689 (0.34×)  | 2588 (1.26×) |
+| layout                   | 2548  | 841 (0.33×)  | 955 (0.37×)  | 3436 (1.35×) |
 | leaderboard              | 2050  | 846 (0.41×)  | 860 (0.42×)  | 3304 (1.61×) |
 | nested-arrays            | 1780  | 659 (0.37×)  | 679 (0.38×)  | 2855 (1.60×) |
 | nested-object            | 2316  | 1229 (0.53×) | 1247 (0.54×) | 4506 (1.95×) |
 | packed-struct (packed)   | 2804  | 1388 (0.50×) | 1381 (0.49×) | —            |
 | packed-struct (unpacked) | 3302  | 1356 (0.41×) | 1349 (0.41×) | 4803 (1.45×) |
+| sequences                | 3344  | 799 (0.24×)  | 794 (0.24×)  | 2732 (0.82×) |
 | small-flat-struct        | 922   | 836 (0.91×)  | 798 (0.87×)  | 1361 (1.48×) |
+| sparse-updates           | 3513  | 1142 (0.33×) | 1245 (0.35×) | 4946 (1.41×) |
 | string-heavy             | 2608  | 755 (0.29×)  | 825 (0.32×)  | 3160 (1.21×) |
 | tagged-union             | 3501  | 1399 (0.40×) | 1494 (0.43×) | 4834 (1.38×) |
 | tree                     | 1876  | —            | —            | 2531 (1.35×) |
+| tuple-rest               | 2216  | 752 (0.34×)  | —            | 3589 (1.62×) |
 | tuples                   | 1586  | 751 (0.47×)  | 751 (0.47×)  | 2589 (1.63×) |
 | wide-struct              | 5634  | 3363 (0.60×) | 3328 (0.59×) | 6027 (1.07×) |
 
@@ -43,5 +49,5 @@ one module, so they have no cell above:
 | Column   | Module                                 | Bytes  |
 | -------- | -------------------------------------- | ------ |
 | baseline | `tests/src/bench/baseline/codecs.luau` | 23366  |
-| blink    | `tests/src/bench/blink/server.luau`    | 99263  |
-| zap      | `tests/src/bench/zap/server.luau`      | 167751 |
+| blink    | `tests/src/bench/blink/server.luau`    | 111251 |
+| zap      | `tests/src/bench/zap/server.luau`      | 191861 |

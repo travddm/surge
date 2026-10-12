@@ -136,3 +136,15 @@ export declare const Bools: ZapEvent<{ values: Array<boolean> }>;
 export declare const Ents: ZapEvent<{
 	entities: Array<{ a: number; b: number; c: number; d: number; e: number; f: number }>;
 }>;
+
+export declare const Updates: ZapEvent<{
+	updates: Array<{
+		id: number;
+		health?: number;
+		name?: string;
+		position?: vector;
+		state?: "idle" | "walking" | "running" | "dead";
+	}>;
+}>;
+
+export declare const Ids: ZapEvent<{ ids: Set<number> }>;

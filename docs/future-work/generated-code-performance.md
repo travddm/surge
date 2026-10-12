@@ -208,8 +208,9 @@ byte order either way.
 - **A tuple's rest.** A tuple's fixed-size rest elements still reserve one at
   a time, where an array's reserve all at once (Transformer 5.18), with
   `reserveElements`. Sharing the fixed elements' reservation paid
-  ([tuple-reservations.md](../research/tuple-reservations.md)), but the
-  tuples row has no rest, and no catalog row has a tuple with one.
+  ([tuple-reservations.md](../research/tuple-reservations.md)), on the
+  tuples row, which has no rest; the tuples with a rest row is where this
+  would be measured.
 
 **Smaller items.** The scratch buffer only grows, so one large
 payload pins its memory for the module's lifetime. A change that shrinks it
@@ -276,9 +277,9 @@ untouched libraries in the same runs as controls. The
 per-call gap is closed on the flat struct, the nested object, the `CFrame`
 array, the packed toggles, the leaderboard, the tree, the instance
 references, the tagged union, the tuples and the nested arrays.
-Everything else is small, or needs a fixture before anything can measure it:
-[benchmark-coverage-and-scoped-runs.md](benchmark-coverage-and-scoped-runs.md)
-adds a tuple with a rest and a sequence.
+Everything else is small, or has had a row to be measured on only since the
+catalog gained the tuples with a rest and the sequences (Benchmark harness
+3.1 in [specs/benchmark-harness.md](../specs/benchmark-harness.md)).
 
 ## How, briefly
 

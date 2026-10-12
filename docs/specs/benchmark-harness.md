@@ -1,7 +1,7 @@
 # Benchmark harness specification
 
 Status: current
-Applies to: commit `1d3e3e3` (no tagged release yet)
+Applies to: commit `25d0190` (no tagged release yet)
 
 ## 1. Scope
 
@@ -30,13 +30,16 @@ results file records. How to run a tier and read a result is in
 
 ## 3. The catalog
 
-**3.1** The catalog is the 21 rows `CATALOG` in `tests/src/bench/catalog.ts`
+**3.1** The catalog is the 27 rows `CATALOG` in `tests/src/bench/catalog.ts`
 lists, and the size and speed tiers read it.
 
 **3.2** A row holds one sample value, built with the seeded `Rng` where it
-needs bulk data so that it is reproducible. The large record is the one
-exception: fbs and serio take its pairs as a `Map`, and every other column
-takes the same pairs as a table.
+needs bulk data so that it is reproducible, and every column encodes the
+same value, with two exceptions of form. fbs and serio take the large
+record's pairs as a `Map`, where every other column takes the same pairs as a
+table. Zap takes the tagged union's and the sparse updates' vectors as Luau's
+native `vector`, which its generated code reads, where every other column
+takes a `Vector3` of the same components.
 
 **3.3** Every column is driven through the same interface:
 
@@ -351,6 +354,9 @@ version, since another compiler version can give another count.
 
 ## Changes
 
+- `25d0190`: 3.1 adds six rows: tuples with a rest, a set, sparse updates,
+  the `CFrame` array quantized, a layout and sequences; 3.2 names Zap's
+  native vectors as the second exception.
 - `1d3e3e3`: adds 4.14 (the `surge (cursor)` column, in the speed tier
   only); 2 (Column), 3.6, 4.8 and 11.2 follow it.
 - `a4cd40d`: adds 4.13 (the `surge (readChecks)` column, timed on decode
