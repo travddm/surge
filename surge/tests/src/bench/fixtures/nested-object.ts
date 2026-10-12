@@ -8,6 +8,7 @@ import { fbsAdapter } from "../adapters/fbs";
 import { flamework2Adapter } from "../adapters/flamework2";
 import { serioAdapter } from "../adapters/serio";
 import { surgeAdapter } from "../adapters/surge";
+import { cursorAdapter } from "../adapters/surge-cursor";
 import { zapAdapter } from "../adapters/zap";
 import { nestedObject as baselineCodec } from "../baseline/codecs";
 import { NestedObject as blinkCodec } from "../blink/server";
@@ -17,6 +18,7 @@ import { serioSerializer } from "../codecs/nested-object/serio";
 import type { FbsNestedObject, NestedObject, SerioNestedObject } from "../codecs/nested-object/shapes";
 import { serializer } from "../codecs/nested-object/surge";
 import { checkedSerializer } from "../codecs/nested-object/surge-checked";
+import { cursorSerializer } from "../codecs/nested-object/surge-cursor";
 
 const value = {
 	root: {
@@ -31,6 +33,7 @@ export const nestedObject: Fixture = {
 	note: "five levels of objects, one field each level",
 	entries: [
 		defineEntry<NestedObject>("surge", value, surgeAdapter(serializer)),
+		defineEntry<NestedObject>("surge (cursor)", value, cursorAdapter(cursorSerializer)),
 		defineEntry<NestedObject>("surge (readChecks)", value, surgeAdapter(checkedSerializer)),
 		defineEntry<FbsNestedObject>("fbs", value, fbsAdapter(fbsSerializer)),
 		defineEntry<SerioNestedObject>("serio", value, serioAdapter(serioSerializer)),

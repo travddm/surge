@@ -9,6 +9,7 @@ import { fbsAdapter } from "../adapters/fbs";
 import { flamework2Adapter } from "../adapters/flamework2";
 import { serioAdapter } from "../adapters/serio";
 import { surgeAdapter } from "../adapters/surge";
+import { cursorAdapter } from "../adapters/surge-cursor";
 import { zapAdapter } from "../adapters/zap";
 import { leaderboard as baselineCodec } from "../baseline/codecs";
 import { Leaderboard as blinkCodec } from "../blink/server";
@@ -18,6 +19,7 @@ import { serioSerializer } from "../codecs/leaderboard/serio";
 import type { FbsLeaderboard, Leaderboard, LeaderboardEntry, SerioLeaderboard } from "../codecs/leaderboard/shapes";
 import { serializer } from "../codecs/leaderboard/surge";
 import { checkedSerializer } from "../codecs/leaderboard/surge-checked";
+import { cursorSerializer } from "../codecs/leaderboard/surge-cursor";
 
 const COUNT = 50;
 
@@ -32,6 +34,7 @@ export const leaderboard: Fixture = {
 	note: `${COUNT} entries of a name of up to 20 bytes, a u32 and an f64`,
 	entries: [
 		defineEntry<Leaderboard>("surge", { entries }, surgeAdapter(serializer)),
+		defineEntry<Leaderboard>("surge (cursor)", { entries }, cursorAdapter(cursorSerializer)),
 		defineEntry<Leaderboard>("surge (readChecks)", { entries }, surgeAdapter(checkedSerializer)),
 		defineEntry<FbsLeaderboard>("fbs", { entries }, fbsAdapter(fbsSerializer)),
 		defineEntry<SerioLeaderboard>("serio", { entries }, serioAdapter(serioSerializer)),

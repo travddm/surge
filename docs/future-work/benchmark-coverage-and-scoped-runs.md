@@ -8,11 +8,6 @@ Part of the [surge](../architecture.md) design. The harness is specified in
 **Rows that open work in
 [generated-code-performance.md](generated-code-performance.md) needs:**
 
-- **A cursor codec**, through `createCursorCodec<T>`: the form that checks the
-  room for a shape sized exactly once, and what writing into a buffer the
-  caller reuses is worth against `serialize`. No other column has a cursor
-  API, so this is a `surge (cursor)` column on every row, writing through one
-  `Cursor` it reuses, rather than a row.
 - **A tuple with a rest element**: the rest's fixed-size elements reserve one
   at a time.
 - **A `ColorSequence` or `NumberSequence`**: sizing one from its keypoint
@@ -71,9 +66,9 @@ baseline.
 
 ## Result
 
-- The cursor column and the rows in the catalog, recorded in `size.md`,
-  `code-size.md` and `speed.md`; the cursor column in `speed.md` only.
-- Benchmark harness sections 3 and 4 updated to match.
+- The rows in the catalog, recorded in `size.md`, `code-size.md` and
+  `speed.md`.
+- Benchmark harness section 3 updated to match.
 
 ## Notes
 

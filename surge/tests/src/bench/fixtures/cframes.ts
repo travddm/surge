@@ -13,6 +13,7 @@ import { fbsAdapter } from "../adapters/fbs";
 import { flamework2Adapter } from "../adapters/flamework2";
 import { serioAdapter } from "../adapters/serio";
 import { surgeAdapter } from "../adapters/surge";
+import { cursorAdapter } from "../adapters/surge-cursor";
 import { zapAdapter } from "../adapters/zap";
 import { transforms as baselineCodec } from "../baseline/codecs";
 import { Transforms as blinkCodec } from "../blink/server";
@@ -24,8 +25,10 @@ import { serioPackedSerializer } from "../codecs/cframes/serio-packed";
 import type { Transforms } from "../codecs/cframes/shapes";
 import { serializer } from "../codecs/cframes/surge";
 import { checkedSerializer } from "../codecs/cframes/surge-checked";
+import { cursorSerializer } from "../codecs/cframes/surge-cursor";
 import { packedSerializer } from "../codecs/cframes/surge-packed";
 import { checkedPackedSerializer } from "../codecs/cframes/surge-packed-checked";
+import { cursorPackedSerializer } from "../codecs/cframes/surge-packed-cursor";
 
 const COUNT = 50;
 
@@ -66,6 +69,7 @@ export const cframeArray: Fixture = {
 	note: `${COUNT} arbitrary rotations, unpacked: position plus axis-angle`,
 	entries: [
 		defineEntry<Transforms>("surge", { list: arbitrary }, surgeAdapter(serializer)),
+		defineEntry<Transforms>("surge (cursor)", { list: arbitrary }, cursorAdapter(cursorSerializer)),
 		defineEntry<Transforms>("surge (readChecks)", { list: arbitrary }, surgeAdapter(checkedSerializer)),
 		defineEntry<Transforms>("fbs", { list: arbitrary }, fbsAdapter(fbsSerializer)),
 		defineEntry<Transforms>("serio", { list: arbitrary }, serioAdapter(serioSerializer)),
@@ -86,6 +90,11 @@ export const cframeArrayPackedAligned: Fixture = {
 	entries: [
 		defineEntry<DataType.Packed<Transforms>>("surge", { list: aligned }, surgeAdapter(packedSerializer)),
 		defineEntry<DataType.Packed<Transforms>>(
+			"surge (cursor)",
+			{ list: aligned },
+			cursorAdapter(cursorPackedSerializer),
+		),
+		defineEntry<DataType.Packed<Transforms>>(
 			"surge (readChecks)",
 			{ list: aligned },
 			surgeAdapter(checkedPackedSerializer),
@@ -100,6 +109,11 @@ export const cframeArrayPackedArbitrary: Fixture = {
 	note: `${COUNT} arbitrary rotations in \`Packed<T>\`: header byte, position, and axis-angle`,
 	entries: [
 		defineEntry<DataType.Packed<Transforms>>("surge", { list: arbitrary }, surgeAdapter(packedSerializer)),
+		defineEntry<DataType.Packed<Transforms>>(
+			"surge (cursor)",
+			{ list: arbitrary },
+			cursorAdapter(cursorPackedSerializer),
+		),
 		defineEntry<DataType.Packed<Transforms>>(
 			"surge (readChecks)",
 			{ list: arbitrary },

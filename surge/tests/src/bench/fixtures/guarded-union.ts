@@ -7,6 +7,7 @@ import { fbsAdapter } from "../adapters/fbs";
 import { flamework2Adapter } from "../adapters/flamework2";
 import { serioAdapter } from "../adapters/serio";
 import { surgeAdapter } from "../adapters/surge";
+import { cursorAdapter } from "../adapters/surge-cursor";
 import { zapAdapter } from "../adapters/zap";
 import { fbsSerializer } from "../codecs/guarded-union/fbs";
 import { flamework2Serializer } from "../codecs/guarded-union/flamework2";
@@ -14,6 +15,7 @@ import { serioSerializer } from "../codecs/guarded-union/serio";
 import type { GuardedUnion, SerioGuardedUnion } from "../codecs/guarded-union/shapes";
 import { serializer } from "../codecs/guarded-union/surge";
 import { checkedSerializer } from "../codecs/guarded-union/surge-checked";
+import { cursorSerializer } from "../codecs/guarded-union/surge-cursor";
 
 const COUNT = 100;
 
@@ -35,6 +37,7 @@ export const guardedUnion: Fixture = {
 	note: `${COUNT} values over string, number, and boolean`,
 	entries: [
 		defineEntry<GuardedUnion>("surge", { values }, surgeAdapter(serializer)),
+		defineEntry<GuardedUnion>("surge (cursor)", { values }, cursorAdapter(cursorSerializer)),
 		defineEntry<GuardedUnion>("surge (readChecks)", { values }, surgeAdapter(checkedSerializer)),
 		defineEntry<GuardedUnion>("fbs", { values }, fbsAdapter(fbsSerializer)),
 		defineEntry<SerioGuardedUnion>("serio", { values }, serioAdapter(serioSerializer)),

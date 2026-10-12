@@ -8,6 +8,7 @@ import { fbsAdapter } from "../adapters/fbs";
 import { flamework2Adapter } from "../adapters/flamework2";
 import { serioAdapter } from "../adapters/serio";
 import { surgeAdapter } from "../adapters/surge";
+import { cursorAdapter } from "../adapters/surge-cursor";
 import { zapAdapter } from "../adapters/zap";
 import { LargeRecord as blinkCodec } from "../blink/server";
 import { fbsSerializer } from "../codecs/large-record/fbs";
@@ -16,6 +17,7 @@ import { serioSerializer } from "../codecs/large-record/serio";
 import type { FbsLargeRecord, LargeRecord, SerioLargeRecord } from "../codecs/large-record/shapes";
 import { serializer } from "../codecs/large-record/surge";
 import { checkedSerializer } from "../codecs/large-record/surge-checked";
+import { cursorSerializer } from "../codecs/large-record/surge-cursor";
 
 const COUNT = 200;
 
@@ -33,6 +35,7 @@ export const largeRecord: Fixture = {
 	note: `${COUNT} string keys, each with a u8 value; a \`Map\` under fbs and serio`,
 	entries: [
 		defineEntry<LargeRecord>("surge", { entries }, surgeAdapter(serializer)),
+		defineEntry<LargeRecord>("surge (cursor)", { entries }, cursorAdapter(cursorSerializer)),
 		defineEntry<LargeRecord>("surge (readChecks)", { entries }, surgeAdapter(checkedSerializer)),
 		defineEntry<FbsLargeRecord>("fbs", { entries: mapEntries }, fbsAdapter(fbsSerializer)),
 		defineEntry<SerioLargeRecord>("serio", { entries: mapEntries }, serioAdapter(serioSerializer)),

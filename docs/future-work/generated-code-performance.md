@@ -149,14 +149,16 @@ would have to be an opt-in API, since a reused buffer is dead the moment
 anything calls `serialize()` again, and what it is worth is unmeasured. The
 cursor codec (Runtime API 3.15 in
 [specs/runtime-api.md](../specs/runtime-api.md)) writes into a buffer the
-caller owns and reuses instead, and what writing that way is worth against
-`serialize` is unmeasured too.
+caller owns and reuses instead. The speed tier's `surge (cursor)` column
+times writing that way against `serialize` (Benchmark harness 4.14 in
+[specs/benchmark-harness.md](../specs/benchmark-harness.md)), and no paper
+has read it yet.
 
 **A cursor codec's write.** A cursor codec writes every shape through the
 scratch path, with a capacity check at each reservation (Transformer 5.3). A
 shape sized exactly could check the room for its size once, and write with no
-check per reservation. That is a second form of the body, and measuring it
-needs a catalog row that writes into a cursor, which the catalog lacks.
+check per reservation. That is a second form of the body, and the
+`surge (cursor)` column is the cell that measures it.
 
 **Kinds exact sizing leaves out.** An array of unions, of objects whose size
 varies, and of arrays, is sized by a loop ahead of the result (Transformer
@@ -276,7 +278,7 @@ array, the packed toggles, the leaderboard, the tree, the instance
 references, the tagged union, the tuples and the nested arrays.
 Everything else is small, or needs a fixture before anything can measure it:
 [benchmark-coverage-and-scoped-runs.md](benchmark-coverage-and-scoped-runs.md)
-adds a cursor codec, a tuple with a rest and a sequence.
+adds a tuple with a rest and a sequence.
 
 ## How, briefly
 

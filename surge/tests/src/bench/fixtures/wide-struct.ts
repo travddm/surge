@@ -7,6 +7,7 @@ import { fbsAdapter } from "../adapters/fbs";
 import { flamework2Adapter } from "../adapters/flamework2";
 import { serioAdapter } from "../adapters/serio";
 import { surgeAdapter } from "../adapters/surge";
+import { cursorAdapter } from "../adapters/surge-cursor";
 import { zapAdapter } from "../adapters/zap";
 import { WideStruct as blinkCodec } from "../blink/server";
 import { fbsSerializer } from "../codecs/wide-struct/fbs";
@@ -15,6 +16,7 @@ import { serioSerializer } from "../codecs/wide-struct/serio";
 import type { FbsWideStruct, SerioWideStruct, WideStruct } from "../codecs/wide-struct/shapes";
 import { serializer } from "../codecs/wide-struct/surge";
 import { checkedSerializer } from "../codecs/wide-struct/surge-checked";
+import { cursorSerializer } from "../codecs/wide-struct/surge-cursor";
 
 const value = {
 	f1: 1.5,
@@ -74,6 +76,7 @@ export const wideStruct: Fixture = {
 	note: "50 f32 fields, no container",
 	entries: [
 		defineEntry<WideStruct>("surge", value, surgeAdapter(serializer)),
+		defineEntry<WideStruct>("surge (cursor)", value, cursorAdapter(cursorSerializer)),
 		defineEntry<WideStruct>("surge (readChecks)", value, surgeAdapter(checkedSerializer)),
 		defineEntry<FbsWideStruct>("fbs", value, fbsAdapter(fbsSerializer)),
 		defineEntry<SerioWideStruct>("serio", value, serioAdapter(serioSerializer)),

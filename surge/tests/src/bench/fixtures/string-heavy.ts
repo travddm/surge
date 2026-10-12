@@ -8,6 +8,7 @@ import { fbsAdapter } from "../adapters/fbs";
 import { flamework2Adapter } from "../adapters/flamework2";
 import { serioAdapter } from "../adapters/serio";
 import { surgeAdapter } from "../adapters/surge";
+import { cursorAdapter } from "../adapters/surge-cursor";
 import { zapAdapter } from "../adapters/zap";
 import { StringHeavy as blinkCodec } from "../blink/server";
 import { fbsSerializer } from "../codecs/string-heavy/fbs";
@@ -16,6 +17,7 @@ import { serioSerializer } from "../codecs/string-heavy/serio";
 import type { StringHeavy } from "../codecs/string-heavy/shapes";
 import { serializer } from "../codecs/string-heavy/surge";
 import { checkedSerializer } from "../codecs/string-heavy/surge-checked";
+import { cursorSerializer } from "../codecs/string-heavy/surge-cursor";
 
 const COUNT = 100;
 
@@ -32,6 +34,7 @@ export const stringHeavy: Fixture = {
 	note: `two short strings and ${COUNT} of up to 40 bytes, each with a count of its bytes`,
 	entries: [
 		defineEntry<StringHeavy>("surge", value, surgeAdapter(serializer)),
+		defineEntry<StringHeavy>("surge (cursor)", value, cursorAdapter(cursorSerializer)),
 		defineEntry<StringHeavy>("surge (readChecks)", value, surgeAdapter(checkedSerializer)),
 		defineEntry<StringHeavy>("fbs", value, fbsAdapter(fbsSerializer)),
 		defineEntry<StringHeavy>("serio", value, serioAdapter(serioSerializer)),

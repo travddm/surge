@@ -17,9 +17,9 @@ local process = require("@lune/process")
 local CODECS_DIRECTORY = "out/bench/codecs"
 local OUTPUT_PATH = "../../docs/benchmarks/code-size.md"
 local LIBRARIES = { "surge", "fbs", "serio", "flamework2" }
--- The last part of the name of a codec module the speed tier alone reads: a surge column with an
--- option (Benchmark harness 4.13 in docs/specs/benchmark-harness.md), which has no cell here.
-local SPEED_ONLY = { checked = true }
+-- The last part of the name of a codec module the speed tier alone reads: a surge column of
+-- Benchmark harness 4.13 or 4.14 in docs/specs/benchmark-harness.md, which has no cell here.
+local SPEED_ONLY = { checked = true, cursor = true }
 local BASELINE = "surge"
 local EMPTY = "—"
 -- The level a published place compiles at, which the modules' own `--!optimize 2` asks for as

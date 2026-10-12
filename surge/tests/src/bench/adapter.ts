@@ -27,9 +27,11 @@ export interface Encoded {
  * hand-written baseline, which is not a library at all but is driven through
  * the same interface (see section 4.5 of docs/specs/benchmark-harness.md).
  * `surge (readChecks)` is surge's codec with `readChecks` on (section 4.13),
- * which only the speed table has: its bytes are surge's.
+ * and `surge (cursor)` its cursor codec (section 4.14), which only the speed
+ * table has: their bytes are surge's.
  */
-export type Library = "surge" | "surge (readChecks)" | "fbs" | "serio" | "flamework2" | "blink" | "zap" | "baseline";
+export type Library =
+	"surge" | "surge (cursor)" | "surge (readChecks)" | "fbs" | "serio" | "flamework2" | "blink" | "zap" | "baseline";
 
 /**
  * Column order of `docs/benchmarks/size.md`. surge comes first: the other

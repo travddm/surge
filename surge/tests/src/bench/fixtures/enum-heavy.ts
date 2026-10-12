@@ -7,12 +7,14 @@ import { fbsAdapter } from "../adapters/fbs";
 import { flamework2Adapter } from "../adapters/flamework2";
 import { serioAdapter } from "../adapters/serio";
 import { surgeAdapter } from "../adapters/surge";
+import { cursorAdapter } from "../adapters/surge-cursor";
 import { fbsSerializer } from "../codecs/enum-heavy/fbs";
 import { flamework2Serializer } from "../codecs/enum-heavy/flamework2";
 import { serioSerializer } from "../codecs/enum-heavy/serio";
 import type { EnumHeavy } from "../codecs/enum-heavy/shapes";
 import { serializer } from "../codecs/enum-heavy/surge";
 import { checkedSerializer } from "../codecs/enum-heavy/surge-checked";
+import { cursorSerializer } from "../codecs/enum-heavy/surge-cursor";
 
 const COUNT = 100;
 
@@ -34,6 +36,7 @@ export const enumHeavy: Fixture = {
 	note: `${COUNT} Enum.Material items plus two scalar enum fields, one index byte each`,
 	entries: [
 		defineEntry<EnumHeavy>("surge", value, surgeAdapter(serializer)),
+		defineEntry<EnumHeavy>("surge (cursor)", value, cursorAdapter(cursorSerializer)),
 		defineEntry<EnumHeavy>("surge (readChecks)", value, surgeAdapter(checkedSerializer)),
 		defineEntry<EnumHeavy>("fbs", value, fbsAdapter(fbsSerializer)),
 		defineEntry<EnumHeavy>("serio", value, serioAdapter(serioSerializer)),

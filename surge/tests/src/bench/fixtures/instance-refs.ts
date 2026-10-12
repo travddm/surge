@@ -8,6 +8,7 @@ import { fbsAdapter } from "../adapters/fbs";
 import { flamework2BlobAdapter } from "../adapters/flamework2";
 import { serioAdapter } from "../adapters/serio";
 import { surgeAdapter } from "../adapters/surge";
+import { cursorAdapter } from "../adapters/surge-cursor";
 import { instanceRefs as baselineCodec } from "../baseline/codecs";
 import { fbsSerializer } from "../codecs/instance-refs/fbs";
 import { flamework2Serializer } from "../codecs/instance-refs/flamework2";
@@ -15,6 +16,7 @@ import { serioSerializer } from "../codecs/instance-refs/serio";
 import type { FbsInstanceRefs, InstanceRef, InstanceRefs, SerioInstanceRefs } from "../codecs/instance-refs/shapes";
 import { serializer } from "../codecs/instance-refs/surge";
 import { checkedSerializer } from "../codecs/instance-refs/surge-checked";
+import { cursorSerializer } from "../codecs/instance-refs/surge-cursor";
 
 const COUNT = 50;
 
@@ -29,6 +31,7 @@ export const instanceRefs: Fixture = {
 	note: `${COUNT} entries of an Instance and a u16: one value beside the bytes each`,
 	entries: [
 		defineEntry<InstanceRefs>("surge", { entries }, surgeAdapter(serializer)),
+		defineEntry<InstanceRefs>("surge (cursor)", { entries }, cursorAdapter(cursorSerializer)),
 		defineEntry<InstanceRefs>("surge (readChecks)", { entries }, surgeAdapter(checkedSerializer)),
 		defineEntry<FbsInstanceRefs>("fbs", { entries }, fbsAdapter(fbsSerializer)),
 		defineEntry<SerioInstanceRefs>("serio", { entries }, serioAdapter(serioSerializer)),

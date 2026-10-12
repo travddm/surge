@@ -8,6 +8,7 @@ import { fbsAdapter } from "../adapters/fbs";
 import { flamework2Adapter } from "../adapters/flamework2";
 import { serioAdapter } from "../adapters/serio";
 import { surgeAdapter } from "../adapters/surge";
+import { cursorAdapter } from "../adapters/surge-cursor";
 import { zapAdapter } from "../adapters/zap";
 import { smallFlatStruct as baselineCodec } from "../baseline/codecs";
 import { SmallFlatStruct as blinkCodec } from "../blink/server";
@@ -17,6 +18,7 @@ import { serioSerializer } from "../codecs/small-flat-struct/serio";
 import type { FbsSmallFlatStruct, SerioSmallFlatStruct, SmallFlatStruct } from "../codecs/small-flat-struct/shapes";
 import { serializer } from "../codecs/small-flat-struct/surge";
 import { checkedSerializer } from "../codecs/small-flat-struct/surge-checked";
+import { cursorSerializer } from "../codecs/small-flat-struct/surge-cursor";
 
 const value = { id: 4_000_000, x: 1.5, y: -2.25, z: 0.125, active: true };
 
@@ -25,6 +27,7 @@ export const smallFlatStruct: Fixture = {
 	note: "five fixed-size fields, no container",
 	entries: [
 		defineEntry<SmallFlatStruct>("surge", value, surgeAdapter(serializer)),
+		defineEntry<SmallFlatStruct>("surge (cursor)", value, cursorAdapter(cursorSerializer)),
 		defineEntry<SmallFlatStruct>("surge (readChecks)", value, surgeAdapter(checkedSerializer)),
 		defineEntry<FbsSmallFlatStruct>("fbs", value, fbsAdapter(fbsSerializer)),
 		defineEntry<SerioSmallFlatStruct>("serio", value, serioAdapter(serioSerializer)),

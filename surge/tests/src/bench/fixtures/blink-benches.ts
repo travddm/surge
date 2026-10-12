@@ -8,6 +8,7 @@ import { fbsAdapter } from "../adapters/fbs";
 import { flamework2Adapter } from "../adapters/flamework2";
 import { serioAdapter } from "../adapters/serio";
 import { surgeAdapter } from "../adapters/surge";
+import { cursorAdapter } from "../adapters/surge-cursor";
 import { zapAdapter } from "../adapters/zap";
 import { Booleans as blinkBooleansCodec, Entities as blinkEntitiesCodec } from "../blink/server";
 import { fbsBooleansSerializer } from "../codecs/blink-benches/fbs-booleans";
@@ -19,8 +20,10 @@ import { serioEntitiesSerializer } from "../codecs/blink-benches/serio-entities"
 import type { Booleans, Entities, Entity, FbsEntities, SerioEntities } from "../codecs/blink-benches/shapes";
 import { booleansSerializer } from "../codecs/blink-benches/surge-booleans";
 import { checkedBooleansSerializer } from "../codecs/blink-benches/surge-booleans-checked";
+import { cursorBooleansSerializer } from "../codecs/blink-benches/surge-booleans-cursor";
 import { entitiesSerializer } from "../codecs/blink-benches/surge-entities";
 import { checkedEntitiesSerializer } from "../codecs/blink-benches/surge-entities-checked";
+import { cursorEntitiesSerializer } from "../codecs/blink-benches/surge-entities-cursor";
 
 const BOOLEAN_COUNT = 1000;
 const ENTITY_COUNT = 100;
@@ -49,6 +52,7 @@ export const blinkBooleans: Fixture = {
 	note: `${BOOLEAN_COUNT} booleans in one array, a byte each, as Blink also writes them`,
 	entries: [
 		defineEntry<Booleans>("surge", { values }, surgeAdapter(booleansSerializer)),
+		defineEntry<Booleans>("surge (cursor)", { values }, cursorAdapter(cursorBooleansSerializer)),
 		defineEntry<Booleans>("surge (readChecks)", { values }, surgeAdapter(checkedBooleansSerializer)),
 		defineEntry<Booleans>("fbs", { values }, fbsAdapter(fbsBooleansSerializer)),
 		defineEntry<Booleans>("serio", { values }, serioAdapter(serioBooleansSerializer)),
@@ -67,6 +71,7 @@ export const blinkEntities: Fixture = {
 	note: `${ENTITY_COUNT} structs of six u8 fields`,
 	entries: [
 		defineEntry<Entities>("surge", { entities }, surgeAdapter(entitiesSerializer)),
+		defineEntry<Entities>("surge (cursor)", { entities }, cursorAdapter(cursorEntitiesSerializer)),
 		defineEntry<Entities>("surge (readChecks)", { entities }, surgeAdapter(checkedEntitiesSerializer)),
 		defineEntry<FbsEntities>("fbs", { entities }, fbsAdapter(fbsEntitiesSerializer)),
 		defineEntry<SerioEntities>("serio", { entities }, serioAdapter(serioEntitiesSerializer)),

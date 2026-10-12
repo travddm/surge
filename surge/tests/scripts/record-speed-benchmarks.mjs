@@ -258,8 +258,8 @@ function readCheck(line) {
 		process.exit(1);
 	}
 
-	// A surge column with an option, such as `surge (readChecks)`, writes surge's bytes, so the size
-	// table's surge figure is its own.
+	// A surge column of its own, `surge (readChecks)` or `surge (cursor)`, writes surge's bytes, so
+	// the size table's surge figure is its own.
 	const allowed = recorded.get(name).get(library.startsWith(`${BASELINE} (`) ? BASELINE : library) ?? 0;
 	const [verdict, error] = roundTrip.split(" ");
 	// Luau prints an infinite difference as `inf`, which `Number` does not read. A cell recorded as
