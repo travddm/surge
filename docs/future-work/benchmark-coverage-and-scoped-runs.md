@@ -1,4 +1,4 @@
-# Future work: benchmark coverage, and runs scoped to a change
+# Future work: benchmark coverage
 
 Part of the [surge](../architecture.md) design. The harness is specified in
 [specs/benchmark-harness.md](../specs/benchmark-harness.md).
@@ -22,7 +22,8 @@ option, so the column has no encode cell.
 - **A cursor codec**, through `createCursorCodec<T>`: the form that checks the
   room for a shape sized exactly once, and what writing into a buffer the
   caller reuses is worth against `serialize`. No other column has a cursor
-  API, so this may be a column on the rows sized exactly rather than a row.
+  API, so this is a `surge (cursor)` column on every row, writing through one
+  `Cursor` it reuses, rather than a row.
 - **A tuple with a rest element**: the rest's fixed-size elements reserve one
   at a time.
 - **A `ColorSequence` or `NumberSequence`**: sizing one from its keypoint
@@ -36,34 +37,16 @@ option, so the column has no encode cell.
   including by the two changes to optionals in
   [optional-length-once.md](../research/optional-length-once.md) and
   [empty-closure-and-dead-checks.md](../research/empty-closure-and-dead-checks.md).
-- **Datatypes:** `Vector2`, `Color3`, `UDim2`, a `Set`, and the 18-byte
-  `DataType.Quantized` `CFrame`.
-
-**Runs scoped to a change.** A full speed invocation is two runs of 204
-cells. A cell takes at least 1.9 s a run whatever its library (a 0.1 s
-warm-up and nine trials of at least 0.2 s, Benchmark harness 6.2 and 6.3), so
-an invocation takes about fifteen minutes, and the rows above add to it. A
-measurement of a change needs only these cells:
-
-- the rows whose surge code the change touches: those whose compiled module
-  under `tests/out/bench/codecs/` differs between the reference build and
-  the change's, and those whose module calls a runtime function the change
-  touches;
-- the halves the change touches;
-- surge, the baseline where the row has one, and the controls below.
-
-Scoped runs (Benchmark harness 9) select rows only, run once, and write no
-trials file, so a paper cannot be read from one.
+- **Datatypes**, in three rows: an array of records of a `Vector2`, a
+  `Color3` and a `UDim2`; a `Set`; and the `CFrame` array in the 18-byte
+  `DataType.Quantized`.
 
 ## Why
 
 The rows give the open items a cell to be measured on, and the column prices
-what the documentation recommends for every server. Each addition makes every
-run longer. Each change in the next step needs a reference invocation and a
-change invocation of its own, and the scoped run keeps both short.
-[testing.md](../testing.md#benchmarks) requires scoped runs wherever they can
-measure a change. Until a scoped run writes its trials, a paper still needs
-full runs.
+what the documentation recommends for every server. Each addition makes a
+full run longer; a scoped run (Benchmark harness 9) times only the cells a
+change touches.
 
 ## Why deferred
 
@@ -72,18 +55,10 @@ branch, and is harness work, not part of that branch. It comes before the
 write-side speed work in
 [write-state-and-joined-reservations.md](write-state-and-joined-reservations.md).
 That way the papers measuring that work cite the larger catalog as their
-baseline and are measured with scoped runs.
+baseline.
 
 ## Constraints
 
-- **Controls.** A measurement reads a change against the drift of the row's
-  quiet control cells, and reads how far unchanged code moves as each control
-  against its row's other controls
-  ([noise-in-the-speed-tier.md](../research/noise-in-the-speed-tier.md)). The
-  baseline covers 10 of the 21 rows, and none of the four that the write-state
-  change touches. A scoped run must keep at least two control columns on each
-  row it selects, or read the drift over all the selected rows' controls
-  together, with the method written down before it is used.
 - **Coverage by column**, from the matrix in
   [type-coverage-across-libraries.md](../research/type-coverage-across-libraries.md):
     - Optionals: every column, Flamework 2's on the toggles row.
@@ -103,32 +78,19 @@ baseline and are measured with scoped runs.
   needs a Blink and a Zap definition (4.4) and a Flamework 2 module
   (4.10–4.11), or an empty cell where the library cannot express the shape
   (3.4).
-- **Published tables.** `docs/benchmarks/speed.md` stays a full run: a
-  scoped run feeds a paper and writes nowhere under `docs/benchmarks/`.
 - New rows add to surge's column in `code-size.md`, whose sum the papers
   cite, and change the summary in `speed.md`.
 
 ## Result
 
-- The column and the rows in the catalog, recorded in `size.md`,
-  `code-size.md` and `speed.md`.
-- A scoped speed run that:
-    - selects rows, columns and halves;
-    - keeps the controls above;
-    - runs twice;
-    - writes its trials where a paper's analysis can read them.
-- Benchmark harness sections 3, 4 and 9 updated to match.
+- The columns and the rows in the catalog, recorded in `size.md`,
+  `code-size.md` and `speed.md`; the two columns in `speed.md` only.
+- Benchmark harness sections 3 and 4 updated to match.
 
 ## Notes
 
 - The checked column's first form was Benchmark harness 4.9, driven by
-  surge's adapter. Whether it gets a code-size cell is open: it would add a
-  checked module per fixture.
+  surge's adapter.
 - A row with a `DataType.Range` number or an exact `DataType.Length` would
   also give `writeChecks` code to generate. No row has either
   ([read-checks-cost.md](../research/read-checks-cost.md)).
-- The first scoped measurement is likely the write-state change: four rows,
-  encode only.
-    - Each row has fbs and serio as controls.
-    - Flamework 2 and Blink cover two of the rows.
-    - With every control kept, that is 16 cells a run, against 204.

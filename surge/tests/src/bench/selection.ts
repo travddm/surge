@@ -1,5 +1,6 @@
 //!optimize 2
-import type { Fixture } from "./adapter";
+import type { Entry, Fixture, Library } from "./adapter";
+import { CONTROLS } from "./adapter";
 
 /**
  * Which fixtures a run measures, for `mise run bench:size:only` and
@@ -65,7 +66,67 @@ export function matching(catalog: ReadonlyArray<Fixture>, patterns: ReadonlyArra
 	return catalog.filter((_, index) => wanted.has(index));
 }
 
-let scoped: ReadonlyArray<string> = [];
+/** One half of a cell: what the speed suite times. */
+export type Half = "encode" | "decode";
+
+/**
+ * What a speed run measures (Benchmark harness 9 in
+ * docs/specs/benchmark-harness.md). Each field left out measures all of its
+ * kind.
+ */
+export interface Scope {
+	/** Patterns that select rows, as {@link matching} reads them. */
+	readonly fixtures?: ReadonlyArray<string>;
+	/** The columns to keep beside surge's and the baseline's, by name, as {@link keptEntries} reads them. */
+	readonly columns?: ReadonlyArray<string>;
+	/** The halves to time. */
+	readonly halves?: ReadonlyArray<Half>;
+}
+
+/** The columns a scoped run keeps on every row it selects. */
+const ALWAYS_KEPT: ReadonlyArray<Library> = ["surge", "baseline"];
+
+/**
+ * The entries of `fixture` a run times: all of them, or, where `columns`
+ * names some, surge's, the baseline's and the ones it names. surge's is kept
+ * because every ratio divides by it, and the baseline's because it is what
+ * surge's code is read against. A name matches a column whose name, with case
+ * and everything that is not a letter or a digit removed, is the same, so
+ * `surgereadchecks` names `surge (readChecks)`.
+ *
+ * Throws where a name matches no column of the row's catalog, and where the
+ * columns kept leave a row fewer than two controls of the ones it has: a
+ * change is read against how far its row's controls moved, and one control
+ * cannot say how far one moves on its own.
+ */
+export function keptEntries(
+	fixture: Fixture,
+	entries: ReadonlyArray<Entry>,
+	columns: ReadonlyArray<string> | undefined,
+	known: ReadonlyArray<Library>,
+): ReadonlyArray<Entry> {
+	if (columns === undefined) {
+		return entries;
+	}
+	const named = new Set<string>();
+	for (const column of columns) {
+		const normalized = normalize(column);
+		if (!known.some((library) => normalize(library) === normalized)) {
+			throw `No benchmark column is named "${column}". The columns are: ${known.join(", ")}.`;
+		}
+		named.add(normalized);
+	}
+
+	const kept = entries.filter((entry) => ALWAYS_KEPT.includes(entry.library) || named.has(normalize(entry.library)));
+	const controls = (list: ReadonlyArray<Entry>) => list.filter((entry) => CONTROLS.includes(entry.library)).size();
+	const needed = math.min(2, controls(entries));
+	if (controls(kept) < needed) {
+		throw `The columns kept leave "${fixture.name}" ${controls(kept)} of its ${controls(entries)} controls, where a scoped run keeps at least ${needed}.`;
+	}
+	return kept;
+}
+
+let scoped: Scope = {};
 
 /**
  * Narrows what the speed suite measures. Called before the run starts, by
@@ -78,11 +139,21 @@ let scoped: ReadonlyArray<string> = [];
  * and src/index.ts has to stay loadable when a fixture module is broken --
  * that is what keeps a broken fixture from failing the round-trip suite.
  */
-export function scopeTo(patterns: ReadonlyArray<string>): void {
-	scoped = patterns;
+export function scopeTo(scope: Scope): void {
+	scoped = scope;
 }
 
-/** The patterns `scopeTo` was last given; empty for a run over the whole catalog. */
+/** The row patterns `scopeTo` was last given; empty for a run over the whole catalog. */
 export function scopedPatterns(): ReadonlyArray<string> {
-	return scoped;
+	return scoped.fixtures ?? [];
+}
+
+/** The column names `scopeTo` was last given; `undefined` for every column. */
+export function scopedColumns(): ReadonlyArray<string> | undefined {
+	return scoped.columns;
+}
+
+/** The halves `scopeTo` was last given, or both. */
+export function scopedHalves(): ReadonlyArray<Half> {
+	return scoped.halves ?? ["encode", "decode"];
 }

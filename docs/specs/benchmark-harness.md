@@ -1,7 +1,7 @@
 # Benchmark harness specification
 
 Status: current
-Applies to: commit `362a52a` (no tagged release yet)
+Applies to: commit `89c53ce` (no tagged release yet)
 
 ## 1. Scope
 
@@ -24,7 +24,8 @@ results file records. How to run a tier and read a result is in
 - **Run**: one pass of the speed suite over the catalog in one Studio
   process.
 - **Invocation**: one `mise run bench:speed`, which is two runs back to back.
-- **Scoped run**: a run over only the rows a pattern selects.
+- **Scoped run**: a run over only the rows, columns and halves its scope
+  selects (9).
 
 ## 3. The catalog
 
@@ -208,7 +209,8 @@ engine version, before the suite runs.
 **8.1** `tests/scripts/record-speed-benchmarks.mjs` wraps `run-in-roblox`,
 forwards every line, and writes `docs/benchmarks/speed.md` and
 `docs/benchmarks/speed-trials.tsv` only if every run printed
-`BENCH_RESULT: PASSED`, returned every row in both halves, and passed the
+`BENCH_RESULT: PASSED`, returned in every run each half of a cell that any
+run returned, and surge's cell in each half its row returned, and passed the
 round-trip check of 6.6 on every cell. An interrupted invocation leaves both
 files as they were.
 
@@ -245,11 +247,31 @@ with case and every character that is not a letter or digit removed from
 both, the pattern is contained in the row's name. Both tiers select through
 `tests/src/bench/selection.ts`.
 
-**9.2** A scoped run prints its tables and writes no results file. A scoped
-speed run is one run, not two.
+**9.2** `mise run bench:speed:only` also takes options, each one word of the
+form `<name>=<value>`:
 
-**9.3** A `:only` task given no pattern, or a pattern that selects no row,
-stops without measuring.
+- `columns=`: the columns to keep beside surge's and the baseline's,
+  comma-separated. A name selects a column whose name, with case and every
+  character that is not a letter or digit removed from both, is the same.
+- `halves=`: `encode`, `decode`, or both, comma-separated.
+- `runs=`: how many runs, two by default, as a full invocation runs (6.1).
+- `out=`: a directory outside `docs/benchmarks/` to write the run's tables
+  and trials into.
+
+**9.3** A scoped speed run keeps surge's column and the baseline's on every
+row it selects. It stops without measuring where the columns it keeps leave a
+row fewer than two of the controls that row has, or fewer than all of them
+where it has one: fbs, serio, Flamework 2, Blink and the baseline, whose code
+a change to surge leaves as it is.
+
+**9.4** A scoped run prints its tables and writes nothing under
+`docs/benchmarks/`. With `out=`, a scoped speed run writes its tables to
+`speed.md` and its trials to `speed-trials.tsv` in that directory, as 8.3 and
+8.4 describe them, with its scope among their facts.
+
+**9.5** A `:only` task given nothing to narrow by, or a pattern or a column
+name that selects nothing, stops without measuring. A pattern narrows both
+tiers; `columns=` and `halves=` narrow the speed tier.
 
 ## 10. Rebuilding before a run
 
@@ -299,12 +321,15 @@ version, since another compiler version can give another count.
 | 6.6       | Source: `check` and `timed` in `tests/src/bench/speed.spec.ts`, and `readCheck`, `recordedRoundTrips` and `requireEveryCheck` in `tests/scripts/record-speed-benchmarks.mjs`. No test runs the comparison; a full or scoped `bench:speed` run exercises it                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | 7.1–7.3   | Source: `tests/src/bench/speed.spec.ts`, and `run` and `runBenchmarks` in `tests/src/index.ts`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | 8.1–8.7   | Source: `tests/scripts/record-speed-benchmarks.mjs` (`RUNS`, `NOISY`, `summarize`, `summaryTable`)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
-| 9.1–9.3   | Source: `tests/src/bench/selection.ts`, the recorder, and `tests/scripts/lune-size-runner.luau`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| 9.1–9.5   | Source: `matching` and `keptEntries` in `tests/src/bench/selection.ts`, the options and `report` in the recorder, and `tests/scripts/lune-size-runner.luau`. No test runs a scoped run; one exercises it                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
 | 10.1      | Source: the `bench:prepare` script in `package.json`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
 | 11.1–11.5 | Source: `tests/scripts/lune-code-size-runner.luau`; a regenerated `code-size.md` with no diff                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
 
 ## Changes
 
+- `89c53ce`: 9.2 to 9.5: a scoped speed run selects columns and halves
+  as well as rows, keeps two controls on each row, runs twice, and writes its
+  tables and trials where `out=` names; 2 (Scoped run) and 8.1 follow it.
 - `362a52a`: adds 6.6 (each cell's round trip is checked in Roblox before
   its trials); 7.1 and 8.1 follow it.
 - `ca5e2ba`: no statement changes. The 4.6 row names the `count` module among

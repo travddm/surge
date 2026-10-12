@@ -48,6 +48,13 @@ export const LIBRARIES: ReadonlyArray<Library> = ["surge", "fbs", "serio", "flam
  */
 export const SIZE_ONLY: ReadonlyArray<Library> = ["zap"];
 
+/**
+ * The columns whose code a change to surge leaves as it is, which a
+ * measurement of that change reads its drift against (Benchmark harness 9 in
+ * docs/specs/benchmark-harness.md). surge's own columns are not among them.
+ */
+export const CONTROLS: ReadonlyArray<Library> = ["fbs", "serio", "flamework2", "blink", "baseline"];
+
 /** What one fixture costs under one library. */
 export interface Measurement {
 	bytes: number;

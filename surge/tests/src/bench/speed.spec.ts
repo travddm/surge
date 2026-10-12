@@ -1,10 +1,10 @@
 //!optimize 2
 import { Fact } from "@rbxts/runit";
 
-import type { Entry, Fixture } from "./adapter";
+import type { Entry, Fixture, Library } from "./adapter";
 import { SIZE_ONLY } from "./adapter";
 import { CATALOG } from "./catalog";
-import { matching, scopedPatterns } from "./selection";
+import { keptEntries, matching, scopedColumns, scopedHalves, scopedPatterns } from "./selection";
 
 /**
  * The speed tier (section 6 of docs/specs/benchmark-harness.md): encode and decode values
@@ -205,9 +205,27 @@ function report(half: string, fixture: Fixture, entry: Entry, rates: ReadonlyArr
 	);
 }
 
-/** The entries of a row the suite times: every one but a size-only library's. */
-function timed(fixture: Fixture): Array<Entry> {
-	return fixture.entries.filter((entry) => !SIZE_ONLY.includes(entry.library));
+/** Every column the suite can time, in the order the catalog first gives each. */
+function timedColumns(): ReadonlyArray<Library> {
+	const columns = new Array<Library>();
+	for (const fixture of CATALOG) {
+		for (const entry of fixture.entries) {
+			if (!SIZE_ONLY.includes(entry.library) && !columns.includes(entry.library)) {
+				columns.push(entry.library);
+			}
+		}
+	}
+	return columns;
+}
+
+/** The entries of a row the suite times: every one but a size-only library's, narrowed to the run's columns. */
+function timed(fixture: Fixture): ReadonlyArray<Entry> {
+	return keptEntries(
+		fixture,
+		fixture.entries.filter((entry) => !SIZE_ONLY.includes(entry.library)),
+		scopedColumns(),
+		timedColumns(),
+	);
 }
 
 class SpeedBench {
@@ -221,7 +239,7 @@ class SpeedBench {
 		}
 		settle();
 
-		for (const half of ["encode", "decode"] as const) {
+		for (const half of scopedHalves()) {
 			for (const fixture of fixtures) {
 				const entries = timed(fixture);
 				const rates = entries.map(() => new Array<number>());

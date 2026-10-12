@@ -72,7 +72,7 @@ description = "Reinstall and recompile tests/, run the speed suite twice back to
 run = "npm run bench:speed"
 
 [tasks."bench:speed:only"]
-description = "Reinstall and recompile tests/, then time only the fixtures the given patterns select in a real Roblox Studio process and print the tables instead of rewriting docs/benchmarks/speed.md -- for reading one change without a full run; a pattern is one word, matched against the fixture name with case and everything that is not a letter or a digit ignored, so `large-array` picks one row and `cframe` picks three"
+description = "Reinstall and recompile tests/, then time only the fixtures the given patterns select in a real Roblox Studio process, twice, and print the tables instead of rewriting docs/benchmarks/speed.md -- for reading one change without a full run; a pattern is one word, matched against the fixture name with case and everything that is not a letter or a digit ignored, so `large-array` picks one row and `cframe` picks three; `columns=fbs,serio` keeps only those columns beside surge and the baseline, `halves=encode` or `halves=decode` times one half, `runs=1` runs once, and `out=<directory>` writes the tables and trials there"
 run = "npm run bench:speed:only -- {{arg(name='fixture', var=true)}}"
 
 [tasks."bench:speed:render"]

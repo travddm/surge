@@ -137,22 +137,29 @@ under [research/](research/README.md).
   the code a library generates for a shape does, so run it after a change to
   what the transformer emits.
 - `mise run bench:size:only large-array` and `mise run bench:speed:only cframe`
-  measure only the rows their patterns select, and write nothing. A pattern
-  is one word, because a mise task argument does not keep its quoting on
-  Windows. Try a pattern on the size tier first, which is quick.
+  measure only the rows their patterns select, and write nothing under
+  `benchmarks/`. A pattern is one word, because a mise task argument does not
+  keep its quoting on Windows. Try a pattern on the size tier first, which is
+  quick.
+- `bench:speed:only` also takes `columns=fbs,serio` to keep only those
+  columns beside surge's and the baseline's, `halves=encode` or
+  `halves=decode`, `runs=1` for one run instead of two, and `out=<directory>`
+  to write its tables and trials there
+  ([specs/benchmark-harness.md](specs/benchmark-harness.md) 9). It stops
+  where the columns kept leave a row fewer than two controls.
 
 Read a scoped size table against `size.md` directly. Read a scoped speed
-table only against another scoped run of the same patterns, with the
-untouched columns as the control: a column is comparable only within one run,
+table only against another scoped run of the same scope, with the untouched
+columns as the control: a column is comparable only within one run,
 and two runs of unchanged code can differ widely on a single cell
 ([research/noise-in-the-speed-tier.md](research/noise-in-the-speed-tier.md)).
 A measurement worth keeping is a paper under `research/`, never an edit to a
 number in a page.
 
-Research a change's speed with scoped runs wherever they can measure it. A
-scoped run writes no trials, so a paper read from trials still needs full
-runs. A branch whose scoped runs moved a row beyond noise, read against the
-untouched columns of the same runs, must record a full `mise run bench:speed`
-after its last change and before it merges to `master`, so that `speed.md`
-matches the code that merges. Where scoped runs measured every change, that
-should be the branch's only full run.
+Research a change's speed with scoped runs wherever they can measure it,
+with `out=` where a paper is read from the trials. A branch whose scoped runs
+moved a row beyond noise, read against the untouched columns of the same
+runs, must record a full `mise run bench:speed` after its last change and
+before it merges to `master`, so that `speed.md` matches the code that
+merges. Where scoped runs measured every change, that should be the branch's
+only full run.
