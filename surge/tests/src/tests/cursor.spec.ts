@@ -2,6 +2,7 @@
 import { Assert, Fact } from "@rbxts/runit";
 import type { Cursor } from "@rbxts/surge";
 import { DataType, createCodec, createCursor, createCursorCodec } from "@rbxts/surge";
+import { grow } from "@rbxts/surge/out/abi";
 
 import { difference, hex } from "../support";
 
@@ -125,6 +126,23 @@ class CursorTest {
 				Assert.equal(undefined, difference(value, chat.read(back)));
 			}
 			Assert.equal(cursor.offset, back.offset);
+		}
+	}
+
+	// Runtime API 5.1: `grow` never returns fewer bytes than it was given. A
+	// `serialize` checks no capacity where a reservation is known to end within
+	// the 64 bytes its scratch buffer is created with (Transformer 5.30).
+	@Fact
+	public growsNoBufferSmallerThanItWasGiven(): void {
+		const cases: Array<[bytes: number, live: number, needed: number]> = [
+			[0, 0, 1],
+			[64, 64, 65],
+			[100, 0, 1],
+		];
+		for (const [bytes, live, needed] of cases) {
+			const [grown, capacity] = grow(buffer.create(bytes), live, needed);
+			Assert.equal(buffer.len(grown), capacity);
+			Assert.equal(true, capacity >= math.max(bytes, needed));
 		}
 	}
 

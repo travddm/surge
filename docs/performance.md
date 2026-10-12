@@ -32,7 +32,7 @@ code, where Luau reads them. Both apply to the whole file.
   serializers and the types they are built from, and nothing else.
 
 A type emits no Luau, and an import used only as a type is removed, so such a
-module compiles to surge's import, one closure per serializer, and its
+module compiles to surge's import, each serializer's functions, and its
 exports. Every line of it is code the directives are for. A module that also
 holds game logic gives that logic native compilation as well, which is a
 choice to make for that logic on its own terms.

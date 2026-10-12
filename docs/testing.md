@@ -129,7 +129,7 @@ under [research/](research/README.md).
 - `mise run bench:speed` times each row in a Roblox Studio process through
   `run-in-roblox`, twice, and rewrites
   [benchmarks/speed.md](benchmarks/speed.md) and its trials. It needs Studio
-  installed and takes about ten minutes. `mise run bench:speed:render`
+  installed and takes about fifteen minutes. `mise run bench:speed:render`
   rewrites `speed.md` from the trials without a run.
 - `mise run bench:code` compiles each codec module of the catalog to Luau
   bytecode under Lune and rewrites
@@ -148,3 +148,11 @@ and two runs of unchanged code can differ widely on a single cell
 ([research/noise-in-the-speed-tier.md](research/noise-in-the-speed-tier.md)).
 A measurement worth keeping is a paper under `research/`, never an edit to a
 number in a page.
+
+Research a change's speed with scoped runs wherever they can measure it. A
+scoped run writes no trials, so a paper read from trials still needs full
+runs. A branch whose scoped runs moved a row beyond noise, read against the
+untouched columns of the same runs, must record a full `mise run bench:speed`
+after its last change and before it merges to `master`, so that `speed.md`
+matches the code that merges. Where scoped runs measured every change, that
+should be the branch's only full run.

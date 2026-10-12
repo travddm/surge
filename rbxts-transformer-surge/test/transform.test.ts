@@ -275,9 +275,23 @@ describe("transform (end-to-end)", () => {
 			const s = createSerializer<P>();`,
 		);
 		try {
-			expect(printed).toContain("const s = function () {");
+			expect(printed).toContain("const s = (value: P) => {");
 			expect(printed).not.toContain("serialize:");
 			expect(printed).not.toContain("deserialize:");
+		} finally {
+			cleanup();
+		}
+	});
+
+	test("a call site whose closure would declare nothing is replaced by the functions alone", () => {
+		const { printed, cleanup } = runTransform(
+			`import { createCodec } from "@rbxts/surge";
+			interface P { x: number; name: string; }
+			const s = createCodec<P>();`,
+		);
+		try {
+			expect(printed).toContain("const s = { serialize: (value: P) => {");
+			expect(printed).not.toContain("function () {");
 		} finally {
 			cleanup();
 		}
@@ -686,6 +700,46 @@ describe("transform generated code", () => {
 		// The printed file no longer calls the `createCodec` it imports. What
 		// this checks is the code generated in place of the call.
 		expect(errors.filter((error) => !error.startsWith("'createCodec' is declared"))).toEqual([]);
+	});
+
+	// The cursor fold (Transformer 5.31) drops each assignment of the cursor that
+	// nothing reads, and the cursor itself where nothing reads it at all.
+	test.each([
+		[
+			"a shape of fixed size",
+			"interface T { id: DataType.u32; spot: { x: number; y: DataType.i16 }; tag: DataType.u8; }",
+		],
+		[
+			"a union of objects of fixed size",
+			'type T = { kind: "a"; x: number } | { kind: "b"; y: DataType.u8; z: DataType.u16 };',
+		],
+		[
+			"a string with a count of fixed width, last",
+			"interface T { id: DataType.u32; name: DataType.Length<string, DataType.u16>; }",
+		],
+		["an array of fixed-size elements, last", "interface T { id: DataType.u32; list: DataType.u16[]; }"],
+		["an optional string, last", "interface T { id: DataType.u32; nick?: string; }"],
+		["an optional buffer", "interface T { data?: buffer; id: DataType.u32; }"],
+		[
+			"an optional string whose presence is a packed bit",
+			"type T = DataType.Packed<{ on: boolean; nick?: string }>;",
+		],
+		["an optional of fixed size", "interface T { id: DataType.u32; offset?: DataType.i16; }"],
+		[
+			"an optional of fixed size whose presence is a packed bit",
+			"type T = DataType.Packed<{ on: boolean; offset?: DataType.i16 }>;",
+		],
+		["an array of strings, on the scratch buffer", "interface T { id: DataType.u32; names: string[]; }"],
+	])("the generated code for %s passes the type check under a consumer's noUnusedLocals", (_name, declarations) => {
+		for (const options of ["", "{ readChecks: true }"]) {
+			const errors = typeErrorsOfGeneratedCode(
+				`import { DataType, createCodec } from "@rbxts/surge";
+				${declarations}
+				export const s = createCodec<T>(${options});`,
+				{ noUnusedLocals: true },
+			);
+			expect(errors.filter((error) => !error.startsWith("'createCodec' is declared"))).toEqual([]);
+		}
 	});
 
 	test("the generated code of a shape written exactly passes the type check", () => {

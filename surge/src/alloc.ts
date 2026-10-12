@@ -24,6 +24,9 @@
  *
  * Returns the new buffer and its length, the caller's new capacity, so that
  * each reservation's growth is one call and one assignment in the caller.
+ * The buffer is never shorter than `current`: a `serialize` checks no capacity
+ * where a reservation is known to end within the bytes its scratch buffer is
+ * created with (Transformer 5.30 in docs/specs/transformer.md).
  */
 // eslint-disable-next-line roblox-ts/no-user-defined-lua-tuple -- a real Luau multi-return, not a stored value.
 export function grow(current: buffer, live: number, needed: number): LuaTuple<[grown: buffer, capacity: number]> {

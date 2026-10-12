@@ -89,6 +89,16 @@ code the transformer generates runs. What has been measured is under
   index keyed by the item itself, with no read of its `Name`.
 - [cold-paths-in-one-call.md](../research/cold-paths-in-one-call.md) — the
   generated code made smaller where it runs rarely or once.
+- [cursor-known-values.md](../research/cursor-known-values.md) — each
+  reservation at the cursor's known value, outside a loop's body, and why
+  not inside one.
+- [optional-length-once.md](../research/optional-length-once.md) — an
+  optional string's value and length bound once, ahead of the result.
+- [packed-cframe-quaternion.md](../research/packed-cframe-quaternion.md) — a
+  packed `CFrame`'s general rotation read through a quaternion.
+- [empty-closure-and-dead-checks.md](../research/empty-closure-and-dead-checks.md)
+  — no closure where it would declare nothing, no capacity check that cannot
+  fire, and a fixed-size optional read once.
 
 This document holds what is still open.
 
@@ -124,10 +134,14 @@ the other rows pay against hand-written Luau is not measured.
 the three candidates a shape sized exactly (Transformer 5.20 in
 [specs/transformer.md](../specs/transformer.md)) does not:
 `finishWrite`'s copy, the scratch state in the closure, and the capacity
-check. A nested object inside a run of Transformer 5.5 still reads its path
-once per property. A sized write reads twice the length of an array whose
+check. Holding the scratch state in locals is
+[write-state-and-joined-reservations.md](write-state-and-joined-reservations.md).
+A nested object inside a run of Transformer 5.5 still reads its path once per
+property. A sized write reads twice the length of an array whose
 count has a fixed width, and what its size reads inside a loop or a branch,
-such as an optional's or a union's bytes, its write reads again.
+such as a union's bytes, or an optional's whose value varies in size, other
+than a `str`'s or a `buffer`'s with a variable-length count, its write reads
+again.
 
 One design the `finishWrite` probe did not reach: handing the caller a buffer
 surge owns and reuses, which removes the allocation as well as the copy. It
@@ -173,35 +187,32 @@ fixed-size elements, and a tuple of only those (Transformer 5.5). An array of
 fixed-size
 elements reserves all of them at once (Transformer 5.18), and a `str` or a
 `buffer` its count and its bytes (Transformer 5.19), and a union variant's
-index the fixed-size bytes that start the variant (Transformer 5.25). Nothing
-else shares a reservation. The places below reserve more often than the bytes require.
-Merging reservations changes no byte, because reservation order is byte order
-either way. On a shape sized exactly, a reservation checks no capacity, so
-what merging still saves there is a move of the cursor.
+index the fixed-size bytes that start the variant (Transformer 5.25). Outside
+a loop's body, adjacent reservations move the cursor once, and at a known
+offset read no position from it (Transformer 5.30), which crosses the
+boundary of a nested object: the deeply nested object's `count` and `flag`
+are written at 0 and 2. The places below reserve more often than the bytes
+require. Merging reservations changes no byte, because reservation order is
+byte order either way.
 
-- **Through a nested object of mixed sizes.** A nested object with a
-  variable-size property, such as a `str`, ends the run, and so does the end
-  of that object. The deeply nested object reserves six times per call, and
-  the hand-written codec for the same bytes allocates once. Its `count` and
-  `flag` are consecutive in the bytes but belong to two objects, so they
-  reserve apart. A run that crossed the boundary would stay open across the
-  emission of more than one object, and would still have to end where a block
-  of Transformer 5.8 does.
+- **In a loop's body.** Folded the same way, loop bodies measured slower on
+  the instance references' encode, by about a tenth, and on the guarded
+  union's decode, by more than unchanged code moved, for what is not known
+  ([cursor-known-values.md](../research/cursor-known-values.md)). A loop's
+  body is left as the emitter wrote it.
+- **A string beside a run.** A string and the fixed-size bytes next to it
+  reserve separately; joining them is
+  [write-state-and-joined-reservations.md](write-state-and-joined-reservations.md).
 - **A tuple's rest.** A tuple's fixed-size rest elements still reserve one at
   a time, where an array's reserve all at once (Transformer 5.18), with
   `reserveElements`. Sharing the fixed elements' reservation paid
   ([tuple-reservations.md](../research/tuple-reservations.md)), but the
   tuples row has no rest, and no catalog row has a tuple with one.
 
-**Smaller items.** A `serialize` sized exactly still moves its cursor past
-its last reservation, where nothing reads it again, and a shape whose
-reservations all merge could write at constant offsets with no cursor at all,
-as the hand-written codec does. Each of these, and merging the reservations
-of a nested object of mixed sizes, saves a few nanoseconds a call at most,
-less than two runs of one build disagree by on the rows it would reach
-([noise-in-the-speed-tier.md](../research/noise-in-the-speed-tier.md)), so
-none can be measured with the speed tier as it is. The scratch buffer only grows, so one large
-payload pins its memory for the module's lifetime. An object large enough to be emitted in
+**Smaller items.** The scratch buffer only grows, so one large
+payload pins its memory for the module's lifetime. A change that shrinks it
+must leave it at least the 64 bytes it is created with: a reservation known
+to end within them checks no capacity (Transformer 5.30). An object large enough to be emitted in
 blocks is read as `const result = {}` plus one assignment per field, so its
 table grows by rehashing instead of being sized once by a table constructor.
 A tuple's table is created at the number of its fixed elements (Transformer
@@ -257,12 +268,15 @@ means, but it is still not surge's to decide for a file surge does not own.
 ## Why deferred
 
 Every item here is measurement-driven, and the method is settled: a change is
-its own full catalog run against a reference taken in the same session, read
-as medians over many cells against the untouched libraries as controls. The
+its own run against a reference taken in the same session, scoped as
+[testing.md](../testing.md#benchmarks) requires, and read against the
+untouched libraries in the same runs as controls. The
 per-call gap is closed on the flat struct, the nested object, the `CFrame`
 array, the packed toggles, the leaderboard, the tree, the instance
 references, the tagged union, the tuples and the nested arrays.
-Everything else is small, or needs a fixture before anything can measure it.
+Everything else is small, or needs a fixture before anything can measure it:
+[benchmark-coverage-and-scoped-runs.md](benchmark-coverage-and-scoped-runs.md)
+adds a cursor codec, a tuple with a rest and a sequence.
 
 ## How, briefly
 

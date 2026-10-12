@@ -1207,15 +1207,21 @@ describe("Emitter exact sizing", () => {
 		});
 		expect(output).toMatchSnapshot();
 		// 1 (nick flag) + 1 + 1 (pair) + 1 (tag), and each variable-length count
-		// by its count. The optional's string is read in a branch, so it is read
-		// by its path.
-		const nick = String.raw`value\.nick!\.size\(\)`;
+		// by its count. The optional's string and its length, 0 where it is
+		// absent, are bound ahead of the result, as a string's are.
+		expect(output).toMatch(
+			/const (opt\d+) = value\.nick;\nconst (len\d+) = \1 !== undefined \? \1\.size\(\) : 0;\n/,
+		);
 		expect(output).toMatch(
 			new RegExp(
 				String.raw`buffer\.create\(${countBytes(String.raw`(len\d+)`)} \+ \1 \* 2 \+ ${countBytes(String.raw`(len\d+)`)} \+ \3 \+ ` +
-					String.raw`\(value\.nick !== undefined \? ${countBytes(nick)} \+ ${nick} : 0\) \+ \(tup\d+\.size\(\) - 1\) \+ 4\)`,
+					String.raw`\((opt\d+) !== undefined \? ${countBytes(String.raw`(len\d+)`)} \+ \6 : 0\) \+ \(tup\d+\.size\(\) - 1\) \+ 4\)`,
 			),
 		);
+		// The write reads both: the optional binds no value of its own, and the
+		// string reads no length.
+		expect(output).not.toMatch(/const opt\d+ = value\.nick;[^]*const opt\d+ = value\.nick;/);
+		expect(output).not.toMatch(/opt\d+\.size\(\)[^]*opt\d+\.size\(\)/);
 	});
 
 	test("the size binds the locals the write reads, and the write binds none of them again", () => {
@@ -1288,7 +1294,11 @@ describe("Emitter exact sizing", () => {
 				{ name: "n", field: { kind: "optional", inner: { kind: "num", width: "i16" }, packed: true } },
 			],
 		});
-		expect(output).toContain("buffer.create((value.n !== undefined ? 2 : 0) + 1)");
+		expect(output).toMatch(
+			/^const (opt\d+) = value\.n;\nconst __surge_scratch = buffer\.create\(\(\1 !== undefined \? 2 : 0\) \+ 1\);/,
+		);
+		// The presence bit and the write test the size's local, and read the path no more.
+		expect(output.match(/value\.n\b/g)).toHaveLength(1);
 	});
 
 	const either: Field = { kind: "guardedUnion", variants: [{ kind: "num", width: "f64" }, { kind: "str" }] };
