@@ -174,6 +174,29 @@ describe("cursor fold", () => {
 		);
 	});
 
+	test("keeps the head's assignment where a branch with no else may leave it to a later read", () => {
+		const folded = fold(`
+			__surge_cursor = 0;
+			const pos1 = __surge_cursor;
+			__surge_cursor = pos1 + 4;
+			buffer.writeu32(scratch, pos1, value.id);
+			if (flag) {
+				__surge_cursor = writeLongString(scratch, __surge_cursor, s, len);
+			}
+			return finishWrite(scratch, __surge_cursor);
+		`);
+		expect(folded).toBe(
+			[
+				"__surge_cursor = 4;",
+				"buffer.writeu32(scratch, 0, value.id);",
+				"if (flag) {",
+				"    __surge_cursor = writeLongString(scratch, 4, s, len);",
+				"}",
+				"return finishWrite(scratch, __surge_cursor);",
+			].join("\n"),
+		);
+	});
+
 	test("leaves a loop's body as it was written, but for the positions known before the loop", () => {
 		const folded = fold(`
 			let __surge_cursor = 0;

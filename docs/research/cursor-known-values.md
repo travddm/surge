@@ -303,3 +303,14 @@ by about a tenth.
   `c0635cf`, in the table above.
 - The figures above were computed from the `.tsv` files, with the recorder's
   own median, spread and noise rule.
+
+## Correction, 2026-10-11
+
+This corrects what the Method says can be checked out. The two variants'
+commits, `efb28ab` and `39ba78b`, were never on a branch or a tag of this
+repository, so a clone cannot check out either. Variant B's generated code
+is the same as `0d4ad4d`'s, byte for byte, as the Background states under
+Loop bodies, so its build can be repeated from that commit. Variant A's
+cannot: what remains of it is its description there and its trials in
+`data/cursor-known-values-variant-a.tsv`. No figure and no conclusion
+changes.

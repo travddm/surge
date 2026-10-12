@@ -140,7 +140,8 @@ A nested object inside a run of Transformer 5.5 still reads its path once per
 property. A sized write reads twice the length of an array whose
 count has a fixed width, and what its size reads inside a loop or a branch,
 such as a union's bytes, or an optional's whose value varies in size, other
-than a `str`'s or a `buffer`'s, its write reads again.
+than a `str`'s or a `buffer`'s with a variable-length count, its write reads
+again.
 
 One design the `finishWrite` probe did not reach: handing the caller a buffer
 surge owns and reuses, which removes the allocation as well as the copy. It
@@ -267,8 +268,9 @@ means, but it is still not surge's to decide for a file surge does not own.
 ## Why deferred
 
 Every item here is measurement-driven, and the method is settled: a change is
-its own full catalog run against a reference taken in the same session, read
-as medians over many cells against the untouched libraries as controls. The
+its own run against a reference taken in the same session, scoped as
+[testing.md](../testing.md#benchmarks) requires, and read against the
+untouched libraries in the same runs as controls. The
 per-call gap is closed on the flat struct, the nested object, the `CFrame`
 array, the packed toggles, the leaderboard, the tree, the instance
 references, the tagged union, the tuples and the nested arrays.

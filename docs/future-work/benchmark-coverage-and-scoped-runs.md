@@ -42,7 +42,7 @@ option, so the column has no encode cell.
 **Runs scoped to a change.** A full speed invocation is two runs of 204
 cells. A cell takes at least 1.9 s a run whatever its library (a 0.1 s
 warm-up and nine trials of at least 0.2 s, Benchmark harness 6.2 and 6.3), so
-an invocation takes about fourteen minutes, and the rows above add to it. A
+an invocation takes about fifteen minutes, and the rows above add to it. A
 measurement of a change needs only these cells:
 
 - the rows whose surge code the change touches: those whose compiled module
@@ -105,7 +105,8 @@ baseline and are measured with scoped runs.
   (3.4).
 - **Published tables.** `docs/benchmarks/speed.md` stays a full run: a
   scoped run feeds a paper and writes nowhere under `docs/benchmarks/`.
-- New rows change the totals in `code-size.md` and the summary in `speed.md`.
+- New rows add to surge's column in `code-size.md`, whose sum the papers
+  cite, and change the summary in `speed.md`.
 
 ## Result
 

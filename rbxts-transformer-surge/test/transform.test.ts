@@ -702,7 +702,7 @@ describe("transform generated code", () => {
 		expect(errors.filter((error) => !error.startsWith("'createCodec' is declared"))).toEqual([]);
 	});
 
-	// The cursor fold (Transformer 5.30) drops each assignment of the cursor that
+	// The cursor fold (Transformer 5.31) drops each assignment of the cursor that
 	// nothing reads, and the cursor itself where nothing reads it at all.
 	test.each([
 		[

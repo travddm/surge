@@ -11,8 +11,8 @@ exactly (Transformer 5.20 in [specs/transformer.md](../specs/transformer.md))
 keeps its scratch buffer, capacity and write cursor in the closure it is
 generated into (5.3). Each reservation therefore loads and stores the cursor
 as an upvalue, and loads the capacity it compares against. In the
-string-heavy row's `serialize`, 72 of the 183 words of bytecode load or
-store an upvalue.
+string-heavy row's `serialize` at `7532ee9`, compiled as `mise run bench:code`
+compiles it, 72 of the 183 words of bytecode load or store an upvalue.
 
 The change:
 
