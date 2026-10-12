@@ -176,6 +176,11 @@ if (!Number.isInteger(runs) || runs < 1) {
 
 /** `fixture -> library -> half -> rates per run`, in the order the first run reported them. */
 const fixtures = new Map();
+/**
+ * The columns, in the order their rows give them. The round-trip checks come first and name every
+ * column of a row, so they set it: the rates come a half at a time, and a column timed on decode
+ * alone would otherwise follow every column timed on encode.
+ */
 const libraries = [];
 const environment = new Map();
 
@@ -272,6 +277,7 @@ function readCheck(line) {
 		mismatches.push(message);
 	}
 
+	if (!libraries.includes(library)) libraries.push(library);
 	if (!checked.has(name)) checked.set(name, new Map());
 	const byLibrary = checked.get(name);
 	byLibrary.set(library, (byLibrary.get(library) ?? 0) + 1);
@@ -821,7 +827,9 @@ function writeTrials(facts, path = TRIALS_PATH, table = OUTPUT_PATH) {
 	];
 	let count = 0;
 	for (const [name, byLibrary] of fixtures) {
-		for (const [library, halves] of byLibrary) {
+		for (const library of libraries) {
+			const halves = byLibrary.get(library);
+			if (halves === undefined) continue;
 			for (const [half, perRun] of halves) {
 				perRun.forEach((rates, runIndex) => {
 					rates.forEach((rate, trialIndex) => {
