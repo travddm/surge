@@ -1,7 +1,7 @@
 # Runtime API specification
 
 Status: current
-Applies to: commit `085f4ea` (no tagged release yet)
+Applies to: commit `e189678` (no tagged release yet)
 
 ## 1. Scope
 
@@ -23,7 +23,7 @@ packages is in [../getting-started.md](../getting-started.md).
 - **Blob channel**: the array of values a serializer passes alongside the
   buffer rather than writing into it (`blobs`).
 - **Checks**: the `readChecks` option of `CodecOptions`.
-- **Helper ABI**: the functions this package's `out/abi` module exports for
+- **Helper ABI**: the functions this package's `abi` module exports for
   generated code to call, as distinct from the API a consumer calls.
 
 ## 3. The consumer API
@@ -240,8 +240,10 @@ the table, any input but a table whose `buffer` is a buffer and whose
 ## 5. The helper ABI
 
 **5.1** Generated code calls only the following exports of the package's
-`out/abi` module, which it imports as `@rbxts/surge/out/abi`. Their
-signatures are part of the coupling in section 6.
+`abi` module, which it imports as `@rbxts/surge/abi`: a subpath that the
+package's `typesVersions` maps to its compiled `out/abi`, so that the import
+names no build directory. Their signatures are part of the coupling in
+section 6.
 
 | Export                                              | Called                                                                                                      | Contract                                                                                                                                                                                                                                                            |
 | --------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -384,6 +386,9 @@ A test file named `*.spec.ts` is under `tests/src/tests/`. A path starting
 
 ## Changes
 
+- `e189678`: 2 and 5.1 name the helper module `abi`, imported as
+  `@rbxts/surge/abi`, a subpath mapped to `out/abi`, where they named
+  `out/abi` itself.
 - `085f4ea`: 5.1's `grow` returns a buffer no shorter than the one it was
   given, which Transformer 5.30 relies on.
 - `766cb9a`: 5.1 adds `writeLongString`, `writeLongBuffer`, `growLongCount`,

@@ -258,7 +258,7 @@ describe("transform (end-to-end)", () => {
 				"import { finishWrite as __surge_finishWrite, grow as __surge_grow, " +
 					"growLongCount as __surge_growLongCount, growLongString as __surge_growLongString, " +
 					"readLongCount as __surge_readLongCount } " +
-					'from "@rbxts/surge/out/abi";',
+					'from "@rbxts/surge/abi";',
 			);
 			expect(printed).toContain("const s = function () {");
 			expect(printed).toContain("serialize:");

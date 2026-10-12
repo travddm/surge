@@ -1,7 +1,7 @@
 # Transformer specification
 
 Status: current
-Applies to: commit `e818dac` (no tagged release yet)
+Applies to: commit `e189678` (no tagged release yet)
 
 ## 1. Scope
 
@@ -519,7 +519,7 @@ replaces that number before anything reads it.
 
 ## 6. Injected imports
 
-**6.1** The transformer adds one import of `@rbxts/surge/out/abi`, the
+**6.1** The transformer adds one import of `@rbxts/surge/abi`, the
 package's helper module (Runtime API 5.1), to each file where a transformed
 call site uses an export, with every name aliased to a `__surge_`
 prefix. A user declaration that does not use the prefix cannot collide with
@@ -658,6 +658,8 @@ of `rbxts-transformer-surge`, cited by `describe` block. Source paths are in
 
 ## Changes
 
+- `e189678`: 6.1 imports `@rbxts/surge/abi`, the subpath of Runtime API 5.1,
+  where it imported `@rbxts/surge/out/abi`.
 - `e818dac`: no statement changes. The 5.9 row names the golden check by its
   new name, which says blob channel, the term of Runtime API 2.
 - `2eb2637`: 5.31 states that an emitted declaration keeps its number, and

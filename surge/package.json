@@ -8,6 +8,13 @@
 	"files": [
 		"out"
 	],
+	"typesVersions": {
+		"*": {
+			"abi": [
+				"out/abi.d.ts"
+			]
+		}
+	},
 	"scripts": {
 		"compile": "rbxtsc -p tsconfig.json --type package",
 		"prepare": "npm run compile",

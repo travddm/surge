@@ -553,6 +553,7 @@ test("deserialize takes what serialize returned, as one argument", () => {
 test("generated code imports its helpers from the package's abi module", () => {
 	// `collections.spec` keeps the scratch buffer, so it calls `grow` and `finishWrite`.
 	const luau = readCompiledLuau("tests/collections.spec.luau");
+	// The import names `@rbxts/surge/abi`; the package's `typesVersions` maps it to `out/abi`.
 	assert.match(luau, /"@rbxts", "surge", "out", "abi"\)$/m);
 	// The package's own exports hold the consumer API and no helper.
 	const index = readFileSync(join(here, "..", "out", "index.d.ts"), "utf8");

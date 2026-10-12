@@ -61,9 +61,11 @@ export const ENUM_LISTED_ITEMS = 5;
 /**
  * The module of `@rbxts/surge` that holds the helpers generated code calls
  * (Runtime API 5.1 in docs/specs/runtime-api.md), apart from
- * the API a consumer imports from the package itself.
+ * the API a consumer imports from the package itself. A subpath the package's
+ * `typesVersions` maps to its compiled `out/abi`, so the import names no
+ * build directory.
  */
-export const ABI_MODULE = "@rbxts/surge/out/abi";
+export const ABI_MODULE = "@rbxts/surge/abi";
 
 // The injected `@rbxts/surge` imports are aliased so that a user's own
 // `grow` (or any other export's name), at the top level or in a scope

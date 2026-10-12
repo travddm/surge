@@ -65,7 +65,7 @@ files are part of the release's documentation.
 
 - Both packages carry one version and are bumped together while surge is
   `0.x`. They meet at the helper ABI that generated code imports from
-  `@rbxts/surge/out/abi` (Runtime API 5 and 6 in
+  `@rbxts/surge/abi` (Runtime API 5 and 6 in
   [specs/runtime-api.md](../specs/runtime-api.md)), and most changes so far
   touch both. A fix in one package republishes the other, unchanged, under
   the new version; that is the whole cost.
