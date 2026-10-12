@@ -394,12 +394,12 @@ describe("TypeWalker classification with fixture packages", () => {
 		expect(field).toMatchObject({ fields: [{ name: "item", field: { kind: "object" } }] });
 	});
 
-	// `Instance` is documented as the opaque blob-passthrough channel (section 4
+	// `Instance` is documented as going through the blob channel (section 4
 	// of docs/specs/transformer.md); it's detected by `@rbxts/types`' own
 	// `_nominal_Instance` brand property, not by walking its (hundreds of)
 	// declared properties -- see the blob-classification finding in
 	// docs/research/september-2026-review.md.
-	test("Instance falls back to the blob passthrough channel instead of walking its declared properties", () => {
+	test("Instance goes through the blob channel instead of walking its declared properties", () => {
 		const { field } = walkDeclaration("interface T { i: Instance; }", "T", { roblox: true });
 		expect(field).toEqual({
 			kind: "object",

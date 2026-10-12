@@ -22,7 +22,7 @@ interface WithRobloxTypes {
 const robloxSerializer = createCodec<WithRobloxTypes>();
 
 // Wire format 4.6 in docs/specs/wire-format.md: Vector2 gets its own real 2xf32
-// encoding instead of routing through the blob side channel.
+// encoding instead of going through the blob channel.
 interface WithVector2 {
 	offset: Vector2;
 }
@@ -30,7 +30,7 @@ const vector2Serializer = createCodec<WithVector2>();
 
 // Transformer 4.1 in docs/specs/transformer.md: a Roblox datatype with no encoding of its own
 // (unlike Vector2/Vector3/CFrame/Color3 above) must still round-trip, via its
-// `_nominal_Vector2int16` brand routing it to the blob passthrough channel
+// `_nominal_Vector2int16` brand routing it to the blob channel
 // instead of being walked structurally.
 interface WithUnencodedDatatype {
 	offset: Vector2int16;
@@ -201,8 +201,8 @@ class CoverageTest {
 	public roundTripsVector2(): void {
 		const value: WithVector2 = { offset: new Vector2(4, 5) };
 		const buf = vector2Serializer.serialize(value);
-		// 2xf32, not the 0-byte blob side channel -- this is the real encoding
-		// of Wire format 4.6, not the passthrough fallback.
+		// 2xf32, not the 0-byte blob channel -- this is the real encoding
+		// of Wire format 4.6, not the blob fallback.
 		Assert.equal(8, buffer.len(buf));
 		const result = vector2Serializer.deserialize(buf);
 		Assert.fuzzyEqual(value.offset.X, result.offset.X, 0.001);
@@ -214,7 +214,7 @@ class CoverageTest {
 		const value: WithUnencodedDatatype = { offset: new Vector2int16(4, 5) };
 		const { buffer: buf, blobs } = unencodedDatatypeSerializer.serialize(value);
 		// Nothing is written into the buffer for a blob field -- this is the
-		// whole point of the passthrough channel, and a real byte-size
+		// whole point of the blob channel, and a real byte-size
 		// assertion (not just round-trip equality) is what would have caught
 		// the walker recursing into Vector2int16's declared properties instead.
 		Assert.equal(0, buffer.len(buf));

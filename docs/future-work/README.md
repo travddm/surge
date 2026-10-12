@@ -32,8 +32,7 @@ time:
 - [shared-configs.md](shared-configs.md): the root and each package keep
   their own copies of the Prettier, markdownlint and cspell configs.
 - In [benchmark-tooling.md](benchmark-tooling.md): Zap's output, which
-  changes order from one run to the next, and two stale statements about the
-  benchmark files.
+  changes order from one run to the next.
 - [enum-name-keys.md](enum-name-keys.md): an option for an enum's write
   keyed by the item's `Name`, for generated code run outside Roblox, where
   the default write keyed by the item finds no index.

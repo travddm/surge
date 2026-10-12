@@ -45,13 +45,6 @@ unchanged `catalog.zap` gave three different `server.luau` and
 Zap modules when no definition changed, and that diff can hide one that
 matters.
 
-**Two stale statements about the benchmark files.** The notes the size and
-speed recorders write above their tables say the baseline writes surge's
-bytes on five rows, where Benchmark harness 4.5 in
-[specs/benchmark-harness.md](../specs/benchmark-harness.md) gives it ten. The
-generated-files table in [coding-standards.md](../coding-standards.md) does not
-list `docs/benchmarks/code-size.md`, which `mise run bench:code` writes.
-
 **A row that gives `writeChecks` code.** No row has a `DataType.Range`
 number or an exact `DataType.Length`, so `writeChecks` generates nothing on
 any of them, and what it costs a `serialize` is not measured
@@ -75,11 +68,8 @@ the transcription as much as Zap.
 A `writeChecks` row has no driver: the option costs nothing on a type with
 neither brand, and nothing yet asks what it costs on one that has them.
 
-Zap's order and the two stale statements change no number. A regeneration
-that changed no definition can be reverted, and the spec states the
-baseline's rows. The two statements are read wherever the tables and the
-standards are, so they are worth correcting before the documentation site
-publishes them.
+Zap's order changes no number, and a regeneration that changed no
+definition can be reverted.
 
 A stable fbs and serio column and a readable `Blink: Booleans` encode cell
 land before the first release, after the documentation site

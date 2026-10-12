@@ -11,11 +11,6 @@ export declare function grow(
 	needed: number,
 ): LuaTuple<[grown: buffer, capacity: number]>;
 export declare function finishWrite(written: buffer, size: number): buffer;
-export declare function beginWriteBlobs(): void;
-export declare function pushBlob(value: defined): void;
-export declare function finishWriteBlobs(): Array<defined>;
-export declare function beginReadBlobs(blobs: Array<defined> | undefined): void;
-export declare function nextBlob(): defined;
 export declare function writePackedCFrame(buf: buffer, pos: number, value: CFrame): number;
 export declare function readPackedCFrame(buf: buffer, pos: number): LuaTuple<[value: CFrame, size: number]>;
 export declare function writeLongCount(target: buffer, offset: number, count: number): number;

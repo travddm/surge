@@ -700,6 +700,11 @@ function ratioTable(cells, half) {
 	return markdownTable(["Fixture", ...others], rows);
 }
 
+/** How many rows the hand-written codec has a cell on, which its note above the tables states. */
+function baselineRows(cells) {
+	return [...cells.values()].filter((byLibrary) => byLibrary.has("baseline")).length;
+}
+
 /**
  * One figure per library and half: the geometric mean of its ratios against surge over the rows
  * both have a cell in and neither cell is noisy. Geometric, because ratios multiply: a column
@@ -899,10 +904,9 @@ function write(facts) {
 		"Time per value is the same measurement as microseconds per call, which",
 		"reads across rows where a rate does not.",
 		"",
-		"`baseline` is a hand-written codec that writes surge's exact bytes on",
-		"five rows, so its ratio is what surge's generated code costs against",
-		"hand-written Luau. Zap exposes no encoder to call and has no column.",
-		"Every column but serio runs with `--!native` and `--!optimize 2`.",
+		...wrap(
+			`\`baseline\` is a hand-written codec that writes surge's exact bytes on ${baselineRows(cells)} rows, so its ratio is what surge's generated code costs against hand-written Luau. Zap exposes no encoder to call and has no column. Every column but serio runs with \`--!native\` and \`--!optimize 2\`.`,
+		),
 		"",
 		"`flamework2` is the experimental Flamework 2's `Flamework.createSerializer`.",
 		"On every call, its `deserialize` checks each count against the bytes left,",
@@ -917,8 +921,9 @@ function write(facts) {
 		"",
 		"Each number is one shape in a warm loop, on one machine on one day, not",
 		"an application profile; compare columns within this file only.",
-		"[size.md](size.md) gives each row's bytes, and",
-		"[specs/benchmark-harness.md](../specs/benchmark-harness.md) says how the suite measures.",
+		// Root-absolute, so that a copy of this file kept under docs/research/data/ still links.
+		"[size.md](/docs/benchmarks/size.md) gives each row's bytes, and",
+		"[specs/benchmark-harness.md](/docs/specs/benchmark-harness.md) says how the suite measures.",
 		"",
 		"The run:",
 		"",

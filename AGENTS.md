@@ -45,14 +45,14 @@ package's directory, it covers that package:
 
 In `surge/`:
 
-| Command                                                 | Does                                                                                          |
-| ------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
-| `mise run compile`                                      | build `@rbxts/surge`                                                                          |
-| `mise run tests:test`                                   | run the round-trip suite under Lune                                                           |
-| `mise run bench:size`, `mise run bench:speed`           | record the size and speed tables; speed needs Roblox Studio                                   |
-| `mise run bench:code`                                   | record the size of each codec module's bytecode                                               |
-| `mise run bench:size:only`, `mise run bench:speed:only` | measure the rows a pattern selects, and record nothing; speed also narrows columns and halves |
-| `mise run bench:speed:render`                           | rewrite `speed.md` from its trials                                                            |
+| Command                                                 | Does                                                                                                                                             |
+| ------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `mise run compile`                                      | build `@rbxts/surge`                                                                                                                             |
+| `mise run tests:test`                                   | run the round-trip suite under Lune                                                                                                              |
+| `mise run bench:size`, `mise run bench:speed`           | record the size and speed tables; speed needs Roblox Studio                                                                                      |
+| `mise run bench:code`                                   | record the size of each codec module's bytecode                                                                                                  |
+| `mise run bench:size:only`, `mise run bench:speed:only` | measure only the rows a pattern selects, and write nothing under `docs/benchmarks/`; speed also narrows columns and halves, and writes to `out=` |
+| `mise run bench:speed:render`                           | rewrite `speed.md` from its trials                                                                                                               |
 
 The full list is in [docs/contributing.md](docs/contributing.md).
 

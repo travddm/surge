@@ -50,7 +50,7 @@ local bench = shim.tests:WaitForChild("bench")
 local result = shim.requireInstance(bench:WaitForChild("size")).collectSizeRows(patterns)
 local libraries, rows = result.libraries, result.rows
 
--- A marker no cell carries needs no explanation, so the paragraph describing the side channel is
+-- A marker no cell carries needs no explanation, so the paragraph describing the blob channel is
 -- written only when some library passes a value outside its buffer on some row.
 local sideChannelUsed = false
 for _, row in rows do
@@ -94,7 +94,7 @@ paragraph(
 	"with the largest difference in any component. About 1e-7 is f32 rounding of",
 	"a `CFrame` rotation, and about 1e-4 a quantized one. A difference near 1 is a",
 	"loss in the library or in this runner, which",
-	"[research/serialized-size-across-libraries.md](../research/serialized-size-across-libraries.md)",
+	"[research/serialized-size-across-libraries.md](/docs/research/serialized-size-across-libraries.md)",
 	"explains."
 )
 
@@ -116,8 +116,18 @@ paragraph(
 	"components, and a blob's index into the buffer as a u32. It has no `Packed`."
 )
 
+-- The hand-written codec's rows are counted, not stated, so the note cannot fall behind the catalog.
+local baselineRows = 0
+for _, row in rows do
+	for _, cell in row.cells do
+		if cell.library == "baseline" then
+			baselineRows += 1
+		end
+	end
+end
+
 paragraph(
-	"`baseline` is a hand-written codec that writes surge's exact bytes on five",
+	("`baseline` is a hand-written codec that writes surge's exact bytes on %d"):format(baselineRows),
 	"rows; it exists for the speed table. Zap's bytes are one fired event minus",
 	"its event-id byte."
 )

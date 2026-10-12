@@ -461,9 +461,9 @@ test("an array of objects that hold a blob is sized by its count", () => {
 	);
 });
 
-// Regression check for the conditional blob side channel. What it is worth is in
+// Regression check for the conditional blob channel. What it is worth is in
 // docs/research/per-call-overhead.md.
-test("a shape with no blob field pays nothing for the blob side channel", () => {
+test("a shape with no blob field pays nothing for the blob channel", () => {
 	const luau = readCompiledLuau("tests/basic.spec.luau");
 	// `Basic` has no Instance, `unknown` or `any` field, so neither side
 	// declares the blob channel's state -- the write side's list is a table

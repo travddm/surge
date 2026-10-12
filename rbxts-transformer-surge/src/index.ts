@@ -218,7 +218,7 @@ export default function transform(program: ts.Program, _config: unknown, extras:
 					undefined,
 				);
 				// The bodies are emitted before either is assembled, because
-				// whether this shape uses the blob side channel at all is only
+				// whether this shape uses the blob channel at all is only
 				// known once they are: the emitter records each blob it writes
 				// or reads, including from inside any recursion helper it
 				// generates on the way. A shape with no blob field -- which is

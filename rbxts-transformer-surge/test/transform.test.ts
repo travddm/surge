@@ -41,7 +41,7 @@ function typeErrorsOfGeneratedCode(source: string, compilerOptions?: ts.Compiler
 }
 
 describe("transform (end-to-end)", () => {
-	test("a shape with no blob field pays nothing for the blob side channel", () => {
+	test("a shape with no blob field pays nothing for the blob channel", () => {
 		const { printed, cleanup } = runTransform(
 			`import { createCodec } from "@rbxts/surge";
 			interface P { x: number; flag: boolean; }
@@ -193,7 +193,7 @@ describe("transform (end-to-end)", () => {
 		}
 	});
 
-	test("a shape with a blob field still carries the side channel", () => {
+	test("a shape with a blob field still carries the blob channel", () => {
 		const { printed, cleanup } = runTransform(
 			`import { createCodec } from "@rbxts/surge";
 			interface P { x: number; part: Instance; }
@@ -223,7 +223,7 @@ describe("transform (end-to-end)", () => {
 		}
 	});
 
-	test("a blob reachable only through a recursion helper still carries the side channel", () => {
+	test("a blob reachable only through a recursion helper still carries the blob channel", () => {
 		const { printed, cleanup } = runTransform(
 			`import { createCodec } from "@rbxts/surge";
 			interface Node { part: Instance; kids: Node[]; }
@@ -249,7 +249,7 @@ describe("transform (end-to-end)", () => {
 			const s = createCodec<P>();`,
 		);
 		try {
-			// No blob field, so nothing from the blob side channel is imported. A
+			// No blob field, so nothing from the blob channel is imported. A
 			// recursive type, written through a helper, keeps the scratch buffer
 			// (Transformer 5.20), which imports both of its helpers, and the
 			// string array's variable-length counts import the long forms of

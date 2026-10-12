@@ -3,10 +3,10 @@
 [![CI](https://github.com/travddm/surge/actions/workflows/ci.yml/badge.svg)](https://github.com/travddm/surge/actions/workflows/ci.yml)
 
 The TypeScript transformer for [`@rbxts/surge`](https://github.com/travddm/surge).
-It finds each `createCodec<T>()`, `createSerializer<T>()` and
-`createDeserializer<T>()` call and replaces it with serialize and deserialize
-code generated for `T` at compile time. It has no run-time code of its own;
-the code it generates calls `@rbxts/surge`.
+It finds each `createCodec<T>()`, `createSerializer<T>()`,
+`createDeserializer<T>()` and `createCursorCodec<T>()` call and replaces it
+with serialize and deserialize code generated for `T` at compile time. It
+has no run-time code of its own; the code it generates calls `@rbxts/surge`.
 
 Register it in a roblox-ts project's `tsconfig.json`:
 
