@@ -87,6 +87,10 @@ Not checked by a machine, and load-bearing:
   `tests/src/tests/bytes.spec.ts` and the size table in the same commit.
 - A measurement is a paper under `docs/research/`, never an edit to a number
   in a page.
+- Speed is researched with scoped runs wherever they can measure the change,
+  and a branch whose scoped runs moved a row beyond noise records one full
+  `mise run bench:speed` at its end, before it merges to `master`
+  ([docs/testing.md](docs/testing.md#benchmarks)).
 
 Enforced by review:
 

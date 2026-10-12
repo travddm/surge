@@ -148,3 +148,9 @@ and two runs of unchanged code can differ widely on a single cell
 ([research/noise-in-the-speed-tier.md](research/noise-in-the-speed-tier.md)).
 A measurement worth keeping is a paper under `research/`, never an edit to a
 number in a page.
+
+Research a change's speed with scoped runs wherever they can measure it. A
+branch whose scoped runs moved a row beyond noise, read against the untouched
+columns of the same runs, must record a full `mise run bench:speed` after its
+last change and before it merges to `master`, so that `speed.md` matches the
+code that merges. That should be the branch's only full run.
