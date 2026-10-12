@@ -45,7 +45,7 @@
 //
 // `--render` writes speed.md again from the trials file, with no run (`mise run
 // bench:speed:render`). The trials file carries every trial and every fact of the run it came
-// from, so a change to how this file summarizes or lays out a table is read without fifteen minutes
+// from, so a change to how this file summarizes or lays out a table is read without twenty minutes
 // of Studio, and the table and the trials cannot drift apart.
 import { execFileSync, spawn } from "node:child_process";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";

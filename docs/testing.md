@@ -130,7 +130,7 @@ under [research/](research/README.md).
 - `mise run bench:speed` times each row in a Roblox Studio process through
   `run-in-roblox`, twice, and rewrites
   [benchmarks/speed.md](benchmarks/speed.md) and its trials. It needs Studio
-  installed and takes about fifteen minutes. `mise run bench:speed:render`
+  installed and takes about twenty minutes. `mise run bench:speed:render`
   rewrites `speed.md` from the trials without a run.
 - `mise run bench:code` compiles each codec module of the catalog to Luau
   bytecode under Lune and rewrites
