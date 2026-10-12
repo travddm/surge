@@ -134,8 +134,10 @@ the other rows pay against hand-written Luau is not measured.
 the three candidates a shape sized exactly (Transformer 5.20 in
 [specs/transformer.md](../specs/transformer.md)) does not:
 `finishWrite`'s copy, the scratch state in the closure, and the capacity
-check. A nested object inside a run of Transformer 5.5 still reads its path
-once per property. A sized write reads twice the length of an array whose
+check. Holding the scratch state in locals is
+[write-state-and-joined-reservations.md](write-state-and-joined-reservations.md).
+A nested object inside a run of Transformer 5.5 still reads its path once per
+property. A sized write reads twice the length of an array whose
 count has a fixed width, and what its size reads inside a loop or a branch,
 such as a union's bytes, or an optional's whose value varies in size, other
 than a `str`'s or a `buffer`'s, its write reads again.
@@ -197,6 +199,9 @@ byte order either way.
   union's decode, by more than unchanged code moved, for what is not known
   ([cursor-known-values.md](../research/cursor-known-values.md)). A loop's
   body is left as the emitter wrote it.
+- **A string beside a run.** A string and the fixed-size bytes next to it
+  reserve separately; joining them is
+  [write-state-and-joined-reservations.md](write-state-and-joined-reservations.md).
 - **A tuple's rest.** A tuple's fixed-size rest elements still reserve one at
   a time, where an array's reserve all at once (Transformer 5.18), with
   `reserveElements`. Sharing the fixed elements' reservation paid
@@ -267,7 +272,9 @@ as medians over many cells against the untouched libraries as controls. The
 per-call gap is closed on the flat struct, the nested object, the `CFrame`
 array, the packed toggles, the leaderboard, the tree, the instance
 references, the tagged union, the tuples and the nested arrays.
-Everything else is small, or needs a fixture before anything can measure it.
+Everything else is small, or needs a fixture before anything can measure it:
+[benchmark-coverage-and-scoped-runs.md](benchmark-coverage-and-scoped-runs.md)
+adds a cursor codec, a tuple with a rest and a sequence.
 
 ## How, briefly
 
