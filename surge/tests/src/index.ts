@@ -1,6 +1,7 @@
 //!optimize 2
 import { TestRunner } from "@rbxts/runit";
 
+import type { Scope } from "./bench/selection";
 import { scopeTo } from "./bench/selection";
 
 /**
@@ -77,10 +78,10 @@ export function main(): void {
  * environment a timing was taken in, and this is the part of it that only
  * the process itself knows.
  *
- * `fixtures` narrows the run to the rows those patterns select (see
+ * `scope` narrows the run to the rows, columns and halves it names (see
  * bench/selection.ts), and is how a scoped run reaches the suite: a Roblox
  * process takes no arguments, so `scripts/run-in-roblox-benchmarks.luau`
- * carries the list instead. Omitted, the whole catalog runs, which is what
+ * carries the scope instead. Omitted, the whole catalog runs, which is what
  * the `MainBenchmarks` Script in default.project.json does. Importing
  * `scopeTo` costs this file nothing it must not depend on -- that module
  * holds the patterns rather than the fixtures, so the catalog is still
@@ -93,8 +94,8 @@ export function main(): void {
  * catalog unmeasured. Waiting here is itself a yield, which is what keeps
  * the plugin thread responsive while the suite runs.
  */
-export function runBenchmarks(fixtures?: ReadonlyArray<string>): void {
-	scopeTo(fixtures ?? []);
+export function runBenchmarks(scope?: Scope): void {
+	scopeTo(scope ?? {});
 	print(`${BENCH_ENVIRONMENT_PREFIX} engine=${version()}`);
 	run(script.WaitForChild("bench"), BENCH_RESULT_PREFIX).expect();
 }

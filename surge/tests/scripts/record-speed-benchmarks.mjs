@@ -23,13 +23,17 @@
 // every run passed and every row came back in both halves of every run: a partial table would
 // read like a result.
 //
-// `--only <pattern>...` measures just the fixtures those patterns select (see
-// src/bench/selection.ts), in one run, and prints the tables instead of writing the file, which
-// is how one change is read without spending a full run (`mise run bench:speed:only`). This runs
-// `run-in-roblox` itself rather than taking the command as arguments, because a Studio process has
-// no argument channel of its own: the patterns can only reach the suite through the script that is
-// injected, so a scoped run injects a copy of scripts/run-in-roblox-benchmarks.luau that carries
-// them.
+// `--only <pattern>... [columns=<name>,...] [halves=encode|decode] [runs=<n>] [out=<directory>]`
+// measures just the rows those patterns select, the columns named beside surge's and the
+// baseline's, and the halves named (see src/bench/selection.ts), and prints the tables instead of
+// writing the file, which is how one change is read without spending a full run
+// (`mise run bench:speed:only`). It runs `RUNS` times, as a full run does, unless `runs=` says
+// otherwise, and with `out=` it writes its tables and its trials into that directory, for a paper
+// to be read from. An option is a word with `=` in it: a row pattern matches on letters and digits
+// alone, and a mise task passes on no flag it does not declare. This runs `run-in-roblox` itself
+// rather than taking the command as arguments, because a Studio process has no argument channel
+// of its own: the scope can only reach the suite through the script that is injected, so a scoped
+// run injects a copy of scripts/run-in-roblox-benchmarks.luau that carries it.
 //
 // Before its trials, the suite decodes every cell once and prints its round trip on a
 // `BENCH_CHECK:` line. This compares each with the round trip the size table records for the
@@ -41,18 +45,20 @@
 //
 // `--render` writes speed.md again from the trials file, with no run (`mise run
 // bench:speed:render`). The trials file carries every trial and every fact of the run it came
-// from, so a change to how this file summarizes or lays out a table is read without ten minutes of
-// Studio, and the table and the trials cannot drift apart.
+// from, so a change to how this file summarizes or lays out a table is read without twenty minutes
+// of Studio, and the table and the trials cannot drift apart.
 import { execFileSync, spawn } from "node:child_process";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { cpus, platform, release } from "node:os";
-import { dirname, join } from "node:path";
+import { dirname, isAbsolute, join, relative, resolve } from "node:path";
 
 const ENVIRONMENT_PREFIX = "BENCH_ENV:";
 const ROW_PREFIX = "BENCH_ROW:";
 const RESULT_PREFIX = "BENCH_RESULT:";
 const CHECK_PREFIX = "BENCH_CHECK:";
 
+/** The repository root, from tests/, where npm runs this file. */
+const REPOSITORY_ROOT = "../..";
 const OUTPUT_PATH = "../../docs/benchmarks/speed.md";
 /**
  * Every trial behind `OUTPUT_PATH`, one line each, under the facts of the run. That file carries a
@@ -89,7 +95,14 @@ const ENTRY_PATH = "scripts/run-in-roblox-benchmarks.luau";
 /** Where a scoped run's copy of the entry script goes; `npm run build` has just made dist/. */
 const SCOPED_ENTRY_PATH = "dist/scoped-benchmarks.luau";
 /** The line of the entry script a scoped run rewrites, which that file documents as fixed. */
-const FIXTURES_MARKER = "local fixtures = {}";
+const SCOPE_MARKER = "local scope = {}";
+/** What `out=` writes a scoped run's tables and trials as, in the directory it names. */
+const SCOPED_OUTPUT_NAME = "speed.md";
+const SCOPED_TRIALS_NAME = "speed-trials.tsv";
+/** The halves of a cell, in the order the suite times them. */
+const HALVES = ["encode", "decode"];
+/** The options a scoped run takes, each a word of the form `<name>=<value>`. */
+const OPTIONS = ["columns", "halves", "runs", "out"];
 
 /**
  * The flag that scopes a run. It is required rather than inferred from "there are arguments", so
@@ -103,13 +116,56 @@ const RENDER_FLAG = "--render";
 /** The label the trials file carries the suite's method under, so a render can restate it. */
 const METHOD_LABEL = "Method";
 
-const argv = process.argv.slice(2);
+// mise quotes a task argument that holds `=` or `,` for a POSIX shell, and on Windows npm runs the
+// script through cmd.exe, which keeps the quotes: `columns=fbs` arrives as `'columns=fbs'`.
+const argv = process.argv.slice(2).map((word) => word.replace(/^'(.*)'$/, "$1"));
 const scoped = argv[0] === SCOPE_FLAG;
 const rendering = argv[0] === RENDER_FLAG;
-const patterns = scoped ? argv.slice(1) : [];
+const words = scoped ? argv.slice(1) : [];
+const patterns = words.filter((word) => !word.includes("="));
+const options = new Map(words.filter((word) => word.includes("=")).map((word) => splitOnce(word, "=")));
 
-if (scoped && patterns.length === 0) {
-	console.error(`${SCOPE_FLAG} needs at least one fixture pattern.`);
+for (const name of options.keys()) {
+	if (!OPTIONS.includes(name)) {
+		console.error(`Unknown option "${name}="; a scoped run takes ${OPTIONS.map((each) => `${each}=`).join(", ")}.`);
+		process.exit(2);
+	}
+}
+/** The column names `columns=` gives, or `undefined` for every column. */
+const columns = options.has("columns")
+	? options
+			.get("columns")
+			.split(",")
+			.filter((name) => name !== "")
+	: undefined;
+if (columns !== undefined && columns.length === 0) {
+	console.error("columns= needs at least one column name.");
+	process.exit(2);
+}
+/** The halves `halves=` gives, each once, or both. */
+const halves = options.has("halves") ? [...new Set(options.get("halves").split(","))] : HALVES;
+if (halves.length === 0 || halves.some((half) => !HALVES.includes(half))) {
+	console.error(`halves= takes encode, decode, or both, comma-separated; it was given "${options.get("halves")}".`);
+	process.exit(2);
+}
+if (scoped && patterns.length === 0 && columns === undefined && halves.length === HALVES.length) {
+	console.error(`${SCOPE_FLAG} needs a row pattern, columns= or one half in halves= to narrow the run.`);
+	process.exit(2);
+}
+if (options.get("out") === "") {
+	console.error("out= needs a directory.");
+	process.exit(2);
+}
+/**
+ * Where `out=` writes a scoped run's tables and trials, or `undefined` to print them only. A
+ * relative path is read from the repository root, as the documentation's paths are, and not from
+ * tests/, where npm runs this file.
+ */
+const outDirectory = options.has("out") ? resolve(REPOSITORY_ROOT, options.get("out")) : undefined;
+// On another drive, `relative` is the absolute path itself.
+const fromBenchmarks = outDirectory === undefined ? ".." : relative(resolve(dirname(OUTPUT_PATH)), outDirectory);
+if (!fromBenchmarks.startsWith("..") && !isAbsolute(fromBenchmarks)) {
+	console.error("out= must name a directory outside docs/benchmarks/, which holds full runs only.");
 	process.exit(2);
 }
 if (rendering && argv.length > 1) {
@@ -121,10 +177,19 @@ if (!scoped && !rendering && argv.length > 0) {
 	process.exit(2);
 }
 
-let runs = scoped ? 1 : RUNS;
+let runs = options.has("runs") ? Number(options.get("runs")) : RUNS;
+if (!Number.isInteger(runs) || runs < 1) {
+	console.error(`runs= takes a whole number of at least 1; it was given "${options.get("runs")}".`);
+	process.exit(2);
+}
 
 /** `fixture -> library -> half -> rates per run`, in the order the first run reported them. */
 const fixtures = new Map();
+/**
+ * The columns, in the order their rows give them. The round-trip checks come first and name every
+ * column of a row, so they set it: the rates come a half at a time, and a column timed on decode
+ * alone would otherwise follow every column timed on encode.
+ */
 const libraries = [];
 const environment = new Map();
 
@@ -207,7 +272,9 @@ function readCheck(line) {
 		process.exit(1);
 	}
 
-	const allowed = recorded.get(name).get(library) ?? 0;
+	// A surge column of its own, `surge (readChecks)` or `surge (cursor)`, writes surge's bytes, so
+	// the size table's surge figure is its own.
+	const allowed = recorded.get(name).get(library.startsWith(`${BASELINE} (`) ? BASELINE : library) ?? 0;
 	const [verdict, error] = roundTrip.split(" ");
 	// Luau prints an infinite difference as `inf`, which `Number` does not read. A cell recorded as
 	// exact fails on any difference, which includes `-0` for `0`, whose difference is 0.
@@ -219,6 +286,7 @@ function readCheck(line) {
 		mismatches.push(message);
 	}
 
+	if (!libraries.includes(library)) libraries.push(library);
 	if (!checked.has(name)) checked.set(name, new Map());
 	const byLibrary = checked.get(name);
 	byLibrary.set(library, (byLibrary.get(library) ?? 0) + 1);
@@ -260,8 +328,8 @@ function splitOnce(text, separator) {
 }
 
 /**
- * The script to inject. A scoped run gets a copy of the entry script with its patterns
- * substituted into the one line that file reserves for them.
+ * The script to inject. A scoped run gets a copy of the entry script with its scope substituted
+ * into the one line that file reserves for it, as the `Scope` src/bench/selection.ts reads.
  */
 function entryScript() {
 	if (!scoped) {
@@ -269,14 +337,17 @@ function entryScript() {
 	}
 
 	const source = readFileSync(ENTRY_PATH, "utf8");
-	if (!source.includes(FIXTURES_MARKER)) {
-		console.error(`${ENTRY_PATH} no longer holds the line \`${FIXTURES_MARKER}\`, so a scoped run has no way in.`);
+	if (!source.includes(SCOPE_MARKER)) {
+		console.error(`${ENTRY_PATH} no longer holds the line \`${SCOPE_MARKER}\`, so a scoped run has no way in.`);
 		process.exit(2);
 	}
 
-	const list = patterns.map((pattern) => `"${pattern.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`).join(", ");
+	const list = (strings) =>
+		`{ ${strings.map((text) => `"${text.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`).join(", ")} }`;
+	const fields = [`fixtures = ${list(patterns)}`, `halves = ${list(halves)}`];
+	if (columns !== undefined) fields.push(`columns = ${list(columns)}`);
 	mkdirSync(dirname(SCOPED_ENTRY_PATH), { recursive: true });
-	writeFileSync(SCOPED_ENTRY_PATH, source.replace(FIXTURES_MARKER, `local fixtures = { ${list} }`), "utf8");
+	writeFileSync(SCOPED_ENTRY_PATH, source.replace(SCOPE_MARKER, `local scope = { ${fields.join(", ")} }`), "utf8");
 	return SCOPED_ENTRY_PATH;
 }
 
@@ -378,23 +449,38 @@ if (rendering) {
 	requireEveryCell();
 	requireEveryCheck();
 	if (scoped) {
-		report();
+		report(runFacts());
 	} else {
 		write(runFacts());
 	}
 }
 
 /**
- * Both halves of every reported cell, in every run, or the file would record a measurement it
- * does not have.
+ * Each column's cell in every run of every half its row reported that the column is timed in on
+ * some row, and surge's cell in every half its row reported, or the file would record a
+ * measurement it does not have. A column the suite times on one half only, `surge (readChecks)`,
+ * is timed in no other half on any row.
  */
 function requireEveryCell() {
+	const timedIn = new Map();
+	for (const byLibrary of fixtures.values()) {
+		for (const [library, byHalf] of byLibrary) {
+			if (!timedIn.has(library)) timedIn.set(library, new Set());
+			for (const half of byHalf.keys()) timedIn.get(library).add(half);
+		}
+	}
+
 	for (const [name, byLibrary] of fixtures) {
-		for (const [library, halves] of byLibrary) {
-			for (const half of ["encode", "decode"]) {
-				const perRun = halves.get(half);
+		const rowHalves = new Set([...byLibrary.values()].flatMap((byHalf) => [...byHalf.keys()]));
+		for (const half of rowHalves) {
+			if (byLibrary.get(BASELINE)?.get(half) === undefined) {
+				console.error(`\n${name} reported no ${BASELINE} ${half} row, so its column has nothing to divide by.`);
+				process.exit(1);
+			}
+			for (const [library, byHalf] of byLibrary) {
+				if (!timedIn.get(library).has(half)) continue;
 				for (let index = 0; index < runs; index += 1) {
-					if (perRun?.[index] === undefined) {
+					if (byHalf.get(half)?.[index] === undefined) {
 						console.error(`\n${name} (${library}) reported no ${half} row in run ${index + 1}.`);
 						process.exit(1);
 					}
@@ -543,45 +629,55 @@ function markdownTable(header, rows) {
 	];
 }
 
+/**
+ * The columns with a cell in `half` on some row, in `libraries` order. A column the suite times on
+ * one half only, such as `surge (readChecks)`, would be a column of empty cells in the other.
+ */
+function librariesIn(cells, half) {
+	return libraries.filter((library) => [...cells.values()].some((byLibrary) => byLibrary.get(library)?.has(half)));
+}
+
 /** Every column's throughput, with its spread, marked where the cell is noisy. */
 function throughputTable(cells, half) {
+	const columns = librariesIn(cells, half);
 	const rows = [];
 	for (const [name, byLibrary] of cells) {
 		referenceOf(name, byLibrary, half);
-		const columns = [name];
-		for (const library of libraries) {
+		const row = [name];
+		for (const library of columns) {
 			const cell = byLibrary.get(library)?.get(half);
 			if (cell === undefined) {
-				columns.push(EMPTY);
+				row.push(EMPTY);
 				continue;
 			}
 			// Per cell rather than per row: the noise here is concentrated in a few
 			// measurements, and a row-wide figure would put their doubt on cells that
 			// do not carry it.
-			columns.push(`${formatRate(cell.median)} ±${formatSpread(cell.spread)}${cell.noisy ? FLAG : ""}`);
+			row.push(`${formatRate(cell.median)} ±${formatSpread(cell.spread)}${cell.noisy ? FLAG : ""}`);
 		}
-		rows.push(columns);
+		rows.push(row);
 	}
-	return markdownTable(["Fixture", ...libraries], rows);
+	return markdownTable(["Fixture", ...columns], rows);
 }
 
 /** Every column's time per value: the throughput table again, as microseconds per call. */
 function timeTable(cells, half) {
+	const columns = librariesIn(cells, half);
 	const rows = [];
 	for (const [name, byLibrary] of cells) {
-		const columns = [name];
-		for (const library of libraries) {
+		const row = [name];
+		for (const library of columns) {
 			const cell = byLibrary.get(library)?.get(half);
-			columns.push(cell === undefined ? EMPTY : `${formatMicroseconds(cell.median)}${cell.noisy ? FLAG : ""}`);
+			row.push(cell === undefined ? EMPTY : `${formatMicroseconds(cell.median)}${cell.noisy ? FLAG : ""}`);
 		}
-		rows.push(columns);
+		rows.push(row);
 	}
-	return markdownTable(["Fixture", ...libraries], rows);
+	return markdownTable(["Fixture", ...columns], rows);
 }
 
 /** Every other column against surge, marked where either side of the ratio is noisy. */
 function ratioTable(cells, half) {
-	const others = libraries.filter((library) => library !== BASELINE);
+	const others = librariesIn(cells, half).filter((library) => library !== BASELINE);
 	const rows = [];
 	for (const [name, byLibrary] of cells) {
 		const reference = referenceOf(name, byLibrary, half);
@@ -685,37 +781,81 @@ function halfSection(cells, half) {
 	];
 }
 
+/** What a scoped run measured, in one sentence: its rows, its columns, its halves and its runs. */
+function scopeDescription(cells) {
+	const rows = `${cells.size} ${cells.size === 1 ? "row" : "rows"}`;
+	const selectedBy = patterns.length === 0 ? "" : ` by the patterns ${patterns.join(", ")}`;
+	const kept = columns === undefined ? "every column" : `surge, the baseline and ${columns.join(", ")}`;
+	return `Scoped to ${rows}${selectedBy}, with ${kept}, timing ${halves.join(" and ")}, in ${runs === 1 ? "one run" : `${runs} runs back to back`}.`;
+}
+
 /**
- * What a scoped run leaves behind: the same tables the file would carry, in the same format, from
- * one run. They are read against another scoped run of the same patterns, though, and not against
- * speed.md: a scoped run is a run of its own, and the results file says a column is read against
- * the other columns of the same run and never against a number from another file. Nothing is
- * written -- the prose of that file describes the whole catalog, and a speed.md holding a few of
- * its rows would read as a result about all of them.
+ * What a scoped run leaves behind: the same tables the file would carry, in the same format, for
+ * the halves it timed. They are read against another scoped run of the same scope, though, and
+ * not against speed.md: a scoped run is a run of its own, and the results file says a column is
+ * read against the other columns of the same run and never against a number from another file.
+ * speed.md is not written -- the prose of that file describes the whole catalog, and a speed.md
+ * holding a few of its rows would read as a result about all of them. With `out=`, the tables and
+ * the trials go into that directory instead, for a paper to be read from.
  */
-function report() {
+function report(facts) {
 	const cells = summaries();
-	const counted = `${cells.size} ${cells.size === 1 ? "fixture" : "fixtures"}`;
-	console.log(`\nscoped to ${counted} by ${patterns.join(", ")}, in one run; ${OUTPUT_PATH} was not rewritten`);
-	console.log(["", ...halfSection(cells, "encode"), "", ...halfSection(cells, "decode")].join("\n"));
+	const sections = halves.flatMap((half, index) => [...(index === 0 ? [] : [""]), ...halfSection(cells, half)]);
+	console.log(`\n${scopeDescription(cells)} ${OUTPUT_PATH} was not rewritten.`);
+	console.log(["", ...sections].join("\n"));
+	if (outDirectory === undefined) {
+		return;
+	}
+
+	const drift = driftFacts(cells);
+	const output = join(outDirectory, SCOPED_OUTPUT_NAME);
+	const lines = [
+		"# Scoped speed run",
+		"",
+		"Written by `mise run bench:speed:only`; do not edit by hand.",
+		"",
+		...wrap(scopeDescription(cells)),
+		...(runs === 1
+			? []
+			: [
+					"",
+					...wrap(
+						`Between the runs, no cell moved by more than ${formatSpread(drift.largest)} and nine in ten by under ${formatSpread(drift.ninthDecile)}.`,
+					),
+				]),
+		"",
+		"The run:",
+		"",
+		...facts.map(([label, value]) => `- ${label}: ${value}`),
+		"",
+		...sections,
+		"",
+	];
+	mkdirSync(outDirectory, { recursive: true });
+	writeFileSync(output, lines.join("\n"), "utf8");
+	console.log(`\nwrote ${output}`);
+	writeTrials([...facts, ["Scope", scopeDescription(cells)]], join(outDirectory, SCOPED_TRIALS_NAME), output);
 }
 
 /**
  * Every trial of every run, one line each, tab-separated because it is read by whatever is at
  * hand rather than by a person. It repeats the table's provenance lines, and the suite's method,
  * so that a pair of files measured together can be told from a pair that was not and so that
- * `--render` can write the table again.
+ * `--render` can write the table again. A scoped run writes its own beside its own tables.
  */
-function writeTrials(facts) {
+function writeTrials(facts, path = TRIALS_PATH, table = OUTPUT_PATH) {
+	const task = scoped ? "mise run bench:speed:only" : "mise run bench:speed";
 	const lines = [
-		"# Trials behind speed.md. Written by `mise run bench:speed`; do not edit by hand.",
+		`# Trials behind ${table.split(/[\\/]/).pop()}. Written by \`${task}\`; do not edit by hand.`,
 		...facts.map(([label, value]) => `# ${label}: ${value}`),
 		`# ${METHOD_LABEL}: ${environment.get("method") ?? "unknown"}`,
 		["fixture", "library", "half", "run", "trial", "rate"].join("\t"),
 	];
 	let count = 0;
 	for (const [name, byLibrary] of fixtures) {
-		for (const [library, halves] of byLibrary) {
+		for (const library of libraries) {
+			const halves = byLibrary.get(library);
+			if (halves === undefined) continue;
 			for (const [half, perRun] of halves) {
 				perRun.forEach((rates, runIndex) => {
 					rates.forEach((rate, trialIndex) => {
@@ -727,9 +867,9 @@ function writeTrials(facts) {
 		}
 	}
 
-	mkdirSync(dirname(TRIALS_PATH), { recursive: true });
-	writeFileSync(TRIALS_PATH, `${lines.join("\n")}\n`, "utf8");
-	console.log(`wrote ${TRIALS_PATH} (${count} trials)`);
+	mkdirSync(dirname(path), { recursive: true });
+	writeFileSync(path, `${lines.join("\n")}\n`, "utf8");
+	console.log(`wrote ${path} (${count} trials)`);
 }
 
 function write(facts) {
@@ -761,6 +901,12 @@ function write(facts) {
 		"On every call, its `deserialize` checks each count against the bytes left,",
 		"raises on a union tag it does not know, and raises unless it read the whole",
 		"buffer; surge's examines its input only under `readChecks`.",
+		"",
+		"`surge (cursor)` is surge's cursor codec, writing every value into one",
+		"`Cursor` it reuses.",
+		"`surge (readChecks)` is surge's codec with `readChecks: true`, timed on",
+		"decode only, since its encode is surge's: the encode tables have no column",
+		"for it.",
 		"",
 		"Each number is one shape in a warm loop, on one machine on one day, not",
 		"an application profile; compare columns within this file only.",

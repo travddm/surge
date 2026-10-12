@@ -182,6 +182,9 @@ export type Transforms = { list: { CFrame } }
 export type Booleans = { values: { boolean } }
 export type Entity = { a: number, b: number, c: number, d: number, e: number, f: number }
 export type Entities = { entities: { { a: number, b: number, c: number, d: number, e: number, f: number } } }
+export type State = ("idle" | "walking" | "running" | "dead")
+export type Update = { id: number, health: number?, name: string?, position: Vector3?, state: ("idle" | "walking" | "running" | "dead")? }
+export type SparseUpdates = { updates: { { id: number, health: number?, name: string?, position: Vector3?, state: ("idle" | "walking" | "running" | "dead")? } } }
 if not RunService:IsRunning() then
 	local NOOP = function() end
 	local Returns = table.freeze({
@@ -1225,6 +1228,166 @@ if not RunService:IsRunning() then
 				local OPERATION_OFFSET_5 = ARRAY_START_1
 				ARRAY_START_1 += 1
 				buffer.writeu8(SendBuffer, OPERATION_OFFSET_5, Item_1.f)
+			end
+			-- END ARRAY
+			-- Buffer restore
+			local Result = buffer.create(SendCursor)
+			buffer.copy(Result, 0, SendBuffer, 0, SendCursor)
+			Load(Previous)
+			return Result
+		end
+	},
+	SparseUpdates = {
+		Read = function(Buffer: buffer): (SparseUpdates)
+			-- Buffer overwrite
+			local PreviousCursor = RecieveCursor
+			local PreviousBuffer = RecieveBuffer
+			local PreviousInstanceCursor = RecieveInstanceCursor
+			RecieveCursor = 0
+			RecieveBuffer = Buffer
+			-- Read BLOCK: 2 bytes
+			local BLOCK_START = Read(2)
+			-- Buffer read
+			local Value = {} :: any
+			-- START ARRAY
+			local Length = buffer.readu16(RecieveBuffer, BLOCK_START + 0)
+			if Length < 0 then error(`Expected "Length" to be larger than 0, got {Length} instead.`) end
+			if Length > 65535 then error(`Expected "Length" to be smaller than 65535, got {Length} instead.`) end
+			Value.updates = table.create(Length)
+				-- Read BLOCK: 6 bytes
+			local ARRAY_START_1 = Read(6 * Length)
+			for Index = 1, Length do
+				local Item_1 = {} :: any
+				-- Read 2
+				local OPERATION_OFFSET_0 = ARRAY_START_1
+				ARRAY_START_1 += 2
+				Item_1.id = buffer.readu16(RecieveBuffer, OPERATION_OFFSET_0)
+				-- Read 1
+				local OPERATION_OFFSET_1 = ARRAY_START_1
+				ARRAY_START_1 += 1
+				if buffer.readu8(RecieveBuffer, OPERATION_OFFSET_1) == 1 then
+					-- Read BLOCK: 2 bytes
+					local BLOCK_START = Read(2)
+					Item_1.health = buffer.readu16(RecieveBuffer, BLOCK_START + 0)
+				end
+				-- Read 1
+				local OPERATION_OFFSET_2 = ARRAY_START_1
+				ARRAY_START_1 += 1
+				if buffer.readu8(RecieveBuffer, OPERATION_OFFSET_2) == 1 then
+					-- Read BLOCK: 2 bytes
+					local BLOCK_START = Read(2)
+					Length = buffer.readu16(RecieveBuffer, BLOCK_START + 0)
+					Item_1.name = buffer.readstring(RecieveBuffer, Read(Length), Length)
+				end
+				-- Read 1
+				local OPERATION_OFFSET_3 = ARRAY_START_1
+				ARRAY_START_1 += 1
+				if buffer.readu8(RecieveBuffer, OPERATION_OFFSET_3) == 1 then
+					-- Read BLOCK: 12 bytes
+					local BLOCK_START = Read(12)
+					local X = buffer.readf32(RecieveBuffer, BLOCK_START + 0)
+					local Y = buffer.readf32(RecieveBuffer, BLOCK_START + 4)
+					local Z = buffer.readf32(RecieveBuffer, BLOCK_START + 8)
+					Item_1.position = Vector3.new(X, Y, Z)
+				end
+				-- Read 1
+				local OPERATION_OFFSET_4 = ARRAY_START_1
+				ARRAY_START_1 += 1
+				if buffer.readu8(RecieveBuffer, OPERATION_OFFSET_4) == 1 then
+					-- Read BLOCK: 1 bytes
+					local BLOCK_START = Read(1)
+					Item_1.state = true :: any
+					local Index = buffer.readu8(RecieveBuffer, BLOCK_START + 0)
+					if Index == 0 then
+						Item_1.state = "idle"
+					elseif Index == 1 then
+						Item_1.state = "walking"
+					elseif Index == 2 then
+						Item_1.state = "running"
+					elseif Index == 3 then
+						Item_1.state = "dead"
+					else
+						error(`Unexpected enum: {Index}`)
+					end
+				end
+				table.insert(Value.updates, Item_1)
+			end
+			-- END ARRAY
+			-- Buffer restore
+			RecieveCursor = PreviousCursor
+			RecieveBuffer = PreviousBuffer
+			RecieveInstanceCursor = PreviousInstanceCursor
+			return Value
+		end,
+		Write = function(Value: SparseUpdates): (buffer)
+			-- Buffer overwrite
+			local Previous = Save()
+			Load()
+			-- Allocate BLOCK: 2 bytes
+			local BLOCK_START = Allocate(2)
+			-- Buffer write
+			-- START ARRAY
+			buffer.writeu16(SendBuffer, BLOCK_START + 0, #Value.updates)
+				-- Allocate BLOCK: 6 bytes
+			local ARRAY_START_1 = Allocate(6 * #Value.updates)
+			for Index = 1, #Value.updates do
+				local Item_1 = Value.updates[Index]
+				-- Allocate 2
+				local OPERATION_OFFSET_0 = ARRAY_START_1
+				ARRAY_START_1 += 2
+				buffer.writeu16(SendBuffer, OPERATION_OFFSET_0, Item_1.id)
+				-- Allocate 1
+				local OPERATION_OFFSET_1 = ARRAY_START_1
+				ARRAY_START_1 += 1
+				buffer.writeu8(SendBuffer, OPERATION_OFFSET_1, Item_1.health ~= nil and 1 or 0)
+				if Item_1.health ~= nil then
+					-- Allocate BLOCK: 2 bytes
+					local BLOCK_START = Allocate(2)
+					buffer.writeu16(SendBuffer, BLOCK_START + 0, Item_1.health)
+				end
+				-- Allocate 1
+				local OPERATION_OFFSET_2 = ARRAY_START_1
+				ARRAY_START_1 += 1
+				buffer.writeu8(SendBuffer, OPERATION_OFFSET_2, Item_1.name ~= nil and 1 or 0)
+				if Item_1.name ~= nil then
+					-- Allocate BLOCK: 2 bytes
+					local BLOCK_START = Allocate(2)
+					local Length = #Item_1.name
+					buffer.writeu16(SendBuffer, BLOCK_START + 0, Length)
+					Allocate(Length)
+					buffer.writestring(SendBuffer, SendOffset, Item_1.name, Length)
+				end
+				-- Allocate 1
+				local OPERATION_OFFSET_3 = ARRAY_START_1
+				ARRAY_START_1 += 1
+				buffer.writeu8(SendBuffer, OPERATION_OFFSET_3, Item_1.position ~= nil and 1 or 0)
+				if Item_1.position ~= nil then
+					-- Allocate BLOCK: 12 bytes
+					local BLOCK_START = Allocate(12)
+					local Vector = Item_1.position
+					buffer.writef32(SendBuffer, BLOCK_START + 0, Vector.X)
+					buffer.writef32(SendBuffer, BLOCK_START + 4, Vector.Y)
+					buffer.writef32(SendBuffer, BLOCK_START + 8, Vector.Z)
+				end
+				-- Allocate 1
+				local OPERATION_OFFSET_4 = ARRAY_START_1
+				ARRAY_START_1 += 1
+				buffer.writeu8(SendBuffer, OPERATION_OFFSET_4, Item_1.state ~= nil and 1 or 0)
+				if Item_1.state ~= nil then
+					-- Allocate BLOCK: 1 bytes
+					local BLOCK_START = Allocate(1)
+					if Item_1.state == "idle" then
+						buffer.writeu8(SendBuffer, BLOCK_START + 0, 0)
+					elseif Item_1.state == "walking" then
+						buffer.writeu8(SendBuffer, BLOCK_START + 0, 1)
+					elseif Item_1.state == "running" then
+						buffer.writeu8(SendBuffer, BLOCK_START + 0, 2)
+					elseif Item_1.state == "dead" then
+						buffer.writeu8(SendBuffer, BLOCK_START + 0, 3)
+					else
+						error(`Unexpected enum: {Item_1.state}, expected one of "idle" or "walking" or "running" or "dead".`)
+					end
+				end
 			end
 			-- END ARRAY
 			-- Buffer restore
@@ -2359,6 +2522,166 @@ local Returns = table.freeze({
 				local OPERATION_OFFSET_5 = ARRAY_START_1
 				ARRAY_START_1 += 1
 				buffer.writeu8(SendBuffer, OPERATION_OFFSET_5, Item_1.f)
+			end
+			-- END ARRAY
+			-- Buffer restore
+			local Result = buffer.create(SendCursor)
+			buffer.copy(Result, 0, SendBuffer, 0, SendCursor)
+			Load(Previous)
+			return Result
+		end
+	},
+	SparseUpdates = {
+		Read = function(Buffer: buffer): (SparseUpdates)
+			-- Buffer overwrite
+			local PreviousCursor = RecieveCursor
+			local PreviousBuffer = RecieveBuffer
+			local PreviousInstanceCursor = RecieveInstanceCursor
+			RecieveCursor = 0
+			RecieveBuffer = Buffer
+			-- Read BLOCK: 2 bytes
+			local BLOCK_START = Read(2)
+			-- Buffer read
+			local Value = {} :: any
+			-- START ARRAY
+			local Length = buffer.readu16(RecieveBuffer, BLOCK_START + 0)
+			if Length < 0 then error(`Expected "Length" to be larger than 0, got {Length} instead.`) end
+			if Length > 65535 then error(`Expected "Length" to be smaller than 65535, got {Length} instead.`) end
+			Value.updates = table.create(Length)
+				-- Read BLOCK: 6 bytes
+			local ARRAY_START_1 = Read(6 * Length)
+			for Index = 1, Length do
+				local Item_1 = {} :: any
+				-- Read 2
+				local OPERATION_OFFSET_0 = ARRAY_START_1
+				ARRAY_START_1 += 2
+				Item_1.id = buffer.readu16(RecieveBuffer, OPERATION_OFFSET_0)
+				-- Read 1
+				local OPERATION_OFFSET_1 = ARRAY_START_1
+				ARRAY_START_1 += 1
+				if buffer.readu8(RecieveBuffer, OPERATION_OFFSET_1) == 1 then
+					-- Read BLOCK: 2 bytes
+					local BLOCK_START = Read(2)
+					Item_1.health = buffer.readu16(RecieveBuffer, BLOCK_START + 0)
+				end
+				-- Read 1
+				local OPERATION_OFFSET_2 = ARRAY_START_1
+				ARRAY_START_1 += 1
+				if buffer.readu8(RecieveBuffer, OPERATION_OFFSET_2) == 1 then
+					-- Read BLOCK: 2 bytes
+					local BLOCK_START = Read(2)
+					Length = buffer.readu16(RecieveBuffer, BLOCK_START + 0)
+					Item_1.name = buffer.readstring(RecieveBuffer, Read(Length), Length)
+				end
+				-- Read 1
+				local OPERATION_OFFSET_3 = ARRAY_START_1
+				ARRAY_START_1 += 1
+				if buffer.readu8(RecieveBuffer, OPERATION_OFFSET_3) == 1 then
+					-- Read BLOCK: 12 bytes
+					local BLOCK_START = Read(12)
+					local X = buffer.readf32(RecieveBuffer, BLOCK_START + 0)
+					local Y = buffer.readf32(RecieveBuffer, BLOCK_START + 4)
+					local Z = buffer.readf32(RecieveBuffer, BLOCK_START + 8)
+					Item_1.position = Vector3.new(X, Y, Z)
+				end
+				-- Read 1
+				local OPERATION_OFFSET_4 = ARRAY_START_1
+				ARRAY_START_1 += 1
+				if buffer.readu8(RecieveBuffer, OPERATION_OFFSET_4) == 1 then
+					-- Read BLOCK: 1 bytes
+					local BLOCK_START = Read(1)
+					Item_1.state = true :: any
+					local Index = buffer.readu8(RecieveBuffer, BLOCK_START + 0)
+					if Index == 0 then
+						Item_1.state = "idle"
+					elseif Index == 1 then
+						Item_1.state = "walking"
+					elseif Index == 2 then
+						Item_1.state = "running"
+					elseif Index == 3 then
+						Item_1.state = "dead"
+					else
+						error(`Unexpected enum: {Index}`)
+					end
+				end
+				table.insert(Value.updates, Item_1)
+			end
+			-- END ARRAY
+			-- Buffer restore
+			RecieveCursor = PreviousCursor
+			RecieveBuffer = PreviousBuffer
+			RecieveInstanceCursor = PreviousInstanceCursor
+			return Value
+		end,
+		Write = function(Value: SparseUpdates): (buffer)
+			-- Buffer overwrite
+			local Previous = Save()
+			Load()
+			-- Allocate BLOCK: 2 bytes
+			local BLOCK_START = Allocate(2)
+			-- Buffer write
+			-- START ARRAY
+			buffer.writeu16(SendBuffer, BLOCK_START + 0, #Value.updates)
+				-- Allocate BLOCK: 6 bytes
+			local ARRAY_START_1 = Allocate(6 * #Value.updates)
+			for Index = 1, #Value.updates do
+				local Item_1 = Value.updates[Index]
+				-- Allocate 2
+				local OPERATION_OFFSET_0 = ARRAY_START_1
+				ARRAY_START_1 += 2
+				buffer.writeu16(SendBuffer, OPERATION_OFFSET_0, Item_1.id)
+				-- Allocate 1
+				local OPERATION_OFFSET_1 = ARRAY_START_1
+				ARRAY_START_1 += 1
+				buffer.writeu8(SendBuffer, OPERATION_OFFSET_1, Item_1.health ~= nil and 1 or 0)
+				if Item_1.health ~= nil then
+					-- Allocate BLOCK: 2 bytes
+					local BLOCK_START = Allocate(2)
+					buffer.writeu16(SendBuffer, BLOCK_START + 0, Item_1.health)
+				end
+				-- Allocate 1
+				local OPERATION_OFFSET_2 = ARRAY_START_1
+				ARRAY_START_1 += 1
+				buffer.writeu8(SendBuffer, OPERATION_OFFSET_2, Item_1.name ~= nil and 1 or 0)
+				if Item_1.name ~= nil then
+					-- Allocate BLOCK: 2 bytes
+					local BLOCK_START = Allocate(2)
+					local Length = #Item_1.name
+					buffer.writeu16(SendBuffer, BLOCK_START + 0, Length)
+					Allocate(Length)
+					buffer.writestring(SendBuffer, SendOffset, Item_1.name, Length)
+				end
+				-- Allocate 1
+				local OPERATION_OFFSET_3 = ARRAY_START_1
+				ARRAY_START_1 += 1
+				buffer.writeu8(SendBuffer, OPERATION_OFFSET_3, Item_1.position ~= nil and 1 or 0)
+				if Item_1.position ~= nil then
+					-- Allocate BLOCK: 12 bytes
+					local BLOCK_START = Allocate(12)
+					local Vector = Item_1.position
+					buffer.writef32(SendBuffer, BLOCK_START + 0, Vector.X)
+					buffer.writef32(SendBuffer, BLOCK_START + 4, Vector.Y)
+					buffer.writef32(SendBuffer, BLOCK_START + 8, Vector.Z)
+				end
+				-- Allocate 1
+				local OPERATION_OFFSET_4 = ARRAY_START_1
+				ARRAY_START_1 += 1
+				buffer.writeu8(SendBuffer, OPERATION_OFFSET_4, Item_1.state ~= nil and 1 or 0)
+				if Item_1.state ~= nil then
+					-- Allocate BLOCK: 1 bytes
+					local BLOCK_START = Allocate(1)
+					if Item_1.state == "idle" then
+						buffer.writeu8(SendBuffer, BLOCK_START + 0, 0)
+					elseif Item_1.state == "walking" then
+						buffer.writeu8(SendBuffer, BLOCK_START + 0, 1)
+					elseif Item_1.state == "running" then
+						buffer.writeu8(SendBuffer, BLOCK_START + 0, 2)
+					elseif Item_1.state == "dead" then
+						buffer.writeu8(SendBuffer, BLOCK_START + 0, 3)
+					else
+						error(`Unexpected enum: {Item_1.state}, expected one of "idle" or "walking" or "running" or "dead".`)
+					end
+				end
 			end
 			-- END ARRAY
 			-- Buffer restore

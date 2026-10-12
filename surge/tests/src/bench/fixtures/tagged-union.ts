@@ -11,6 +11,7 @@ import { fbsAdapter } from "../adapters/fbs";
 import { flamework2Adapter } from "../adapters/flamework2";
 import { serioAdapter } from "../adapters/serio";
 import { surgeAdapter } from "../adapters/surge";
+import { cursorAdapter } from "../adapters/surge-cursor";
 import { zapAdapter } from "../adapters/zap";
 import { taggedUnion as baselineCodec } from "../baseline/codecs";
 import { TaggedUnion as blinkCodec } from "../blink/server";
@@ -19,6 +20,8 @@ import { flamework2Serializer } from "../codecs/tagged-union/flamework2";
 import { serioSerializer } from "../codecs/tagged-union/serio";
 import type { Event, FbsTaggedUnion, SerioTaggedUnion, TaggedUnion } from "../codecs/tagged-union/shapes";
 import { serializer } from "../codecs/tagged-union/surge";
+import { checkedSerializer } from "../codecs/tagged-union/surge-checked";
+import { cursorSerializer } from "../codecs/tagged-union/surge-cursor";
 
 const COUNT = 100;
 
@@ -62,6 +65,8 @@ export const taggedUnion: Fixture = {
 	note: `${COUNT} events over four variants, discriminated by a literal field`,
 	entries: [
 		defineEntry<TaggedUnion>("surge", { events }, surgeAdapter(serializer)),
+		defineEntry<TaggedUnion>("surge (cursor)", { events }, cursorAdapter(cursorSerializer)),
+		defineEntry<TaggedUnion>("surge (readChecks)", { events }, surgeAdapter(checkedSerializer)),
 		defineEntry<FbsTaggedUnion>("fbs", { events }, fbsAdapter(fbsSerializer)),
 		defineEntry<SerioTaggedUnion>("serio", { events }, serioAdapter(serioSerializer)),
 		defineEntry<TaggedUnion>("flamework2", { events }, flamework2Adapter(flamework2Serializer)),

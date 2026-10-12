@@ -21,8 +21,10 @@ The change:
 - both are stored back to the closure, so the next call starts from a grown
   buffer.
 
-The rows it touches are string-heavy, the large record, and both packed
-`CFrame` rows, which share one module.
+The rows it touches are string-heavy, the large record, the set, the tuples
+with a rest, the sequences, and both packed `CFrame` rows, which share one
+module. The tree's `serialize` is not sized either, but it reaches a
+recursion helper (see Constraints).
 
 **A string's reservation joined with the fixed-size bytes beside it.** A
 `str` reserves its count and bytes at once (5.19), and a run of fixed-size
@@ -52,9 +54,10 @@ read at offsets from the string's end. The rows it touches:
 ## Why deferred
 
 Both were found while reviewing the results of the `smaller-generated-code`
-branch. They come after
-[benchmark-coverage-and-scoped-runs.md](benchmark-coverage-and-scoped-runs.md),
-so that their measurements are scoped runs over the larger catalog.
+branch. They were put after the catalog gained its rows and its scoped runs
+(Benchmark harness 3.1 and 9 in
+[specs/benchmark-harness.md](../specs/benchmark-harness.md)), so that their
+measurements are scoped runs over the larger catalog.
 
 ## Constraints
 
@@ -98,6 +101,3 @@ Each change is kept only if its measurement passes its keep rule.
   locals, and renaming the closure's, leaves most anchors as they are. A
   TypeScript `let` cannot read an outer variable of its own name in its
   initializer, so the two need different names.
-- A sequence is not sized (5.20), so the sequence row in
-  [benchmark-coverage-and-scoped-runs.md](benchmark-coverage-and-scoped-runs.md)
-  also uses the scratch path.

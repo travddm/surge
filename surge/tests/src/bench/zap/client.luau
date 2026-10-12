@@ -135,6 +135,9 @@ if not RunService:IsRunning() then
 		Wide = table.freeze({
 			SetCallback = noop
 		}),
+		Updates = table.freeze({
+			SetCallback = noop
+		}),
 		Tagged = table.freeze({
 			SetCallback = noop
 		}),
@@ -159,6 +162,9 @@ if not RunService:IsRunning() then
 		Large = table.freeze({
 			SetCallback = noop
 		}),
+		Ids = table.freeze({
+			SetCallback = noop
+		}),
 		Guarded = table.freeze({
 			SetCallback = noop
 		}),
@@ -181,27 +187,31 @@ local remotes = ReplicatedStorage:WaitForChild("ZAP")
 local reliable = remotes:WaitForChild("ZAP_RELIABLE")
 assert(reliable:IsA("RemoteEvent"), "Expected ZAP_RELIABLE to be a RemoteEvent")
 
-export type Third = ({
-	["leaf"]: ({
-		["name"]: (string),
-		["weight"]: (number),
-	}),
-	["flag"]: (boolean),
+export type Booleans = ({
+	["values"]: ({ (boolean) }),
 })
-export type Toggles = ({
-	["a"]: (boolean),
-	["b"]: (boolean),
-	["c"]: (boolean),
-	["d"]: (boolean),
-	["e"]: (boolean),
-	["f"]: (boolean),
-	["g"]: (boolean),
-	["h"]: (boolean),
-	["i"]: (boolean),
-	["j"]: (boolean),
-	["level"]: (number),
-	["label"]: ((string)?),
-	["offset"]: ((number)?),
+export type First = ({
+	["inner"]: ({
+		["inner"]: ({
+			["leaf"]: ({
+				["name"]: (string),
+				["weight"]: (number),
+			}),
+			["flag"]: (boolean),
+		}),
+		["count"]: (number),
+	}),
+	["label"]: (string),
+})
+export type LeaderboardEntry = ({
+	["name"]: (string),
+	["score"]: (number),
+	["userId"]: (number),
+})
+export type StringHeavy = ({
+	["title"]: (string),
+	["author"]: (string),
+	["lines"]: ({ (string) }),
 })
 export type WideStruct = ({
 	["f1"]: (number),
@@ -255,11 +265,15 @@ export type WideStruct = ({
 	["f49"]: (number),
 	["f50"]: (number),
 })
-export type LargeRecord = ({
-	["entries"]: ({ [(string)]: (number) }),
-})
-export type NestedArrays = ({
-	["rows"]: ({ ({ (number) }) }),
+export type Second = ({
+	["inner"]: ({
+		["leaf"]: ({
+			["name"]: (string),
+			["weight"]: (number),
+		}),
+		["flag"]: (boolean),
+	}),
+	["count"]: (number),
 })
 export type Event = ({
 	["kind"]: "spawn",
@@ -277,22 +291,7 @@ export type Event = ({
 	["kind"]: "despawn",
 	["id"]: (number),
 })
-export type NestedObject = ({
-	["root"]: ({
-		["inner"]: ({
-			["inner"]: ({
-				["leaf"]: ({
-					["name"]: (string),
-					["weight"]: (number),
-				}),
-				["flag"]: (boolean),
-			}),
-			["count"]: (number),
-		}),
-		["label"]: (string),
-	}),
-	["version"]: (number),
-})
+export type State = ("idle" | "walking" | "running" | "dead")
 export type SmallFlatStruct = ({
 	["id"]: (number),
 	["x"]: (number),
@@ -300,30 +299,17 @@ export type SmallFlatStruct = ({
 	["z"]: (number),
 	["active"]: (boolean),
 })
-export type First = ({
-	["inner"]: ({
-		["inner"]: ({
-			["leaf"]: ({
-				["name"]: (string),
-				["weight"]: (number),
-			}),
-			["flag"]: (boolean),
-		}),
-		["count"]: (number),
-	}),
-	["label"]: (string),
+export type NestedArrays = ({
+	["rows"]: ({ ({ (number) }) }),
 })
-export type LeaderboardEntry = ({
-	["name"]: (string),
-	["score"]: (number),
-	["userId"]: (number),
+export type Leaderboard = ({
+	["entries"]: ({ ({
+		["name"]: (string),
+		["score"]: (number),
+		["userId"]: (number),
+	}) }),
 })
-export type Transforms = ({
-	["list"]: ({ (CFrame) }),
-})
-export type Booleans = ({
-	["values"]: ({ (boolean) }),
-})
+export type Value = ((string) | (number) | (boolean))
 export type Entities = ({
 	["entities"]: ({ ({
 		["a"]: (number),
@@ -334,7 +320,13 @@ export type Entities = ({
 		["f"]: (number),
 	}) }),
 })
-export type Value = ((string) | (number) | (boolean))
+export type Third = ({
+	["leaf"]: ({
+		["name"]: (string),
+		["weight"]: (number),
+	}),
+	["flag"]: (boolean),
+})
 export type TaggedUnion = ({
 	["events"]: ({ ({
 		["kind"]: "spawn",
@@ -353,27 +345,60 @@ export type TaggedUnion = ({
 		["id"]: (number),
 	}) }),
 })
-export type StringHeavy = ({
-	["title"]: (string),
-	["author"]: (string),
-	["lines"]: ({ (string) }),
+export type Toggles = ({
+	["a"]: (boolean),
+	["b"]: (boolean),
+	["c"]: (boolean),
+	["d"]: (boolean),
+	["e"]: (boolean),
+	["f"]: (boolean),
+	["g"]: (boolean),
+	["h"]: (boolean),
+	["i"]: (boolean),
+	["j"]: (boolean),
+	["level"]: (number),
+	["label"]: ((string)?),
+	["offset"]: ((number)?),
 })
-export type Second = ({
-	["inner"]: ({
-		["leaf"]: ({
-			["name"]: (string),
-			["weight"]: (number),
+export type Transforms = ({
+	["list"]: ({ (CFrame) }),
+})
+export type NestedObject = ({
+	["root"]: ({
+		["inner"]: ({
+			["inner"]: ({
+				["leaf"]: ({
+					["name"]: (string),
+					["weight"]: (number),
+				}),
+				["flag"]: (boolean),
+			}),
+			["count"]: (number),
 		}),
-		["flag"]: (boolean),
+		["label"]: (string),
 	}),
-	["count"]: (number),
+	["version"]: (number),
 })
-export type Leaderboard = ({
-	["entries"]: ({ ({
-		["name"]: (string),
-		["score"]: (number),
-		["userId"]: (number),
+export type LargeArray = ({
+	["values"]: ({ (number) }),
+})
+export type SparseUpdates = ({
+	["updates"]: ({ ({
+		["id"]: (number),
+		["health"]: ((number)?),
+		["name"]: ((string)?),
+		["position"]: ((vector)?),
+		["state"]: (("idle" | "walking" | "running" | "dead")?),
 	}) }),
+})
+export type LargeRecord = ({
+	["entries"]: ({ [(string)]: (number) }),
+})
+export type IdSet = ({
+	["ids"]: ({ [(number)]: any }),
+})
+export type GuardedUnion = ({
+	["values"]: ({ ((string) | (number) | (boolean)) }),
 })
 export type Entity = ({
 	["a"]: (number),
@@ -383,15 +408,16 @@ export type Entity = ({
 	["e"]: (number),
 	["f"]: (number),
 })
-export type LargeArray = ({
-	["values"]: ({ (number) }),
+export type Update = ({
+	["id"]: (number),
+	["health"]: ((number)?),
+	["name"]: ((string)?),
+	["position"]: ((vector)?),
+	["state"]: (("idle" | "walking" | "running" | "dead")?),
 })
 export type Leaf = ({
 	["name"]: (string),
 	["weight"]: (number),
-})
-export type GuardedUnion = ({
-	["values"]: ({ ((string) | (number) | (boolean)) }),
 })
 
 local function SendEvents()
@@ -408,9 +434,10 @@ local function SendEvents()
 	end
 end
 
-local reliable_events = table.create(14)
-local reliable_event_queue: { [number]: { any } } = table.create(14)
+local reliable_events = table.create(16)
+local reliable_event_queue: { [number]: { any } } = table.create(16)
 reliable_event_queue[12] = {}
+reliable_event_queue[14] = {}
 reliable_event_queue[7] = {}
 reliable_event_queue[5] = {}
 reliable_event_queue[0] = {}
@@ -419,6 +446,7 @@ reliable_event_queue[3] = {}
 reliable_event_queue[4] = {}
 reliable_event_queue[1] = {}
 reliable_event_queue[2] = {}
+reliable_event_queue[15] = {}
 reliable_event_queue[13] = {}
 reliable_event_queue[9] = {}
 reliable_event_queue[8] = {}
@@ -493,32 +521,81 @@ reliable.OnClientEvent:Connect(function(buff, inst)
 					warn(`[ZAP] {#reliable_event_queue[12]} events in queue for Wide. Did you forget to attach a listener?`)
 				end
 			end
-		elseif id == 7 then -- Tagged
+		elseif id == 14 then -- Updates
 			local value
 			value = {  }
 			local len_1 = buffer.readu16(incoming_buff, read(2))
-			value["events"] = table.create(len_1)
+			value["updates"] = table.create(len_1)
 			for i_1 = 1, len_1 do
 				local bool_1 = buffer.readu8(incoming_buff, read(1))
 				local val_1
+				val_1 = {  }
+				val_1["id"] = buffer.readu16(incoming_buff, read(2))
 				if bit32.btest(bool_1, 0b0000000000000001) then
-					val_1 = { ["kind"] = "spawn" }
-					val_1["id"] = buffer.readu32(incoming_buff, read(4))
-					val_1["at"] = vector.create(buffer.readf32(incoming_buff, read(4)), buffer.readf32(incoming_buff, read(4)), buffer.readf32(incoming_buff, read(4)))
-				elseif bit32.btest(bool_1, 0b0000000000000010) then
-					val_1 = { ["kind"] = "damage" }
-					val_1["id"] = buffer.readu32(incoming_buff, read(4))
-					val_1["amount"] = buffer.readu16(incoming_buff, read(2))
-				elseif bit32.btest(bool_1, 0b0000000000000100) then
-					val_1 = { ["kind"] = "chat" }
-					val_1["id"] = buffer.readu32(incoming_buff, read(4))
-					local len_2 = buffer.readu16(incoming_buff, read(2))
-					val_1["text"] = buffer.readstring(incoming_buff, read(len_2), len_2)
-				elseif bit32.btest(bool_1, 0b0000000000001000) then
-					val_1 = { ["kind"] = "despawn" }
-					val_1["id"] = buffer.readu32(incoming_buff, read(4))
+					val_1["health"] = buffer.readu16(incoming_buff, read(2))
+				else
+					val_1["health"] = nil
 				end
-				value["events"][i_1] = val_1
+				if bit32.btest(bool_1, 0b0000000000000010) then
+					local len_2 = buffer.readu16(incoming_buff, read(2))
+					val_1["name"] = buffer.readstring(incoming_buff, read(len_2), len_2)
+				else
+					val_1["name"] = nil
+				end
+				if bit32.btest(bool_1, 0b0000000000000100) then
+					val_1["position"] = vector.create(buffer.readf32(incoming_buff, read(4)), buffer.readf32(incoming_buff, read(4)), buffer.readf32(incoming_buff, read(4)))
+				else
+					val_1["position"] = nil
+				end
+				if bit32.btest(bool_1, 0b0000000000001000) then
+					if bit32.btest(bool_1, 0b0000000000010000) then
+						val_1["state"] = "idle"
+					elseif bit32.btest(bool_1, 0b0000000000100000) then
+						val_1["state"] = "walking"
+					elseif bit32.btest(bool_1, 0b0000000001000000) then
+						val_1["state"] = "running"
+					elseif bit32.btest(bool_1, 0b0000000010000000) then
+						val_1["state"] = "dead"
+					end
+				else
+					val_1["state"] = nil
+				end
+				value["updates"][i_1] = val_1
+			end
+			if reliable_events[14] then
+				reliable_events[14](value)
+			else
+				table.insert(reliable_event_queue[14], value)
+				if #reliable_event_queue[14] > 64 then
+					warn(`[ZAP] {#reliable_event_queue[14]} events in queue for Updates. Did you forget to attach a listener?`)
+				end
+			end
+		elseif id == 7 then -- Tagged
+			local value
+			value = {  }
+			local len_3 = buffer.readu16(incoming_buff, read(2))
+			value["events"] = table.create(len_3)
+			for i_2 = 1, len_3 do
+				local bool_2 = buffer.readu8(incoming_buff, read(1))
+				local val_2
+				if bit32.btest(bool_2, 0b0000000000000001) then
+					val_2 = { ["kind"] = "spawn" }
+					val_2["id"] = buffer.readu32(incoming_buff, read(4))
+					val_2["at"] = vector.create(buffer.readf32(incoming_buff, read(4)), buffer.readf32(incoming_buff, read(4)), buffer.readf32(incoming_buff, read(4)))
+				elseif bit32.btest(bool_2, 0b0000000000000010) then
+					val_2 = { ["kind"] = "damage" }
+					val_2["id"] = buffer.readu32(incoming_buff, read(4))
+					val_2["amount"] = buffer.readu16(incoming_buff, read(2))
+				elseif bit32.btest(bool_2, 0b0000000000000100) then
+					val_2 = { ["kind"] = "chat" }
+					val_2["id"] = buffer.readu32(incoming_buff, read(4))
+					local len_4 = buffer.readu16(incoming_buff, read(2))
+					val_2["text"] = buffer.readstring(incoming_buff, read(len_4), len_4)
+				elseif bit32.btest(bool_2, 0b0000000000001000) then
+					val_2 = { ["kind"] = "despawn" }
+					val_2["id"] = buffer.readu32(incoming_buff, read(4))
+				end
+				value["events"][i_2] = val_2
 			end
 			if reliable_events[7] then
 				reliable_events[7](value)
@@ -531,17 +608,17 @@ reliable.OnClientEvent:Connect(function(buff, inst)
 		elseif id == 5 then -- Strings
 			local value
 			value = {  }
-			local len_3 = buffer.readu16(incoming_buff, read(2))
-			value["title"] = buffer.readstring(incoming_buff, read(len_3), len_3)
-			local len_4 = buffer.readu16(incoming_buff, read(2))
-			value["author"] = buffer.readstring(incoming_buff, read(len_4), len_4)
 			local len_5 = buffer.readu16(incoming_buff, read(2))
-			value["lines"] = table.create(len_5)
-			for i_2 = 1, len_5 do
-				local val_2
-				local len_6 = buffer.readu16(incoming_buff, read(2))
-				val_2 = buffer.readstring(incoming_buff, read(len_6), len_6)
-				value["lines"][i_2] = val_2
+			value["title"] = buffer.readstring(incoming_buff, read(len_5), len_5)
+			local len_6 = buffer.readu16(incoming_buff, read(2))
+			value["author"] = buffer.readstring(incoming_buff, read(len_6), len_6)
+			local len_7 = buffer.readu16(incoming_buff, read(2))
+			value["lines"] = table.create(len_7)
+			for i_3 = 1, len_7 do
+				local val_3
+				local len_8 = buffer.readu16(incoming_buff, read(2))
+				val_3 = buffer.readstring(incoming_buff, read(len_8), len_8)
+				value["lines"][i_3] = val_3
 			end
 			if reliable_events[5] then
 				reliable_events[5](value)
@@ -553,13 +630,13 @@ reliable.OnClientEvent:Connect(function(buff, inst)
 			end
 		elseif id == 0 then -- SmallFlat
 			local value
-			local bool_2 = buffer.readu8(incoming_buff, read(1))
+			local bool_3 = buffer.readu8(incoming_buff, read(1))
 			value = {  }
 			value["id"] = buffer.readu32(incoming_buff, read(4))
 			value["x"] = buffer.readf32(incoming_buff, read(4))
 			value["y"] = buffer.readf32(incoming_buff, read(4))
 			value["z"] = buffer.readf32(incoming_buff, read(4))
-			value["active"] = bit32.btest(bool_2, 0b0000000000000001)
+			value["active"] = bit32.btest(bool_3, 0b0000000000000001)
 			if reliable_events[0] then
 				reliable_events[0](value)
 			else
@@ -571,16 +648,16 @@ reliable.OnClientEvent:Connect(function(buff, inst)
 		elseif id == 6 then -- Scores
 			local value
 			value = {  }
-			local len_7 = buffer.readu16(incoming_buff, read(2))
-			value["entries"] = table.create(len_7)
-			for i_3 = 1, len_7 do
-				local val_3
-				val_3 = {  }
-				local len_8 = buffer.readu16(incoming_buff, read(2))
-				val_3["name"] = buffer.readstring(incoming_buff, read(len_8), len_8)
-				val_3["score"] = buffer.readu32(incoming_buff, read(4))
-				val_3["userId"] = buffer.readf64(incoming_buff, read(8))
-				value["entries"][i_3] = val_3
+			local len_9 = buffer.readu16(incoming_buff, read(2))
+			value["entries"] = table.create(len_9)
+			for i_4 = 1, len_9 do
+				local val_4
+				val_4 = {  }
+				local len_10 = buffer.readu16(incoming_buff, read(2))
+				val_4["name"] = buffer.readstring(incoming_buff, read(len_10), len_10)
+				val_4["score"] = buffer.readu32(incoming_buff, read(4))
+				val_4["userId"] = buffer.readf64(incoming_buff, read(8))
+				value["entries"][i_4] = val_4
 			end
 			if reliable_events[6] then
 				reliable_events[6](value)
@@ -593,18 +670,18 @@ reliable.OnClientEvent:Connect(function(buff, inst)
 		elseif id == 3 then -- Rows
 			local value
 			value = {  }
-			local len_9 = buffer.readu16(incoming_buff, read(2))
-			value["rows"] = table.create(len_9)
-			for i_4 = 1, len_9 do
-				local val_4
-				local len_10 = buffer.readu16(incoming_buff, read(2))
-				val_4 = table.create(len_10)
-				for i_5 = 1, len_10 do
-					local val_5
-					val_5 = buffer.readu16(incoming_buff, read(2))
-					val_4[i_5] = val_5
+			local len_11 = buffer.readu16(incoming_buff, read(2))
+			value["rows"] = table.create(len_11)
+			for i_5 = 1, len_11 do
+				local val_5
+				local len_12 = buffer.readu16(incoming_buff, read(2))
+				val_5 = table.create(len_12)
+				for i_6 = 1, len_12 do
+					local val_6
+					val_6 = buffer.readu16(incoming_buff, read(2))
+					val_5[i_6] = val_6
 				end
-				value["rows"][i_4] = val_4
+				value["rows"][i_5] = val_5
 			end
 			if reliable_events[3] then
 				reliable_events[3](value)
@@ -616,17 +693,17 @@ reliable.OnClientEvent:Connect(function(buff, inst)
 			end
 		elseif id == 4 then -- Record
 			local value
-			local bool_3 = buffer.readu8(incoming_buff, read(1))
+			local bool_4 = buffer.readu8(incoming_buff, read(1))
 			value = {  }
 			value["entries"] = {  }
-			if not bit32.btest(bool_3, 0b0000000000000001) then
+			if not bit32.btest(bool_4, 0b0000000000000001) then
 				for _ = 1, buffer.readu16(incoming_buff, read(2)) + 1 do
 					local key_1
-					local val_6
-					local len_11 = buffer.readu16(incoming_buff, read(2))
-					key_1 = buffer.readstring(incoming_buff, read(len_11), len_11)
-					val_6 = buffer.readu8(incoming_buff, read(1))
-					value["entries"][key_1] = val_6
+					local val_7
+					local len_13 = buffer.readu16(incoming_buff, read(2))
+					key_1 = buffer.readstring(incoming_buff, read(len_13), len_13)
+					val_7 = buffer.readu8(incoming_buff, read(1))
+					value["entries"][key_1] = val_7
 				end
 			end
 			if reliable_events[4] then
@@ -639,19 +716,19 @@ reliable.OnClientEvent:Connect(function(buff, inst)
 			end
 		elseif id == 1 then -- Nested
 			local value
-			local bool_4 = buffer.readu8(incoming_buff, read(1))
+			local bool_5 = buffer.readu8(incoming_buff, read(1))
 			value = {  }
 			value["root"] = {  }
 			value["root"]["inner"] = {  }
 			value["root"]["inner"]["inner"] = {  }
 			value["root"]["inner"]["inner"]["leaf"] = {  }
-			local len_12 = buffer.readu16(incoming_buff, read(2))
-			value["root"]["inner"]["inner"]["leaf"]["name"] = buffer.readstring(incoming_buff, read(len_12), len_12)
+			local len_14 = buffer.readu16(incoming_buff, read(2))
+			value["root"]["inner"]["inner"]["leaf"]["name"] = buffer.readstring(incoming_buff, read(len_14), len_14)
 			value["root"]["inner"]["inner"]["leaf"]["weight"] = buffer.readf32(incoming_buff, read(4))
-			value["root"]["inner"]["inner"]["flag"] = bit32.btest(bool_4, 0b0000000000000001)
+			value["root"]["inner"]["inner"]["flag"] = bit32.btest(bool_5, 0b0000000000000001)
 			value["root"]["inner"]["count"] = buffer.readu16(incoming_buff, read(2))
-			local len_13 = buffer.readu16(incoming_buff, read(2))
-			value["root"]["label"] = buffer.readstring(incoming_buff, read(len_13), len_13)
+			local len_15 = buffer.readu16(incoming_buff, read(2))
+			value["root"]["label"] = buffer.readstring(incoming_buff, read(len_15), len_15)
 			value["version"] = buffer.readu8(incoming_buff, read(1))
 			if reliable_events[1] then
 				reliable_events[1](value)
@@ -664,12 +741,12 @@ reliable.OnClientEvent:Connect(function(buff, inst)
 		elseif id == 2 then -- Large
 			local value
 			value = {  }
-			local len_14 = buffer.readu16(incoming_buff, read(2))
-			value["values"] = table.create(len_14)
-			for i_6 = 1, len_14 do
-				local val_7
-				val_7 = buffer.readu16(incoming_buff, read(2))
-				value["values"][i_6] = val_7
+			local len_16 = buffer.readu16(incoming_buff, read(2))
+			value["values"] = table.create(len_16)
+			for i_7 = 1, len_16 do
+				local val_8
+				val_8 = buffer.readu16(incoming_buff, read(2))
+				value["values"][i_7] = val_8
 			end
 			if reliable_events[2] then
 				reliable_events[2](value)
@@ -679,23 +756,43 @@ reliable.OnClientEvent:Connect(function(buff, inst)
 					warn(`[ZAP] {#reliable_event_queue[2]} events in queue for Large. Did you forget to attach a listener?`)
 				end
 			end
+		elseif id == 15 then -- Ids
+			local value
+			local bool_6 = buffer.readu8(incoming_buff, read(1))
+			value = {  }
+			value["ids"] = {  }
+			if not bit32.btest(bool_6, 0b0000000000000001) then
+				for _ = 1, buffer.readu16(incoming_buff, read(2)) + 1 do
+					local key_2
+					key_2 = buffer.readu16(incoming_buff, read(2))
+					value["ids"][key_2] = true
+				end
+			end
+			if reliable_events[15] then
+				reliable_events[15](value)
+			else
+				table.insert(reliable_event_queue[15], value)
+				if #reliable_event_queue[15] > 64 then
+					warn(`[ZAP] {#reliable_event_queue[15]} events in queue for Ids. Did you forget to attach a listener?`)
+				end
+			end
 		elseif id == 13 then -- Guarded
 			local value
 			value = {  }
-			local len_15 = buffer.readu16(incoming_buff, read(2))
-			value["values"] = table.create(len_15)
-			for i_7 = 1, len_15 do
-				local bool_5 = buffer.readu8(incoming_buff, read(1))
-				local val_8
-				if bit32.btest(bool_5, 0b0000000000000001) then
-					local len_16 = buffer.readu16(incoming_buff, read(2))
-					val_8 = buffer.readstring(incoming_buff, read(len_16), len_16)
-				elseif bit32.btest(bool_5, 0b0000000000000010) then
-					val_8 = buffer.readf64(incoming_buff, read(8))
-				elseif bit32.btest(bool_5, 0b0000000000000100) then
-					val_8 = bit32.btest(bool_5, 0b0000000000001000)
+			local len_17 = buffer.readu16(incoming_buff, read(2))
+			value["values"] = table.create(len_17)
+			for i_8 = 1, len_17 do
+				local bool_7 = buffer.readu8(incoming_buff, read(1))
+				local val_9
+				if bit32.btest(bool_7, 0b0000000000000001) then
+					local len_18 = buffer.readu16(incoming_buff, read(2))
+					val_9 = buffer.readstring(incoming_buff, read(len_18), len_18)
+				elseif bit32.btest(bool_7, 0b0000000000000010) then
+					val_9 = buffer.readf64(incoming_buff, read(8))
+				elseif bit32.btest(bool_7, 0b0000000000000100) then
+					val_9 = bit32.btest(bool_7, 0b0000000000001000)
 				end
-				value["values"][i_7] = val_8
+				value["values"][i_8] = val_9
 			end
 			if reliable_events[13] then
 				reliable_events[13](value)
@@ -708,19 +805,19 @@ reliable.OnClientEvent:Connect(function(buff, inst)
 		elseif id == 9 then -- Frames
 			local value
 			value = {  }
-			local len_17 = buffer.readu16(incoming_buff, read(2))
-			value["list"] = table.create(len_17)
-			for i_8 = 1, len_17 do
-				local val_9
+			local len_19 = buffer.readu16(incoming_buff, read(2))
+			value["list"] = table.create(len_19)
+			for i_9 = 1, len_19 do
+				local val_10
 				local pos_1 = Vector3.new(buffer.readf32(incoming_buff, read(4)), buffer.readf32(incoming_buff, read(4)), buffer.readf32(incoming_buff, read(4)))
 				local axisangle_1 = Vector3.new(buffer.readf32(incoming_buff, read(4)), buffer.readf32(incoming_buff, read(4)), buffer.readf32(incoming_buff, read(4)))
 				local angle_1 = axisangle_1.Magnitude
 				if angle_1 ~= 0 then
-					val_9 = CFrame.fromAxisAngle(axisangle_1, angle_1) + pos_1
+					val_10 = CFrame.fromAxisAngle(axisangle_1, angle_1) + pos_1
 				else
-					val_9 = CFrame.new(pos_1)
+					val_10 = CFrame.new(pos_1)
 				end
-				value["list"][i_8] = val_9
+				value["list"][i_9] = val_10
 			end
 			if reliable_events[9] then
 				reliable_events[9](value)
@@ -732,26 +829,26 @@ reliable.OnClientEvent:Connect(function(buff, inst)
 			end
 		elseif id == 8 then -- Flags
 			local value
-			local bool_6 = buffer.readu16(incoming_buff, read(2))
+			local bool_8 = buffer.readu16(incoming_buff, read(2))
 			value = {  }
-			value["a"] = bit32.btest(bool_6, 0b0000000000000001)
-			value["b"] = bit32.btest(bool_6, 0b0000000000000010)
-			value["c"] = bit32.btest(bool_6, 0b0000000000000100)
-			value["d"] = bit32.btest(bool_6, 0b0000000000001000)
-			value["e"] = bit32.btest(bool_6, 0b0000000000010000)
-			value["f"] = bit32.btest(bool_6, 0b0000000000100000)
-			value["g"] = bit32.btest(bool_6, 0b0000000001000000)
-			value["h"] = bit32.btest(bool_6, 0b0000000010000000)
-			value["i"] = bit32.btest(bool_6, 0b0000000100000000)
-			value["j"] = bit32.btest(bool_6, 0b0000001000000000)
+			value["a"] = bit32.btest(bool_8, 0b0000000000000001)
+			value["b"] = bit32.btest(bool_8, 0b0000000000000010)
+			value["c"] = bit32.btest(bool_8, 0b0000000000000100)
+			value["d"] = bit32.btest(bool_8, 0b0000000000001000)
+			value["e"] = bit32.btest(bool_8, 0b0000000000010000)
+			value["f"] = bit32.btest(bool_8, 0b0000000000100000)
+			value["g"] = bit32.btest(bool_8, 0b0000000001000000)
+			value["h"] = bit32.btest(bool_8, 0b0000000010000000)
+			value["i"] = bit32.btest(bool_8, 0b0000000100000000)
+			value["j"] = bit32.btest(bool_8, 0b0000001000000000)
 			value["level"] = buffer.readu8(incoming_buff, read(1))
-			if bit32.btest(bool_6, 0b0000010000000000) then
-				local len_18 = buffer.readu16(incoming_buff, read(2))
-				value["label"] = buffer.readstring(incoming_buff, read(len_18), len_18)
+			if bit32.btest(bool_8, 0b0000010000000000) then
+				local len_20 = buffer.readu16(incoming_buff, read(2))
+				value["label"] = buffer.readstring(incoming_buff, read(len_20), len_20)
 			else
 				value["label"] = nil
 			end
-			if bit32.btest(bool_6, 0b0000100000000000) then
+			if bit32.btest(bool_8, 0b0000100000000000) then
 				value["offset"] = buffer.readi16(incoming_buff, read(2))
 			else
 				value["offset"] = nil
@@ -767,20 +864,20 @@ reliable.OnClientEvent:Connect(function(buff, inst)
 		elseif id == 11 then -- Ents
 			local value
 			value = {  }
-			local len_19 = buffer.readu16(incoming_buff, read(2))
-			assert(len_19 >= 0, "value is less than 0!")
-			assert(len_19 <= 1000, "value is more than 1000!")
-			value["entities"] = table.create(len_19)
-			for i_9 = 1, len_19 do
-				local val_10
-				val_10 = {  }
-				val_10["a"] = buffer.readu8(incoming_buff, read(1))
-				val_10["b"] = buffer.readu8(incoming_buff, read(1))
-				val_10["c"] = buffer.readu8(incoming_buff, read(1))
-				val_10["d"] = buffer.readu8(incoming_buff, read(1))
-				val_10["e"] = buffer.readu8(incoming_buff, read(1))
-				val_10["f"] = buffer.readu8(incoming_buff, read(1))
-				value["entities"][i_9] = val_10
+			local len_21 = buffer.readu16(incoming_buff, read(2))
+			assert(len_21 >= 0, "value is less than 0!")
+			assert(len_21 <= 1000, "value is more than 1000!")
+			value["entities"] = table.create(len_21)
+			for i_10 = 1, len_21 do
+				local val_11
+				val_11 = {  }
+				val_11["a"] = buffer.readu8(incoming_buff, read(1))
+				val_11["b"] = buffer.readu8(incoming_buff, read(1))
+				val_11["c"] = buffer.readu8(incoming_buff, read(1))
+				val_11["d"] = buffer.readu8(incoming_buff, read(1))
+				val_11["e"] = buffer.readu8(incoming_buff, read(1))
+				val_11["f"] = buffer.readu8(incoming_buff, read(1))
+				value["entities"][i_10] = val_11
 			end
 			if reliable_events[11] then
 				reliable_events[11](value)
@@ -793,15 +890,15 @@ reliable.OnClientEvent:Connect(function(buff, inst)
 		elseif id == 10 then -- Bools
 			local value
 			value = {  }
-			local len_20 = buffer.readu16(incoming_buff, read(2))
-			assert(len_20 >= 0, "value is less than 0!")
-			assert(len_20 <= 1000, "value is more than 1000!")
-			value["values"] = table.create(len_20)
-			for i_10 = 1, len_20 do
-				local bool_7 = buffer.readu8(incoming_buff, read(1))
-				local val_11
-				val_11 = bit32.btest(bool_7, 0b0000000000000001)
-				value["values"][i_10] = val_11
+			local len_22 = buffer.readu16(incoming_buff, read(2))
+			assert(len_22 >= 0, "value is less than 0!")
+			assert(len_22 <= 1000, "value is more than 1000!")
+			value["values"] = table.create(len_22)
+			for i_11 = 1, len_22 do
+				local bool_9 = buffer.readu8(incoming_buff, read(1))
+				local val_12
+				val_12 = bit32.btest(bool_9, 0b0000000000000001)
+				value["values"][i_11] = val_12
 			end
 			if reliable_events[10] then
 				reliable_events[10](value)
@@ -882,6 +979,27 @@ local returns = {
 			reliable_event_queue[12] = {}
 			return function()
 				reliable_events[12] = nil
+			end
+		end,
+	},
+	Updates = {
+		SetCallback = function(Callback: (Value: ({
+			["updates"]: ({ ({
+				["id"]: (number),
+				["health"]: ((number)?),
+				["name"]: ((string)?),
+				["position"]: ((vector)?),
+				["state"]: (("idle" | "walking" | "running" | "dead")?),
+			}) }),
+		})) -> ()): () -> ()
+			reliable_events[14] = Callback
+			for _, value in reliable_event_queue[14] do
+				Callback(value				)
+
+			end
+			reliable_event_queue[14] = {}
+			return function()
+				reliable_events[14] = nil
 			end
 		end,
 	},
@@ -1040,6 +1158,21 @@ local returns = {
 			reliable_event_queue[2] = {}
 			return function()
 				reliable_events[2] = nil
+			end
+		end,
+	},
+	Ids = {
+		SetCallback = function(Callback: (Value: ({
+			["ids"]: ({ [(number)]: any }),
+		})) -> ()): () -> ()
+			reliable_events[15] = Callback
+			for _, value in reliable_event_queue[15] do
+				Callback(value				)
+
+			end
+			reliable_event_queue[15] = {}
+			return function()
+				reliable_events[15] = nil
 			end
 		end,
 	},

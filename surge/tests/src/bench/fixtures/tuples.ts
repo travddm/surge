@@ -8,12 +8,15 @@ import { fbsAdapter } from "../adapters/fbs";
 import { flamework2Adapter } from "../adapters/flamework2";
 import { serioAdapter } from "../adapters/serio";
 import { surgeAdapter } from "../adapters/surge";
+import { cursorAdapter } from "../adapters/surge-cursor";
 import { tuples as baselineCodec } from "../baseline/codecs";
 import { fbsSerializer } from "../codecs/tuples/fbs";
 import { flamework2Serializer } from "../codecs/tuples/flamework2";
 import { serioSerializer } from "../codecs/tuples/serio";
 import type { FbsSamples, Sample, Samples, SerioSamples } from "../codecs/tuples/shapes";
 import { serializer } from "../codecs/tuples/surge";
+import { checkedSerializer } from "../codecs/tuples/surge-checked";
+import { cursorSerializer } from "../codecs/tuples/surge-cursor";
 
 const COUNT = 50;
 
@@ -28,6 +31,8 @@ export const tuples: Fixture = {
 	note: `${COUNT} tuples of a u16 and two f32`,
 	entries: [
 		defineEntry<Samples>("surge", { samples }, surgeAdapter(serializer)),
+		defineEntry<Samples>("surge (cursor)", { samples }, cursorAdapter(cursorSerializer)),
+		defineEntry<Samples>("surge (readChecks)", { samples }, surgeAdapter(checkedSerializer)),
 		defineEntry<FbsSamples>("fbs", { samples }, fbsAdapter(fbsSerializer)),
 		defineEntry<SerioSamples>("serio", { samples }, serioAdapter(serioSerializer)),
 		defineEntry<Samples>("flamework2", { samples }, flamework2Adapter(flamework2Serializer)),

@@ -17,6 +17,9 @@ local process = require("@lune/process")
 local CODECS_DIRECTORY = "out/bench/codecs"
 local OUTPUT_PATH = "../../docs/benchmarks/code-size.md"
 local LIBRARIES = { "surge", "fbs", "serio", "flamework2" }
+-- The last part of the name of a codec module the speed tier alone reads: a surge column of
+-- Benchmark harness 4.13 or 4.14 in docs/specs/benchmark-harness.md, which has no cell here.
+local SPEED_ONLY = { checked = true, cursor = true }
 local BASELINE = "surge"
 local EMPTY = "—"
 -- The level a published place compiles at, which the modules' own `--!optimize 2` asks for as
@@ -41,7 +44,7 @@ end
 -- its only one.
 local function parse(fileName)
 	local stem = fileName:match("^(.+)%.luau$")
-	if not stem or stem == "shapes" then
+	if not stem or stem == "shapes" or SPEED_ONLY[stem:match("([^%-]+)$")] then
 		return nil
 	end
 	for _, library in LIBRARIES do

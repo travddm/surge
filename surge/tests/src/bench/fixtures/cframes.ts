@@ -13,6 +13,7 @@ import { fbsAdapter } from "../adapters/fbs";
 import { flamework2Adapter } from "../adapters/flamework2";
 import { serioAdapter } from "../adapters/serio";
 import { surgeAdapter } from "../adapters/surge";
+import { cursorAdapter } from "../adapters/surge-cursor";
 import { zapAdapter } from "../adapters/zap";
 import { transforms as baselineCodec } from "../baseline/codecs";
 import { Transforms as blinkCodec } from "../blink/server";
@@ -21,9 +22,16 @@ import { fbsPackedSerializer } from "../codecs/cframes/fbs-packed";
 import { flamework2Serializer } from "../codecs/cframes/flamework2";
 import { serioSerializer } from "../codecs/cframes/serio";
 import { serioPackedSerializer } from "../codecs/cframes/serio-packed";
-import type { Transforms } from "../codecs/cframes/shapes";
+import type { QuantizedTransforms, Transforms } from "../codecs/cframes/shapes";
 import { serializer } from "../codecs/cframes/surge";
+import { checkedSerializer } from "../codecs/cframes/surge-checked";
+import { cursorSerializer } from "../codecs/cframes/surge-cursor";
 import { packedSerializer } from "../codecs/cframes/surge-packed";
+import { checkedPackedSerializer } from "../codecs/cframes/surge-packed-checked";
+import { cursorPackedSerializer } from "../codecs/cframes/surge-packed-cursor";
+import { quantizedSerializer } from "../codecs/cframes/surge-quantized";
+import { checkedQuantizedSerializer } from "../codecs/cframes/surge-quantized-checked";
+import { cursorQuantizedSerializer } from "../codecs/cframes/surge-quantized-cursor";
 
 const COUNT = 50;
 
@@ -64,6 +72,8 @@ export const cframeArray: Fixture = {
 	note: `${COUNT} arbitrary rotations, unpacked: position plus axis-angle`,
 	entries: [
 		defineEntry<Transforms>("surge", { list: arbitrary }, surgeAdapter(serializer)),
+		defineEntry<Transforms>("surge (cursor)", { list: arbitrary }, cursorAdapter(cursorSerializer)),
+		defineEntry<Transforms>("surge (readChecks)", { list: arbitrary }, surgeAdapter(checkedSerializer)),
 		defineEntry<Transforms>("fbs", { list: arbitrary }, fbsAdapter(fbsSerializer)),
 		defineEntry<Transforms>("serio", { list: arbitrary }, serioAdapter(serioSerializer)),
 		defineEntry<Transforms>("flamework2", { list: arbitrary }, flamework2Adapter(flamework2Serializer)),
@@ -82,6 +92,16 @@ export const cframeArrayPackedAligned: Fixture = {
 	note: `${COUNT} axis-aligned rotations in \`Packed<T>\`: header byte plus position`,
 	entries: [
 		defineEntry<DataType.Packed<Transforms>>("surge", { list: aligned }, surgeAdapter(packedSerializer)),
+		defineEntry<DataType.Packed<Transforms>>(
+			"surge (cursor)",
+			{ list: aligned },
+			cursorAdapter(cursorPackedSerializer),
+		),
+		defineEntry<DataType.Packed<Transforms>>(
+			"surge (readChecks)",
+			{ list: aligned },
+			surgeAdapter(checkedPackedSerializer),
+		),
 		defineEntry<Fbs.Packed<Transforms>>("fbs", { list: aligned }, fbsAdapter(fbsPackedSerializer)),
 		defineEntry<Serio.Packed<Transforms>>("serio", { list: aligned }, serioAdapter(serioPackedSerializer)),
 	],
@@ -92,7 +112,37 @@ export const cframeArrayPackedArbitrary: Fixture = {
 	note: `${COUNT} arbitrary rotations in \`Packed<T>\`: header byte, position, and axis-angle`,
 	entries: [
 		defineEntry<DataType.Packed<Transforms>>("surge", { list: arbitrary }, surgeAdapter(packedSerializer)),
+		defineEntry<DataType.Packed<Transforms>>(
+			"surge (cursor)",
+			{ list: arbitrary },
+			cursorAdapter(cursorPackedSerializer),
+		),
+		defineEntry<DataType.Packed<Transforms>>(
+			"surge (readChecks)",
+			{ list: arbitrary },
+			surgeAdapter(checkedPackedSerializer),
+		),
 		defineEntry<Fbs.Packed<Transforms>>("fbs", { list: arbitrary }, fbsAdapter(fbsPackedSerializer)),
 		defineEntry<Serio.Packed<Transforms>>("serio", { list: arbitrary }, serioAdapter(serioPackedSerializer)),
+	],
+};
+
+export const cframeArrayQuantized: Fixture = {
+	name: "CFrame array (quantized)",
+	note: `${COUNT} arbitrary rotations in \`Quantized<CFrame>\`: position plus a rotation of three i16`,
+	entries: [
+		defineEntry<QuantizedTransforms>("surge", { list: arbitrary }, surgeAdapter(quantizedSerializer)),
+		defineEntry<QuantizedTransforms>(
+			"surge (cursor)",
+			{ list: arbitrary },
+			cursorAdapter(cursorQuantizedSerializer),
+		),
+		defineEntry<QuantizedTransforms>(
+			"surge (readChecks)",
+			{ list: arbitrary },
+			surgeAdapter(checkedQuantizedSerializer),
+		),
+		defineEntry<Transforms>("fbs", { list: arbitrary }, fbsAdapter(fbsSerializer)),
+		defineEntry<Transforms>("serio", { list: arbitrary }, serioAdapter(serioSerializer)),
 	],
 };

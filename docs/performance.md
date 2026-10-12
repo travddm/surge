@@ -71,8 +71,10 @@ measured in
 ## What to expect
 
 - **Against flamework-binary-serializer**, surge encodes and decodes faster on
-  every shape in the benchmark catalog, and writes the same bytes on most of
-  them. The numbers are in [benchmarks/speed.md](benchmarks/speed.md) and
+  every shape in the benchmark catalog but one, and writes the same bytes on
+  most of them. On the layout row, fbs encodes faster because it passes each
+  `Vector2` and `UDim2` beside the buffer instead of writing it. The numbers
+  are in [benchmarks/speed.md](benchmarks/speed.md) and
   [benchmarks/size.md](benchmarks/size.md).
 - **Against hand-written Luau** that writes the same bytes, on the ten
   shapes of the benchmark catalog that have a hand-written codec, surge's

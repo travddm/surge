@@ -149,14 +149,16 @@ would have to be an opt-in API, since a reused buffer is dead the moment
 anything calls `serialize()` again, and what it is worth is unmeasured. The
 cursor codec (Runtime API 3.15 in
 [specs/runtime-api.md](../specs/runtime-api.md)) writes into a buffer the
-caller owns and reuses instead, and what writing that way is worth against
-`serialize` is unmeasured too.
+caller owns and reuses instead. The speed tier's `surge (cursor)` column
+times writing that way against `serialize` (Benchmark harness 4.14 in
+[specs/benchmark-harness.md](../specs/benchmark-harness.md)), and no paper
+has read it yet.
 
 **A cursor codec's write.** A cursor codec writes every shape through the
 scratch path, with a capacity check at each reservation (Transformer 5.3). A
 shape sized exactly could check the room for its size once, and write with no
-check per reservation. That is a second form of the body, and measuring it
-needs a catalog row that writes into a cursor, which the catalog lacks.
+check per reservation. That is a second form of the body, and the
+`surge (cursor)` column is the cell that measures it.
 
 **Kinds exact sizing leaves out.** An array of unions, of objects whose size
 varies, and of arrays, is sized by a loop ahead of the result (Transformer
@@ -206,8 +208,9 @@ byte order either way.
 - **A tuple's rest.** A tuple's fixed-size rest elements still reserve one at
   a time, where an array's reserve all at once (Transformer 5.18), with
   `reserveElements`. Sharing the fixed elements' reservation paid
-  ([tuple-reservations.md](../research/tuple-reservations.md)), but the
-  tuples row has no rest, and no catalog row has a tuple with one.
+  ([tuple-reservations.md](../research/tuple-reservations.md)), on the
+  tuples row, which has no rest; the tuples with a rest row is where this
+  would be measured.
 
 **Smaller items.** The scratch buffer only grows, so one large
 payload pins its memory for the module's lifetime. A change that shrinks it
@@ -274,9 +277,9 @@ untouched libraries in the same runs as controls. The
 per-call gap is closed on the flat struct, the nested object, the `CFrame`
 array, the packed toggles, the leaderboard, the tree, the instance
 references, the tagged union, the tuples and the nested arrays.
-Everything else is small, or needs a fixture before anything can measure it:
-[benchmark-coverage-and-scoped-runs.md](benchmark-coverage-and-scoped-runs.md)
-adds a cursor codec, a tuple with a rest and a sequence.
+Everything else is small, or has had a row to be measured on only since the
+catalog gained the tuples with a rest and the sequences (Benchmark harness
+3.1 in [specs/benchmark-harness.md](../specs/benchmark-harness.md)).
 
 ## How, briefly
 

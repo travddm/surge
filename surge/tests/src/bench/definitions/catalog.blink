@@ -188,3 +188,17 @@ struct Entity {
 export struct Entities {
     entities: Entity[0..1000],
 }
+
+enum State = { idle, walking, running, dead }
+
+struct Update {
+    id: u16,
+    health: u16?,
+    name: string?,
+    position: vector?,
+    state: State?,
+}
+
+export struct SparseUpdates {
+    updates: Update[],
+}

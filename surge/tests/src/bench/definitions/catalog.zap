@@ -292,3 +292,35 @@ event Guarded = {
 	call: SingleSync,
 	data: GuardedUnion,
 }
+
+type State = enum { idle, walking, running, dead }
+
+type Update = struct {
+	id: u16,
+	health: u16?,
+	name: string.binary?,
+	position: vector?,
+	state: State?,
+}
+
+type SparseUpdates = struct {
+	updates: Update[],
+}
+
+event Updates = {
+	from: Server,
+	type: Reliable,
+	call: SingleSync,
+	data: SparseUpdates,
+}
+
+type IdSet = struct {
+	ids: set { u16 },
+}
+
+event Ids = {
+	from: Server,
+	type: Reliable,
+	call: SingleSync,
+	data: IdSet,
+}

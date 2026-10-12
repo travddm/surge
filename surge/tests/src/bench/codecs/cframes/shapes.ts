@@ -1,3 +1,5 @@
+import type { DataType } from "@rbxts/surge";
+
 /**
  * No width brands, so the unpacked shape is the same for all three; only the
  * `Packed<T>` wrapper comes from each library's own namespace. serio stores a
@@ -13,4 +15,16 @@
  */
 export interface Transforms {
 	list: CFrame[];
+}
+
+/**
+ * The same rotations in surge's 18-byte `Quantized` form. fbs and serio have
+ * no such brand, so their cells write their `CFrame` as the CFrame array's do:
+ * serio quantized to 18 bytes as it always is, which is the comparison, and
+ * fbs at full width, a second control for a scoped run (Benchmark harness 9.3
+ * in docs/specs/benchmark-harness.md). Flamework 2, Blink and Zap would write
+ * full width too, and the CFrame array row times them on the same rotations.
+ */
+export interface QuantizedTransforms {
+	list: Array<DataType.Quantized<CFrame>>;
 }

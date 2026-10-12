@@ -1,7 +1,7 @@
 # Benchmark harness specification
 
 Status: current
-Applies to: commit `362a52a` (no tagged release yet)
+Applies to: commit `cd61fe7` (no tagged release yet)
 
 ## 1. Scope
 
@@ -17,24 +17,29 @@ results file records. How to run a tier and read a result is in
 - **Row**: one shape in the catalog: a `Fixture` that a module under
   `tests/src/bench/fixtures/` exports. One module may export more than one
   row.
-- **Column**: one library, or the hand-written baseline.
+- **Column**: one library, a second surge codec (4.13, 4.14), or the
+  hand-written baseline.
 - **Cell**: one column's measurement of one row. In the speed tier, a cell is
   also one half: encode or decode.
 - **Trial**: one timed measurement of a cell.
 - **Run**: one pass of the speed suite over the catalog in one Studio
   process.
 - **Invocation**: one `mise run bench:speed`, which is two runs back to back.
-- **Scoped run**: a run over only the rows a pattern selects.
+- **Scoped run**: a run over only the rows, columns and halves its scope
+  selects (9).
 
 ## 3. The catalog
 
-**3.1** The catalog is the 21 rows `CATALOG` in `tests/src/bench/catalog.ts`
+**3.1** The catalog is the 27 rows `CATALOG` in `tests/src/bench/catalog.ts`
 lists, and the size and speed tiers read it.
 
 **3.2** A row holds one sample value, built with the seeded `Rng` where it
-needs bulk data so that it is reproducible. The large record is the one
-exception: fbs and serio take its pairs as a `Map`, and every other column
-takes the same pairs as a table.
+needs bulk data so that it is reproducible, and every column encodes the
+same value, with two exceptions of form. fbs and serio take the large
+record's pairs as a `Map`, where every other column takes the same pairs as a
+table. Zap takes the tagged union's and the sparse updates' vectors as Luau's
+native `vector`, which its generated code reads, where every other column
+takes a `Vector3` of the same components.
 
 **3.3** Every column is driven through the same interface:
 
@@ -57,7 +62,9 @@ declaration. Blink's and Zap's declarations are in their definition files
 one statement of a module of its own, under
 `tests/src/bench/codecs/<fixture>/`: `surge.ts`, `fbs.ts` and `serio.ts`, with
 a suffix where a fixture has more than one shape, such as `surge-packed.ts`.
-Flamework 2's module for a row is the `flamework2.luau` there, with the same
+A second surge codec (4.13, 4.14) has a module of its own beside surge's,
+with its suffix last, such as `surge-checked.ts` and
+`surge-packed-cursor.ts`. Flamework 2's module for a row is the `flamework2.luau` there, with the same
 suffixes, that 4.11 generates. A fixture's shapes are in the `shapes.ts`
 beside them, which holds types only.
 The fixture module under `tests/src/bench/fixtures/` holds the sample values
@@ -112,16 +119,17 @@ sources in `tests/flamework2/src/` carry both. serio's modules carry neither.
 **4.8** An adapter uses what a library returns the way that library's own
 documentation shows, and does no other work in a timed call. surge's adapter
 keeps what `serialize` returns as the payload, and passes it to `deserialize`
-unchanged. fbs's keeps the table `serialize`
-returns and passes its `buffer` and `blobs` to `deserialize`. serio's keeps the `SerializedData`
-`serialize` returns and passes it to `deserialize`. Blink's and the
-baseline's keep what their write function returns: the buffer, or for the
-baseline's instance references, the table of the buffer and the blobs, which
-its read function takes back. Flamework 2's keeps the buffer `serialize`
-returns and passes it to `deserialize`. On the instance references, where
+unchanged. fbs's keeps the table `serialize` returns and passes its `buffer`
+and `blobs` to `deserialize`. serio's keeps the `SerializedData` `serialize`
+returns and passes it to `deserialize`. Blink's and the baseline's keep what
+their write function returns: the buffer, or for the baseline's instance
+references, the table of the buffer and the blobs, which its read function
+takes back. Flamework 2's keeps the buffer `serialize` returns and passes it
+to `deserialize`. On the instance references and the sequences, where
 `serialize` returns the buffer and the blob list as two values, its adapter
 creates a table of the two to carry them to `decode`: the one table an
-adapter creates in a timed call.
+adapter creates in a timed call. The cursor column's adapter resets the
+cursor it reuses, as 4.14 states.
 
 **4.10** Flamework 2 is the experimental `@flamework-experimental/core` and
 `@flamework-experimental/transformer`, at the exact version that
@@ -143,6 +151,23 @@ Flamework 2 cell. On every call, its `deserialize` checks each count against
 the bytes left in the buffer, raises on a union tag it does not know, and
 raises unless it read the buffer to its end. surge's `deserialize` examines
 its input only under `readChecks`.
+
+**4.13** The `surge (readChecks)` column is each row's surge declaration
+again, through `createCodec<T>({ readChecks: true })` in a `-checked` module
+(3.6) and surge's adapter. The speed suite times its decode only, since its
+encode runs the code surge's column runs. It has no cell in the size tier or
+the code-size tier, since its bytes are surge's, and its round-trip check
+(6.6) is held to surge's figure in the size table.
+
+**4.14** The `surge (cursor)` column is each row's surge declaration again,
+through `createCursorCodec<T>()` in a `-cursor` module (3.6) and
+`tests/src/bench/adapters/surge-cursor.ts`. Its adapter writes every encode
+into one `Cursor` it creates once, setting its `offset` to 0 and emptying its
+`blobs` where a write filled them, so the buffer keeps the room an earlier
+write grew it to. The payload is that cursor, which each decode sets back to
+`offset` 0 and `blobIndex` 0 and reads. Like 4.13's column, it has no cell in
+the size tier or the code-size tier, and its round-trip check is held to
+surge's figure in the size table.
 
 ## 5. The size tier
 
@@ -208,7 +233,8 @@ engine version, before the suite runs.
 **8.1** `tests/scripts/record-speed-benchmarks.mjs` wraps `run-in-roblox`,
 forwards every line, and writes `docs/benchmarks/speed.md` and
 `docs/benchmarks/speed-trials.tsv` only if every run printed
-`BENCH_RESULT: PASSED`, returned every row in both halves, and passed the
+`BENCH_RESULT: PASSED`, returned in every run each half of a cell that any
+run returned, and surge's cell in each half its row returned, and passed the
 round-trip check of 6.6 on every cell. An interrupted invocation leaves both
 files as they were.
 
@@ -237,6 +263,10 @@ geometric mean of that column's throughput over surge's, across the rows
 where both have a cell and neither cell is marked. It states how many of the
 rows both have that mean covers.
 
+**8.8** Each half's throughput, time and ratio tables give a column only to a
+column with a cell in that half, so a column timed on decode only, such as
+4.13's, has none in the encode tables.
+
 ## 9. Scoped runs
 
 **9.1** `mise run bench:size:only` and `mise run bench:speed:only` take
@@ -245,11 +275,31 @@ with case and every character that is not a letter or digit removed from
 both, the pattern is contained in the row's name. Both tiers select through
 `tests/src/bench/selection.ts`.
 
-**9.2** A scoped run prints its tables and writes no results file. A scoped
-speed run is one run, not two.
+**9.2** `mise run bench:speed:only` also takes options, each one word of the
+form `<name>=<value>`:
 
-**9.3** A `:only` task given no pattern, or a pattern that selects no row,
-stops without measuring.
+- `columns=`: the columns to keep beside surge's and the baseline's,
+  comma-separated. A name selects a column whose name, with case and every
+  character that is not a letter or digit removed from both, is the same.
+- `halves=`: `encode`, `decode`, or both, comma-separated.
+- `runs=`: how many runs, two by default, as a full invocation runs (6.1).
+- `out=`: a directory outside `docs/benchmarks/` to write the run's tables
+  and trials into. A relative path is read from the repository root.
+
+**9.3** A scoped speed run keeps surge's column and the baseline's on every
+row it selects. It stops without measuring where the columns it keeps leave a
+row fewer than two of the controls that row has, or fewer than all of them
+where it has one: fbs, serio, Flamework 2, Blink and the baseline, whose code
+a change to surge leaves as it is.
+
+**9.4** A scoped run prints its tables and writes nothing under
+`docs/benchmarks/`. With `out=`, a scoped speed run writes its tables to
+`speed.md` and its trials to `speed-trials.tsv` in that directory, as 8.3 and
+8.4 describe them, and both state its scope.
+
+**9.5** A `:only` task given nothing to narrow by, or a pattern or a column
+name that selects nothing, stops without measuring. A pattern narrows both
+tiers; `columns=`, and `halves=` naming one half, narrow the speed tier.
 
 ## 10. Rebuilding before a run
 
@@ -263,7 +313,8 @@ for the reasons in section 6 of [test-harness.md](test-harness.md).
 `docs/benchmarks/code-size.md`.
 
 **11.2** A cell is the length in bytes of the Luau bytecode that `luau.compile`
-of the pinned Lune returns for one compiled codec module of 3.6, at
+of the pinned Lune returns for one compiled codec module of 3.6, other than
+a module of 4.13 or 4.14, at
 optimization level 2 and debug level 1. A row is one shape of one fixture, and
 the columns are surge, fbs, serio and Flamework 2.
 
@@ -293,18 +344,37 @@ version, since another compiler version can give another count.
 | 4.7       | Source: the first lines of `tests/src/bench/speed.spec.ts`, `adapter.ts` and `adapters/*.ts`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 | 4.8       | Source: `tests/src/bench/adapters/`. The documentation each follows: `docs/getting-started.md` for surge; the README of `@rbxts/flamework-binary-serializer` 0.7.0 and the comments on its `Serializer<T>`; the README of `@rbxts/serio` 1.2.7                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | 4.10–4.12 | Source: `tests/flamework2/`, `tests/scripts/copy-flamework2-codecs.mjs` and the `bench:definitions` script in `tests/package.json`; the `flamework2.luau` modules under `tests/src/bench/codecs/`; `docs/benchmarks/size.md`, where every Flamework 2 cell round-trips and the packed rows have none                                                                                                                                                                                                                                                                                                                                                                                                            |
+| 4.13      | Source: `DECODE_ONLY` in `tests/src/bench/adapter.ts`, the `-checked` modules under `tests/src/bench/codecs/`, `readCheck` in the recorder, and `SPEED_ONLY` in `tests/scripts/lune-code-size-runner.luau`; a scoped speed run exercises it                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| 4.14      | Source: `tests/src/bench/adapters/surge-cursor.ts`, the `-cursor` modules under `tests/src/bench/codecs/`, and `SPEED_ONLY` in `tests/scripts/lune-code-size-runner.luau`; a scoped speed run exercises it                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | 5.1–5.3   | Source: `tests/scripts/lune-size-runner.luau` and `tests/src/bench/size.ts`; a regenerated `size.md` with no diff                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 | 6.1       | Source: `RUNS` and `runOnce` in `tests/scripts/record-speed-benchmarks.mjs`, and the `bench:speed` scripts in `package.json` and `tests/package.json`; `main()` in `tests/src/index.ts` runs only `tests` ([test-harness.md](test-harness.md) 3.4)                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | 6.2–6.5   | Source: the constants and comment block of `tests/src/bench/speed.spec.ts`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | 6.6       | Source: `check` and `timed` in `tests/src/bench/speed.spec.ts`, and `readCheck`, `recordedRoundTrips` and `requireEveryCheck` in `tests/scripts/record-speed-benchmarks.mjs`. No test runs the comparison; a full or scoped `bench:speed` run exercises it                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | 7.1–7.3   | Source: `tests/src/bench/speed.spec.ts`, and `run` and `runBenchmarks` in `tests/src/index.ts`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
-| 8.1–8.7   | Source: `tests/scripts/record-speed-benchmarks.mjs` (`RUNS`, `NOISY`, `summarize`, `summaryTable`)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
-| 9.1–9.3   | Source: `tests/src/bench/selection.ts`, the recorder, and `tests/scripts/lune-size-runner.luau`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| 8.1–8.8   | Source: `tests/scripts/record-speed-benchmarks.mjs` (`RUNS`, `NOISY`, `summarize`, `summaryTable`, `librariesIn`)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| 9.1–9.5   | `tests/src/tests/selection.spec.ts`: `SelectionTest` (9.2's column names and 9.3's controls). Source: `matching` and `keptEntries` in `tests/src/bench/selection.ts`, the options and `report` in the recorder, and `tests/scripts/lune-size-runner.luau`; a scoped run exercises the rest                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | 10.1      | Source: the `bench:prepare` script in `package.json`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
 | 11.1–11.5 | Source: `tests/scripts/lune-code-size-runner.luau`; a regenerated `code-size.md` with no diff                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
 
 ## Changes
 
+- `cd61fe7`: 4.8 names the sequences row's Flamework 2 adapter; 9.2 reads a
+  relative `out=` from the repository root; 9.4 says both files state the
+  scope; 9.5's `halves=` narrows only where it names one half.
+- `3d804d1`: adds 8.8 (a half's tables leave out a column with no cell in
+  that half).
+- `9da6b2c`: 9.3's Conformance names a test of the columns a scoped run
+  keeps.
+- `b8ac287`: 3.1 adds six rows: tuples with a rest, a set, sparse updates,
+  the `CFrame` array quantized, a layout and sequences; 3.2 names Zap's
+  native vectors as the second exception.
+- `1d3e3e3`: adds 4.14 (the `surge (cursor)` column, in the speed tier
+  only); 2 (Column), 3.6, 4.8 and 11.2 follow it.
+- `a4cd40d`: adds 4.13 (the `surge (readChecks)` column, timed on decode
+  only and in the speed tier only); 2 (Column), 3.6 and 11.2 follow it.
+- `89c53ce`: 9.2 to 9.5: a scoped speed run selects columns and halves
+  as well as rows, keeps two controls on each row, runs twice, and writes its
+  tables and trials where `out=` names; 2 (Scoped run) and 8.1 follow it.
 - `362a52a`: adds 6.6 (each cell's round trip is checked in Roblox before
   its trials); 7.1 and 8.1 follow it.
 - `ca5e2ba`: no statement changes. The 4.6 row names the `count` module among
