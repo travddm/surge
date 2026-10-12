@@ -59,6 +59,11 @@ const CHECK_PREFIX = "BENCH_CHECK:";
 
 /** The repository root, from tests/, where npm runs this file. */
 const REPOSITORY_ROOT = "../..";
+/**
+ * The root's Prettier, which formats the tables an `out=` run writes as `npm run bench:speed`
+ * formats speed.md. Run through Node rather than `npx`, which Windows starts only through a shell.
+ */
+const PRETTIER_PATH = resolve(REPOSITORY_ROOT, "node_modules/prettier/bin/prettier.cjs");
 const OUTPUT_PATH = "../../docs/benchmarks/speed.md";
 /**
  * Every trial behind `OUTPUT_PATH`, one line each, under the facts of the run. That file carries a
@@ -796,7 +801,8 @@ function scopeDescription(cells) {
  * read against the other columns of the same run and never against a number from another file.
  * speed.md is not written -- the prose of that file describes the whole catalog, and a speed.md
  * holding a few of its rows would read as a result about all of them. With `out=`, the tables and
- * the trials go into that directory instead, for a paper to be read from.
+ * the trials go into that directory instead, for a paper to be read from. The tables are formatted
+ * there, so that one written under docs/ passes the root's `format:check`.
  */
 function report(facts) {
 	const cells = summaries();
@@ -833,6 +839,7 @@ function report(facts) {
 	];
 	mkdirSync(outDirectory, { recursive: true });
 	writeFileSync(output, lines.join("\n"), "utf8");
+	execFileSync(process.execPath, [PRETTIER_PATH, "--write", output], { cwd: REPOSITORY_ROOT, stdio: "inherit" });
 	console.log(`\nwrote ${output}`);
 	writeTrials([...facts, ["Scope", scopeDescription(cells)]], join(outDirectory, SCOPED_TRIALS_NAME), output);
 }
