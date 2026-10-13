@@ -11,11 +11,12 @@ checking the capacity. Joined into one, with the run reserved again on its
 own beside the count's long form, they take 15 bytes off the tagged union's
 module and add 13 to each of three others. In two pairs of scoped runs,
 surge's own column on the three rows sized exactly moved within how far
-unchanged code moved, but for one decode cell read through a reference
-whose runs were 9% apart, and measured 1.003× and 1.021× on the large record's encode. The
-leaderboard's cursor codec, which checks the capacity at each reservation,
-measured 1.061× and 1.040× on encode, both runs above both of the reference
-in each pair. No byte changed, the reading stated before the runs passed,
+unchanged code moved, but for one decode cell read through a reference whose
+runs were 9% apart, and measured 1.003× and 1.021× on the large record's
+encode. The leaderboard's cursor codec, which checks the capacity at each
+reservation, measured 1.061× and 1.040× on encode, both runs above both of
+the reference in each pair: the one cell above how far unchanged code moved
+in both pairs. No byte changed, the reading stated before the runs passed,
 and the change is kept.
 
 ## Background

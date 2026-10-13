@@ -1,7 +1,7 @@
 # Runtime API specification
 
 Status: current
-Applies to: commit `5745202` (no tagged release yet)
+Applies to: commit `7915680` (no tagged release yet)
 
 ## 1. Scope
 
@@ -296,18 +296,20 @@ Otherwise it creates the list empty. A value whose `__len`
 metamethod answers that read differently changes only the length the list is
 created at, unless `table.create` does not accept the answer, which raises.
 
-**5.6** The state of 5.2 belongs to a serializer, not to a call. A `serialize`
-must not start while a `serialize` of the same serializer is running, and a
-`deserialize` must not start while a `deserialize` of the same serializer is
-running, whatever `T` is, and neither may a cursor codec's `write` or `read`
-while a call of the same function of that codec is running. No `write` or
-`read` may start into a cursor while another `write` or `read` into the same
-cursor is running, whatever codec makes it: each takes the cursor's offset
-when it starts and stores its own back when it ends, so the running call
-overwrites what the other wrote or read. A call that starts anyway resets the
-cursor that the running call uses, where the serializer holds it. The running `serialize` then
-returns wrong bytes without an error, and the running `deserialize` reads the
-rest of its value from the other call's input.
+**5.6** The state of 5.2 belongs to a serializer, not to a call. A
+`serialize` must not start while a `serialize` of the same serializer is
+running, and a `deserialize` must not start while a `deserialize` of the same
+serializer is running, whatever `T` is, and neither may a cursor codec's
+`write` or `read` while a call of the same function of that codec is running.
+No `write` or `read` may start into a cursor while another `write` or `read`
+into the same cursor is running, whatever codec makes it: each takes the
+cursor's offset when it starts and stores its own back when it ends, so the
+running call overwrites what the other wrote or read. A call that starts
+anyway resets the cursor that the running call uses, where the serializer
+holds it, and a `serialize` that copies the scratch buffer from the closure
+(5.2) writes over the bytes the running call has written in it. The running
+`serialize` then returns wrong bytes without an error, and the running
+`deserialize` reads the rest of its value from the other call's input.
 
 **5.7** A serializer runs code that it did not generate only through the
 metamethods of a table it is given. Only a metamethod can therefore start a
@@ -387,7 +389,7 @@ A test file named `*.spec.ts` is under `tests/src/tests/`. A path starting
 | 5.3                         | `test/golden.test.mjs`: a packed region is written and read inline, with no per-bit helper                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | 5.4                         | Source only: `finishWriteExpression` and `writeStateDecls` in `emit/context.ts`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 | 5.5                         | `test/golden.test.mjs`: a blob is appended and read inline, with no call into the package, and a blob list is created at the most blobs its value appends; `rbxts-transformer-surge` `test/transform.test.ts`: a shape with a blob field, and a blob reachable only through a recursion helper                                                                                                                                                                                                                                                                                                                                  |
-| 5.6                         | Source only: `writeStateDecls` and `readStateDecls` in `emit/context.ts` declare the state once per closure where the serializer holds it, and `beginWriteStatements` and `beginReadStatements` reset it per call, or declare it where the call holds it; no test re-enters a serializer                                                                                                                                                                                                                                                                                                                                        |
+| 5.6                         | Source only: `writeStateDecls` and `readStateDecls` in `emit/context.ts` declare the state once per closure where the serializer holds it, and `beginWriteStatements` and `beginReadStatements` reset it per call, or declare it where the call holds it, and `endWriteStatements` gives the closure back its scratch buffer; no test re-enters a serializer                                                                                                                                                                                                                                                                    |
 | 5.7                         | Source only: the emitter reads a value's properties, lengths and `for … in` iterations under `emit/`, and calls nothing else of the value's. Which metamethods may yield is Luau's: `luaD_call` and `luaD_performcally` in its `VM/src/ldo.cpp`. No test yields inside `serialize`, because Lune 0.10.5 bundles Luau 0.709                                                                                                                                                                                                                                                                                                      |
 | 5.8                         | `overlap.spec.ts`: `runsAnotherSerializerInsideAnIterator`, a call from inside an `__iter` iterator. A call while an iterator is suspended is not run, as the 5.7 row states                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 | 5.9                         | `test/golden.test.mjs`: a shape sized exactly creates its result at that size and checks no capacity, and a size binds the locals its write reads, ahead of the result; `overlap.spec.ts`: `iteratesAnArrayOfUnionsOnceForItsSizeAndOnceForItsWrite`, `iteratesAnArrayOfObjectsOnceForItsSizeAndOnceForItsWrite` and `iteratesAnArrayOfArraysOnceForItsSizeAndOnceForItsWrite`. Source only for a second read that differs: `exactSize` in `emit/size.ts`                                                                                                                                                                       |
@@ -395,6 +397,8 @@ A test file named `*.spec.ts` is under `tests/src/tests/`. A path starting
 
 ## Changes
 
+- `7915680`: 5.6 adds that a `serialize` that copies the scratch buffer from
+  the closure writes over the bytes a running call has written in it.
 - `5745202`: 5.2 has a `serialize` that is not sized exactly, of a `T` that
   holds no recursive type, declare its own cursor and copy the scratch buffer
   and its capacity from the closure on each call.

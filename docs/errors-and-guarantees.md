@@ -118,8 +118,9 @@ enum, writes the item as the union's last variant.
 
 A serializer can keep its buffer and cursors between calls. A `serialize` must
 not start while the same serializer's `serialize` is running, whatever its
-type: the second call can reset the cursor the first one uses, and the first
-then returns wrong bytes without an error. The same holds for `deserialize`,
+type: the second call can reset the cursor the first one uses, or write over
+the bytes the first has written in the buffer they share, and the first then
+returns wrong bytes without an error. The same holds for `deserialize`,
 and for a cursor codec's `write` and `read`.
 
 Two different serializers may overlap: one may run inside a call of the
