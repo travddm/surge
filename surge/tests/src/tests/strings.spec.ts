@@ -32,7 +32,24 @@ const namedEntriesSerializer = createCodec<WithNamedEntries>();
 // or after it, with its own bytes in its count's one-byte form, and on their
 // own beside its long form (Transformer 5.19 in docs/specs/transformer.md).
 // `WithJoinedRuns` is sized exactly, and `WithJoinedRunsInMaps` keeps the
-// scratch buffer.
+// scratch buffer. Properties are written in the order of their names, so
+// each `atHead` is written first, where the cursor's position is known and
+// folded (Transformer 5.30): a string then a run, and a run then a string,
+// with the first of the two at that position.
+interface RunAfterFirst {
+	label: string;
+	level: DataType.u16;
+	marks: DataType.u8[];
+	rank: DataType.u8;
+	title: string;
+}
+interface RunBeforeFirst {
+	level: DataType.u8;
+	motto: string;
+	ranks: DataType.u8[];
+	tag: string;
+	tier: DataType.u16;
+}
 interface JoinedEntry {
 	name: string;
 	score: DataType.u32;
@@ -43,12 +60,14 @@ interface WithJoinedRuns {
 	entries: JoinedEntry[];
 	events: JoinedEvent[];
 	blob: { bytes: DataType.Length<buffer, DataType.u16>; tag: DataType.u8 };
+	atHead: RunAfterFirst;
 }
 interface WithJoinedRunsInMaps {
 	byName: Map<string, DataType.u8>;
 	notes: Map<DataType.u16, string>;
 	byId: Map<DataType.u16, JoinedEvent>;
 	entries: JoinedEntry[];
+	atHead: RunBeforeFirst;
 }
 const joinedSerializer = createCodec<WithJoinedRuns>();
 const joinedCheckedSerializer = createCodec<WithJoinedRuns>({ readChecks: true });
@@ -149,6 +168,7 @@ class StringsTest {
 				{ kind: "chat", id: 11, text: "" },
 			],
 			blob: { bytes: buffer.fromstring(text), tag: 200 },
+			atHead: { label: text, level: 65_535, marks: [1, 2], rank: 3, title: text },
 		};
 		const inMaps: WithJoinedRunsInMaps = {
 			byName: new Map([
@@ -164,6 +184,7 @@ class StringsTest {
 				[4, { kind: "ping", id: 13 }],
 			]),
 			entries: value.entries,
+			atHead: { level: 255, motto: text, ranks: [4], tag: text, tier: 65_535 },
 		};
 		for (const serializer of [joinedSerializer, joinedCheckedSerializer]) {
 			Assert.equal(undefined, difference(value, serializer.deserialize(serializer.serialize(value))));
@@ -197,8 +218,27 @@ class StringsTest {
 				entries,
 				events,
 				blob: { bytes: buffer.fromstring(rng.str(300)), tag: rng.int(0, 255) },
+				atHead: {
+					label: rng.str(300),
+					level: rng.int(0, 65535),
+					marks: [],
+					rank: rng.int(0, 255),
+					title: rng.str(300),
+				},
 			};
-			const inMaps: WithJoinedRunsInMaps = { byName, notes, byId, entries };
+			const inMaps: WithJoinedRunsInMaps = {
+				byName,
+				notes,
+				byId,
+				entries,
+				atHead: {
+					level: rng.int(0, 255),
+					motto: rng.str(300),
+					ranks: [],
+					tag: rng.str(300),
+					tier: rng.int(0, 65535),
+				},
+			};
 			for (const serializer of [joinedSerializer, joinedCheckedSerializer]) {
 				Assert.equal(undefined, difference(value, serializer.deserialize(serializer.serialize(value))));
 			}
