@@ -1,7 +1,7 @@
 # Runtime API specification
 
 Status: current
-Applies to: commit `8e086a1` (no tagged release yet)
+Applies to: commit `5745202` (no tagged release yet)
 
 ## 1. Scope
 
@@ -269,7 +269,10 @@ capacity and write cursor its `serialize` uses and the read cursor its
 `deserialize` uses, and reserves bytes inline, and the blob channel's state
 of 5.5. A `serialize` sized exactly declares its own, in 5.9,
 and so does a `deserialize` of a `T` that holds no recursive type
-(Transformer 4.2 and 5.3). A cursor codec's `write` and `read` take this
+(Transformer 4.2 and 5.3). A `serialize` of such a `T` that is not sized
+exactly declares its own cursor, and copies the scratch buffer and its
+capacity from the closure on each call and stores them back before it
+returns. A cursor codec's `write` and `read` take this
 state from the cursor on each call, as locals of their own where `T` holds no
 recursive type, and into the closure otherwise (3.16 and 3.17).
 
@@ -380,7 +383,7 @@ A test file named `*.spec.ts` is under `tests/src/tests/`. A path starting
 | 4.10                        | Source only: `enumFromIndexExpr` in `emit/read.ts`; `readPackedCFrame` in `src/cframe.ts`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 | 4.11                        | `checks.spec.ts`: `rejectsAnythingButABufferForAShapeWithNoBlob`, `rejectsAnythingButItsTableForAShapeWithABlob`; `test/golden.test.mjs`: a serializer with `readChecks` carries them. Source only for the order: `buildCheckedDeserialize` in `src/index.ts` of `rbxts-transformer-surge` checks before the body                                                                                                                                                                                                                                                                                                               |
 | 5.1                         | `test/golden.test.mjs`: generated code imports its helpers from the package's abi module. Source: the calls the emitter makes under `emit/`, and the exports of `src/abi.ts`; a buffer of no bytes: `cursor.spec.ts`: `growsTheBufferAndKeepsTheBytesBeforeTheValue`; a buffer no shorter than `current`: `cursor.spec.ts`: `growsNoBufferSmallerThanItWasGiven`; the long counts: `counts.spec.ts`: `roundTripsEachKindAtTheEdgesOfTheLongForms`, on both paths, for each kind; the capacity `grow` returns: `test/golden.test.mjs`: a reservation past the capacity grows the buffer and takes its capacity in one assignment |
-| 5.2                         | `test/golden.test.mjs`: consecutive fixed-size fields share one reservation, inline, and a deserialize that reaches no recursion helper holds its input and cursor in locals; a cursor codec: `rbxts-transformer-surge` `test/transform.test.ts`, a cursor codec's generated code                                                                                                                                                                                                                                                                                                                                               |
+| 5.2                         | `test/golden.test.mjs`: consecutive fixed-size fields share one reservation, inline, a deserialize that reaches no recursion helper holds its input and cursor in locals, and a serialize on the scratch path that reaches no recursion helper holds its state in locals; a cursor codec: `rbxts-transformer-surge` `test/transform.test.ts`, a cursor codec's generated code                                                                                                                                                                                                                                                   |
 | 5.3                         | `test/golden.test.mjs`: a packed region is written and read inline, with no per-bit helper                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | 5.4                         | Source only: `finishWriteExpression` and `writeStateDecls` in `emit/context.ts`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 | 5.5                         | `test/golden.test.mjs`: a blob is appended and read inline, with no call into the package, and a blob list is created at the most blobs its value appends; `rbxts-transformer-surge` `test/transform.test.ts`: a shape with a blob field, and a blob reachable only through a recursion helper                                                                                                                                                                                                                                                                                                                                  |
@@ -392,6 +395,9 @@ A test file named `*.spec.ts` is under `tests/src/tests/`. A path starting
 
 ## Changes
 
+- `5745202`: 5.2 has a `serialize` that is not sized exactly, of a `T` that
+  holds no recursive type, declare its own cursor and copy the scratch buffer
+  and its capacity from the closure on each call.
 - `8e086a1`: 3.10 adds a number with no range that its integer width cannot
   hold, a `Vector` or `Transform` component included; 3.11 excepts only a
   float width.

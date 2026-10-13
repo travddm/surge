@@ -373,7 +373,7 @@ test("a serializer whose closure would declare nothing is its functions alone", 
 	const bytes = readCompiledLuau("tests/bytes.spec.luau");
 	assert.match(
 		bytes,
-		/^local wideHeadSerializer = [(]function[(][)]\n\s+local __surge_scratch = buffer[.]create[(]64[)]$/m,
+		/^local wideHeadSerializer = [(]function[(][)]\n\s+local __surge_keptScratch = buffer[.]create[(]64[)]$/m,
 	);
 });
 
@@ -401,6 +401,30 @@ test("a deserialize that reaches no recursion helper holds its input and cursor 
 	const recursion = readCompiledLuau("tests/recursion.spec.luau");
 	assert.match(recursion, /^\s+local __surge_input = buffer[.]create[(]0[)]$/m);
 	assert.match(recursion, /^\s+__surge_input = input$/m);
+});
+
+// Regression check for the write state held in locals. What it was measured as
+// worth is in docs/research/write-state-in-locals.md.
+test("a serialize on the scratch path that reaches no recursion helper holds its state in locals", () => {
+	// `WideHead` keeps the scratch buffer, and is not recursive.
+	const luau = readCompiledLuau("tests/bytes.spec.luau");
+	assert.match(
+		luau,
+		/^local wideHeadSerializer = [(]function[(][)]\n\s+local __surge_keptScratch = buffer[.]create[(]64[)]\n\s+local __surge_keptCapacity = 64\n\s+return [{]\n\s+serialize = function[(]value[)]\n\s+local __surge_scratch = __surge_keptScratch\n\s+local __surge_capacity = __surge_keptCapacity\n\s+local __surge_cursor = 80$/m,
+	);
+	// The closure keeps the buffer, grown or not, for the next call.
+	assert.match(
+		luau,
+		/\n\s+__surge_keptScratch = __surge_scratch\n\s+__surge_keptCapacity = __surge_capacity\n\s+return __surge_finishWrite[(]__surge_scratch, __surge_cursor[)]\n/,
+	);
+	// A positive control: a recursive type's helpers grow the closure's
+	// buffer, so its `serialize` uses the closure's state.
+	const recursion = readCompiledLuau("tests/recursion.spec.luau");
+	assert.match(
+		recursion,
+		/^local folderSerializer = [(]function[(][)]\n\s+local __surge_scratch = buffer[.]create[(]64[)]$/m,
+	);
+	assert.doesNotMatch(recursion, /__surge_kept/);
 });
 
 // Regression check for the boundary of sizing by a loop. What it was measured
@@ -441,7 +465,7 @@ test("an array of unions, objects or arrays is sized by a loop, and an array of 
 	// measured slower: it keeps the scratch buffer.
 	assert.match(
 		unions,
-		/local guardedSerializer = [(]function[(][)]\n\s+local __surge_scratch = buffer[.]create[(]64[)]$/m,
+		/local guardedSerializer = [(]function[(][)]\n\s+local __surge_keptScratch = buffer[.]create[(]64[)]$/m,
 	);
 });
 

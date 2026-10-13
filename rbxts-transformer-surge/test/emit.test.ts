@@ -1164,10 +1164,12 @@ describe("Emitter exact sizing", () => {
 		const body: ts.Statement[] = [];
 		emitter.beginFunction();
 		emitter.sizeExactly(field, value);
+		emitter.writeLocally();
 		emitter.writeField(field, value, body);
 		return printNodes([
 			...emitter.beginWriteStatements(),
 			...body,
+			...emitter.endWriteStatements(),
 			ts.factory.createReturnStatement(emitter.finishWriteExpression()),
 			...emitter.writeStateDecls(),
 		]);
@@ -1509,9 +1511,38 @@ describe("Emitter exact sizing", () => {
 	])("%s keeps the scratch buffer", (_label, field) => {
 		const output = serializeBody(field);
 		expect(output).not.toContain("const __surge_scratch");
-		expect(output).toContain("let __surge_scratch = buffer.create(64);");
+		expect(output).toContain("let __surge_keptScratch = buffer.create(64);");
 		expect(output).toContain("__surge_capacity");
 		expect(output).toContain("__surge_finishWrite(");
+	});
+
+	test("a serialize on the scratch path holds its state in locals, and the closure keeps the buffer", () => {
+		const strings: Field = { kind: "array", element: { kind: "str" } };
+		const output = serializeBody(strings);
+		expect(output).toMatch(
+			/^let __surge_scratch = __surge_keptScratch;\nlet __surge_capacity = __surge_keptCapacity;\nlet __surge_cursor = 0;\n/,
+		);
+		expect(output).toMatch(
+			/\n__surge_keptScratch = __surge_scratch;\n__surge_keptCapacity = __surge_capacity;\nreturn __surge_finishWrite\(__surge_scratch, __surge_cursor\);\n/,
+		);
+		expect(output).toMatch(/\nlet __surge_keptScratch = buffer\.create\(64\);\nlet __surge_keptCapacity = 64;$/);
+		// A positive control: where a recursion helper reads the closure's state,
+		// `serialize` moves the closure's cursor and keeps nothing itself.
+		const emitter = new Emitter(ts, ts.factory, new Map([["surge_Node_1", strings]]));
+		const value = ts.factory.createIdentifier("value");
+		const body: ts.Statement[] = [];
+		emitter.beginFunction();
+		emitter.sizeExactly(strings, value);
+		emitter.writeLocally();
+		emitter.writeField(strings, value, body);
+		const shared = printNodes([
+			...emitter.beginWriteStatements(),
+			...emitter.endWriteStatements(),
+			...emitter.writeStateDecls(),
+		]);
+		expect(shared).toBe(
+			"__surge_cursor = 0;\nlet __surge_scratch = buffer.create(64);\nlet __surge_capacity = 64;\nlet __surge_cursor = 0;",
+		);
 	});
 });
 
