@@ -27,6 +27,7 @@ import {
 	exactCount,
 	fixedBytes,
 	isAllPackedBits,
+	joinedRunBytes,
 	packedBits,
 	runLocals,
 	tagKeyOf,
@@ -287,10 +288,23 @@ function writeCount(
 			ctx,
 			n,
 			[...statements, ctx.factory.createExpressionStatement(ctx.bufferCall("writeu8", [buf, pos, n]))],
-			ctx.writeLongForm("Count", [n]),
+			[ctx.writeLongForm("Count", [n])],
 		),
 	);
 	return n;
+}
+
+/**
+ * A run of `bytes` fixed-size bytes that a `str` or a `buffer` with a count
+ * reserves with its own (Transformer 5.19), `before` its count or `after`
+ * its bytes. `write` writes the run from `start` once the string's bytes are
+ * written: the bytes of a buffer are the same whatever order they are
+ * written in.
+ */
+interface JoinedWrite {
+	readonly side: "before" | "after";
+	readonly bytes: number;
+	readonly write: (start: ts.Identifier, out: ts.Statement[]) => void;
 }
 
 /**
@@ -298,6 +312,12 @@ function writeCount(
  * it at once, writes the count, and has `writeBytes` write the bytes where
  * they go. A variable-length count's long form writes `source` itself, as
  * the `kind` the call names.
+ *
+ * With `run`, the one-byte form, or a count of a fixed width, reserves the
+ * run as well. A run before the count starts at the cursor's position,
+ * which each form reserves from; the long form reserves it ahead of its
+ * call. A run after the bytes ends at the cursor; the long form reserves it
+ * after its call.
  */
 function writeCountedBytes(
 	ctx: EmitContext,
@@ -306,30 +326,50 @@ function writeCountedBytes(
 	writeBytes: (buf: ts.Identifier, at: ts.Expression) => ts.Statement,
 	long: { kind: "String" | "Buffer"; source: ts.Expression },
 	out: ts.Statement[],
+	run?: JoinedWrite,
 ): void {
 	const f = ctx.factory;
 	const plus = (a: ts.Expression, b: ts.Expression) => f.createBinaryExpression(a, ctx.ts_.SyntaxKind.PlusToken, b);
 	const width = countWidth(length);
 	checkCountFits(ctx, width, len, out);
+	const countBytes = width === undefined ? 1 : WIDTH_BYTES[width];
+	const start = run?.side === "before" ? ctx.takePosition("alloc", out) : undefined;
+	// The count is `lead` bytes into the reservation, past a run before it.
+	const lead = start === undefined ? 0 : run!.bytes;
+	const size = plus(len, ctx.num(countBytes + (run?.bytes ?? 0)));
+	const { buf, pos, statements } =
+		start === undefined
+			? ctx.destructureAlloc("alloc", size)
+			: { buf: ctx.scratch(), pos: start, statements: ctx.reserveFrom(start, size) };
 	if (width !== undefined) {
-		const countBytes = ctx.num(WIDTH_BYTES[width]);
-		const { buf, pos, statements } = ctx.destructureAlloc("alloc", plus(len, countBytes));
-		out.push(...statements, ...ctx.writeNumberAt(width, buf, pos, len), writeBytes(buf, plus(pos, countBytes)));
-		return;
+		out.push(
+			...statements,
+			...ctx.writeNumberAt(width, buf, ctx.offsetFrom(pos, lead), len),
+			writeBytes(buf, ctx.offsetFrom(pos, lead + countBytes)),
+		);
+	} else {
+		const longForm = [ctx.writeLongForm(long.kind, [long.source, len])];
+		if (start !== undefined) {
+			longForm.unshift(...ctx.reserveFrom(start, ctx.num(run!.bytes)));
+		} else if (run !== undefined) {
+			longForm.push(...ctx.destructureAlloc("alloc", run.bytes).statements);
+		}
+		out.push(
+			countForms(
+				ctx,
+				len,
+				[
+					...statements,
+					f.createExpressionStatement(ctx.bufferCall("writeu8", [buf, ctx.offsetFrom(pos, lead), len])),
+					writeBytes(buf, ctx.offsetFrom(pos, lead + 1)),
+				],
+				longForm,
+			),
+		);
 	}
-	const { buf, pos, statements } = ctx.destructureAlloc("alloc", plus(len, ctx.num(1)));
-	out.push(
-		countForms(
-			ctx,
-			len,
-			[
-				...statements,
-				f.createExpressionStatement(ctx.bufferCall("writeu8", [buf, pos, len])),
-				writeBytes(buf, plus(pos, ctx.num(1))),
-			],
-			ctx.writeLongForm(long.kind, [long.source, len]),
-		),
-	);
+	if (run !== undefined) {
+		run.write(start ?? ctx.positionBeforeCursor(run.bytes, out), out);
+	}
 }
 
 /**
@@ -337,13 +377,34 @@ function writeCountedBytes(
  * variable-length count once (Transformer 5.28), writes its one-byte form
  * inline, and its long form with one call into the package.
  */
-function countForms(ctx: EmitContext, count: ts.Expression, short: ts.Statement[], long: ts.Statement): ts.Statement {
+function countForms(ctx: EmitContext, count: ts.Expression, short: ts.Statement[], long: ts.Statement[]): ts.Statement {
 	const f = ctx.factory;
 	return f.createIfStatement(
 		f.createBinaryExpression(count, ctx.ts_.SyntaxKind.LessThanToken, ctx.num(LONG_COUNT_MARKER)),
 		f.createBlock(short, true),
-		f.createBlock([long], true),
+		f.createBlock(long, true),
 	);
+}
+
+/**
+ * Writes `field`, a `str` or a `buffer` with a count, and `run`, the
+ * fixed-size bytes beside it, with one reservation (Transformer 5.19).
+ */
+function writeBesideRun(
+	ctx: EmitContext,
+	field: Extract<Field, { kind: "str" | "buffer" }>,
+	value: ts.Expression,
+	run: JoinedWrite,
+	out: ts.Statement[],
+): void {
+	if (exactCount(field.length) !== undefined) {
+		throw new Error("surge: a run joined to a string or buffer that writes no count");
+	}
+	if (field.kind === "str") {
+		writeStr(ctx, field, value, out, run);
+	} else {
+		writeBuffer(ctx, field, value, out, run);
+	}
 }
 
 function writeStr(
@@ -351,6 +412,7 @@ function writeStr(
 	field: Extract<Field, { kind: "str" }>,
 	value: ts.Expression,
 	out: ts.Statement[],
+	run?: JoinedWrite,
 ): void {
 	const f = ctx.factory;
 	const bound = ctx.boundBySize(value);
@@ -374,6 +436,7 @@ function writeStr(
 		(buf, at) => f.createExpressionStatement(ctx.bufferCall("writestring", [buf, at, s])),
 		{ kind: "String", source: s },
 		out,
+		run,
 	);
 }
 
@@ -382,6 +445,7 @@ function writeBuffer(
 	field: Extract<Field, { kind: "buffer" }>,
 	value: ts.Expression,
 	out: ts.Statement[],
+	run?: JoinedWrite,
 ): void {
 	const f = ctx.factory;
 	const bound = ctx.boundBySize(value);
@@ -404,6 +468,7 @@ function writeBuffer(
 		(buf, at) => f.createExpressionStatement(ctx.bufferCall("copy", [buf, at, source, ctx.num(0), len])),
 		{ kind: "Buffer", source },
 		out,
+		run,
 	);
 }
 
@@ -1053,10 +1118,36 @@ function writeDict(
 	);
 	const k = ctx.fresh("k");
 	const body: ts.Statement[] = [];
-	writeField(ctx, field.key, k, body);
-	if (!isSet) {
-		const v = ctx.fresh("v");
-		writeField(ctx, field.value!, v, body);
+	const entryValue = field.value;
+	if (entryValue !== undefined) {
+		// A `str` or a `buffer` key reserves a fixed-size value after it with
+		// its own bytes, and a `str` or a `buffer` value a fixed-size key
+		// before it.
+		const runAfter = joinedRunBytes(field.key, [entryValue], ctx.writeChecks);
+		const runBefore = runAfter === undefined ? joinedRunBytes(entryValue, [field.key], ctx.writeChecks) : undefined;
+		const joinedBytes = runAfter ?? runBefore;
+		let v: ts.Identifier;
+		if (joinedBytes === undefined) {
+			writeField(ctx, field.key, k, body);
+			v = ctx.fresh("v");
+			writeField(ctx, entryValue, v, body);
+		} else {
+			v = ctx.fresh("v");
+			const [str, strValue, run, runValue] =
+				runAfter !== undefined ? [field.key, k, entryValue, v] : [entryValue, v, field.key, k];
+			writeBesideRun(
+				ctx,
+				str as Extract<Field, { kind: "str" | "buffer" }>,
+				strValue,
+				{
+					side: runAfter !== undefined ? "after" : "before",
+					bytes: joinedBytes,
+					write: (start, runOut) =>
+						ctx.withAllocRun("alloc", joinedBytes, () => writeField(ctx, run, runValue, runOut), start),
+				},
+				body,
+			);
+		}
 		body.push(f.createExpressionStatement(f.createPostfixUnaryExpression(count, ctx.ts_.SyntaxKind.PlusPlusToken)));
 		out.push(
 			f.createForOfStatement(
@@ -1077,6 +1168,7 @@ function writeDict(
 			),
 		);
 	} else {
+		writeField(ctx, field.key, k, body);
 		body.push(f.createExpressionStatement(f.createPostfixUnaryExpression(count, ctx.ts_.SyntaxKind.PlusPlusToken)));
 		out.push(
 			f.createForOfStatement(
@@ -1224,7 +1316,63 @@ export function writeObjectInline(
 	if (bits.length > 0) {
 		items.push(ctx.measure((itemOut) => writePackedBits(ctx, bits, value, itemOut)));
 	}
-	for (const group of groups) {
+	for (let g = 0; g < groups.length; g++) {
+		const group = groups[g];
+		const next = groups[g + 1];
+		// A `str` or a `buffer` next to a run reserves it with its own bytes.
+		const runBefore =
+			next?.length === 1 && group.every(shareable)
+				? joinedRunBytes(
+						next[0].field,
+						group.map((entry) => entry.field),
+						ctx.writeChecks,
+						pendingLead?.bytes,
+					)
+				: undefined;
+		const runAfter =
+			runBefore === undefined && pendingLead === undefined && group.length === 1 && next?.every(shareable)
+				? joinedRunBytes(
+						group[0].field,
+						next.map((entry) => entry.field),
+						ctx.writeChecks,
+					)
+				: undefined;
+		const joinedBytes = runBefore ?? runAfter;
+		if (joinedBytes !== undefined) {
+			const [str, run] = runBefore !== undefined ? [next[0], group] : [group[0], next];
+			const index = pendingLead;
+			pendingLead = undefined;
+			items.push(
+				ctx.measure((itemOut) =>
+					writeBesideRun(
+						ctx,
+						str.field as Extract<Field, { kind: "str" | "buffer" }>,
+						ctx.propertyAccess(value, str),
+						{
+							side: runBefore !== undefined ? "before" : "after",
+							bytes: joinedBytes,
+							write: (start, runOut) =>
+								ctx.withAllocRun(
+									"alloc",
+									joinedBytes,
+									() => {
+										if (index !== undefined) {
+											writeVariantIndex(ctx, index, runOut);
+										}
+										for (const entry of run) {
+											writeField(ctx, entry.field, ctx.propertyAccess(value, entry), runOut);
+										}
+									},
+									start,
+								),
+						},
+						itemOut,
+					),
+				),
+			);
+			g += 1;
+			continue;
+		}
 		if (group.length > 1 || pendingLead !== undefined) {
 			const index = pendingLead;
 			pendingLead = undefined;

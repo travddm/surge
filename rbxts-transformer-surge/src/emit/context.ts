@@ -40,6 +40,19 @@ export interface Slot {
 }
 
 /**
+ * A run of `bytes` fixed-size bytes that a `str` or a `buffer` with a count
+ * reads with one move of the read cursor (Transformer 5.19): `before` its
+ * count, from `start`, a position the caller took from the cursor, or
+ * `after` its bytes, from `start`, a local `readCountedBytes` declares where
+ * they end.
+ */
+export interface JoinedRead {
+	readonly side: "before" | "after";
+	readonly bytes: number;
+	readonly start: ts.Identifier;
+}
+
+/**
  * A local that the size of a `serialize` written exactly binds ahead of the
  * result (Transformer 5.20 in docs/specs/transformer.md),
  * and that the write reads instead of binding its own: the value of an
@@ -983,8 +996,17 @@ export abstract class EmitContext {
 	 * bounded first, and the bytes after the move. A variable-length count
 	 * (`width` `undefined`) reads its first byte, and the rest of a long form
 	 * where that byte is a marker. Returns the count and where the bytes start.
+	 *
+	 * With `run`, the same move of the cursor covers a run of fixed-size bytes
+	 * beside them (Transformer 5.19), and so does each bound: one before the
+	 * count reads the count from past the run, and one after the bytes starts
+	 * where they end.
 	 */
-	public readCountedBytes(width: LengthWidth | undefined, out: ts.Statement[]): { len: ts.Identifier; bytes: Slot } {
+	public readCountedBytes(
+		width: LengthWidth | undefined,
+		out: ts.Statement[],
+		run?: JoinedRead,
+	): { len: ts.Identifier; bytes: Slot } {
 		if (this.run !== undefined) {
 			throw new Error("surge: a field inside an alloc run reserved on its own");
 		}
@@ -992,36 +1014,48 @@ export abstract class EmitContext {
 		const f = this.factory;
 		const syntax = this.ts_.SyntaxKind;
 		const countBytes = width === undefined ? 1 : WIDTH_BYTES[width];
-		const pos = this.fresh("pos");
-		out.push(this.constStatement(pos, f.createIdentifier(READ_CURSOR)));
+		let base: ts.Identifier;
+		if (run?.side === "before") {
+			base = run.start;
+		} else {
+			base = this.fresh("pos");
+			out.push(this.constStatement(base, f.createIdentifier(READ_CURSOR)));
+		}
+		// The count is `lead` bytes past `base`: past the run read before it.
+		const lead = run?.side === "before" ? run.bytes : 0;
+		const pos = this.offsetFrom(base, lead);
 		const pastEnd = (end: ts.Expression) =>
 			this.throwIf(
 				f.createBinaryExpression(end, syntax.GreaterThanToken, f.createIdentifier(READ_LENGTH)),
 				"deserialize read past the end of the input buffer",
 			);
 		if (this.readChecks) {
-			out.push(pastEnd(this.offsetFrom(pos, countBytes)));
+			out.push(pastEnd(this.offsetFrom(base, lead + countBytes)));
 		}
 		const len = this.fresh("len");
 		let bytes: Slot;
+		let end: ts.Expression;
 		if (width === undefined) {
 			const at = this.fresh("at");
 			out.push(
 				this.letLocal(len, this.bufferCall("readu8", [f.createIdentifier(READ_BUFFER), pos])),
-				this.letLocal(at, this.offsetFrom(pos, 1)),
+				this.letLocal(at, this.offsetFrom(base, lead + 1)),
 				this.readLongCountInto(pos, len, at),
-				this.assign(READ_CURSOR, f.createBinaryExpression(at, syntax.PlusToken, len)),
 			);
+			end = f.createBinaryExpression(at, syntax.PlusToken, len);
 			bytes = { buf: f.createIdentifier(READ_BUFFER), pos: at, offset: 0 };
 		} else {
+			out.push(this.constStatement(len, this.readNumberAt(width, f.createIdentifier(READ_BUFFER), pos)));
+			end = f.createBinaryExpression(this.offsetFrom(base, lead + countBytes), syntax.PlusToken, len);
+			bytes = { buf: f.createIdentifier(READ_BUFFER), pos: base, offset: lead + countBytes };
+		}
+		if (run?.side === "after") {
 			out.push(
-				this.constStatement(len, this.readNumberAt(width, f.createIdentifier(READ_BUFFER), pos)),
-				this.assign(
-					READ_CURSOR,
-					f.createBinaryExpression(this.offsetFrom(pos, countBytes), syntax.PlusToken, len),
-				),
+				this.constStatement(run.start, end),
+				this.assign(READ_CURSOR, this.offsetFrom(run.start, run.bytes)),
 			);
-			bytes = { buf: f.createIdentifier(READ_BUFFER), pos, offset: countBytes };
+		} else {
+			out.push(this.assign(READ_CURSOR, end));
 		}
 		if (this.readChecks) {
 			out.push(pastEnd(f.createIdentifier(READ_CURSOR)));
@@ -1085,37 +1119,80 @@ export abstract class EmitContext {
 			return { buf: f.createIdentifier(READ_BUFFER), pos, statements };
 		}
 		this.usesWriteBytes = true;
-		const take = [
-			this.constStatement(pos, f.createIdentifier(CURSOR)),
-			this.assign(CURSOR, f.createBinaryExpression(pos, this.ts_.SyntaxKind.PlusToken, sizeExpr)),
-		];
-		// The buffer was created at the size of everything this call writes.
-		if (this.writeSize !== undefined) {
-			return { buf: f.createIdentifier(SCRATCH), pos, statements: take };
-		}
 		return {
 			buf: f.createIdentifier(SCRATCH),
 			pos,
-			statements: [
-				...take,
-				f.createIfStatement(
-					f.createBinaryExpression(
-						f.createIdentifier(CURSOR),
-						this.ts_.SyntaxKind.GreaterThanToken,
-						f.createIdentifier(CAPACITY),
-					),
-					f.createBlock(
-						[
-							this.assignAll(
-								[SCRATCH, CAPACITY],
-								this.call("grow", [f.createIdentifier(SCRATCH), pos, f.createIdentifier(CURSOR)]),
-							),
-						],
-						true,
-					),
-				),
-			],
+			statements: [this.constStatement(pos, f.createIdentifier(CURSOR)), ...this.reserveFrom(pos, sizeExpr)],
 		};
+	}
+
+	/**
+	 * Moves the write cursor to `size` bytes past `start`, and grows the
+	 * buffer where the cursor passes the capacity, keeping the bytes before
+	 * `start`, unless the `serialize` writes exactly: its buffer was created
+	 * at the size of everything the call writes.
+	 */
+	public reserveFrom(start: ts.Identifier, size: ts.Expression): ts.Statement[] {
+		this.usesWriteBytes = true;
+		const f = this.factory;
+		const move = this.assign(CURSOR, f.createBinaryExpression(start, this.ts_.SyntaxKind.PlusToken, size));
+		if (this.writeSize !== undefined) {
+			return [move];
+		}
+		return [
+			move,
+			f.createIfStatement(
+				f.createBinaryExpression(
+					f.createIdentifier(CURSOR),
+					this.ts_.SyntaxKind.GreaterThanToken,
+					f.createIdentifier(CAPACITY),
+				),
+				f.createBlock(
+					[
+						this.assignAll(
+							[SCRATCH, CAPACITY],
+							this.call("grow", [f.createIdentifier(SCRATCH), start, f.createIdentifier(CURSOR)]),
+						),
+					],
+					true,
+				),
+			),
+		];
+	}
+
+	/** The scratch buffer a reservation writes into, read at each write. */
+	public scratch(): ts.Identifier {
+		return this.factory.createIdentifier(SCRATCH);
+	}
+
+	/**
+	 * Declares a position local holding the write or read cursor, without
+	 * moving the cursor: the start of a reservation that each branch after it
+	 * makes with {@link reserveFrom}, or of bytes read from one move of the
+	 * cursor.
+	 */
+	public takePosition(side: "alloc" | "readAlloc", out: ts.Statement[]): ts.Identifier {
+		if (side === "alloc") {
+			this.usesWriteBytes = true;
+		} else {
+			this.usesReadBytes = true;
+		}
+		const pos = this.fresh("pos");
+		out.push(this.constStatement(pos, this.factory.createIdentifier(side === "alloc" ? CURSOR : READ_CURSOR)));
+		return pos;
+	}
+
+	/** Declares a position local `bytes` before the write cursor: where the last `bytes` reserved start. */
+	public positionBeforeCursor(bytes: number, out: ts.Statement[]): ts.Identifier {
+		const f = this.factory;
+		const pos = this.fresh("pos");
+		out.push(
+			this.constStatement(
+				pos,
+				f.createBinaryExpression(f.createIdentifier(CURSOR), this.ts_.SyntaxKind.MinusToken, this.num(bytes)),
+			),
+		);
+		return pos;
 	}
 
 	/** `name = value;`, for the cursor state. */

@@ -156,12 +156,12 @@ test("an unpacked CFrame is read into one constructor from a quaternion", () => 
 test("consecutive fixed-size fields share one reservation", () => {
 	const luau = readCompiledLuau("tests/basic.spec.luau");
 	// `Basic` starts with a `number` (f64, 8 bytes) and a `boolean` (1), so
-	// those two share one 9-byte reservation instead of taking one each. At
-	// the head of the buffer, its fields are written at numbers and the
-	// cursor is set once, past both (Transformer 5.30).
+	// those two share one reservation instead of taking one each, with the
+	// string after them (Transformer 5.19). At the head of the buffer, its
+	// fields are written at numbers (Transformer 5.30).
 	assert.match(
 		luau,
-		/local __surge_cursor = 9\n\s+buffer[.]writef64[(]__surge_scratch, 0, value[.]a[)]\n\s+buffer[.]writeu8[(]__surge_scratch, 8, /m,
+		/^\s+end\n\s+buffer[.]writef64[(]__surge_scratch, 0, value[.]a[)]\n\s+buffer[.]writeu8[(]__surge_scratch, 8, /m,
 	);
 	assert.match(
 		luau,
@@ -206,18 +206,50 @@ const opens = String.raw`(?:[(]function[(][)]|[{])\n`;
 test("a string reserves its count and its bytes at once", () => {
 	const luau = readCompiledLuau("tests/basic.spec.luau");
 	// `Basic.name` is a string: in its count's one-byte form, one reservation
-	// of its length and the count's byte, in its long form one call that
-	// reserves and writes both, and one move of the read cursor past both.
-	// It starts at 9, a number the cursor's value is known as there.
+	// of its length, the count's byte and the 9 bytes before it, in its long
+	// form one call that reserves and writes both, and one move of the read
+	// cursor past both. It starts at 9, a number the cursor's value is known
+	// as there.
 	assert.match(
 		luau,
-		/^\s+if (len[0-9]+) < 254 then\n\s+__surge_cursor = \1 [+] 10\n\s+buffer[.]writeu8[(]__surge_scratch, 9, \1[)]\n\s+buffer[.]writestring[(]__surge_scratch, 10, s[0-9]+[)]$/m,
+		/^\s+if (len[0-9]+) < 254 then\n\s+__surge_cursor = [(]\1 [+] 10[)]\n\s+buffer[.]writeu8[(]__surge_scratch, 9, \1[)]\n\s+buffer[.]writestring[(]__surge_scratch, 10, s[0-9]+[)]$/m,
 	);
 	assert.match(
 		luau,
 		/^\s+else\n\s+__surge_cursor = __surge_writeLongString[(]__surge_scratch, 9, (s[0-9]+), (len[0-9]+)[)]$/m,
 	);
 	assert.match(luau, /__surge_readCursor = at[0-9]+ [+] len[0-9]+$/m);
+});
+
+// Regression check for a string's reservation joined with the fixed-size
+// bytes beside it. What it was measured as worth is in
+// docs/research/joined-reservations.md.
+test("a string reserves the fixed-size bytes beside it with its own", () => {
+	const luau = readCompiledLuau("tests/strings.spec.luau");
+	// `JoinedEntry.name` reserves the 12 bytes of the `score` and the `userId`
+	// after it, which start 12 bytes before the cursor in either form of its
+	// count.
+	assert.match(
+		luau,
+		/__surge_cursor = (pos[0-9]+) [+] [(]len[0-9]+ [+] 13[)]\n\s+buffer[.]writeu8[(]__surge_scratch, \1, len[0-9]+[)]\n/,
+	);
+	assert.match(
+		luau,
+		/local (pos[0-9]+) = __surge_cursor - 12\n\s+buffer[.]writeu32[(]__surge_scratch, \1, item[0-9]+[.]score[)]/,
+	);
+	// The `chat` variant's index and `id` are reserved from one position with
+	// the `text` after them, and written after it.
+	assert.match(
+		luau,
+		/local (pos[0-9]+) = __surge_cursor\n\s+if (len[0-9]+) < 254 then\n\s+__surge_cursor = \1 [+] [(]\2 [+] 6[)]\n[^]*?\n\s+end\n\s+buffer[.]writeu8[(]__surge_scratch, \1, 0[)]/,
+	);
+	// On the scratch buffer, the one reservation checks the capacity once.
+	assert.match(
+		luau,
+		/__surge_cursor = (pos[0-9]+) [+] [(]len[0-9]+ [+] 2[)]\n\s+if __surge_cursor > __surge_capacity then\n/,
+	);
+	// The read moves its cursor once, past the string and the run.
+	assert.match(luau, /local (pos[0-9]+) = at[0-9]+ [+] len[0-9]+\n\s+__surge_readCursor = \1 [+] 12$/m);
 });
 
 // Regression check for sizing a union. What it was measured as worth is in

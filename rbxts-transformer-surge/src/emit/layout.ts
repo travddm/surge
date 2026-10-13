@@ -362,6 +362,43 @@ export function allocRuns<T>(
 }
 
 /**
+ * The locals a `str` or a `buffer` declares beside a run it joins: its value
+ * and its length, its reservation's position in each form of its count, and
+ * the run's start.
+ */
+const JOINED_STRING_LOCALS = 5;
+
+/**
+ * The bytes of `run`, fixed-size fields next to `str`, that `str`'s
+ * reservation joins (Transformer 5.19), or `undefined` where it joins none:
+ * `str` is not a `str` or a `buffer` that writes a count, the run holds no
+ * bytes, or the two declare more locals than a run holds, so that they fit
+ * in one block. `leadBytes` is a union variant's index at the head of the
+ * run. The caller has checked that each of `run` can share a reservation.
+ */
+export function joinedRunBytes(
+	str: Field,
+	run: ReadonlyArray<Field>,
+	writeChecks: boolean,
+	leadBytes = 0,
+): number | undefined {
+	if ((str.kind !== "str" && str.kind !== "buffer") || exactCount(str.length) !== undefined) {
+		return undefined;
+	}
+	let bytes = leadBytes;
+	let locals = JOINED_STRING_LOCALS + (leadBytes > 0 ? 1 : 0);
+	for (const field of run) {
+		const each = fixedBytes(field);
+		if (each === undefined) {
+			return undefined;
+		}
+		bytes += each;
+		locals += runLocals(field, writeChecks);
+	}
+	return bytes === 0 || locals > ALLOC_RUN_LOCALS ? undefined : bytes;
+}
+
+/**
  * The bits of an object's packed region, in wire order. Both sides build
  * the region from this one list, so the bit order cannot differ between
  * them. A packed `boolean` is one value bit. A packed `optional` is one

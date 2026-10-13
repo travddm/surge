@@ -1,7 +1,7 @@
 # Transformer specification
 
 Status: current
-Applies to: commit `5745202` (no tagged release yet)
+Applies to: commit `88fe442` (no tagged release yet)
 
 ## 1. Scope
 
@@ -251,7 +251,8 @@ two, and one more for each of its bytes; and, under `writeChecks: true`, a
 A nested object declares
 what its properties declare, at any depth, and a tuple what its elements
 declare. A tuple's consecutive fixed-size elements share a reservation, as an
-object's properties do.
+object's properties do. A run next to a `str` or a `buffer` with a count
+shares that one's reservation (5.19).
 
 **5.6** A `dict`'s count is reserved before its entries, the entries are
 counted as they are written, and the count is written back once known. A
@@ -371,6 +372,25 @@ one-byte form inline and in its long form in the call that writes it
 (5.28). The read side reads the count, then moves the read
 cursor past the count and the bytes in one step. The exact form, which writes
 no count, reserves its bytes alone.
+
+Such a `str` or `buffer` next to a run of fixed-size properties of the same
+object (5.5), with a variant's index at the run's head where 5.25 puts one
+there, or a `dict`'s key whose value is fixed-size, or its value whose key
+is, shares its reservation with that run, or with that key or value; of a run
+on each side, the one before it. A run before it is reserved from the write
+cursor's position ahead of both: with the count and the bytes in a
+variable-length count's one-byte form and in a count of a fixed width, and on
+its own ahead of the long form's call. A run after it is reserved with the
+count and the bytes in the same forms, and on its own after the long form's
+call, and starts that many bytes before the cursor. The run is written after
+the bytes, and the write reads the `str` or `buffer` from its value before
+the run's properties. The read side moves the read cursor past both in one
+step: a run before the count is read from the position read ahead of both,
+after the count, and a run after the bytes from where they end. Under
+`readChecks`, the bound before the count covers a run before it, and the
+bound after the bytes a run after them. The two declare at most the 31 locals
+of 5.5: the run's, as 5.5 counts them, one for a variant's index, and five
+for the `str` or `buffer`.
 
 **5.20** A `serialize` whose shape can be sized from its value before it is
 written creates its result at that size and writes into it. The size is one
@@ -649,7 +669,7 @@ of `rbxts-transformer-surge`, cited by `describe` block. Source paths are in
 | 5.16      | `transform`: `transform (end-to-end)` (the declared result has a blobs array exactly when the walk finds a blob, an array the shape never fills, the declared table at a `createDeserializer` call site, and a `deserialize` that reads nothing), `transform generated code` (a caller of a result with no blob and with one, and separate factories); `test/golden.test.mjs`: a shape with no blob field returns the buffer alone, and `deserialize` takes what `serialize` returned                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
 | 5.17      | `transform`: `transform readChecks option` (`deserialize` takes `unknown`, the table each factory requires for a blob or a declared table it never fills, and a caller passing `unknown`, with a blob and without, type-checks); `test/golden.test.mjs`: a serializer with `readChecks` carries them; `tests/src/tests/checks.spec.ts`: `rejectsAnythingButABufferForAShapeWithNoBlob`, `rejectsAnythingButItsTableForAShapeWithABlob`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
 | 5.18      | `emit`: `Emitter element reservations`; `test/golden.test.mjs`: an array of fixed-size elements reserves them all once, ahead of its loop; `tests/src/tests/checks.spec.ts`: `rejectsATruncatedExactLengthArray`; `tests/src/tests/coverage.spec.ts`: `roundTripsAnArrayOfObjectsWiderThanTheLocalRegisterLimit`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
-| 5.19      | `emit`: `Emitter counted bytes`; `test/golden.test.mjs`: a string reserves its count and its bytes at once; `tests/src/tests/checks.spec.ts`: `rejectsAStringCutInItsCountOrItsBytes`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| 5.19      | `emit`: `Emitter counted bytes`, `Emitter strings joined with a run`; `test/golden.test.mjs`: a string reserves its count and its bytes at once, a string reserves the fixed-size bytes beside it with its own; `tests/src/tests/strings.spec.ts`: `roundTripsAStringJoinedWithTheRunBesideIt`, `roundTripsRandomStringsJoinedWithTheRunBesideThem`; `tests/src/tests/checks.spec.ts`: `rejectsAStringCutInItsCountOrItsBytes`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
 | 5.20      | `emit`: `Emitter exact sizing`; `transform`: `transform generated code` (a shape written exactly passes the type check), `transform (end-to-end)` (a shape with no blob field); `test/golden.test.mjs`: a shape sized exactly creates its result at that size and checks no capacity, a union is sized by the variant its write picks, an array of unions, objects or arrays is sized by a loop, and an array of anything else that varies is not, an array of objects that hold a blob is sized by its count, and a size binds the locals its write reads, ahead of the result, and a size that compares a tag more than once reads it once; `transform`: `transform generated code` (a shape sized by loops over unions, and an optional of fixed size, packed and not, pass the type check under `noUnusedLocals`); `tests/src/tests/coverage.spec.ts`: `roundTripsAnObjectWhoseSizeHasHundredsOfTerms`; `tests/src/tests/roblox.spec.ts`: `roundTripsAnArrayOfObjectsThatHoldABlob`; `tests/src/tests/strings.spec.ts`: `roundTripsAnArrayOfObjectsThatHoldAString`; every round trip and byte pin under `tests/src/tests/`; `tests/src/tests/counts.spec.ts`: `roundTripsOptionalsAtTheEdgesOfTheLongForms` |
 | 5.21      | `emit`: `Emitter read tables`; `test/golden.test.mjs`: a read creates its table at its size and stores each element at its index, and a tuple of fixed-size elements shares the reservation around it, and is read into one table; `tests/src/tests/collections.spec.ts`: `keepsAnAbsentTupleElementInItsPlace`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | 5.22      | `emit`: `Emitter exact arrays`; `transform`: `transform generated code` (an array, an exact array and a tuple's rest under `noUncheckedIndexedAccess`)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
@@ -674,6 +694,9 @@ of `rbxts-transformer-surge`, cited by `describe` block. Source paths are in
 
 ## Changes
 
+- `88fe442`: 5.19 has a `str` or a `buffer` with a count share its reservation
+  with a run of fixed-size bytes beside it, and read both with one move of the
+  read cursor; 5.5 points to it.
 - `5745202`: 5.3 has a `serialize` that is not sized exactly and reaches no
   recursion helper hold its scratch buffer, capacity and write cursor in
   locals, and the closure keep the buffer and its capacity between calls.

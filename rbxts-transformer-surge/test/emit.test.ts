@@ -680,10 +680,13 @@ describe("Emitter shared reservations", () => {
 			],
 		});
 		// Reservation order is byte order, so the two fields after the string
-		// cannot join the two before it. The string's count and bytes are one
-		// reservation whose size is known only at run time, which this does not count.
+		// cannot join the two before it. The two before it join the string's
+		// one-byte count and its bytes in one reservation whose size is known
+		// only at run time, which this does not count, and reserve on their
+		// own, the 2, only ahead of the count's long form.
 		expect(reservations(output, "write")).toEqual([2, 8]);
-		expect(reservations(output, "read")).toEqual([2, 8]);
+		expect(output).toMatch(/__surge_cursor = pos\d+ \+ \(len\d+ \+ 3\);/);
+		expect(reservations(output, "read")).toEqual([8]);
 	});
 
 	test("a field whose bytes the packed region holds does not join a run", () => {
@@ -933,6 +936,122 @@ describe("Emitter counted bytes", () => {
 		expect(countBound).toBeGreaterThan(-1);
 		expect(countBound).toBeLessThan(countRead);
 		expect(bytesBound).toBeGreaterThan(countRead);
+	});
+});
+
+describe("Emitter strings joined with a run", () => {
+	const u32: Field = { kind: "num", width: "u32" };
+	const f64: Field = { kind: "num", width: "f64" };
+
+	test("a string reserves the run of fixed-size properties after it with its bytes", () => {
+		const output = emitSnapshot(
+			{
+				kind: "object",
+				fields: [
+					{ name: "name", field: { kind: "str" } },
+					{ name: "score", field: u32 },
+					{ name: "userId", field: f64 },
+				],
+			},
+			new Map(),
+			{ readChecks: true },
+		);
+		const [write, read] = output.split("// read\n");
+		// The one-byte form reserves the run with the string; the long form
+		// reserves it after its call. The run then starts 12 bytes before the
+		// cursor in either form.
+		expect(write).toMatch(/^\s+__surge_cursor = pos\d+ \+ \(len\d+ \+ 13\);$/m);
+		expect(write).toMatch(
+			/__surge_growLongString\([^\n]*\);\n\s+const (pos\d+) = __surge_cursor;\n\s+__surge_cursor = \1 \+ 12;/,
+		);
+		expect(write).toMatch(
+			/^const (pos\d+) = __surge_cursor - 12;\nbuffer\.writeu32\(__surge_scratch, \1, value\.score\);$/m,
+		);
+		// One move of the read cursor past the bytes and the run, and one bound.
+		expect(read).toMatch(
+			/^const (pos\d+) = (at\d+) \+ (len\d+);\n__surge_readCursor = \1 \+ 12;\nif \(__surge_readCursor > __surge_inputLength\) \{$/m,
+		);
+		expect(read.match(/__surge_readCursor = /g)).toHaveLength(1);
+		expect(read.match(/__surge_readCursor > __surge_inputLength/g)).toHaveLength(1);
+	});
+
+	test("a string reserves the run before it, a union variant's index included", () => {
+		const output = emitSnapshot(
+			{
+				kind: "taggedUnion",
+				tagKey: "kind",
+				variants: [
+					{
+						tagValue: "chat",
+						fields: [
+							{ name: "id", field: u32 },
+							{ name: "text", field: { kind: "str" } },
+						],
+					},
+					{ tagValue: "ping", fields: [{ name: "id", field: u32 }] },
+				],
+			},
+			new Map(),
+			{ readChecks: true },
+		);
+		const [write, read] = output.split("// read\n");
+		// The position is taken once, the one-byte form reserves the index, the
+		// `u32` and the string from it, and the long form reserves the run ahead
+		// of its call. The run is written from the position after the string.
+		expect(write).toMatch(
+			/const (pos\d+) = __surge_cursor;\n\s+if \((len\d+) < 254\) \{\n\s+__surge_cursor = \1 \+ \(\2 \+ 6\);\n[^]*?buffer\.writeu8\(__surge_scratch, \1 \+ 5, \2\);\n\s+buffer\.writestring\(__surge_scratch, \1 \+ 6, s\d+\);\n\s+\}\n\s+else \{\n\s+__surge_cursor = \1 \+ 5;\n[^]*?__surge_growLongString\([^\n]*\n\s+\}\n\s+buffer\.writeu8\(__surge_scratch, \1, 0\);/,
+		);
+		// The read takes the variant's index on its own, then reads the count
+		// past the `u32`, and the `u32` from where the run starts, after the
+		// bound that covers both.
+		expect(read).toMatch(
+			/const (pos\d+) = __surge_readCursor;\n\s+if \(\1 \+ 5 > __surge_inputLength\) \{\n[^]*?let len\d+ = buffer\.readu8\(__surge_input, \1 \+ 4\);/,
+		);
+		expect(read).toMatch(/id: buffer\.readu32\(__surge_input, pos\d+\),\n\s+text: buffer\.readstring/);
+	});
+
+	test.each([
+		[
+			"a string key reserves a fixed-size value after it",
+			{ kind: "dict", key: { kind: "str" }, value: { kind: "num", width: "u8" }, source: "map" } as Field,
+			/__surge_cursor = pos\d+ \+ \(len\d+ \+ 2\);/,
+			/const (pos\d+) = at\d+ \+ len\d+;\n\s+__surge_readCursor = \1 \+ 1;/,
+		],
+		[
+			"a buffer value with a u16 count reserves a fixed-size key before it",
+			{
+				kind: "dict",
+				key: { kind: "num", width: "u16" },
+				value: { kind: "buffer", length: "u16" },
+				source: "map",
+			} as Field,
+			/const (pos\d+) = __surge_cursor;\n\s+__surge_cursor = \1 \+ \(len\d+ \+ 4\);/,
+			/const (pos\d+) = __surge_readCursor;\n\s+const len\d+ = buffer\.readu16\(__surge_input, \1 \+ 2\);/,
+		],
+	])("%s", (_label, field, write, read) => {
+		const output = emitSnapshot(field);
+		expect(output.split("// read\n")[0]).toMatch(write);
+		expect(output.split("// read\n")[1]).toMatch(read);
+	});
+
+	test.each([
+		[
+			"a string of an exact length",
+			[
+				{ name: "code", field: { kind: "str", length: 4 } as Field },
+				{ name: "n", field: u32 },
+			],
+		],
+		[
+			"a string beside no run",
+			[
+				{ name: "a", field: { kind: "str" } as Field },
+				{ name: "b", field: { kind: "str" } as Field },
+			],
+		],
+	])("%s joins nothing", (_label, fields) => {
+		const output = emitSnapshot({ kind: "object", fields });
+		expect(output).not.toMatch(/__surge_cursor - \d+|__surge_cursor = pos\d+ \+ \(len\d+ \+ [2-9]\d*\)/);
 	});
 });
 
