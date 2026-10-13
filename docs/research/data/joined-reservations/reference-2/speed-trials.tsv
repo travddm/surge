@@ -1,0 +1,1328 @@
+# Trials behind speed.md. Written by `mise run bench:speed:only`; do not edit by hand.
+# Date: 2026-10-13
+# Roblox: 0.742.0.7421053
+# Machine: 12th Gen Intel(R) Core(TM) i9-12900KF, 16 threads, win32 10.0.26200
+# Runs: 2, back to back
+# Commit: 88fe442
+# roblox-ts: 3.0.0
+# @rbxts/flamework-binary-serializer: 0.7.0
+# @rbxts/serio: 1.2.7
+# @flamework-experimental/core: 2.0.0-alpha.8
+# Blink: 0.18.8
+# Scope: Scoped to 5 rows by the patterns leaderboard, largerecord, taggedunion, nested, with every column, timing encode and decode, in 2 runs back to back.
+# Method: 9 trials per cell, each at least 0.2 seconds of calls after 0.1 seconds of warm-up calls, timed in chunks of 250 calls so that the yields between chunks are not in the time; within a row the libraries take turns, one trial each, and 3 idle frames separate one row from the next; before any trial, every cell decodes its buffer once, and a run in which a cell round-trips worse than the size table records is not recorded
+fixture	library	half	run	trial	rate
+deeply nested object	surge	encode	1	1	4110034
+deeply nested object	surge	encode	1	2	4097658
+deeply nested object	surge	encode	1	3	4290081
+deeply nested object	surge	encode	1	4	4124990
+deeply nested object	surge	encode	1	5	4288806
+deeply nested object	surge	encode	1	6	4312233
+deeply nested object	surge	encode	1	7	4105207
+deeply nested object	surge	encode	1	8	4337118
+deeply nested object	surge	encode	1	9	4088738
+deeply nested object	surge	encode	2	1	4228681
+deeply nested object	surge	encode	2	2	3893557
+deeply nested object	surge	encode	2	3	4342368
+deeply nested object	surge	encode	2	4	4053553
+deeply nested object	surge	encode	2	5	4321071
+deeply nested object	surge	encode	2	6	4349698
+deeply nested object	surge	encode	2	7	4124332
+deeply nested object	surge	encode	2	8	4335910
+deeply nested object	surge	encode	2	9	4314424
+deeply nested object	surge	decode	1	1	2594414
+deeply nested object	surge	decode	1	2	2683747
+deeply nested object	surge	decode	1	3	2448319
+deeply nested object	surge	decode	1	4	2651545
+deeply nested object	surge	decode	1	5	2546396
+deeply nested object	surge	decode	1	6	2715314
+deeply nested object	surge	decode	1	7	2685977
+deeply nested object	surge	decode	1	8	2368198
+deeply nested object	surge	decode	1	9	2710720
+deeply nested object	surge	decode	2	1	2684870
+deeply nested object	surge	decode	2	2	2621859
+deeply nested object	surge	decode	2	3	2645667
+deeply nested object	surge	decode	2	4	2670266
+deeply nested object	surge	decode	2	5	2462337
+deeply nested object	surge	decode	2	6	2695107
+deeply nested object	surge	decode	2	7	2550157
+deeply nested object	surge	decode	2	8	2693890
+deeply nested object	surge	decode	2	9	2672305
+deeply nested object	surge (cursor)	encode	1	1	4659578
+deeply nested object	surge (cursor)	encode	1	2	4687097
+deeply nested object	surge (cursor)	encode	1	3	4729827
+deeply nested object	surge (cursor)	encode	1	4	4598979
+deeply nested object	surge (cursor)	encode	1	5	4872269
+deeply nested object	surge (cursor)	encode	1	6	4795209
+deeply nested object	surge (cursor)	encode	1	7	4646273
+deeply nested object	surge (cursor)	encode	1	8	4327737
+deeply nested object	surge (cursor)	encode	1	9	4766413
+deeply nested object	surge (cursor)	encode	2	1	4647251
+deeply nested object	surge (cursor)	encode	2	2	4345722
+deeply nested object	surge (cursor)	encode	2	3	4918298
+deeply nested object	surge (cursor)	encode	2	4	4728865
+deeply nested object	surge (cursor)	encode	2	5	4967841
+deeply nested object	surge (cursor)	encode	2	6	4914496
+deeply nested object	surge (cursor)	encode	2	7	4684945
+deeply nested object	surge (cursor)	encode	2	8	4840628
+deeply nested object	surge (cursor)	encode	2	9	4721000
+deeply nested object	surge (cursor)	decode	1	1	2517139
+deeply nested object	surge (cursor)	decode	1	2	2444566
+deeply nested object	surge (cursor)	decode	1	3	2481897
+deeply nested object	surge (cursor)	decode	1	4	2398701
+deeply nested object	surge (cursor)	decode	1	5	2288090
+deeply nested object	surge (cursor)	decode	1	6	2525293
+deeply nested object	surge (cursor)	decode	1	7	2429399
+deeply nested object	surge (cursor)	decode	1	8	2325112
+deeply nested object	surge (cursor)	decode	1	9	2477735
+deeply nested object	surge (cursor)	decode	2	1	2488232
+deeply nested object	surge (cursor)	decode	2	2	2404089
+deeply nested object	surge (cursor)	decode	2	3	2541176
+deeply nested object	surge (cursor)	decode	2	4	2499371
+deeply nested object	surge (cursor)	decode	2	5	2341168
+deeply nested object	surge (cursor)	decode	2	6	2489965
+deeply nested object	surge (cursor)	decode	2	7	2403313
+deeply nested object	surge (cursor)	decode	2	8	2449899
+deeply nested object	surge (cursor)	decode	2	9	2525925
+deeply nested object	surge (readChecks)	decode	1	1	2431167
+deeply nested object	surge (readChecks)	decode	1	2	2268309
+deeply nested object	surge (readChecks)	decode	1	3	2515488
+deeply nested object	surge (readChecks)	decode	1	4	2292020
+deeply nested object	surge (readChecks)	decode	1	5	2338523
+deeply nested object	surge (readChecks)	decode	1	6	2509652
+deeply nested object	surge (readChecks)	decode	1	7	2429615
+deeply nested object	surge (readChecks)	decode	1	8	2514785
+deeply nested object	surge (readChecks)	decode	1	9	2545835
+deeply nested object	surge (readChecks)	decode	2	1	2540024
+deeply nested object	surge (readChecks)	decode	2	2	2350451
+deeply nested object	surge (readChecks)	decode	2	3	2493724
+deeply nested object	surge (readChecks)	decode	2	4	2486261
+deeply nested object	surge (readChecks)	decode	2	5	2326123
+deeply nested object	surge (readChecks)	decode	2	6	2492719
+deeply nested object	surge (readChecks)	decode	2	7	2401339
+deeply nested object	surge (readChecks)	decode	2	8	2526756
+deeply nested object	surge (readChecks)	decode	2	9	2511009
+deeply nested object	fbs	encode	1	1	1640901
+deeply nested object	fbs	encode	1	2	1688592
+deeply nested object	fbs	encode	1	3	1751105
+deeply nested object	fbs	encode	1	4	1681746
+deeply nested object	fbs	encode	1	5	1775681
+deeply nested object	fbs	encode	1	6	1785483
+deeply nested object	fbs	encode	1	7	1677949
+deeply nested object	fbs	encode	1	8	1672069
+deeply nested object	fbs	encode	1	9	1720120
+deeply nested object	fbs	encode	2	1	1732376
+deeply nested object	fbs	encode	2	2	1764959
+deeply nested object	fbs	encode	2	3	1778682
+deeply nested object	fbs	encode	2	4	1698667
+deeply nested object	fbs	encode	2	5	1770859
+deeply nested object	fbs	encode	2	6	1730597
+deeply nested object	fbs	encode	2	7	1802954
+deeply nested object	fbs	encode	2	8	1809416
+deeply nested object	fbs	encode	2	9	1732324
+deeply nested object	fbs	decode	1	1	1534464
+deeply nested object	fbs	decode	1	2	1550331
+deeply nested object	fbs	decode	1	3	1567153
+deeply nested object	fbs	decode	1	4	1570730
+deeply nested object	fbs	decode	1	5	1519474
+deeply nested object	fbs	decode	1	6	1594009
+deeply nested object	fbs	decode	1	7	1545989
+deeply nested object	fbs	decode	1	8	1570478
+deeply nested object	fbs	decode	1	9	1589867
+deeply nested object	fbs	decode	2	1	1583170
+deeply nested object	fbs	decode	2	2	1514662
+deeply nested object	fbs	decode	2	3	1560388
+deeply nested object	fbs	decode	2	4	1590361
+deeply nested object	fbs	decode	2	5	1546638
+deeply nested object	fbs	decode	2	6	1577107
+deeply nested object	fbs	decode	2	7	1467885
+deeply nested object	fbs	decode	2	8	1573321
+deeply nested object	fbs	decode	2	9	1561394
+deeply nested object	serio	encode	1	1	430365
+deeply nested object	serio	encode	1	2	468258
+deeply nested object	serio	encode	1	3	459543
+deeply nested object	serio	encode	1	4	458898
+deeply nested object	serio	encode	1	5	465856
+deeply nested object	serio	encode	1	6	461063
+deeply nested object	serio	encode	1	7	466455
+deeply nested object	serio	encode	1	8	447296
+deeply nested object	serio	encode	1	9	443543
+deeply nested object	serio	encode	2	1	453654
+deeply nested object	serio	encode	2	2	458927
+deeply nested object	serio	encode	2	3	455201
+deeply nested object	serio	encode	2	4	468217
+deeply nested object	serio	encode	2	5	472359
+deeply nested object	serio	encode	2	6	469552
+deeply nested object	serio	encode	2	7	461615
+deeply nested object	serio	encode	2	8	470997
+deeply nested object	serio	encode	2	9	452335
+deeply nested object	serio	decode	1	1	713552
+deeply nested object	serio	decode	1	2	693958
+deeply nested object	serio	decode	1	3	713655
+deeply nested object	serio	decode	1	4	719701
+deeply nested object	serio	decode	1	5	712516
+deeply nested object	serio	decode	1	6	723748
+deeply nested object	serio	decode	1	7	700485
+deeply nested object	serio	decode	1	8	718915
+deeply nested object	serio	decode	1	9	723192
+deeply nested object	serio	decode	2	1	715702
+deeply nested object	serio	decode	2	2	696186
+deeply nested object	serio	decode	2	3	716928
+deeply nested object	serio	decode	2	4	707965
+deeply nested object	serio	decode	2	5	711969
+deeply nested object	serio	decode	2	6	717170
+deeply nested object	serio	decode	2	7	706445
+deeply nested object	serio	decode	2	8	707288
+deeply nested object	serio	decode	2	9	714471
+deeply nested object	flamework2	encode	1	1	1968288
+deeply nested object	flamework2	encode	1	2	2806205
+deeply nested object	flamework2	encode	1	3	2836227
+deeply nested object	flamework2	encode	1	4	2829348
+deeply nested object	flamework2	encode	1	5	2889207
+deeply nested object	flamework2	encode	1	6	2764835
+deeply nested object	flamework2	encode	1	7	2795395
+deeply nested object	flamework2	encode	1	8	2761826
+deeply nested object	flamework2	encode	1	9	2576177
+deeply nested object	flamework2	encode	2	1	2666832
+deeply nested object	flamework2	encode	2	2	2739111
+deeply nested object	flamework2	encode	2	3	2806072
+deeply nested object	flamework2	encode	2	4	2855479
+deeply nested object	flamework2	encode	2	5	2840219
+deeply nested object	flamework2	encode	2	6	2769302
+deeply nested object	flamework2	encode	2	7	2850677
+deeply nested object	flamework2	encode	2	8	2858815
+deeply nested object	flamework2	encode	2	9	2697191
+deeply nested object	flamework2	decode	1	1	2086719
+deeply nested object	flamework2	decode	1	2	1945505
+deeply nested object	flamework2	decode	1	3	2113044
+deeply nested object	flamework2	decode	1	4	2054841
+deeply nested object	flamework2	decode	1	5	2127339
+deeply nested object	flamework2	decode	1	6	2134956
+deeply nested object	flamework2	decode	1	7	1919440
+deeply nested object	flamework2	decode	1	8	1960722
+deeply nested object	flamework2	decode	1	9	2030497
+deeply nested object	flamework2	decode	2	1	2128617
+deeply nested object	flamework2	decode	2	2	2005841
+deeply nested object	flamework2	decode	2	3	2155040
+deeply nested object	flamework2	decode	2	4	2030200
+deeply nested object	flamework2	decode	2	5	2151774
+deeply nested object	flamework2	decode	2	6	2139478
+deeply nested object	flamework2	decode	2	7	1992112
+deeply nested object	flamework2	decode	2	8	2134473
+deeply nested object	flamework2	decode	2	9	2033454
+deeply nested object	blink	encode	1	1	1528283
+deeply nested object	blink	encode	1	2	1957310
+deeply nested object	blink	encode	1	3	1894552
+deeply nested object	blink	encode	1	4	1910585
+deeply nested object	blink	encode	1	5	1968921
+deeply nested object	blink	encode	1	6	1851220
+deeply nested object	blink	encode	1	7	1917652
+deeply nested object	blink	encode	1	8	1920743
+deeply nested object	blink	encode	1	9	1716933
+deeply nested object	blink	encode	2	1	1944950
+deeply nested object	blink	encode	2	2	1920336
+deeply nested object	blink	encode	2	3	1875121
+deeply nested object	blink	encode	2	4	1980424
+deeply nested object	blink	encode	2	5	1956518
+deeply nested object	blink	encode	2	6	1856242
+deeply nested object	blink	encode	2	7	1993978
+deeply nested object	blink	encode	2	8	1974230
+deeply nested object	blink	encode	2	9	1880445
+deeply nested object	blink	decode	1	1	1634664
+deeply nested object	blink	decode	1	2	1559668
+deeply nested object	blink	decode	1	3	1629587
+deeply nested object	blink	decode	1	4	1614168
+deeply nested object	blink	decode	1	5	1651829
+deeply nested object	blink	decode	1	6	1650845
+deeply nested object	blink	decode	1	7	1453037
+deeply nested object	blink	decode	1	8	1602405
+deeply nested object	blink	decode	1	9	1546199
+deeply nested object	blink	decode	2	1	1640737
+deeply nested object	blink	decode	2	2	1553242
+deeply nested object	blink	decode	2	3	1641306
+deeply nested object	blink	decode	2	4	1563230
+deeply nested object	blink	decode	2	5	1650885
+deeply nested object	blink	decode	2	6	1650577
+deeply nested object	blink	decode	2	7	1558713
+deeply nested object	blink	decode	2	8	1653341
+deeply nested object	blink	decode	2	9	1568723
+deeply nested object	baseline	encode	1	1	4139619
+deeply nested object	baseline	encode	1	2	4340193
+deeply nested object	baseline	encode	1	3	4213968
+deeply nested object	baseline	encode	1	4	4308727
+deeply nested object	baseline	encode	1	5	4444169
+deeply nested object	baseline	encode	1	6	4209699
+deeply nested object	baseline	encode	1	7	4355292
+deeply nested object	baseline	encode	1	8	4325344
+deeply nested object	baseline	encode	1	9	4155812
+deeply nested object	baseline	encode	2	1	4345340
+deeply nested object	baseline	encode	2	2	4447992
+deeply nested object	baseline	encode	2	3	4338440
+deeply nested object	baseline	encode	2	4	4436041
+deeply nested object	baseline	encode	2	5	4446148
+deeply nested object	baseline	encode	2	6	4212830
+deeply nested object	baseline	encode	2	7	4437238
+deeply nested object	baseline	encode	2	8	4462503
+deeply nested object	baseline	encode	2	9	4260835
+deeply nested object	baseline	decode	1	1	2628552
+deeply nested object	baseline	decode	1	2	2388856
+deeply nested object	baseline	decode	1	3	2648712
+deeply nested object	baseline	decode	1	4	2457396
+deeply nested object	baseline	decode	1	5	2722001
+deeply nested object	baseline	decode	1	6	2639254
+deeply nested object	baseline	decode	1	7	2303341
+deeply nested object	baseline	decode	1	8	2686503
+deeply nested object	baseline	decode	1	9	2463836
+deeply nested object	baseline	decode	2	1	2617247
+deeply nested object	baseline	decode	2	2	2504874
+deeply nested object	baseline	decode	2	3	2669960
+deeply nested object	baseline	decode	2	4	2348711
+deeply nested object	baseline	decode	2	5	2605859
+deeply nested object	baseline	decode	2	6	2651950
+deeply nested object	baseline	decode	2	7	2515981
+deeply nested object	baseline	decode	2	8	2614906
+deeply nested object	baseline	decode	2	9	2503152
+nested arrays	surge	encode	1	1	782162
+nested arrays	surge	encode	1	2	783503
+nested arrays	surge	encode	1	3	783010
+nested arrays	surge	encode	1	4	786843
+nested arrays	surge	encode	1	5	784239
+nested arrays	surge	encode	1	6	778894
+nested arrays	surge	encode	1	7	803847
+nested arrays	surge	encode	1	8	798617
+nested arrays	surge	encode	1	9	776807
+nested arrays	surge	encode	2	1	796081
+nested arrays	surge	encode	2	2	802743
+nested arrays	surge	encode	2	3	782041
+nested arrays	surge	encode	2	4	801406
+nested arrays	surge	encode	2	5	803045
+nested arrays	surge	encode	2	6	782877
+nested arrays	surge	encode	2	7	804162
+nested arrays	surge	encode	2	8	793742
+nested arrays	surge	encode	2	9	789538
+nested arrays	surge	decode	1	1	303655
+nested arrays	surge	decode	1	2	307031
+nested arrays	surge	decode	1	3	285342
+nested arrays	surge	decode	1	4	296563
+nested arrays	surge	decode	1	5	312930
+nested arrays	surge	decode	1	6	312236
+nested arrays	surge	decode	1	7	312383
+nested arrays	surge	decode	1	8	284998
+nested arrays	surge	decode	1	9	304400
+nested arrays	surge	decode	2	1	314855
+nested arrays	surge	decode	2	2	305711
+nested arrays	surge	decode	2	3	278816
+nested arrays	surge	decode	2	4	314034
+nested arrays	surge	decode	2	5	282308
+nested arrays	surge	decode	2	6	307835
+nested arrays	surge	decode	2	7	318282
+nested arrays	surge	decode	2	8	280865
+nested arrays	surge	decode	2	9	308250
+nested arrays	surge (cursor)	encode	1	1	1170340
+nested arrays	surge (cursor)	encode	1	2	1181105
+nested arrays	surge (cursor)	encode	1	3	1161822
+nested arrays	surge (cursor)	encode	1	4	1164117
+nested arrays	surge (cursor)	encode	1	5	1180653
+nested arrays	surge (cursor)	encode	1	6	1163541
+nested arrays	surge (cursor)	encode	1	7	1171063
+nested arrays	surge (cursor)	encode	1	8	1191836
+nested arrays	surge (cursor)	encode	1	9	1188254
+nested arrays	surge (cursor)	encode	2	1	1200662
+nested arrays	surge (cursor)	encode	2	2	1208597
+nested arrays	surge (cursor)	encode	2	3	1178867
+nested arrays	surge (cursor)	encode	2	4	1206769
+nested arrays	surge (cursor)	encode	2	5	1195726
+nested arrays	surge (cursor)	encode	2	6	1188743
+nested arrays	surge (cursor)	encode	2	7	1189612
+nested arrays	surge (cursor)	encode	2	8	1193140
+nested arrays	surge (cursor)	encode	2	9	1188436
+nested arrays	surge (cursor)	decode	1	1	302787
+nested arrays	surge (cursor)	decode	1	2	306334
+nested arrays	surge (cursor)	decode	1	3	275720
+nested arrays	surge (cursor)	decode	1	4	306188
+nested arrays	surge (cursor)	decode	1	5	292229
+nested arrays	surge (cursor)	decode	1	6	308930
+nested arrays	surge (cursor)	decode	1	7	313247
+nested arrays	surge (cursor)	decode	1	8	279832
+nested arrays	surge (cursor)	decode	1	9	315338
+nested arrays	surge (cursor)	decode	2	1	322462
+nested arrays	surge (cursor)	decode	2	2	298738
+nested arrays	surge (cursor)	decode	2	3	276078
+nested arrays	surge (cursor)	decode	2	4	304651
+nested arrays	surge (cursor)	decode	2	5	261091
+nested arrays	surge (cursor)	decode	2	6	303959
+nested arrays	surge (cursor)	decode	2	7	313571
+nested arrays	surge (cursor)	decode	2	8	288544
+nested arrays	surge (cursor)	decode	2	9	303478
+nested arrays	surge (readChecks)	decode	1	1	300146
+nested arrays	surge (readChecks)	decode	1	2	311119
+nested arrays	surge (readChecks)	decode	1	3	269875
+nested arrays	surge (readChecks)	decode	1	4	301152
+nested arrays	surge (readChecks)	decode	1	5	287803
+nested arrays	surge (readChecks)	decode	1	6	305668
+nested arrays	surge (readChecks)	decode	1	7	315154
+nested arrays	surge (readChecks)	decode	1	8	289358
+nested arrays	surge (readChecks)	decode	1	9	304800
+nested arrays	surge (readChecks)	decode	2	1	299895
+nested arrays	surge (readChecks)	decode	2	2	294430
+nested arrays	surge (readChecks)	decode	2	3	280507
+nested arrays	surge (readChecks)	decode	2	4	318757
+nested arrays	surge (readChecks)	decode	2	5	242900
+nested arrays	surge (readChecks)	decode	2	6	304542
+nested arrays	surge (readChecks)	decode	2	7	308498
+nested arrays	surge (readChecks)	decode	2	8	292211
+nested arrays	surge (readChecks)	decode	2	9	308928
+nested arrays	fbs	encode	1	1	260579
+nested arrays	fbs	encode	1	2	264542
+nested arrays	fbs	encode	1	3	254387
+nested arrays	fbs	encode	1	4	263767
+nested arrays	fbs	encode	1	5	262888
+nested arrays	fbs	encode	1	6	260171
+nested arrays	fbs	encode	1	7	265466
+nested arrays	fbs	encode	1	8	258011
+nested arrays	fbs	encode	1	9	260885
+nested arrays	fbs	encode	2	1	261653
+nested arrays	fbs	encode	2	2	265987
+nested arrays	fbs	encode	2	3	259746
+nested arrays	fbs	encode	2	4	264692
+nested arrays	fbs	encode	2	5	261869
+nested arrays	fbs	encode	2	6	262733
+nested arrays	fbs	encode	2	7	264461
+nested arrays	fbs	encode	2	8	258580
+nested arrays	fbs	encode	2	9	265996
+nested arrays	fbs	decode	1	1	159801
+nested arrays	fbs	decode	1	2	160831
+nested arrays	fbs	decode	1	3	149972
+nested arrays	fbs	decode	1	4	156751
+nested arrays	fbs	decode	1	5	149478
+nested arrays	fbs	decode	1	6	159734
+nested arrays	fbs	decode	1	7	157442
+nested arrays	fbs	decode	1	8	153641
+nested arrays	fbs	decode	1	9	158318
+nested arrays	fbs	decode	2	1	158074
+nested arrays	fbs	decode	2	2	154906
+nested arrays	fbs	decode	2	3	157090
+nested arrays	fbs	decode	2	4	155528
+nested arrays	fbs	decode	2	5	141415
+nested arrays	fbs	decode	2	6	159674
+nested arrays	fbs	decode	2	7	157772
+nested arrays	fbs	decode	2	8	158915
+nested arrays	fbs	decode	2	9	158029
+nested arrays	serio	encode	1	1	35301
+nested arrays	serio	encode	1	2	35067
+nested arrays	serio	encode	1	3	35399
+nested arrays	serio	encode	1	4	35267
+nested arrays	serio	encode	1	5	35095
+nested arrays	serio	encode	1	6	35086
+nested arrays	serio	encode	1	7	35317
+nested arrays	serio	encode	1	8	35567
+nested arrays	serio	encode	1	9	36009
+nested arrays	serio	encode	2	1	34839
+nested arrays	serio	encode	2	2	35141
+nested arrays	serio	encode	2	3	35084
+nested arrays	serio	encode	2	4	35231
+nested arrays	serio	encode	2	5	35138
+nested arrays	serio	encode	2	6	35055
+nested arrays	serio	encode	2	7	35271
+nested arrays	serio	encode	2	8	35440
+nested arrays	serio	encode	2	9	34858
+nested arrays	serio	decode	1	1	76667
+nested arrays	serio	decode	1	2	76134
+nested arrays	serio	decode	1	3	76183
+nested arrays	serio	decode	1	4	75834
+nested arrays	serio	decode	1	5	75152
+nested arrays	serio	decode	1	6	76979
+nested arrays	serio	decode	1	7	76601
+nested arrays	serio	decode	1	8	76382
+nested arrays	serio	decode	1	9	76565
+nested arrays	serio	decode	2	1	76812
+nested arrays	serio	decode	2	2	75454
+nested arrays	serio	decode	2	3	76427
+nested arrays	serio	decode	2	4	76690
+nested arrays	serio	decode	2	5	72771
+nested arrays	serio	decode	2	6	76226
+nested arrays	serio	decode	2	7	74694
+nested arrays	serio	decode	2	8	74636
+nested arrays	serio	decode	2	9	76635
+nested arrays	flamework2	encode	1	1	761787
+nested arrays	flamework2	encode	1	2	746540
+nested arrays	flamework2	encode	1	3	767773
+nested arrays	flamework2	encode	1	4	760309
+nested arrays	flamework2	encode	1	5	744096
+nested arrays	flamework2	encode	1	6	751203
+nested arrays	flamework2	encode	1	7	755721
+nested arrays	flamework2	encode	1	8	742258
+nested arrays	flamework2	encode	1	9	756057
+nested arrays	flamework2	encode	2	1	761141
+nested arrays	flamework2	encode	2	2	732922
+nested arrays	flamework2	encode	2	3	743457
+nested arrays	flamework2	encode	2	4	748436
+nested arrays	flamework2	encode	2	5	722119
+nested arrays	flamework2	encode	2	6	753595
+nested arrays	flamework2	encode	2	7	746578
+nested arrays	flamework2	encode	2	8	712439
+nested arrays	flamework2	encode	2	9	759420
+nested arrays	flamework2	decode	1	1	266244
+nested arrays	flamework2	decode	1	2	242092
+nested arrays	flamework2	decode	1	3	265930
+nested arrays	flamework2	decode	1	4	266778
+nested arrays	flamework2	decode	1	5	243305
+nested arrays	flamework2	decode	1	6	270955
+nested arrays	flamework2	decode	1	7	255668
+nested arrays	flamework2	decode	1	8	260126
+nested arrays	flamework2	decode	1	9	267249
+nested arrays	flamework2	decode	2	1	278405
+nested arrays	flamework2	decode	2	2	251793
+nested arrays	flamework2	decode	2	3	277215
+nested arrays	flamework2	decode	2	4	273174
+nested arrays	flamework2	decode	2	5	250075
+nested arrays	flamework2	decode	2	6	274850
+nested arrays	flamework2	decode	2	7	263267
+nested arrays	flamework2	decode	2	8	277451
+nested arrays	flamework2	decode	2	9	279446
+nested arrays	blink	encode	1	1	344202
+nested arrays	blink	encode	1	2	329982
+nested arrays	blink	encode	1	3	348164
+nested arrays	blink	encode	1	4	336953
+nested arrays	blink	encode	1	5	331026
+nested arrays	blink	encode	1	6	342324
+nested arrays	blink	encode	1	7	350691
+nested arrays	blink	encode	1	8	323599
+nested arrays	blink	encode	1	9	342030
+nested arrays	blink	encode	2	1	354718
+nested arrays	blink	encode	2	2	338535
+nested arrays	blink	encode	2	3	361598
+nested arrays	blink	encode	2	4	355843
+nested arrays	blink	encode	2	5	339451
+nested arrays	blink	encode	2	6	351830
+nested arrays	blink	encode	2	7	351417
+nested arrays	blink	encode	2	8	319893
+nested arrays	blink	encode	2	9	358394
+nested arrays	blink	decode	1	1	246795
+nested arrays	blink	decode	1	2	234028
+nested arrays	blink	decode	1	3	238659
+nested arrays	blink	decode	1	4	243322
+nested arrays	blink	decode	1	5	230118
+nested arrays	blink	decode	1	6	246485
+nested arrays	blink	decode	1	7	237273
+nested arrays	blink	decode	1	8	246760
+nested arrays	blink	decode	1	9	247197
+nested arrays	blink	decode	2	1	244703
+nested arrays	blink	decode	2	2	235447
+nested arrays	blink	decode	2	3	247059
+nested arrays	blink	decode	2	4	237204
+nested arrays	blink	decode	2	5	236391
+nested arrays	blink	decode	2	6	247631
+nested arrays	blink	decode	2	7	227327
+nested arrays	blink	decode	2	8	246501
+nested arrays	blink	decode	2	9	244821
+nested arrays	baseline	encode	1	1	802303
+nested arrays	baseline	encode	1	2	774414
+nested arrays	baseline	encode	1	3	808852
+nested arrays	baseline	encode	1	4	821203
+nested arrays	baseline	encode	1	5	785869
+nested arrays	baseline	encode	1	6	800842
+nested arrays	baseline	encode	1	7	798801
+nested arrays	baseline	encode	1	8	777952
+nested arrays	baseline	encode	1	9	814888
+nested arrays	baseline	encode	2	1	772676
+nested arrays	baseline	encode	2	2	761392
+nested arrays	baseline	encode	2	3	776513
+nested arrays	baseline	encode	2	4	777444
+nested arrays	baseline	encode	2	5	761017
+nested arrays	baseline	encode	2	6	761984
+nested arrays	baseline	encode	2	7	784168
+nested arrays	baseline	encode	2	8	733607
+nested arrays	baseline	encode	2	9	786574
+nested arrays	baseline	decode	1	1	312506
+nested arrays	baseline	decode	1	2	295466
+nested arrays	baseline	decode	1	3	291620
+nested arrays	baseline	decode	1	4	303718
+nested arrays	baseline	decode	1	5	283154
+nested arrays	baseline	decode	1	6	317060
+nested arrays	baseline	decode	1	7	279103
+nested arrays	baseline	decode	1	8	313157
+nested arrays	baseline	decode	1	9	317520
+nested arrays	baseline	decode	2	1	308046
+nested arrays	baseline	decode	2	2	275065
+nested arrays	baseline	decode	2	3	308628
+nested arrays	baseline	decode	2	4	301642
+nested arrays	baseline	decode	2	5	304492
+nested arrays	baseline	decode	2	6	314558
+nested arrays	baseline	decode	2	7	284726
+nested arrays	baseline	decode	2	8	314524
+nested arrays	baseline	decode	2	9	300992
+large record	surge	encode	1	1	133921
+large record	surge	encode	1	2	132807
+large record	surge	encode	1	3	133742
+large record	surge	encode	1	4	140279
+large record	surge	encode	1	5	130618
+large record	surge	encode	1	6	138158
+large record	surge	encode	1	7	140565
+large record	surge	encode	1	8	138937
+large record	surge	encode	1	9	137491
+large record	surge	encode	2	1	129638
+large record	surge	encode	2	2	134771
+large record	surge	encode	2	3	137434
+large record	surge	encode	2	4	137652
+large record	surge	encode	2	5	134141
+large record	surge	encode	2	6	136719
+large record	surge	encode	2	7	135187
+large record	surge	encode	2	8	135871
+large record	surge	encode	2	9	132851
+large record	surge	decode	1	1	71624
+large record	surge	decode	1	2	75037
+large record	surge	decode	1	3	75284
+large record	surge	decode	1	4	72224
+large record	surge	decode	1	5	75787
+large record	surge	decode	1	6	76572
+large record	surge	decode	1	7	70968
+large record	surge	decode	1	8	75176
+large record	surge	decode	1	9	73335
+large record	surge	decode	2	1	67897
+large record	surge	decode	2	2	71319
+large record	surge	decode	2	3	71660
+large record	surge	decode	2	4	68669
+large record	surge	decode	2	5	70624
+large record	surge	decode	2	6	69501
+large record	surge	decode	2	7	70203
+large record	surge	decode	2	8	75946
+large record	surge	decode	2	9	74851
+large record	surge (cursor)	encode	1	1	218747
+large record	surge (cursor)	encode	1	2	216795
+large record	surge (cursor)	encode	1	3	216185
+large record	surge (cursor)	encode	1	4	210207
+large record	surge (cursor)	encode	1	5	217241
+large record	surge (cursor)	encode	1	6	204964
+large record	surge (cursor)	encode	1	7	215438
+large record	surge (cursor)	encode	1	8	209493
+large record	surge (cursor)	encode	1	9	204406
+large record	surge (cursor)	encode	2	1	220002
+large record	surge (cursor)	encode	2	2	204876
+large record	surge (cursor)	encode	2	3	210440
+large record	surge (cursor)	encode	2	4	215810
+large record	surge (cursor)	encode	2	5	218507
+large record	surge (cursor)	encode	2	6	207354
+large record	surge (cursor)	encode	2	7	211119
+large record	surge (cursor)	encode	2	8	208423
+large record	surge (cursor)	encode	2	9	215790
+large record	surge (cursor)	decode	1	1	72934
+large record	surge (cursor)	decode	1	2	74580
+large record	surge (cursor)	decode	1	3	74881
+large record	surge (cursor)	decode	1	4	72415
+large record	surge (cursor)	decode	1	5	74734
+large record	surge (cursor)	decode	1	6	73013
+large record	surge (cursor)	decode	1	7	73482
+large record	surge (cursor)	decode	1	8	75612
+large record	surge (cursor)	decode	1	9	73775
+large record	surge (cursor)	decode	2	1	68565
+large record	surge (cursor)	decode	2	2	70398
+large record	surge (cursor)	decode	2	3	68600
+large record	surge (cursor)	decode	2	4	69738
+large record	surge (cursor)	decode	2	5	71371
+large record	surge (cursor)	decode	2	6	68713
+large record	surge (cursor)	decode	2	7	71003
+large record	surge (cursor)	decode	2	8	75418
+large record	surge (cursor)	decode	2	9	72112
+large record	surge (readChecks)	decode	1	1	72042
+large record	surge (readChecks)	decode	1	2	75308
+large record	surge (readChecks)	decode	1	3	72851
+large record	surge (readChecks)	decode	1	4	72936
+large record	surge (readChecks)	decode	1	5	73994
+large record	surge (readChecks)	decode	1	6	72830
+large record	surge (readChecks)	decode	1	7	74195
+large record	surge (readChecks)	decode	1	8	74553
+large record	surge (readChecks)	decode	1	9	71240
+large record	surge (readChecks)	decode	2	1	66875
+large record	surge (readChecks)	decode	2	2	69878
+large record	surge (readChecks)	decode	2	3	68420
+large record	surge (readChecks)	decode	2	4	68938
+large record	surge (readChecks)	decode	2	5	69557
+large record	surge (readChecks)	decode	2	6	68715
+large record	surge (readChecks)	decode	2	7	68775
+large record	surge (readChecks)	decode	2	8	74229
+large record	surge (readChecks)	decode	2	9	72188
+large record	fbs	encode	1	1	81092
+large record	fbs	encode	1	2	84496
+large record	fbs	encode	1	3	81836
+large record	fbs	encode	1	4	82725
+large record	fbs	encode	1	5	80203
+large record	fbs	encode	1	6	82260
+large record	fbs	encode	1	7	81481
+large record	fbs	encode	1	8	84917
+large record	fbs	encode	1	9	81690
+large record	fbs	encode	2	1	85692
+large record	fbs	encode	2	2	84338
+large record	fbs	encode	2	3	84968
+large record	fbs	encode	2	4	78055
+large record	fbs	encode	2	5	78939
+large record	fbs	encode	2	6	82116
+large record	fbs	encode	2	7	85665
+large record	fbs	encode	2	8	85109
+large record	fbs	encode	2	9	81429
+large record	fbs	decode	1	1	52496
+large record	fbs	decode	1	2	54056
+large record	fbs	decode	1	3	53011
+large record	fbs	decode	1	4	54221
+large record	fbs	decode	1	5	53967
+large record	fbs	decode	1	6	52297
+large record	fbs	decode	1	7	54949
+large record	fbs	decode	1	8	54578
+large record	fbs	decode	1	9	51556
+large record	fbs	decode	2	1	51754
+large record	fbs	decode	2	2	51718
+large record	fbs	decode	2	3	50716
+large record	fbs	decode	2	4	51688
+large record	fbs	decode	2	5	51605
+large record	fbs	decode	2	6	49517
+large record	fbs	decode	2	7	53379
+large record	fbs	decode	2	8	54618
+large record	fbs	decode	2	9	53241
+large record	serio	encode	1	1	11970
+large record	serio	encode	1	2	11364
+large record	serio	encode	1	3	11950
+large record	serio	encode	1	4	12033
+large record	serio	encode	1	5	11911
+large record	serio	encode	1	6	11991
+large record	serio	encode	1	7	11685
+large record	serio	encode	1	8	11419
+large record	serio	encode	1	9	11975
+large record	serio	encode	2	1	11324
+large record	serio	encode	2	2	11427
+large record	serio	encode	2	3	11577
+large record	serio	encode	2	4	12124
+large record	serio	encode	2	5	11842
+large record	serio	encode	2	6	11874
+large record	serio	encode	2	7	11344
+large record	serio	encode	2	8	11344
+large record	serio	encode	2	9	11528
+large record	serio	decode	1	1	24632
+large record	serio	decode	1	2	24515
+large record	serio	decode	1	3	24242
+large record	serio	decode	1	4	24593
+large record	serio	decode	1	5	24564
+large record	serio	decode	1	6	24150
+large record	serio	decode	1	7	24524
+large record	serio	decode	1	8	24491
+large record	serio	decode	1	9	23888
+large record	serio	decode	2	1	24052
+large record	serio	decode	2	2	23942
+large record	serio	decode	2	3	23592
+large record	serio	decode	2	4	24070
+large record	serio	decode	2	5	24033
+large record	serio	decode	2	6	23435
+large record	serio	decode	2	7	24763
+large record	serio	decode	2	8	24631
+large record	serio	decode	2	9	24274
+large record	flamework2	encode	1	1	94012
+large record	flamework2	encode	1	2	97876
+large record	flamework2	encode	1	3	95666
+large record	flamework2	encode	1	4	99735
+large record	flamework2	encode	1	5	98342
+large record	flamework2	encode	1	6	94901
+large record	flamework2	encode	1	7	93669
+large record	flamework2	encode	1	8	99770
+large record	flamework2	encode	1	9	94284
+large record	flamework2	encode	2	1	94896
+large record	flamework2	encode	2	2	100231
+large record	flamework2	encode	2	3	101669
+large record	flamework2	encode	2	4	100369
+large record	flamework2	encode	2	5	99254
+large record	flamework2	encode	2	6	96040
+large record	flamework2	encode	2	7	95317
+large record	flamework2	encode	2	8	98856
+large record	flamework2	encode	2	9	101593
+large record	flamework2	decode	1	1	62837
+large record	flamework2	decode	1	2	62829
+large record	flamework2	decode	1	3	59996
+large record	flamework2	decode	1	4	63181
+large record	flamework2	decode	1	5	63541
+large record	flamework2	decode	1	6	60470
+large record	flamework2	decode	1	7	62579
+large record	flamework2	decode	1	8	63092
+large record	flamework2	decode	1	9	58902
+large record	flamework2	decode	2	1	60046
+large record	flamework2	decode	2	2	59717
+large record	flamework2	decode	2	3	58398
+large record	flamework2	decode	2	4	59851
+large record	flamework2	decode	2	5	59899
+large record	flamework2	decode	2	6	57487
+large record	flamework2	decode	2	7	63746
+large record	flamework2	decode	2	8	63896
+large record	flamework2	decode	2	9	62474
+large record	blink	encode	1	1	43651
+large record	blink	encode	1	2	42269
+large record	blink	encode	1	3	42741
+large record	blink	encode	1	4	41938
+large record	blink	encode	1	5	40569
+large record	blink	encode	1	6	43399
+large record	blink	encode	1	7	45207
+large record	blink	encode	1	8	41070
+large record	blink	encode	1	9	42817
+large record	blink	encode	2	1	43958
+large record	blink	encode	2	2	42099
+large record	blink	encode	2	3	42972
+large record	blink	encode	2	4	40865
+large record	blink	encode	2	5	43279
+large record	blink	encode	2	6	45415
+large record	blink	encode	2	7	44771
+large record	blink	encode	2	8	41689
+large record	blink	encode	2	9	42828
+large record	blink	decode	1	1	70527
+large record	blink	decode	1	2	70683
+large record	blink	decode	1	3	68438
+large record	blink	decode	1	4	69896
+large record	blink	decode	1	5	70474
+large record	blink	decode	1	6	67496
+large record	blink	decode	1	7	71128
+large record	blink	decode	1	8	70793
+large record	blink	decode	1	9	64973
+large record	blink	decode	2	1	65951
+large record	blink	decode	2	2	65612
+large record	blink	decode	2	3	64505
+large record	blink	decode	2	4	66931
+large record	blink	decode	2	5	66634
+large record	blink	decode	2	6	64040
+large record	blink	decode	2	7	70965
+large record	blink	decode	2	8	69339
+large record	blink	decode	2	9	71023
+leaderboard	surge	encode	1	1	266787
+leaderboard	surge	encode	1	2	238778
+leaderboard	surge	encode	1	3	275412
+leaderboard	surge	encode	1	4	261013
+leaderboard	surge	encode	1	5	240424
+leaderboard	surge	encode	1	6	275893
+leaderboard	surge	encode	1	7	258063
+leaderboard	surge	encode	1	8	266560
+leaderboard	surge	encode	1	9	267249
+leaderboard	surge	encode	2	1	263010
+leaderboard	surge	encode	2	2	257166
+leaderboard	surge	encode	2	3	263409
+leaderboard	surge	encode	2	4	265477
+leaderboard	surge	encode	2	5	248749
+leaderboard	surge	encode	2	6	264709
+leaderboard	surge	encode	2	7	247535
+leaderboard	surge	encode	2	8	250514
+leaderboard	surge	encode	2	9	261226
+leaderboard	surge	decode	1	1	145504
+leaderboard	surge	decode	1	2	143057
+leaderboard	surge	decode	1	3	145448
+leaderboard	surge	decode	1	4	150602
+leaderboard	surge	decode	1	5	135076
+leaderboard	surge	decode	1	6	149751
+leaderboard	surge	decode	1	7	137124
+leaderboard	surge	decode	1	8	147511
+leaderboard	surge	decode	1	9	145813
+leaderboard	surge	decode	2	1	161128
+leaderboard	surge	decode	2	2	153464
+leaderboard	surge	decode	2	3	159190
+leaderboard	surge	decode	2	4	158966
+leaderboard	surge	decode	2	5	146065
+leaderboard	surge	decode	2	6	167795
+leaderboard	surge	decode	2	7	133471
+leaderboard	surge	decode	2	8	154133
+leaderboard	surge	decode	2	9	163421
+leaderboard	surge (cursor)	encode	1	1	750818
+leaderboard	surge (cursor)	encode	1	2	797512
+leaderboard	surge (cursor)	encode	1	3	779882
+leaderboard	surge (cursor)	encode	1	4	785361
+leaderboard	surge (cursor)	encode	1	5	782459
+leaderboard	surge (cursor)	encode	1	6	790619
+leaderboard	surge (cursor)	encode	1	7	799232
+leaderboard	surge (cursor)	encode	1	8	739185
+leaderboard	surge (cursor)	encode	1	9	755275
+leaderboard	surge (cursor)	encode	2	1	785054
+leaderboard	surge (cursor)	encode	2	2	780822
+leaderboard	surge (cursor)	encode	2	3	758980
+leaderboard	surge (cursor)	encode	2	4	773910
+leaderboard	surge (cursor)	encode	2	5	747183
+leaderboard	surge (cursor)	encode	2	6	784071
+leaderboard	surge (cursor)	encode	2	7	812099
+leaderboard	surge (cursor)	encode	2	8	797416
+leaderboard	surge (cursor)	encode	2	9	759574
+leaderboard	surge (cursor)	decode	1	1	152744
+leaderboard	surge (cursor)	decode	1	2	148420
+leaderboard	surge (cursor)	decode	1	3	154985
+leaderboard	surge (cursor)	decode	1	4	156786
+leaderboard	surge (cursor)	decode	1	5	145224
+leaderboard	surge (cursor)	decode	1	6	159301
+leaderboard	surge (cursor)	decode	1	7	150207
+leaderboard	surge (cursor)	decode	1	8	161854
+leaderboard	surge (cursor)	decode	1	9	156930
+leaderboard	surge (cursor)	decode	2	1	160071
+leaderboard	surge (cursor)	decode	2	2	149031
+leaderboard	surge (cursor)	decode	2	3	161490
+leaderboard	surge (cursor)	decode	2	4	162245
+leaderboard	surge (cursor)	decode	2	5	147953
+leaderboard	surge (cursor)	decode	2	6	155696
+leaderboard	surge (cursor)	decode	2	7	135134
+leaderboard	surge (cursor)	decode	2	8	156085
+leaderboard	surge (cursor)	decode	2	9	162833
+leaderboard	surge (readChecks)	decode	1	1	161091
+leaderboard	surge (readChecks)	decode	1	2	147343
+leaderboard	surge (readChecks)	decode	1	3	157469
+leaderboard	surge (readChecks)	decode	1	4	159018
+leaderboard	surge (readChecks)	decode	1	5	146454
+leaderboard	surge (readChecks)	decode	1	6	161970
+leaderboard	surge (readChecks)	decode	1	7	144853
+leaderboard	surge (readChecks)	decode	1	8	161128
+leaderboard	surge (readChecks)	decode	1	9	156341
+leaderboard	surge (readChecks)	decode	2	1	162803
+leaderboard	surge (readChecks)	decode	2	2	149412
+leaderboard	surge (readChecks)	decode	2	3	157644
+leaderboard	surge (readChecks)	decode	2	4	158104
+leaderboard	surge (readChecks)	decode	2	5	148761
+leaderboard	surge (readChecks)	decode	2	6	158747
+leaderboard	surge (readChecks)	decode	2	7	130533
+leaderboard	surge (readChecks)	decode	2	8	148192
+leaderboard	surge (readChecks)	decode	2	9	157356
+leaderboard	fbs	encode	1	1	134644
+leaderboard	fbs	encode	1	2	132760
+leaderboard	fbs	encode	1	3	140240
+leaderboard	fbs	encode	1	4	139702
+leaderboard	fbs	encode	1	5	130609
+leaderboard	fbs	encode	1	6	139278
+leaderboard	fbs	encode	1	7	139326
+leaderboard	fbs	encode	1	8	133656
+leaderboard	fbs	encode	1	9	136561
+leaderboard	fbs	encode	2	1	136609
+leaderboard	fbs	encode	2	2	136083
+leaderboard	fbs	encode	2	3	135950
+leaderboard	fbs	encode	2	4	141744
+leaderboard	fbs	encode	2	5	134267
+leaderboard	fbs	encode	2	6	140764
+leaderboard	fbs	encode	2	7	136053
+leaderboard	fbs	encode	2	8	139024
+leaderboard	fbs	encode	2	9	143401
+leaderboard	fbs	decode	1	1	94575
+leaderboard	fbs	decode	1	2	88262
+leaderboard	fbs	decode	1	3	96698
+leaderboard	fbs	decode	1	4	93544
+leaderboard	fbs	decode	1	5	92256
+leaderboard	fbs	decode	1	6	94426
+leaderboard	fbs	decode	1	7	90319
+leaderboard	fbs	decode	1	8	93708
+leaderboard	fbs	decode	1	9	93257
+leaderboard	fbs	decode	2	1	93065
+leaderboard	fbs	decode	2	2	87477
+leaderboard	fbs	decode	2	3	95704
+leaderboard	fbs	decode	2	4	90687
+leaderboard	fbs	decode	2	5	92218
+leaderboard	fbs	decode	2	6	92458
+leaderboard	fbs	decode	2	7	82404
+leaderboard	fbs	decode	2	8	92752
+leaderboard	fbs	decode	2	9	92448
+leaderboard	serio	encode	1	1	25174
+leaderboard	serio	encode	1	2	26026
+leaderboard	serio	encode	1	3	24892
+leaderboard	serio	encode	1	4	25124
+leaderboard	serio	encode	1	5	24454
+leaderboard	serio	encode	1	6	25098
+leaderboard	serio	encode	1	7	25957
+leaderboard	serio	encode	1	8	26292
+leaderboard	serio	encode	1	9	26068
+leaderboard	serio	encode	2	1	25987
+leaderboard	serio	encode	2	2	25587
+leaderboard	serio	encode	2	3	26335
+leaderboard	serio	encode	2	4	24938
+leaderboard	serio	encode	2	5	26203
+leaderboard	serio	encode	2	6	26023
+leaderboard	serio	encode	2	7	26026
+leaderboard	serio	encode	2	8	26126
+leaderboard	serio	encode	2	9	25162
+leaderboard	serio	decode	1	1	42943
+leaderboard	serio	decode	1	2	40975
+leaderboard	serio	decode	1	3	43066
+leaderboard	serio	decode	1	4	42365
+leaderboard	serio	decode	1	5	43198
+leaderboard	serio	decode	1	6	43139
+leaderboard	serio	decode	1	7	42042
+leaderboard	serio	decode	1	8	43295
+leaderboard	serio	decode	1	9	42435
+leaderboard	serio	decode	2	1	43022
+leaderboard	serio	decode	2	2	41218
+leaderboard	serio	decode	2	3	42700
+leaderboard	serio	decode	2	4	42085
+leaderboard	serio	decode	2	5	43209
+leaderboard	serio	decode	2	6	42866
+leaderboard	serio	decode	2	7	41210
+leaderboard	serio	decode	2	8	42920
+leaderboard	serio	decode	2	9	41935
+leaderboard	flamework2	encode	1	1	195705
+leaderboard	flamework2	encode	1	2	183048
+leaderboard	flamework2	encode	1	3	199819
+leaderboard	flamework2	encode	1	4	191714
+leaderboard	flamework2	encode	1	5	193667
+leaderboard	flamework2	encode	1	6	199183
+leaderboard	flamework2	encode	1	7	182017
+leaderboard	flamework2	encode	1	8	193093
+leaderboard	flamework2	encode	1	9	189918
+leaderboard	flamework2	encode	2	1	197463
+leaderboard	flamework2	encode	2	2	179132
+leaderboard	flamework2	encode	2	3	199402
+leaderboard	flamework2	encode	2	4	193090
+leaderboard	flamework2	encode	2	5	200610
+leaderboard	flamework2	encode	2	6	190311
+leaderboard	flamework2	encode	2	7	194899
+leaderboard	flamework2	encode	2	8	192344
+leaderboard	flamework2	encode	2	9	196731
+leaderboard	flamework2	decode	1	1	113584
+leaderboard	flamework2	decode	1	2	120755
+leaderboard	flamework2	decode	1	3	133350
+leaderboard	flamework2	decode	1	4	125601
+leaderboard	flamework2	decode	1	5	132377
+leaderboard	flamework2	decode	1	6	133349
+leaderboard	flamework2	decode	1	7	121535
+leaderboard	flamework2	decode	1	8	131871
+leaderboard	flamework2	decode	1	9	124665
+leaderboard	flamework2	decode	2	1	135271
+leaderboard	flamework2	decode	2	2	119763
+leaderboard	flamework2	decode	2	3	132269
+leaderboard	flamework2	decode	2	4	126971
+leaderboard	flamework2	decode	2	5	130635
+leaderboard	flamework2	decode	2	6	126380
+leaderboard	flamework2	decode	2	7	118937
+leaderboard	flamework2	decode	2	8	130811
+leaderboard	flamework2	decode	2	9	123827
+leaderboard	blink	encode	1	1	95546
+leaderboard	blink	encode	1	2	99695
+leaderboard	blink	encode	1	3	95823
+leaderboard	blink	encode	1	4	89575
+leaderboard	blink	encode	1	5	94806
+leaderboard	blink	encode	1	6	96108
+leaderboard	blink	encode	1	7	95375
+leaderboard	blink	encode	1	8	96935
+leaderboard	blink	encode	1	9	97635
+leaderboard	blink	encode	2	1	89733
+leaderboard	blink	encode	2	2	103562
+leaderboard	blink	encode	2	3	94757
+leaderboard	blink	encode	2	4	97633
+leaderboard	blink	encode	2	5	94976
+leaderboard	blink	encode	2	6	100124
+leaderboard	blink	encode	2	7	89303
+leaderboard	blink	encode	2	8	98526
+leaderboard	blink	encode	2	9	94757
+leaderboard	blink	decode	1	1	90525
+leaderboard	blink	decode	1	2	89816
+leaderboard	blink	decode	1	3	94665
+leaderboard	blink	decode	1	4	93165
+leaderboard	blink	decode	1	5	95543
+leaderboard	blink	decode	1	6	97189
+leaderboard	blink	decode	1	7	88364
+leaderboard	blink	decode	1	8	96246
+leaderboard	blink	decode	1	9	90640
+leaderboard	blink	decode	2	1	93806
+leaderboard	blink	decode	2	2	93043
+leaderboard	blink	decode	2	3	94299
+leaderboard	blink	decode	2	4	91034
+leaderboard	blink	decode	2	5	94957
+leaderboard	blink	decode	2	6	91931
+leaderboard	blink	decode	2	7	94952
+leaderboard	blink	decode	2	8	85095
+leaderboard	blink	decode	2	9	91658
+leaderboard	baseline	encode	1	1	258561
+leaderboard	baseline	encode	1	2	247400
+leaderboard	baseline	encode	1	3	265622
+leaderboard	baseline	encode	1	4	270544
+leaderboard	baseline	encode	1	5	257783
+leaderboard	baseline	encode	1	6	270182
+leaderboard	baseline	encode	1	7	255489
+leaderboard	baseline	encode	1	8	268064
+leaderboard	baseline	encode	1	9	271025
+leaderboard	baseline	encode	2	1	256173
+leaderboard	baseline	encode	2	2	261811
+leaderboard	baseline	encode	2	3	263457
+leaderboard	baseline	encode	2	4	255539
+leaderboard	baseline	encode	2	5	265819
+leaderboard	baseline	encode	2	6	266186
+leaderboard	baseline	encode	2	7	253220
+leaderboard	baseline	encode	2	8	265865
+leaderboard	baseline	encode	2	9	267304
+leaderboard	baseline	decode	1	1	153544
+leaderboard	baseline	decode	1	2	148725
+leaderboard	baseline	decode	1	3	158280
+leaderboard	baseline	decode	1	4	148700
+leaderboard	baseline	decode	1	5	160408
+leaderboard	baseline	decode	1	6	157035
+leaderboard	baseline	decode	1	7	155851
+leaderboard	baseline	decode	1	8	158300
+leaderboard	baseline	decode	1	9	141199
+leaderboard	baseline	decode	2	1	155776
+leaderboard	baseline	decode	2	2	160907
+leaderboard	baseline	decode	2	3	161244
+leaderboard	baseline	decode	2	4	144058
+leaderboard	baseline	decode	2	5	157196
+leaderboard	baseline	decode	2	6	146169
+leaderboard	baseline	decode	2	7	158684
+leaderboard	baseline	decode	2	8	156570
+leaderboard	baseline	decode	2	9	144683
+tagged union	surge	encode	1	1	215597
+tagged union	surge	encode	1	2	220692
+tagged union	surge	encode	1	3	214135
+tagged union	surge	encode	1	4	213044
+tagged union	surge	encode	1	5	216553
+tagged union	surge	encode	1	6	220167
+tagged union	surge	encode	1	7	212496
+tagged union	surge	encode	1	8	219801
+tagged union	surge	encode	1	9	220415
+tagged union	surge	encode	2	1	213679
+tagged union	surge	encode	2	2	222218
+tagged union	surge	encode	2	3	216821
+tagged union	surge	encode	2	4	214040
+tagged union	surge	encode	2	5	222373
+tagged union	surge	encode	2	6	214474
+tagged union	surge	encode	2	7	212942
+tagged union	surge	encode	2	8	216938
+tagged union	surge	encode	2	9	209449
+tagged union	surge	decode	1	1	99982
+tagged union	surge	decode	1	2	99579
+tagged union	surge	decode	1	3	89353
+tagged union	surge	decode	1	4	96248
+tagged union	surge	decode	1	5	88835
+tagged union	surge	decode	1	6	94114
+tagged union	surge	decode	1	7	84398
+tagged union	surge	decode	1	8	85949
+tagged union	surge	decode	1	9	99778
+tagged union	surge	decode	2	1	91869
+tagged union	surge	decode	2	2	88394
+tagged union	surge	decode	2	3	82505
+tagged union	surge	decode	2	4	91151
+tagged union	surge	decode	2	5	80569
+tagged union	surge	decode	2	6	96337
+tagged union	surge	decode	2	7	94366
+tagged union	surge	decode	2	8	79708
+tagged union	surge	decode	2	9	91912
+tagged union	surge (cursor)	encode	1	1	562473
+tagged union	surge (cursor)	encode	1	2	579886
+tagged union	surge (cursor)	encode	1	3	569553
+tagged union	surge (cursor)	encode	1	4	588796
+tagged union	surge (cursor)	encode	1	5	596753
+tagged union	surge (cursor)	encode	1	6	558581
+tagged union	surge (cursor)	encode	1	7	578258
+tagged union	surge (cursor)	encode	1	8	593317
+tagged union	surge (cursor)	encode	1	9	586678
+tagged union	surge (cursor)	encode	2	1	589881
+tagged union	surge (cursor)	encode	2	2	586858
+tagged union	surge (cursor)	encode	2	3	599151
+tagged union	surge (cursor)	encode	2	4	571467
+tagged union	surge (cursor)	encode	2	5	608967
+tagged union	surge (cursor)	encode	2	6	598245
+tagged union	surge (cursor)	encode	2	7	616499
+tagged union	surge (cursor)	encode	2	8	596309
+tagged union	surge (cursor)	encode	2	9	608258
+tagged union	surge (cursor)	decode	1	1	99152
+tagged union	surge (cursor)	decode	1	2	98079
+tagged union	surge (cursor)	decode	1	3	88728
+tagged union	surge (cursor)	decode	1	4	95756
+tagged union	surge (cursor)	decode	1	5	88705
+tagged union	surge (cursor)	decode	1	6	96940
+tagged union	surge (cursor)	decode	1	7	88781
+tagged union	surge (cursor)	decode	1	8	89287
+tagged union	surge (cursor)	decode	1	9	100020
+tagged union	surge (cursor)	decode	2	1	93967
+tagged union	surge (cursor)	decode	2	2	92838
+tagged union	surge (cursor)	decode	2	3	88817
+tagged union	surge (cursor)	decode	2	4	96226
+tagged union	surge (cursor)	decode	2	5	83325
+tagged union	surge (cursor)	decode	2	6	95029
+tagged union	surge (cursor)	decode	2	7	96862
+tagged union	surge (cursor)	decode	2	8	93217
+tagged union	surge (cursor)	decode	2	9	89412
+tagged union	surge (readChecks)	decode	1	1	97345
+tagged union	surge (readChecks)	decode	1	2	98313
+tagged union	surge (readChecks)	decode	1	3	92373
+tagged union	surge (readChecks)	decode	1	4	93184
+tagged union	surge (readChecks)	decode	1	5	87685
+tagged union	surge (readChecks)	decode	1	6	94478
+tagged union	surge (readChecks)	decode	1	7	88703
+tagged union	surge (readChecks)	decode	1	8	95986
+tagged union	surge (readChecks)	decode	1	9	96306
+tagged union	surge (readChecks)	decode	2	1	89555
+tagged union	surge (readChecks)	decode	2	2	85088
+tagged union	surge (readChecks)	decode	2	3	93591
+tagged union	surge (readChecks)	decode	2	4	92426
+tagged union	surge (readChecks)	decode	2	5	82639
+tagged union	surge (readChecks)	decode	2	6	97072
+tagged union	surge (readChecks)	decode	2	7	87194
+tagged union	surge (readChecks)	decode	2	8	94965
+tagged union	surge (readChecks)	decode	2	9	90517
+tagged union	fbs	encode	1	1	80917
+tagged union	fbs	encode	1	2	79650
+tagged union	fbs	encode	1	3	72824
+tagged union	fbs	encode	1	4	76582
+tagged union	fbs	encode	1	5	77845
+tagged union	fbs	encode	1	6	75459
+tagged union	fbs	encode	1	7	79909
+tagged union	fbs	encode	1	8	78673
+tagged union	fbs	encode	1	9	78178
+tagged union	fbs	encode	2	1	79185
+tagged union	fbs	encode	2	2	80573
+tagged union	fbs	encode	2	3	76543
+tagged union	fbs	encode	2	4	79812
+tagged union	fbs	encode	2	5	79295
+tagged union	fbs	encode	2	6	79587
+tagged union	fbs	encode	2	7	78027
+tagged union	fbs	encode	2	8	79615
+tagged union	fbs	encode	2	9	76712
+tagged union	fbs	decode	1	1	45500
+tagged union	fbs	decode	1	2	43680
+tagged union	fbs	decode	1	3	44455
+tagged union	fbs	decode	1	4	43635
+tagged union	fbs	decode	1	5	40886
+tagged union	fbs	decode	1	6	43416
+tagged union	fbs	decode	1	7	42760
+tagged union	fbs	decode	1	8	44786
+tagged union	fbs	decode	1	9	44951
+tagged union	fbs	decode	2	1	44214
+tagged union	fbs	decode	2	2	43186
+tagged union	fbs	decode	2	3	44120
+tagged union	fbs	decode	2	4	43475
+tagged union	fbs	decode	2	5	41583
+tagged union	fbs	decode	2	6	44732
+tagged union	fbs	decode	2	7	42478
+tagged union	fbs	decode	2	8	43045
+tagged union	fbs	decode	2	9	42255
+tagged union	serio	encode	1	1	12796
+tagged union	serio	encode	1	2	12809
+tagged union	serio	encode	1	3	13467
+tagged union	serio	encode	1	4	13406
+tagged union	serio	encode	1	5	13514
+tagged union	serio	encode	1	6	13281
+tagged union	serio	encode	1	7	13402
+tagged union	serio	encode	1	8	13497
+tagged union	serio	encode	1	9	13239
+tagged union	serio	encode	2	1	13271
+tagged union	serio	encode	2	2	12820
+tagged union	serio	encode	2	3	12476
+tagged union	serio	encode	2	4	12848
+tagged union	serio	encode	2	5	13364
+tagged union	serio	encode	2	6	12766
+tagged union	serio	encode	2	7	13481
+tagged union	serio	encode	2	8	12823
+tagged union	serio	encode	2	9	13370
+tagged union	serio	decode	1	1	20088
+tagged union	serio	decode	1	2	19653
+tagged union	serio	decode	1	3	20258
+tagged union	serio	decode	1	4	20003
+tagged union	serio	decode	1	5	19200
+tagged union	serio	decode	1	6	19878
+tagged union	serio	decode	1	7	19202
+tagged union	serio	decode	1	8	20316
+tagged union	serio	decode	1	9	20224
+tagged union	serio	decode	2	1	19925
+tagged union	serio	decode	2	2	19289
+tagged union	serio	decode	2	3	19838
+tagged union	serio	decode	2	4	19535
+tagged union	serio	decode	2	5	18874
+tagged union	serio	decode	2	6	19710
+tagged union	serio	decode	2	7	19551
+tagged union	serio	decode	2	8	19329
+tagged union	serio	decode	2	9	19679
+tagged union	flamework2	encode	1	1	158397
+tagged union	flamework2	encode	1	2	149634
+tagged union	flamework2	encode	1	3	150913
+tagged union	flamework2	encode	1	4	145594
+tagged union	flamework2	encode	1	5	147771
+tagged union	flamework2	encode	1	6	154964
+tagged union	flamework2	encode	1	7	150306
+tagged union	flamework2	encode	1	8	145925
+tagged union	flamework2	encode	1	9	146661
+tagged union	flamework2	encode	2	1	149634
+tagged union	flamework2	encode	2	2	151159
+tagged union	flamework2	encode	2	3	149563
+tagged union	flamework2	encode	2	4	161223
+tagged union	flamework2	encode	2	5	150277
+tagged union	flamework2	encode	2	6	146311
+tagged union	flamework2	encode	2	7	145051
+tagged union	flamework2	encode	2	8	152378
+tagged union	flamework2	encode	2	9	144929
+tagged union	flamework2	decode	1	1	86642
+tagged union	flamework2	decode	1	2	80502
+tagged union	flamework2	decode	1	3	85737
+tagged union	flamework2	decode	1	4	82109
+tagged union	flamework2	decode	1	5	77828
+tagged union	flamework2	decode	1	6	81223
+tagged union	flamework2	decode	1	7	78059
+tagged union	flamework2	decode	1	8	84845
+tagged union	flamework2	decode	1	9	86025
+tagged union	flamework2	decode	2	1	83740
+tagged union	flamework2	decode	2	2	74346
+tagged union	flamework2	decode	2	3	84725
+tagged union	flamework2	decode	2	4	82128
+tagged union	flamework2	decode	2	5	83585
+tagged union	flamework2	decode	2	6	86452
+tagged union	flamework2	decode	2	7	77340
+tagged union	flamework2	decode	2	8	83918
+tagged union	flamework2	decode	2	9	82033
+tagged union	blink	encode	1	1	72056
+tagged union	blink	encode	1	2	77365
+tagged union	blink	encode	1	3	70786
+tagged union	blink	encode	1	4	74448
+tagged union	blink	encode	1	5	74949
+tagged union	blink	encode	1	6	68626
+tagged union	blink	encode	1	7	73512
+tagged union	blink	encode	1	8	76544
+tagged union	blink	encode	1	9	70433
+tagged union	blink	encode	2	1	73229
+tagged union	blink	encode	2	2	78156
+tagged union	blink	encode	2	3	60572
+tagged union	blink	encode	2	4	71471
+tagged union	blink	encode	2	5	74151
+tagged union	blink	encode	2	6	75835
+tagged union	blink	encode	2	7	79358
+tagged union	blink	encode	2	8	79013
+tagged union	blink	encode	2	9	74360
+tagged union	blink	decode	1	1	57889
+tagged union	blink	decode	1	2	54914
+tagged union	blink	decode	1	3	56010
+tagged union	blink	decode	1	4	56513
+tagged union	blink	decode	1	5	53870
+tagged union	blink	decode	1	6	55602
+tagged union	blink	decode	1	7	53423
+tagged union	blink	decode	1	8	57406
+tagged union	blink	decode	1	9	56598
+tagged union	blink	decode	2	1	55837
+tagged union	blink	decode	2	2	52016
+tagged union	blink	decode	2	3	57116
+tagged union	blink	decode	2	4	51452
+tagged union	blink	decode	2	5	56490
+tagged union	blink	decode	2	6	57595
+tagged union	blink	decode	2	7	52256
+tagged union	blink	decode	2	8	56466
+tagged union	blink	decode	2	9	52921
+tagged union	baseline	encode	1	1	228207
+tagged union	baseline	encode	1	2	223627
+tagged union	baseline	encode	1	3	209546
+tagged union	baseline	encode	1	4	216395
+tagged union	baseline	encode	1	5	225727
+tagged union	baseline	encode	1	6	213928
+tagged union	baseline	encode	1	7	219380
+tagged union	baseline	encode	1	8	220606
+tagged union	baseline	encode	1	9	217049
+tagged union	baseline	encode	2	1	231982
+tagged union	baseline	encode	2	2	222288
+tagged union	baseline	encode	2	3	197061
+tagged union	baseline	encode	2	4	220952
+tagged union	baseline	encode	2	5	233100
+tagged union	baseline	encode	2	6	209214
+tagged union	baseline	encode	2	7	217744
+tagged union	baseline	encode	2	8	218509
+tagged union	baseline	encode	2	9	216050
+tagged union	baseline	decode	1	1	99249
+tagged union	baseline	decode	1	2	88877
+tagged union	baseline	decode	1	3	99728
+tagged union	baseline	decode	1	4	88462
+tagged union	baseline	decode	1	5	95508
+tagged union	baseline	decode	1	6	77059
+tagged union	baseline	decode	1	7	89329
+tagged union	baseline	decode	1	8	97918
+tagged union	baseline	decode	1	9	86381
+tagged union	baseline	decode	2	1	88842
+tagged union	baseline	decode	2	2	85388
+tagged union	baseline	decode	2	3	97251
+tagged union	baseline	decode	2	4	83491
+tagged union	baseline	decode	2	5	96724
+tagged union	baseline	decode	2	6	97323
+tagged union	baseline	decode	2	7	82351
+tagged union	baseline	decode	2	8	95965
+tagged union	baseline	decode	2	9	87432

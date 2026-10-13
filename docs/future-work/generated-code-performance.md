@@ -99,6 +99,10 @@ code the transformer generates runs. What has been measured is under
 - [empty-closure-and-dead-checks.md](../research/empty-closure-and-dead-checks.md)
   — no closure where it would declare nothing, no capacity check that cannot
   fire, and a fixed-size optional read once.
+- [write-state-in-locals.md](../research/write-state-in-locals.md) — a
+  scratch-path `serialize`'s buffer, capacity and cursor held in locals.
+- [joined-reservations.md](../research/joined-reservations.md) — a string's
+  reservation joined with the fixed-size bytes beside it.
 
 This document holds what is still open.
 
@@ -131,11 +135,11 @@ well. What
 the other rows pay against hand-written Luau is not measured.
 
 **What is left per call.** A shape that keeps the scratch buffer still has
-the three candidates a shape sized exactly (Transformer 5.20 in
-[specs/transformer.md](../specs/transformer.md)) does not:
-`finishWrite`'s copy, the scratch state in the closure, and the capacity
-check. Holding the scratch state in locals is
-[write-state-and-joined-reservations.md](write-state-and-joined-reservations.md).
+two costs a shape sized exactly (Transformer 5.20 in
+[specs/transformer.md](../specs/transformer.md)) does not: `finishWrite`'s
+copy, and the capacity check. One that reaches a recursion helper keeps its
+scratch state in the closure as well (Transformer 5.3), since the helper
+reserves through it.
 A nested object inside a run of Transformer 5.5 still reads its path once per
 property. A sized write reads twice the length of an array whose
 count has a fixed width, and what its size reads inside a loop or a branch,
@@ -188,7 +192,8 @@ a fixed size joins the run around it, and so do a tuple's consecutive
 fixed-size elements, and a tuple of only those (Transformer 5.5). An array of
 fixed-size
 elements reserves all of them at once (Transformer 5.18), and a `str` or a
-`buffer` its count and its bytes (Transformer 5.19), and a union variant's
+`buffer` its count, its bytes and the fixed-size bytes beside it (Transformer
+5.19), and a union variant's
 index the fixed-size bytes that start the variant (Transformer 5.25). Outside
 a loop's body, adjacent reservations move the cursor once, and at a known
 offset read no position from it (Transformer 5.30), which crosses the
@@ -202,9 +207,6 @@ byte order either way.
   union's decode, by more than unchanged code moved, for what is not known
   ([cursor-known-values.md](../research/cursor-known-values.md)). A loop's
   body is left as the emitter wrote it.
-- **A string beside a run.** A string and the fixed-size bytes next to it
-  reserve separately; joining them is
-  [write-state-and-joined-reservations.md](write-state-and-joined-reservations.md).
 - **A tuple's rest.** A tuple's fixed-size rest elements still reserve one at
   a time, where an array's reserve all at once (Transformer 5.18), with
   `reserveElements`. Sharing the fixed elements' reservation paid
