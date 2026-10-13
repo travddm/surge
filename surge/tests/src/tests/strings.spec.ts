@@ -28,6 +28,52 @@ interface WithNamedEntries {
 }
 const namedEntriesSerializer = createCodec<WithNamedEntries>();
 
+// A string or a buffer reserves the fixed-size properties beside it, before
+// or after it, with its own bytes in its count's one-byte form, and on their
+// own beside its long form (Transformer 5.19 in docs/specs/transformer.md).
+// `WithJoinedRuns` is sized exactly, and `WithJoinedRunsInMaps` keeps the
+// scratch buffer. Properties are written in the order of their names, so
+// each `atHead` is written first, where the cursor's position is known and
+// folded (Transformer 5.30): a string then a run, and a run then a string,
+// with the first of the two at that position.
+interface RunAfterFirst {
+	label: string;
+	level: DataType.u16;
+	marks: DataType.u8[];
+	rank: DataType.u8;
+	title: string;
+}
+interface RunBeforeFirst {
+	level: DataType.u8;
+	motto: string;
+	ranks: DataType.u8[];
+	tag: string;
+	tier: DataType.u16;
+}
+interface JoinedEntry {
+	name: string;
+	score: DataType.u32;
+	userId: DataType.f64;
+}
+type JoinedEvent = { kind: "chat"; id: DataType.u32; text: string } | { kind: "ping"; id: DataType.u32 };
+interface WithJoinedRuns {
+	entries: JoinedEntry[];
+	events: JoinedEvent[];
+	blob: { bytes: DataType.Length<buffer, DataType.u16>; tag: DataType.u8 };
+	atHead: RunAfterFirst;
+}
+interface WithJoinedRunsInMaps {
+	byName: Map<string, DataType.u8>;
+	notes: Map<DataType.u16, string>;
+	byId: Map<DataType.u16, JoinedEvent>;
+	entries: JoinedEntry[];
+	atHead: RunBeforeFirst;
+}
+const joinedSerializer = createCodec<WithJoinedRuns>();
+const joinedCheckedSerializer = createCodec<WithJoinedRuns>({ readChecks: true });
+const joinedInMapsSerializer = createCodec<WithJoinedRunsInMaps>();
+const joinedInMapsCheckedSerializer = createCodec<WithJoinedRunsInMaps>({ readChecks: true });
+
 const FUZZ_ITERATIONS = 100;
 
 class StringsTest {
@@ -100,6 +146,105 @@ class StringsTest {
 			const buf = namedEntriesSerializer.serialize(value);
 			Assert.equal(bytes, buffer.len(buf));
 			Assert.equal(undefined, difference(value, namedEntriesSerializer.deserialize(buf)));
+		}
+	}
+
+	// 253 is the longest count of one byte, and 254 the shortest of the long form.
+	@Theory
+	@InlineData(0)
+	@InlineData(253)
+	@InlineData(254)
+	@InlineData(300)
+	public roundTripsAStringJoinedWithTheRunBesideIt(length: number): void {
+		const text = string.rep("x", length);
+		const value: WithJoinedRuns = {
+			entries: [
+				{ name: text, score: 7, userId: 1.5 },
+				{ name: "", score: 4_294_967_295, userId: -2 },
+			],
+			events: [
+				{ kind: "chat", id: 9, text },
+				{ kind: "ping", id: 10 },
+				{ kind: "chat", id: 11, text: "" },
+			],
+			blob: { bytes: buffer.fromstring(text), tag: 200 },
+			atHead: { label: text, level: 65_535, marks: [1, 2], rank: 3, title: text },
+		};
+		const inMaps: WithJoinedRunsInMaps = {
+			byName: new Map([
+				[text, 1],
+				[`${text}!`, 2],
+			]),
+			notes: new Map([
+				[1, text],
+				[2, ""],
+			]),
+			byId: new Map([
+				[3, { kind: "chat", id: 12, text }],
+				[4, { kind: "ping", id: 13 }],
+			]),
+			entries: value.entries,
+			atHead: { level: 255, motto: text, ranks: [4], tag: text, tier: 65_535 },
+		};
+		for (const serializer of [joinedSerializer, joinedCheckedSerializer]) {
+			Assert.equal(undefined, difference(value, serializer.deserialize(serializer.serialize(value))));
+		}
+		for (const serializer of [joinedInMapsSerializer, joinedInMapsCheckedSerializer]) {
+			Assert.equal(undefined, difference(inMaps, serializer.deserialize(serializer.serialize(inMaps))));
+		}
+	}
+
+	@Fact
+	public roundTripsRandomStringsJoinedWithTheRunBesideThem(): void {
+		const rng = new Rng(17);
+		for (const _ of $range(1, FUZZ_ITERATIONS)) {
+			const entries = new Array<JoinedEntry>();
+			const events = new Array<JoinedEvent>();
+			const byName = new Map<string, number>();
+			const notes = new Map<number, string>();
+			const byId = new Map<number, JoinedEvent>();
+			for (const __ of $range(1, rng.int(0, 4))) {
+				entries.push({ name: rng.str(300), score: rng.int(0, 4_294_967_295), userId: rng.int(-100, 100) });
+				events.push(
+					rng.bool()
+						? { kind: "chat", id: rng.int(0, 99), text: rng.str(300) }
+						: { kind: "ping", id: rng.int(0, 99) },
+				);
+				byName.set(rng.str(300), rng.int(0, 255));
+				notes.set(rng.int(0, 65535), rng.str(300));
+				byId.set(rng.int(0, 65535), { kind: "chat", id: rng.int(0, 99), text: rng.str(300) });
+			}
+			const value: WithJoinedRuns = {
+				entries,
+				events,
+				blob: { bytes: buffer.fromstring(rng.str(300)), tag: rng.int(0, 255) },
+				atHead: {
+					label: rng.str(300),
+					level: rng.int(0, 65535),
+					marks: [],
+					rank: rng.int(0, 255),
+					title: rng.str(300),
+				},
+			};
+			const inMaps: WithJoinedRunsInMaps = {
+				byName,
+				notes,
+				byId,
+				entries,
+				atHead: {
+					level: rng.int(0, 255),
+					motto: rng.str(300),
+					ranks: [],
+					tag: rng.str(300),
+					tier: rng.int(0, 65535),
+				},
+			};
+			for (const serializer of [joinedSerializer, joinedCheckedSerializer]) {
+				Assert.equal(undefined, difference(value, serializer.deserialize(serializer.serialize(value))));
+			}
+			for (const serializer of [joinedInMapsSerializer, joinedInMapsCheckedSerializer]) {
+				Assert.equal(undefined, difference(inMaps, serializer.deserialize(serializer.serialize(inMaps))));
+			}
 		}
 	}
 

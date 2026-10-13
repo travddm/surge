@@ -232,6 +232,7 @@ export default function transform(program: ts.Program, _config: unknown, extras:
 						emitter.writeIntoCursor();
 					} else {
 						emitter.sizeExactly(rootField, f.createIdentifier("value"));
+						emitter.writeLocally();
 					}
 					emitter.writeField(rootField, f.createIdentifier("value"), writeStatements);
 				}
@@ -280,6 +281,7 @@ export default function transform(program: ts.Program, _config: unknown, extras:
 						...emitter.beginWriteStatements(),
 						...emitter.beginWriteBlobsStatements(),
 						...writeStatements,
+						...emitter.endWriteStatements(),
 					];
 					const bytes = emitter.finishWriteExpression();
 					let result: ts.Expression = bytes;

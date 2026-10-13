@@ -8,6 +8,8 @@ import {
 	ENUM_UNROLLED_ITEMS,
 	ERROR_PREFIX,
 	INITIAL_CAPACITY,
+	KEPT_CAPACITY,
+	KEPT_SCRATCH,
 	LOCALS_BUDGET,
 	LOCALS_PER_BLOCK,
 	LONG_COUNT_MARKER,
@@ -35,6 +37,19 @@ export interface Slot {
 	readonly buf: ts.Identifier;
 	readonly pos: ts.Identifier;
 	readonly offset: number;
+}
+
+/**
+ * A run of `bytes` fixed-size bytes that a `str` or a `buffer` with a count
+ * reads with one move of the read cursor (Transformer 5.19): `before` its
+ * count, from `start`, a position the caller took from the cursor, or
+ * `after` its bytes, from `start`, a local `readCountedBytes` declares where
+ * they end.
+ */
+export interface JoinedRead {
+	readonly side: "before" | "after";
+	readonly bytes: number;
+	readonly start: ts.Identifier;
 }
 
 /**
@@ -146,6 +161,8 @@ export abstract class EmitContext {
 	public writeBlobsLength: ts.Expression | undefined;
 	/** Whether `deserialize` declares the read state itself (see {@link readLocally}). */
 	private readsLocally = false;
+	/** Whether a `serialize` on the scratch path declares its state itself (see {@link writeLocally}). */
+	private writesLocally = false;
 	protected readonly generatedHelpers = new Set<string>();
 	protected readonly helperDecls: ts.Statement[] = [];
 	private readonly enumTables = new Map<string, { itemsName: string; indexName: string }>();
@@ -314,11 +331,18 @@ export abstract class EmitContext {
 	 * the closure the serializer is emitted into. One buffer per serializer,
 	 * not one per place: two serializers can then be in flight at once, which a
 	 * single module-scoped buffer never allowed. A `serialize` that writes
-	 * exactly declares its own instead.
+	 * exactly declares its own instead, and one that writes locally has the
+	 * closure keep only the buffer and its capacity between calls.
 	 */
 	public writeStateDecls(): ts.Statement[] {
 		if (!this.usesWriteBytes || this.writeSize !== undefined) {
 			return [];
+		}
+		if (this.writesLocally) {
+			return [
+				this.letStatement(KEPT_SCRATCH, this.bufferCall("create", [this.num(INITIAL_CAPACITY)])),
+				this.letStatement(KEPT_CAPACITY, this.num(INITIAL_CAPACITY)),
+			];
 		}
 		if (this.cursor) {
 			// Set from the cursor each call: in `write` itself unless a recursion
@@ -336,6 +360,23 @@ export abstract class EmitContext {
 			this.letStatement(CAPACITY, this.num(INITIAL_CAPACITY)),
 			this.letStatement(CURSOR, this.num(0)),
 		];
+	}
+
+	/**
+	 * Has the `serialize` about to be emitted hold the scratch buffer, its
+	 * capacity and the write cursor in locals of its own, which count toward
+	 * its budget, where it does not write exactly and no recursion helper
+	 * reads them: a helper reserves through the closure's buffer and capacity,
+	 * and may grow them while its caller holds the old ones (Transformer 5.3
+	 * in docs/specs/transformer.md). Called after
+	 * {@link writeExactly} would be and before the body is emitted.
+	 */
+	public writeLocally(): void {
+		if (this.writeSize !== undefined || this.helperFields.size > 0) {
+			return;
+		}
+		this.writesLocally = true;
+		this.liveLocals += 3;
 	}
 
 	/**
@@ -375,24 +416,47 @@ export abstract class EmitContext {
 
 	/**
 	 * Opens a `serialize()`: everything written last call is forgotten by
-	 * moving one number, or, writing exactly, the result is created at its
-	 * size and the cursor starts at its head.
+	 * moving one number, or, writing locally, by starting a local cursor at
+	 * the head of the buffer the closure kept, or, writing exactly, the result
+	 * is created at its size and the cursor starts at its head.
 	 */
 	public beginWriteStatements(): ts.Statement[] {
 		if (!this.usesWriteBytes) {
 			return [];
 		}
+		const f = this.factory;
 		if (this.writeSize !== undefined) {
 			return [
 				...this.writeSizeStatements,
-				this.constStatement(
-					this.factory.createIdentifier(SCRATCH),
-					this.bufferCall("create", [this.writeSize]),
-				),
+				this.constStatement(f.createIdentifier(SCRATCH), this.bufferCall("create", [this.writeSize])),
+				this.letStatement(CURSOR, this.num(0)),
+			];
+		}
+		if (this.writesLocally) {
+			return [
+				this.letStatement(SCRATCH, f.createIdentifier(KEPT_SCRATCH)),
+				this.letStatement(CAPACITY, f.createIdentifier(KEPT_CAPACITY)),
 				this.letStatement(CURSOR, this.num(0)),
 			];
 		}
 		return [this.assign(CURSOR, this.num(0))];
+	}
+
+	/**
+	 * Closes a `serialize()` that writes locally, before its return: the
+	 * closure keeps the buffer, grown or not, and its capacity, so the next
+	 * call starts from them. A call that raises after a grow skips this, and
+	 * the closure keeps the smaller buffer, which a later call grows again.
+	 */
+	public endWriteStatements(): ts.Statement[] {
+		if (!this.usesWriteBytes || !this.writesLocally) {
+			return [];
+		}
+		const f = this.factory;
+		return [
+			this.assign(KEPT_SCRATCH, f.createIdentifier(SCRATCH)),
+			this.assign(KEPT_CAPACITY, f.createIdentifier(CAPACITY)),
+		];
 	}
 
 	/**
@@ -932,8 +996,17 @@ export abstract class EmitContext {
 	 * bounded first, and the bytes after the move. A variable-length count
 	 * (`width` `undefined`) reads its first byte, and the rest of a long form
 	 * where that byte is a marker. Returns the count and where the bytes start.
+	 *
+	 * With `run`, the same move of the cursor covers a run of fixed-size bytes
+	 * beside them (Transformer 5.19), and so does each bound: one before the
+	 * count reads the count from past the run, and one after the bytes starts
+	 * where they end.
 	 */
-	public readCountedBytes(width: LengthWidth | undefined, out: ts.Statement[]): { len: ts.Identifier; bytes: Slot } {
+	public readCountedBytes(
+		width: LengthWidth | undefined,
+		out: ts.Statement[],
+		run?: JoinedRead,
+	): { len: ts.Identifier; bytes: Slot } {
 		if (this.run !== undefined) {
 			throw new Error("surge: a field inside an alloc run reserved on its own");
 		}
@@ -941,36 +1014,48 @@ export abstract class EmitContext {
 		const f = this.factory;
 		const syntax = this.ts_.SyntaxKind;
 		const countBytes = width === undefined ? 1 : WIDTH_BYTES[width];
-		const pos = this.fresh("pos");
-		out.push(this.constStatement(pos, f.createIdentifier(READ_CURSOR)));
+		let base: ts.Identifier;
+		if (run?.side === "before") {
+			base = run.start;
+		} else {
+			base = this.fresh("pos");
+			out.push(this.constStatement(base, f.createIdentifier(READ_CURSOR)));
+		}
+		// The count is `lead` bytes past `base`: past the run read before it.
+		const lead = run?.side === "before" ? run.bytes : 0;
+		const pos = this.offsetFrom(base, lead);
 		const pastEnd = (end: ts.Expression) =>
 			this.throwIf(
 				f.createBinaryExpression(end, syntax.GreaterThanToken, f.createIdentifier(READ_LENGTH)),
 				"deserialize read past the end of the input buffer",
 			);
 		if (this.readChecks) {
-			out.push(pastEnd(this.offsetFrom(pos, countBytes)));
+			out.push(pastEnd(this.offsetFrom(base, lead + countBytes)));
 		}
 		const len = this.fresh("len");
 		let bytes: Slot;
+		let end: ts.Expression;
 		if (width === undefined) {
 			const at = this.fresh("at");
 			out.push(
 				this.letLocal(len, this.bufferCall("readu8", [f.createIdentifier(READ_BUFFER), pos])),
-				this.letLocal(at, this.offsetFrom(pos, 1)),
+				this.letLocal(at, this.offsetFrom(base, lead + 1)),
 				this.readLongCountInto(pos, len, at),
-				this.assign(READ_CURSOR, f.createBinaryExpression(at, syntax.PlusToken, len)),
 			);
+			end = f.createBinaryExpression(at, syntax.PlusToken, len);
 			bytes = { buf: f.createIdentifier(READ_BUFFER), pos: at, offset: 0 };
 		} else {
+			out.push(this.constStatement(len, this.readNumberAt(width, f.createIdentifier(READ_BUFFER), pos)));
+			end = f.createBinaryExpression(this.offsetFrom(base, lead + countBytes), syntax.PlusToken, len);
+			bytes = { buf: f.createIdentifier(READ_BUFFER), pos: base, offset: lead + countBytes };
+		}
+		if (run?.side === "after") {
 			out.push(
-				this.constStatement(len, this.readNumberAt(width, f.createIdentifier(READ_BUFFER), pos)),
-				this.assign(
-					READ_CURSOR,
-					f.createBinaryExpression(this.offsetFrom(pos, countBytes), syntax.PlusToken, len),
-				),
+				this.constStatement(run.start, end),
+				this.assign(READ_CURSOR, this.offsetFrom(run.start, run.bytes)),
 			);
-			bytes = { buf: f.createIdentifier(READ_BUFFER), pos, offset: countBytes };
+		} else {
+			out.push(this.assign(READ_CURSOR, end));
 		}
 		if (this.readChecks) {
 			out.push(pastEnd(f.createIdentifier(READ_CURSOR)));
@@ -995,7 +1080,8 @@ export abstract class EmitContext {
 	 * not taken, unless the `serialize` writes exactly (see
 	 * {@link writeExactly}). The cursor and the buffer are locals of the
 	 * closure this code is emitted into, or of the function it is emitted
-	 * into (see {@link readLocally}), not module state in `@rbxts/surge`, which is what makes this four instructions
+	 * into (see {@link writeLocally} and {@link readLocally}), not module
+	 * state in `@rbxts/surge`, which is what makes this four instructions
 	 * instead of a call into another module. What removing that call was worth
 	 * is in docs/research/generated-code-against-hand-written.md in the surge
 	 * repo.
@@ -1033,37 +1119,80 @@ export abstract class EmitContext {
 			return { buf: f.createIdentifier(READ_BUFFER), pos, statements };
 		}
 		this.usesWriteBytes = true;
-		const take = [
-			this.constStatement(pos, f.createIdentifier(CURSOR)),
-			this.assign(CURSOR, f.createBinaryExpression(pos, this.ts_.SyntaxKind.PlusToken, sizeExpr)),
-		];
-		// The buffer was created at the size of everything this call writes.
-		if (this.writeSize !== undefined) {
-			return { buf: f.createIdentifier(SCRATCH), pos, statements: take };
-		}
 		return {
 			buf: f.createIdentifier(SCRATCH),
 			pos,
-			statements: [
-				...take,
-				f.createIfStatement(
-					f.createBinaryExpression(
-						f.createIdentifier(CURSOR),
-						this.ts_.SyntaxKind.GreaterThanToken,
-						f.createIdentifier(CAPACITY),
-					),
-					f.createBlock(
-						[
-							this.assignAll(
-								[SCRATCH, CAPACITY],
-								this.call("grow", [f.createIdentifier(SCRATCH), pos, f.createIdentifier(CURSOR)]),
-							),
-						],
-						true,
-					),
-				),
-			],
+			statements: [this.constStatement(pos, f.createIdentifier(CURSOR)), ...this.reserveFrom(pos, sizeExpr)],
 		};
+	}
+
+	/**
+	 * Moves the write cursor to `size` bytes past `start`, and grows the
+	 * buffer where the cursor passes the capacity, keeping the bytes before
+	 * `start`, unless the `serialize` writes exactly: its buffer was created
+	 * at the size of everything the call writes.
+	 */
+	public reserveFrom(start: ts.Identifier, size: ts.Expression): ts.Statement[] {
+		this.usesWriteBytes = true;
+		const f = this.factory;
+		const move = this.assign(CURSOR, f.createBinaryExpression(start, this.ts_.SyntaxKind.PlusToken, size));
+		if (this.writeSize !== undefined) {
+			return [move];
+		}
+		return [
+			move,
+			f.createIfStatement(
+				f.createBinaryExpression(
+					f.createIdentifier(CURSOR),
+					this.ts_.SyntaxKind.GreaterThanToken,
+					f.createIdentifier(CAPACITY),
+				),
+				f.createBlock(
+					[
+						this.assignAll(
+							[SCRATCH, CAPACITY],
+							this.call("grow", [f.createIdentifier(SCRATCH), start, f.createIdentifier(CURSOR)]),
+						),
+					],
+					true,
+				),
+			),
+		];
+	}
+
+	/** The scratch buffer a reservation writes into, read at each write. */
+	public scratch(): ts.Identifier {
+		return this.factory.createIdentifier(SCRATCH);
+	}
+
+	/**
+	 * Declares a position local holding the write or read cursor, without
+	 * moving the cursor: the start of a reservation that each branch after it
+	 * makes with {@link reserveFrom}, or of bytes read from one move of the
+	 * cursor.
+	 */
+	public takePosition(side: "alloc" | "readAlloc", out: ts.Statement[]): ts.Identifier {
+		if (side === "alloc") {
+			this.usesWriteBytes = true;
+		} else {
+			this.usesReadBytes = true;
+		}
+		const pos = this.fresh("pos");
+		out.push(this.constStatement(pos, this.factory.createIdentifier(side === "alloc" ? CURSOR : READ_CURSOR)));
+		return pos;
+	}
+
+	/** Declares a position local `bytes` before the write cursor: where the last `bytes` reserved start. */
+	public positionBeforeCursor(bytes: number, out: ts.Statement[]): ts.Identifier {
+		const f = this.factory;
+		const pos = this.fresh("pos");
+		out.push(
+			this.constStatement(
+				pos,
+				f.createBinaryExpression(f.createIdentifier(CURSOR), this.ts_.SyntaxKind.MinusToken, this.num(bytes)),
+			),
+		);
+		return pos;
 	}
 
 	/** `name = value;`, for the cursor state. */

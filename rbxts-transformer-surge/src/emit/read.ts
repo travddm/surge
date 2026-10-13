@@ -14,7 +14,7 @@ import {
 	WIDTH_BYTES,
 	ZERO_SIZE_COUNT_CAP,
 } from "./constants";
-import type { EmitContext, ScopedItem, Slot } from "./context";
+import type { EmitContext, JoinedRead, ScopedItem, Slot } from "./context";
 import {
 	allocRuns,
 	bitSetBytes,
@@ -25,6 +25,7 @@ import {
 	elementBytes,
 	exactCount,
 	fixedBytes,
+	joinedRunBytes,
 	minBytes,
 	packedBits,
 	tagKeyOf,
@@ -100,14 +101,19 @@ function readBool(ctx: EmitContext, out: ts.Statement[]): ts.Expression {
 	);
 }
 
-function readStr(ctx: EmitContext, field: Extract<Field, { kind: "str" }>, out: ts.Statement[]): ts.Expression {
+function readStr(
+	ctx: EmitContext,
+	field: Extract<Field, { kind: "str" }>,
+	out: ts.Statement[],
+	run?: JoinedRead,
+): ts.Expression {
 	const exact = exactCount(field.length);
 	if (exact !== undefined) {
 		const { buf, pos, statements } = ctx.destructureAlloc("readAlloc", exact);
 		out.push(...statements);
 		return ctx.bufferCall("readstring", [buf, pos, ctx.num(exact)]);
 	}
-	const { len, bytes } = ctx.readCountedBytes(countWidth(field.length), out);
+	const { len, bytes } = ctx.readCountedBytes(countWidth(field.length), out, run);
 	return ctx.bufferCall("readstring", [bytes.buf, ctx.at(bytes, 0), len]);
 }
 
@@ -116,7 +122,12 @@ function readVector2(ctx: EmitContext, out: ts.Statement[]): ts.Expression {
 	return ctx.factory.createNewExpression(ctx.factory.createIdentifier("Vector2"), undefined, [x, y]);
 }
 
-function readBuffer(ctx: EmitContext, field: Extract<Field, { kind: "buffer" }>, out: ts.Statement[]): ts.Expression {
+function readBuffer(
+	ctx: EmitContext,
+	field: Extract<Field, { kind: "buffer" }>,
+	out: ts.Statement[],
+	run?: JoinedRead,
+): ts.Expression {
 	const f = ctx.factory;
 	const exact = exactCount(field.length);
 	if (exact !== undefined) {
@@ -129,7 +140,7 @@ function readBuffer(ctx: EmitContext, field: Extract<Field, { kind: "buffer" }>,
 		);
 		return exactResult;
 	}
-	const { len, bytes } = ctx.readCountedBytes(countWidth(field.length), out);
+	const { len, bytes } = ctx.readCountedBytes(countWidth(field.length), out, run);
 	// A copy: the input buffer holds the whole payload, and the caller owns the result.
 	const result = ctx.fresh("bytes");
 	out.push(ctx.constStatement(result, ctx.bufferCall("create", [len])));
@@ -137,6 +148,31 @@ function readBuffer(ctx: EmitContext, field: Extract<Field, { kind: "buffer" }>,
 		f.createExpressionStatement(ctx.bufferCall("copy", [result, ctx.num(0), bytes.buf, ctx.at(bytes, 0), len])),
 	);
 	return result;
+}
+
+/**
+ * Reads `field`, a `str` or a `buffer` with a count, and the run of `bytes`
+ * fixed-size bytes beside it, `before` its count or `after` its bytes, with
+ * one move of the read cursor (Transformer 5.19). `readRun` reads the run's
+ * fields from its start, after the string, so that under `readChecks` the
+ * bounds the string's read checks cover the run's bytes before any is read.
+ */
+function readBesideRun(
+	ctx: EmitContext,
+	field: Extract<Field, { kind: "str" | "buffer" }>,
+	side: "before" | "after",
+	bytes: number,
+	readRun: () => void,
+	out: ts.Statement[],
+): ts.Expression {
+	if (exactCount(field.length) !== undefined) {
+		throw new Error("surge: a run joined to a string or buffer that reads no count");
+	}
+	const start = side === "before" ? ctx.takePosition("readAlloc", out) : ctx.fresh("pos");
+	const run: JoinedRead = { side, bytes, start };
+	const value = field.kind === "str" ? readStr(ctx, field, out, run) : readBuffer(ctx, field, out, run);
+	ctx.withAllocRun("readAlloc", bytes, readRun, start);
+	return value;
 }
 
 function readVector3(ctx: EmitContext, field: Extract<Field, { kind: "vector3" }>, out: ts.Statement[]): ts.Expression {
@@ -805,8 +841,44 @@ function readDict(ctx: EmitContext, field: Extract<Field, { kind: "dict" }>, out
 	);
 	const i = ctx.fresh("_i");
 	const body: ts.Statement[] = [];
-	const keyExpr = readField(ctx, field.key, body);
-	const entry = isSet ? [keyExpr] : [keyExpr, readField(ctx, field.value!, body)];
+	const entryValue = field.value;
+	// A `str` or a `buffer` key reads a fixed-size value after it with the
+	// same move of the cursor, and a `str` or a `buffer` value a fixed-size
+	// key before it.
+	const runAfter = entryValue && joinedRunBytes(field.key, [entryValue], ctx.writeChecks);
+	const runBefore =
+		entryValue && runAfter === undefined ? joinedRunBytes(entryValue, [field.key], ctx.writeChecks) : undefined;
+	let entry: ts.Expression[];
+	if (entryValue !== undefined && runAfter !== undefined) {
+		let valueExpr!: ts.Expression;
+		const keyExpr = readBesideRun(
+			ctx,
+			field.key as Extract<Field, { kind: "str" | "buffer" }>,
+			"after",
+			runAfter,
+			() => {
+				valueExpr = readField(ctx, entryValue, body);
+			},
+			body,
+		);
+		entry = [keyExpr, valueExpr];
+	} else if (entryValue !== undefined && runBefore !== undefined) {
+		let keyExpr!: ts.Expression;
+		const valueExpr = readBesideRun(
+			ctx,
+			entryValue as Extract<Field, { kind: "str" | "buffer" }>,
+			"before",
+			runBefore,
+			() => {
+				keyExpr = readField(ctx, field.key, body);
+			},
+			body,
+		);
+		entry = [keyExpr, valueExpr];
+	} else {
+		const keyExpr = readField(ctx, field.key, body);
+		entry = entryValue === undefined ? [keyExpr] : [keyExpr, readField(ctx, entryValue, body)];
+	}
 	body.push(
 		f.createExpressionStatement(
 			f.createCallExpression(f.createPropertyAccessExpression(result, isSet ? "add" : "set"), undefined, entry),
@@ -967,7 +1039,52 @@ export function readObjectInline(
 	// cannot share a reservation; the others may, on the same terms as
 	// the write side.
 	const shareable = (entry: ObjectFieldEntry) => !bitExprs.has(entry) && fixedBytes(entry.field) !== undefined;
-	for (const group of allocRuns(fields, shareable, (entry) => entry.field, ctx.writeChecks)) {
+	const groups = allocRuns(fields, shareable, (entry) => entry.field, ctx.writeChecks);
+	for (let g = 0; g < groups.length; g++) {
+		const group = groups[g];
+		const next = groups[g + 1];
+		// A `str` or a `buffer` next to a run reads it with the same move of
+		// the cursor.
+		const runBefore =
+			next?.length === 1 && group.every(shareable)
+				? joinedRunBytes(
+						next[0].field,
+						group.map((entry) => entry.field),
+						ctx.writeChecks,
+					)
+				: undefined;
+		const runAfter =
+			runBefore === undefined && group.length === 1 && next?.every(shareable)
+				? joinedRunBytes(
+						group[0].field,
+						next.map((entry) => entry.field),
+						ctx.writeChecks,
+					)
+				: undefined;
+		const joinedBytes = runBefore ?? runAfter;
+		if (joinedBytes !== undefined) {
+			const [str, run] = runBefore !== undefined ? [next[0], group] : [group[0], next];
+			const runProps: Array<{ entry: ObjectFieldEntry; expr: ts.Expression }> = [];
+			let strExpr!: ts.Expression;
+			const item = ctx.measure((itemOut) => {
+				strExpr = readBesideRun(
+					ctx,
+					str.field as Extract<Field, { kind: "str" | "buffer" }>,
+					runBefore !== undefined ? "before" : "after",
+					joinedBytes,
+					() => {
+						for (const entry of run) {
+							runProps.push({ entry, expr: readField(ctx, entry.field, itemOut) });
+						}
+					},
+					itemOut,
+				);
+			});
+			const strProp = { entry: str, expr: strExpr };
+			items.push({ ...item, props: runBefore !== undefined ? [...runProps, strProp] : [strProp, ...runProps] });
+			g += 1;
+			continue;
+		}
 		if (group.length > 1) {
 			const total = group.reduce((sum, entry) => sum + fixedBytes(entry.field)!, 0);
 			const props: Array<{ entry: ObjectFieldEntry; expr: ts.Expression }> = [];

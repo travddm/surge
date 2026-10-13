@@ -74,12 +74,12 @@ export function importAlias(name: string): string {
 	return `__surge_${name}`;
 }
 
-// The cursor state, declared in the closure each serializer is emitted into,
-// in a `serialize` that writes exactly (Transformer 5.20), or in a
-// `deserialize` no recursion helper reads through, rather than owned by
-// `@rbxts/surge`. A reservation is then a compare and two moves here
-// instead of a call into another module (Transformer 5.3 and 5.4 in
-// docs/specs/transformer.md). What that was worth is in
+// The cursor state, declared in the closure each serializer is emitted into
+// where a recursion helper reads it, and otherwise in the `serialize` or
+// `deserialize` that uses it, rather than owned by `@rbxts/surge`. A
+// reservation is then a compare and two moves here instead of a call into
+// another module (Transformer 5.3 and 5.4 in docs/specs/transformer.md).
+// What that was worth is in
 // docs/research/generated-code-against-hand-written.md there. They carry the
 // import prefix for the same reason the aliases do: nothing a user wrote can
 // collide with them.
@@ -89,6 +89,12 @@ export const CURSOR = importAlias("cursor");
 export const READ_BUFFER = importAlias("input");
 export const READ_CURSOR = importAlias("readCursor");
 export const READ_LENGTH = importAlias("inputLength");
+// The scratch buffer and its capacity that the closure keeps between calls of
+// a `serialize` that holds its state in locals. They are named apart from the
+// locals because a TypeScript `let` cannot read an outer variable of its own
+// name in its initializer.
+export const KEPT_SCRATCH = importAlias("keptScratch");
+export const KEPT_CAPACITY = importAlias("keptCapacity");
 // The blob channel's state (Transformer 5.9 in docs/specs/transformer.md): the
 // list `serialize` returns, and the list `deserialize`
 // was given and the next blob's index.
