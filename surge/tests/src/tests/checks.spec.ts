@@ -121,6 +121,23 @@ function rangedValue(): Ranged {
 	return { health: 100, offset: -1000, ratio: 0.5 };
 }
 
+// `writeChecks` holds a number with no `Range` to what its integer width
+// holds (Runtime API 3.10), on a number and on each `Vector` or `Transform`
+// component. A float width holds any number.
+interface Widths {
+	byte: DataType.u8;
+	signed: DataType.i16;
+	ratio: DataType.f32;
+	velocity: DataType.Vector<DataType.i16>;
+	spawn: DataType.Transform<DataType.u8>;
+}
+const widths = createCodec<Widths>({ writeChecks: true });
+const widthsUnchecked = createCodec<Widths>();
+
+function widthsValue(): Widths {
+	return { byte: 255, signed: -32768, ratio: 0.5, velocity: new Vector3(1, -2, 3), spawn: new CFrame(1, 2, 3) };
+}
+
 function exactValue(): Exact {
 	return { code: "abcd", triple: [1, 2, 3], bytes: buffer.create(2), slots: [1, 2, 3], marks: ["a", "b", "a"] };
 }
@@ -361,6 +378,33 @@ class ChecksTest {
 	public wrapsANumberOutsideItsRangeWithoutWriteChecks(): void {
 		const written = rangedUnchecked.serialize({ ...rangedValue(), health: 300 });
 		Assert.equal(44, rangedUnchecked.deserialize(written).health);
+	}
+
+	@Fact
+	public rejectsANumberItsWidthCannotHold(): void {
+		Assert.undefined(rejection(() => widths.serialize(widthsValue())));
+		Assert.undefined(rejection(() => widths.serialize({ ...widthsValue(), byte: 0, signed: 32767 })));
+		assertRejected(() => widths.serialize({ ...widthsValue(), byte: 256 }));
+		assertRejected(() => widths.serialize({ ...widthsValue(), byte: -1 }));
+		assertRejected(() => widths.serialize({ ...widthsValue(), byte: 0.5 }));
+		assertRejected(() => widths.serialize({ ...widthsValue(), byte: 0 / 0 }));
+		assertRejected(() => widths.serialize({ ...widthsValue(), signed: 32768 }));
+		assertRejected(() => widths.serialize({ ...widthsValue(), velocity: new Vector3(0, 40000, 0) }));
+		assertRejected(() => widths.serialize({ ...widthsValue(), velocity: new Vector3(0.5, 0, 0) }));
+		assertRejected(() => widths.serialize({ ...widthsValue(), spawn: new CFrame(300, 0, 0) }));
+		// A float width holds any number, a NaN included.
+		Assert.undefined(rejection(() => widths.serialize({ ...widthsValue(), ratio: 1e30 })));
+		Assert.undefined(rejection(() => widths.serialize({ ...widthsValue(), ratio: 0 / 0 })));
+	}
+
+	// Unchecked, a number and a component are written at their widths, which
+	// wrap them (Wire format 4.15 and 7.3).
+	@Fact
+	public wrapsANumberOutsideItsWidthWithoutWriteChecks(): void {
+		const written = widthsUnchecked.serialize({ ...widthsValue(), byte: 300, velocity: new Vector3(40000, 0, 0) });
+		const result = widthsUnchecked.deserialize(written);
+		Assert.equal(44, result.byte);
+		Assert.equal(40000 - 65536, result.velocity.X);
 	}
 
 	@Fact

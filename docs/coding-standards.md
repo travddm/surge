@@ -131,6 +131,7 @@ Never edit these by hand; regenerate them:
 | `flamework2*.luau` under `tests/src/bench/codecs/`                                                                | `mise run bench:definitions` |
 | `docs/benchmarks/size.md`                                                                                         | `mise run bench:size`        |
 | `docs/benchmarks/speed.md`, `docs/benchmarks/speed-trials.tsv`                                                    | `mise run bench:speed`       |
+| `docs/benchmarks/code-size.md`                                                                                    | `mise run bench:code`        |
 
 The `.d.ts` files beside the Blink, Zap and Flamework 2 modules, and
 `zap/deferred.luau`, are written by hand: no compiler's own TypeScript output

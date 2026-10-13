@@ -1,7 +1,7 @@
 # Runtime API specification
 
 Status: current
-Applies to: commit `085f4ea` (no tagged release yet)
+Applies to: commit `8e086a1` (no tagged release yet)
 
 ## 1. Scope
 
@@ -23,7 +23,7 @@ packages is in [../getting-started.md](../getting-started.md).
 - **Blob channel**: the array of values a serializer passes alongside the
   buffer rather than writing into it (`blobs`).
 - **Checks**: the `readChecks` option of `CodecOptions`.
-- **Helper ABI**: the functions this package's `out/abi` module exports for
+- **Helper ABI**: the functions this package's `abi` module exports for
   generated code to call, as distinct from the API a consumer calls.
 
 ## 3. The consumer API
@@ -87,15 +87,20 @@ them what to emit. Each defaults to `false`. `readChecks` governs
 3.11).
 
 **3.9** The package exports the `DataType` namespace of width, length, range,
-quantization and packing brands. What each brand does to the bytes is in
-[wire-format.md](wire-format.md).
+quantization and packing brands, and `DataType.Width`, the union of the width
+brands, for a type over widths to take as a constraint. What each brand does
+to the bytes is in [wire-format.md](wire-format.md). A property typed
+`DataType.Width` itself is a diagnostic (Transformer 7.2).
 
 **3.10** With `writeChecks`, `serialize` raises a string beginning
 `@rbxts/surge:` for a value that does not fit its type: a value in the exact
 form of `DataType.Length<T, N>` that is not `N` long, a count larger than the
-`u8`, `u16` or `u24` width `DataType.Length<T, L>` gives it, and a number that
+`u8`, `u16` or `u24` width `DataType.Length<T, L>` gives it, a number that
 its `DataType.Range<T, Min, Max>` does not admit
-([wire-format.md](wire-format.md) 4.17). An `array` or tuple rest in the exact
+([wire-format.md](wire-format.md) 4.17), and a number with no range that its
+integer width cannot hold, or a fraction in one, a component of a
+`DataType.Vector<X, Y, Z>` or a `DataType.Transform<X, Y, Z>` included
+([wire-format.md](wire-format.md) 4.15 and 7.3). An `array` or tuple rest in the exact
 form whose element is `optional`, or a `literal` that includes `undefined`,
 may be shorter than `N`, which [wire-format.md](wire-format.md) 6.6 makes
 valid; only a longer one raises.
@@ -105,7 +110,8 @@ or numbers: a value in the exact form is truncated or padded as
 [wire-format.md](wire-format.md) 6.3 and 6.7 state, a count too large for its
 width wraps as 6.8 states, and a number outside its width wraps as 4.15
 states, whatever its `DataType.Range`. `writeChecks` examines no other value,
-and no number without a `DataType.Range`.
+and no number of a float width: a plain `number`, an `f32` and an `f64` hold
+any number.
 
 **3.12** `Serialized<T>` decides in the type system whether `T` can hold a
 blob field, by the rows of Transformer 4.1 that make a `blob`: `unknown`,
@@ -240,8 +246,10 @@ the table, any input but a table whose `buffer` is a buffer and whose
 ## 5. The helper ABI
 
 **5.1** Generated code calls only the following exports of the package's
-`out/abi` module, which it imports as `@rbxts/surge/out/abi`. Their
-signatures are part of the coupling in section 6.
+`abi` module, which it imports as `@rbxts/surge/abi`: a subpath that the
+package's `typesVersions` maps to its compiled `out/abi`, so that the import
+names no build directory. Their signatures are part of the coupling in
+section 6.
 
 | Export                                              | Called                                                                                                      | Contract                                                                                                                                                                                                                                                            |
 | --------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -350,8 +358,8 @@ A test file named `*.spec.ts` is under `tests/src/tests/`. A path starting
 | 3.7                         | `factories.spec.ts`: `passesTheBufferAloneForAShapeWithNoBlob`; `test/golden.test.mjs`: `deserialize` takes what `serialize` returned; `rbxts-transformer-surge` `test/transform.test.ts`, `transform (end-to-end)`: the declared table at a `createDeserializer` call site                                                                                                                                                                                                                                                                                                                                                     |
 | 3.8                         | `test/golden.test.mjs`: a serializer without `readChecks` carries no read-side check, and one with it carries them; `rbxts-transformer-surge` `test/transform.test.ts`: `transform readChecks option`, `transform writeChecks option`                                                                                                                                                                                                                                                                                                                                                                                           |
 | 3.9                         | Source: `src/data-type.ts`; each brand's bytes are pinned in `bytes.spec.ts`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
-| 3.10                        | `checks.spec.ts`: `rejectsAnExactLengthValueOfAnyOtherLength`, `letsAnExactArrayOfOptionalsBeShorterButNotLonger`, `rejectsACountPastItsWidth`, `rejectsANumberItsRangeDoesNotAdmit`                                                                                                                                                                                                                                                                                                                                                                                                                                            |
-| 3.11                        | `checks.spec.ts`: `wrapsACountPastItsWidthWithoutWriteChecks`, `wrapsANumberOutsideItsRangeWithoutWriteChecks`; `collections.spec.ts`: `padsAShortExactArrayOfOptionalsInsteadOfRaising`                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| 3.10                        | `checks.spec.ts`: `rejectsAnExactLengthValueOfAnyOtherLength`, `letsAnExactArrayOfOptionalsBeShorterButNotLonger`, `rejectsACountPastItsWidth`, `rejectsANumberItsRangeDoesNotAdmit`, `rejectsANumberItsWidthCannotHold`                                                                                                                                                                                                                                                                                                                                                                                                        |
+| 3.11                        | `checks.spec.ts`: `wrapsACountPastItsWidthWithoutWriteChecks`, `wrapsANumberOutsideItsRangeWithoutWriteChecks`, `wrapsANumberOutsideItsWidthWithoutWriteChecks`; a float width: `rejectsANumberItsWidthCannotHold`; `collections.spec.ts`: `padsAShortExactArrayOfOptionalsInsteadOfRaising`                                                                                                                                                                                                                                                                                                                                    |
 | 3.12                        | `rbxts-transformer-surge` `test/transform.test.ts`, `transform (end-to-end)`: the declared result has a blobs array exactly when the walk finds a blob, on fourteen shapes; every call site under `tests/src/`, each of which Transformer 7.3 would reject. Source: `Serialized` in `src/serializer.ts`                                                                                                                                                                                                                                                                                                                         |
 | 3.13                        | `test/golden.test.mjs`: generated code imports its helpers from the package's abi module, whose second half reads `out/index.d.ts`. Source: `src/index.ts`                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | 3.14                        | `checks.spec.ts`: `rejectsAnythingButABufferForAShapeWithNoBlob`, `rejectsAnythingButItsTableForAShapeWithABlob`; `rbxts-transformer-surge` `test/transform.test.ts`, `transform readChecks option`: a caller passing `unknown`, and without `readChecks` it does not type-check                                                                                                                                                                                                                                                                                                                                                |
@@ -384,6 +392,13 @@ A test file named `*.spec.ts` is under `tests/src/tests/`. A path starting
 
 ## Changes
 
+- `8e086a1`: 3.10 adds a number with no range that its integer width cannot
+  hold, a `Vector` or `Transform` component included; 3.11 excepts only a
+  float width.
+- `15cc851`: 3.9 names `DataType.Width` among the exports.
+- `e189678`: 2 and 5.1 name the helper module `abi`, imported as
+  `@rbxts/surge/abi`, a subpath mapped to `out/abi`, where they named
+  `out/abi` itself.
 - `085f4ea`: 5.1's `grow` returns a buffer no shorter than the one it was
   given, which Transformer 5.30 relies on.
 - `766cb9a`: 5.1 adds `writeLongString`, `writeLongBuffer`, `growLongCount`,

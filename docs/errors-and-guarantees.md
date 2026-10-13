@@ -16,13 +16,13 @@ const [ok, request] = pcall(() => readRequest(input));
 
 ## Two options
 
-|                | `readChecks`                                                                                                                                                           | `writeChecks`                                                                                                                                              |
-| -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Governs        | `deserialize`, and a cursor codec's `read`                                                                                                                             | `serialize`, and a cursor codec's `write`                                                                                                                  |
-| Guards against | input a client crafted, read on the server                                                                                                                             | a value of the game's own that does not fit its `DataType` brands                                                                                          |
-| Rejects        | an input that is not what `serialize` returns, a read past the end, a count the rest cannot hold, an enum index past its items, a packed rotation code that names none | an exact `Length<T, N>` value that is not `N` long, a count too large for its `u8`, `u16` or `u24` width, a number its `Range<T, Min, Max>` does not admit |
-| Taken by       | `createDeserializer`, `createCodec`, `createCursorCodec`                                                                                                               | `createSerializer`, `createCodec`, `createCursorCodec`                                                                                                     |
-| Costs          | a branch per read and a shape check per call: a few percent of a decode ([research](research/read-checks-cost.md))                                                     | a branch per narrowed or exact `Length` and per `Range` number; nothing for a type with neither                                                            |
+|                | `readChecks`                                                                                                                                                           | `writeChecks`                                                                                                                                                                                                                             |
+| -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Governs        | `deserialize`, and a cursor codec's `read`                                                                                                                             | `serialize`, and a cursor codec's `write`                                                                                                                                                                                                 |
+| Guards against | input a client crafted, read on the server                                                                                                                             | a value of the game's own that does not fit its `DataType` brands                                                                                                                                                                         |
+| Rejects        | an input that is not what `serialize` returns, a read past the end, a count the rest cannot hold, an enum index past its items, a packed rotation code that names none | an exact `Length<T, N>` value that is not `N` long, a count too large for its `u8`, `u16` or `u24` width, a number its `Range<T, Min, Max>` does not admit, a number or a `Vector` or `Transform` component its integer width cannot hold |
+| Taken by       | `createDeserializer`, `createCodec`, `createCursorCodec`                                                                                                               | `createSerializer`, `createCodec`, `createCursorCodec`                                                                                                                                                                                    |
+| Costs          | a branch per read and a shape check per call: a few percent of a decode ([research](research/read-checks-cost.md))                                                     | a branch per narrowed or exact `Length`, per `Range` number and per integer-width number or component; nothing for a type with none                                                                                                       |
 
 Both default to `false`, and both must be written as `true` or `false` at the
 call site, because they decide what code is generated. Every error either one
@@ -81,14 +81,16 @@ nothing:
 - an exact `Length<T, N>` value of another length is truncated, padded, or
   raises, depending on its element type.
 
-`writeChecks: true` makes the second and third raise before they are written.
-It examines a number only when its type is a `Range<T, Min, Max>`, and then
-raises for a value outside the range, a NaN, and a fraction where the range
-holds whole numbers. To have `serialize` check a number, give it a `Range`.
+`writeChecks: true` makes all three raise before they are written. A number
+is checked against its `Range<T, Min, Max>` where it has one, and otherwise
+against what its integer width holds, each component of a `Vector` or a
+`Transform` included: a value outside it, a NaN, and a fraction where it
+holds whole numbers raise. A plain `number`, an `f32` and an `f64` hold any
+number, and are not examined.
 
 `writeChecks` guards the game's own values, not what crosses the network. A
-type with no narrowed or exact `Length` and no `Range` gets no check from it,
-so turning it on costs such a type nothing.
+type with no narrowed or exact `Length`, no `Range` and no integer width gets
+no check from it, so turning it on costs such a type nothing.
 
 An enum item's write finds the item's index by the item itself, which works
 because Roblox gives each item one object. Outside Roblox, such as under

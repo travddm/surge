@@ -2,7 +2,8 @@
 import type ts from "typescript";
 
 import { FIXED_DATATYPES } from "../datatypes";
-import type { ComponentWidths, CountSpec, Field, LengthWidth, NumRange, ObjectFieldEntry } from "../field";
+import type { ComponentWidths, CountSpec, Field, LengthWidth, NumRange, NumWidth, ObjectFieldEntry } from "../field";
+import { widthRange } from "../field";
 import {
 	ALLOC_RUN_LOCALS,
 	CURSOR,
@@ -92,10 +93,14 @@ function writeNum(
 	out: ts.Statement[],
 ): void {
 	let written = value;
-	if (ctx.writeChecks && field.range !== undefined) {
+	// A number is checked against its range, or, without one, against what its
+	// integer width holds (Transformer 5.14 in docs/specs/transformer.md).
+	const range = ctx.writeChecks ? (field.range ?? widthRange(field.width)) : undefined;
+	if (range !== undefined) {
 		const n = ctx.fresh("n");
 		out.push(ctx.constStatement(n, value));
-		checkRange(ctx, field.range, n, out);
+		const message = field.range === undefined ? widthMessage("number", field.width) : RANGE_MESSAGE;
+		checkRange(ctx, range, n, message, out);
 		written = n;
 	}
 	const { buf, pos, statements } = ctx.destructureAlloc("alloc", WIDTH_BYTES[field.width]);
@@ -103,13 +108,27 @@ function writeNum(
 	out.push(...ctx.writeNumberAt(field.width, buf, pos, written));
 }
 
+const RANGE_MESSAGE = "serialize given a number its DataType.Range does not admit";
+
+/** What a number, or a `Vector` or `Transform` component, raises when its integer width cannot hold it. */
+function widthMessage(what: "number" | "component", width: NumWidth): string {
+	return `serialize given a ${what} its DataType.${width} width cannot hold`;
+}
+
 /**
- * Under `writeChecks`, raises for a number its `DataType.Range` does not
- * admit. The bounds are tested as `!(n >= min && n <= max)`, which a NaN fails,
- * where `n < min || n > max` would let it through. A range that holds whole
- * numbers also rejects a fraction, which its width would truncate.
+ * Under `writeChecks`, raises `message` for a number outside `range`: its
+ * `DataType.Range`, or the values its integer width holds. The bounds are
+ * tested as `!(n >= min && n <= max)`, which a NaN fails, where
+ * `n < min || n > max` would let it through. A range that holds whole numbers
+ * also rejects a fraction, which its width would truncate.
  */
-function checkRange(ctx: EmitContext, range: NumRange, value: ts.Expression, out: ts.Statement[]): void {
+function checkRange(
+	ctx: EmitContext,
+	range: NumRange,
+	value: ts.Expression,
+	message: string,
+	out: ts.Statement[],
+): void {
 	const f = ctx.factory;
 	const syntax = ctx.ts_.SyntaxKind;
 	let rejected: ts.Expression = f.createPrefixUnaryExpression(
@@ -133,7 +152,7 @@ function checkRange(ctx: EmitContext, range: NumRange, value: ts.Expression, out
 			),
 		);
 	}
-	out.push(ctx.throwIf(rejected, "serialize given a number its DataType.Range does not admit"));
+	out.push(ctx.throwIf(rejected, message));
 }
 
 function writeBool(ctx: EmitContext, value: ts.Expression, out: ts.Statement[]): void {
@@ -512,7 +531,7 @@ function writeElement(
 	out: ts.Statement[],
 	body: ts.Statement[],
 ): void {
-	const bytes = elementBytes(element);
+	const bytes = elementBytes(element, ctx.writeChecks);
 	if (bytes === undefined) {
 		writeField(ctx, element, value, body);
 		return;
@@ -546,6 +565,7 @@ function writeTuple(
 		elements,
 		(element) => fixedBytes(element.elementField) !== undefined,
 		(element) => element.elementField,
+		ctx.writeChecks,
 	);
 	ctx.pushScoped(
 		groups.map((group) =>
@@ -705,14 +725,16 @@ function writeNum3(
 	const f = ctx.factory;
 	let offset = 0;
 	[a, b, c].forEach((component, i) => {
-		out.push(
-			...ctx.writeNumberAt(
-				widths[i],
-				slot.buf,
-				ctx.at(slot, offset),
-				f.createPropertyAccessExpression(value, component),
-			),
-		);
+		let read: ts.Expression = f.createPropertyAccessExpression(value, component);
+		// Under `writeChecks`, a component of an integer width is bound and
+		// compared with what the width holds, as a number is (Transformer 5.14).
+		const range = ctx.writeChecks ? widthRange(widths[i]) : undefined;
+		if (range !== undefined) {
+			const bound = bindLocal(ctx, component.toLowerCase(), read, out);
+			checkRange(ctx, range, bound, widthMessage("component", widths[i]), out);
+			read = bound;
+		}
+		out.push(...ctx.writeNumberAt(widths[i], slot.buf, ctx.at(slot, offset), read));
 		offset += WIDTH_BYTES[widths[i]];
 	});
 }
@@ -1180,7 +1202,7 @@ export function writeObjectInline(
 	const written = fields.filter((entry) => !isAllPackedBits(entry.field));
 	const shareable = (entry: ObjectFieldEntry) =>
 		!bits.some((bit) => bit.entry === entry) && fixedBytes(entry.field) !== undefined;
-	const groups = allocRuns(written, shareable, (entry) => entry.field);
+	const groups = allocRuns(written, shareable, (entry) => entry.field, ctx.writeChecks);
 	const items: ScopedItem[] = [];
 	// A variant's index comes before everything the variant writes. It
 	// shares the reservation of the properties right after it when those have
@@ -1193,7 +1215,7 @@ export function writeObjectInline(
 		(bits.length > 0 ||
 			first === undefined ||
 			!shareable(first[0]) ||
-			first.reduce((sum, entry) => sum + runLocals(entry.field), 1) > ALLOC_RUN_LOCALS)
+			first.reduce((sum, entry) => sum + runLocals(entry.field, ctx.writeChecks), 1) > ALLOC_RUN_LOCALS)
 	) {
 		const index = pendingLead;
 		items.push(ctx.measure((itemOut) => writeVariantIndex(ctx, index, itemOut)));
@@ -1392,7 +1414,11 @@ function writeGuardedUnion(
 			write: (branch: ts.Statement[], index: VariantIndex | undefined) => {
 				const cast = ctx.castTo(value, fieldToTypeNode(ctx, variant));
 				const bytes = fixedBytes(variant);
-				if (index === undefined || bytes === undefined || runLocals(variant) + 1 > ALLOC_RUN_LOCALS) {
+				if (
+					index === undefined ||
+					bytes === undefined ||
+					runLocals(variant, ctx.writeChecks) + 1 > ALLOC_RUN_LOCALS
+				) {
 					if (index !== undefined) {
 						writeVariantIndex(ctx, index, branch);
 					}

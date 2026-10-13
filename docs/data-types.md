@@ -34,8 +34,14 @@ builds it. What each brand does to the bytes is
 | `DataType.u32` / `DataType.i32` | 4     | 0 to 4294967295 / the signed 32 bits |
 
 An integer width truncates a fraction toward zero and wraps a value outside
-its range. A `u8` given 300 reads back 44. Choose a width that holds every
-value the field takes, or state the range and let surge choose.
+its range. A `u8` given 300 reads back 44, and with `writeChecks: true` on
+the factory `serialize` raises instead
+([errors-and-guarantees.md](errors-and-guarantees.md)). Choose a width that
+holds every value the field takes, or state the range and let surge choose.
+
+`DataType.Width` is the union of these, for a type that takes a width as a
+parameter: `interface Sample<W extends DataType.Width> { x: W }`. A property
+typed `DataType.Width` itself is a build error, since it names no width.
 
 ## Ranges: `Range<T, Min, Max>`
 
@@ -86,7 +92,8 @@ depends on its value.
 `DataType.Vector<X, Y, Z>` sets the width of each component of a `Vector3`,
 and `DataType.Transform<X, Y, Z>` sets the widths of a `CFrame`'s position.
 `Y` and `Z` default to `X`, and `X` to `f32`, so `Vector<DataType.i16>` is
-three `i16`s. An integer component truncates and wraps as a number width does.
+three `i16`s. An integer component truncates and wraps as a number width
+does, and `writeChecks` holds it to its width the same way.
 
 A `CFrame`'s rotation takes 12 bytes. `DataType.Quantized<CFrame>` stores it
 in 6, as three `i16`s, and reads back a rotation within about 1e-4 radians of

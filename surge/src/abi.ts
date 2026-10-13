@@ -1,6 +1,7 @@
 // The helpers generated code calls (Runtime API 5.1 in docs/specs/runtime-api.md),
 // kept out of the package's own exports so that a consumer sees only the API
-// meant for it. The transformer imports them from `@rbxts/surge/out/abi`.
+// meant for it. The transformer imports them from `@rbxts/surge/abi`, the
+// subpath that `typesVersions` in package.json maps to this module's `out/abi`.
 //
 // No //!optimize 2 here, for the reason index.ts gives: this module only
 // re-exports.

@@ -41,7 +41,7 @@ function typeErrorsOfGeneratedCode(source: string, compilerOptions?: ts.Compiler
 }
 
 describe("transform (end-to-end)", () => {
-	test("a shape with no blob field pays nothing for the blob side channel", () => {
+	test("a shape with no blob field pays nothing for the blob channel", () => {
 		const { printed, cleanup } = runTransform(
 			`import { createCodec } from "@rbxts/surge";
 			interface P { x: number; flag: boolean; }
@@ -193,7 +193,7 @@ describe("transform (end-to-end)", () => {
 		}
 	});
 
-	test("a shape with a blob field still carries the side channel", () => {
+	test("a shape with a blob field still carries the blob channel", () => {
 		const { printed, cleanup } = runTransform(
 			`import { createCodec } from "@rbxts/surge";
 			interface P { x: number; part: Instance; }
@@ -223,7 +223,7 @@ describe("transform (end-to-end)", () => {
 		}
 	});
 
-	test("a blob reachable only through a recursion helper still carries the side channel", () => {
+	test("a blob reachable only through a recursion helper still carries the blob channel", () => {
 		const { printed, cleanup } = runTransform(
 			`import { createCodec } from "@rbxts/surge";
 			interface Node { part: Instance; kids: Node[]; }
@@ -249,7 +249,7 @@ describe("transform (end-to-end)", () => {
 			const s = createCodec<P>();`,
 		);
 		try {
-			// No blob field, so nothing from the blob side channel is imported. A
+			// No blob field, so nothing from the blob channel is imported. A
 			// recursive type, written through a helper, keeps the scratch buffer
 			// (Transformer 5.20), which imports both of its helpers, and the
 			// string array's variable-length counts import the long forms of
@@ -258,7 +258,7 @@ describe("transform (end-to-end)", () => {
 				"import { finishWrite as __surge_finishWrite, grow as __surge_grow, " +
 					"growLongCount as __surge_growLongCount, growLongString as __surge_growLongString, " +
 					"readLongCount as __surge_readLongCount } " +
-					'from "@rbxts/surge/out/abi";',
+					'from "@rbxts/surge/abi";',
 			);
 			expect(printed).toContain("const s = function () {");
 			expect(printed).toContain("serialize:");
@@ -1081,6 +1081,22 @@ describe("transform writeChecks option", () => {
 				const s = createSerializer<P>({ writeChecks: true });`,
 			),
 		).toEqual([]);
+	});
+
+	test("a width brand and a Vector are checked under writeChecks, and the generated code type-checks", () => {
+		const source = `import { DataType, createCodec } from "@rbxts/surge";
+			interface P { health: DataType.u8; velocity: DataType.Vector<DataType.i16>; ratio: DataType.f32; }
+			const guarded = createCodec<P>({ writeChecks: true });`;
+		expect(typeErrorsOfGeneratedCode(source)).toEqual([]);
+		const { printed, diagnostics, cleanup } = runTransform(source);
+		try {
+			expect(diagnostics).toHaveLength(0);
+			expect(printed).toContain("DataType.u8 width cannot hold");
+			expect(printed.match(/DataType\.i16 width cannot hold/g)).toHaveLength(3);
+			expect(printed).not.toContain("DataType.f32 width");
+		} finally {
+			cleanup();
+		}
 	});
 
 	// There is no write path to check, so accepting it would say otherwise.

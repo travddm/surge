@@ -14,7 +14,7 @@ the byte count does not show.
 with the largest difference in any component. About 1e-7 is f32 rounding of
 a `CFrame` rotation, and about 1e-4 a quantized one. A difference near 1 is a
 loss in the library or in this runner, which
-[research/serialized-size-across-libraries.md](../research/serialized-size-across-libraries.md)
+[research/serialized-size-across-libraries.md](/docs/research/serialized-size-across-libraries.md)
 explains.
 
 Blink and Zap are smaller than surge on a count of 254 or more, which surge
@@ -29,7 +29,7 @@ an experimental Flamework 2. It writes each count and length as a varint, one
 byte below 128, an enum item as a u16 of its `Value`, a `CFrame` as its twelve
 components, and a blob's index into the buffer as a u32. It has no `Packed`.
 
-`baseline` is a hand-written codec that writes surge's exact bytes on five
+`baseline` is a hand-written codec that writes surge's exact bytes on 10
 rows; it exists for the speed table. Zap's bytes are one fired event minus
 its event-id byte.
 

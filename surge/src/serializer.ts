@@ -170,14 +170,17 @@ export interface CodecOptions {
 	 * Check, on every write, that a value fits its type: that a
 	 * `DataType.Length<T, N>` value is exactly `N` long, that a count fits the
 	 * width `DataType.Length<T, L>` gives it, and that a number is one its
-	 * `DataType.Range<T, Min, Max>` admits. A value that does not raises a
-	 * string beginning `@rbxts/surge: ` from `serialize`, where unchecked it
-	 * would be padded, truncated, or wrapped. Defaults to `false`.
+	 * `DataType.Range<T, Min, Max>` admits, or, without a range, one its
+	 * integer width holds, a `DataType.Vector` or `DataType.Transform`
+	 * component included. A value that does not raises a string beginning
+	 * `@rbxts/surge: ` from `serialize`, where unchecked it would be padded,
+	 * truncated, or wrapped. Defaults to `false`.
 	 *
 	 * It catches a value this game built wrong rather than input it was sent,
-	 * so it costs a branch per container and per ranged number, on the write
-	 * side only. A type with no narrowed or exact `DataType.Length` and no
-	 * `DataType.Range` gets no check, and pays nothing.
+	 * so it costs a branch per container and per ranged or integer-width
+	 * number, on the write side only. A type with no narrowed or exact
+	 * `DataType.Length`, no `DataType.Range` and no integer width gets no
+	 * check, and pays nothing.
 	 */
 	readonly writeChecks?: boolean;
 }

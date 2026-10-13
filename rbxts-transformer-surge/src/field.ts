@@ -57,6 +57,38 @@ export interface NumRange {
 	readonly whole: boolean;
 }
 
+/**
+ * The values each width holds exactly: every whole number between the two
+ * bounds for an integer width, and every finite single-precision value for
+ * `f32`.
+ */
+export const WIDTH_LIMITS: Readonly<Record<NumWidth, readonly [number, number]>> = {
+	u8: [0, 255],
+	u16: [0, 65535],
+	u24: [0, 16777215],
+	u32: [0, 4294967295],
+	i8: [-128, 127],
+	i16: [-32768, 32767],
+	i24: [-8388608, 8388607],
+	i32: [-2147483648, 2147483647],
+	f32: [-3.4028234663852886e38, 3.4028234663852886e38],
+	f64: [-Infinity, Infinity],
+};
+
+/**
+ * The range an integer width holds, as the `NumRange` that `writeChecks`
+ * compares a number of that width with when it has no `DataType.Range`
+ * (Transformer 5.14 in docs/specs/transformer.md), or `undefined` for a float
+ * width, which holds any number.
+ */
+export function widthRange(width: NumWidth): NumRange | undefined {
+	if (width === "f32" || width === "f64") {
+		return undefined;
+	}
+	const [min, max] = WIDTH_LIMITS[width];
+	return { min, max, whole: true };
+}
+
 /** A literal value a `bitSet` can hold. `undefined` cannot be a table key, so it is never one. */
 export type SetMember = string | number | boolean;
 

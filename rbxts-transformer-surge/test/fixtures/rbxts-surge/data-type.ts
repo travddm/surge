@@ -19,7 +19,7 @@ export namespace DataType {
 
 	export type Length<T, L extends u8 | u16 | u24 | u32> = T & { readonly _surge_length?: [T, L] };
 
-	type Width = f32 | f64 | u8 | u16 | u24 | u32 | i8 | i16 | i24 | i32;
+	export type Width = f32 | f64 | u8 | u16 | u24 | u32 | i8 | i16 | i24 | i32;
 
 	export type Range<T extends number, Min extends number, Max extends number> = T & {
 		readonly _surge_range?: [T, Min, Max];

@@ -24,8 +24,8 @@ by more than 10% and is left out of the summary.
 Time per value is the same measurement as microseconds per call, which
 reads across rows where a rate does not.
 
-`baseline` is a hand-written codec that writes surge's exact bytes on
-five rows, so its ratio is what surge's generated code costs against
+`baseline` is a hand-written codec that writes surge's exact bytes on 10
+rows, so its ratio is what surge's generated code costs against
 hand-written Luau. Zap exposes no encoder to call and has no column.
 Every column but serio runs with `--!native` and `--!optimize 2`.
 
@@ -42,8 +42,8 @@ for it.
 
 Each number is one shape in a warm loop, on one machine on one day, not
 an application profile; compare columns within this file only.
-[size.md](size.md) gives each row's bytes, and
-[specs/benchmark-harness.md](../specs/benchmark-harness.md) says how the suite measures.
+[size.md](/docs/benchmarks/size.md) gives each row's bytes, and
+[specs/benchmark-harness.md](/docs/specs/benchmark-harness.md) says how the suite measures.
 
 The run:
 

@@ -20,7 +20,7 @@ import type {
 	ObjectFieldEntry,
 	SetMember,
 } from "./field";
-import { DEFAULT_COMPONENT_WIDTH, LENGTH_WIDTHS } from "./field";
+import { DEFAULT_COMPONENT_WIDTH, LENGTH_WIDTHS, WIDTH_LIMITS } from "./field";
 
 export interface WalkDiagnostic {
 	readonly message: string;
@@ -61,24 +61,6 @@ const RUNTIME_TYPE_TAGS: Partial<Record<Field["kind"], string>> = {
 	buffer: "buffer",
 	numberSequence: "NumberSequence",
 	enum: "EnumItem",
-};
-
-/**
- * The values each width holds exactly: every whole number between the two
- * bounds for an integer width, and every finite single-precision value for
- * `f32`.
- */
-const WIDTH_LIMITS: Readonly<Record<NumWidth, readonly [number, number]>> = {
-	u8: [0, 255],
-	u16: [0, 65535],
-	u24: [0, 16777215],
-	u32: [0, 4294967295],
-	i8: [-128, 127],
-	i16: [-32768, 32767],
-	i24: [-8388608, 8388607],
-	i32: [-2147483648, 2147483647],
-	f32: [-3.4028234663852886e38, 3.4028234663852886e38],
-	f64: [-Infinity, Infinity],
 };
 
 /**
@@ -268,6 +250,18 @@ export class TypeWalker {
 		if (surgeBrand && NUM_BRAND_WIDTHS.has(surgeBrand.name)) {
 			return { kind: "num", width: surgeBrand.name as NumWidth };
 		}
+		// The union of the widths is exported as a constraint for a type over
+		// them. As a property's type it names no width, and left alone it would
+		// reach the union rows and be reported as ten constituents of one
+		// runtime type, which says nothing about widths.
+		if (surgeBrand?.name === "Width") {
+			this.report(
+				`"DataType.Width" is the union of the number widths, not one of them -- give the property one ` +
+					`width: ${[...NUM_BRAND_WIDTHS].map((width) => `"DataType.${width}"`).join(", ")}.`,
+				node,
+			);
+			return { kind: "num", width: "f64" };
+		}
 
 		if ((type.flags & ts_.TypeFlags.Union) !== 0) {
 			return this.walkUnion(type as ts.UnionType, node, packed);
@@ -327,7 +321,7 @@ export class TypeWalker {
 		// `@rbxts/types` brands `Instance` (and every subclass) and every
 		// Roblox datatype not covered above with its own `_nominal_*`
 		// property (fbs and serio both key off the same brand). Routing them
-		// to the blob passthrough channel here, before any structural check
+		// to the blob channel here, before any structural check
 		// below can walk their declared properties, is what makes them blobs
 		// (Transformer 4.1 in docs/specs/transformer.md):
 		// `Instance` has hundreds of properties and `Region3`/`TweenInfo`/etc.
@@ -343,28 +337,28 @@ export class TypeWalker {
 		// routed to blob so a typo'd type doesn't disappear without a trace.
 		if ((type.flags & ts_.TypeFlags.TemplateLiteral) !== 0) {
 			this.report(
-				`a template literal type can't be structurally encoded -- widen it to "string" or opt into the blob passthrough channel with "unknown".`,
+				`a template literal type can't be structurally encoded -- widen it to "string", or type it "unknown" to pass it through in "blobs".`,
 				node,
 			);
 			return { kind: "blob" };
 		}
 		if ((type.flags & ts_.TypeFlags.ESSymbolLike) !== 0) {
 			this.report(
-				`"symbol" can't be structurally encoded -- opt into the blob passthrough channel with "unknown".`,
+				`"symbol" can't be structurally encoded -- type it "unknown" to pass it through in "blobs".`,
 				node,
 			);
 			return { kind: "blob" };
 		}
 		if ((type.flags & ts_.TypeFlags.BigIntLike) !== 0) {
 			this.report(
-				`"bigint" can't be structurally encoded -- opt into the blob passthrough channel with "unknown".`,
+				`"bigint" can't be structurally encoded -- type it "unknown" to pass it through in "blobs".`,
 				node,
 			);
 			return { kind: "blob" };
 		}
 		if ((type.flags & ts_.TypeFlags.Null) !== 0) {
 			this.report(
-				`"null" can't be structurally encoded -- opt into the blob passthrough channel with "unknown".`,
+				`"null" can't be structurally encoded -- type it "unknown" to pass it through in "blobs".`,
 				node,
 			);
 			return { kind: "blob" };
@@ -374,7 +368,7 @@ export class TypeWalker {
 			checker.getSignaturesOfType(type, ts_.SignatureKind.Construct).length > 0
 		) {
 			this.report(
-				`a function type can't be encoded -- it would round-trip as a stale reference in-process at best and be meaningless over a RemoteEvent at worst. Opt into the blob passthrough channel with "unknown" if this is intentional.`,
+				`a function type can't be encoded -- it would round-trip as a stale reference in-process at best and be meaningless over a RemoteEvent at worst. Type it "unknown" to pass it through in "blobs" if this is intentional.`,
 				node,
 			);
 			return { kind: "blob" };
@@ -398,7 +392,7 @@ export class TypeWalker {
 		if (type.getProperties().length > 0 && indexInfos.length > 0) {
 			this.report(
 				`a type with both declared properties and an index signature isn't supported -- split the index ` +
-					`signature into its own "Record"/"Map" field, or opt into the blob passthrough channel with "unknown".`,
+					`signature into its own "Record"/"Map" field, or type it "unknown" to pass it through in "blobs".`,
 				node,
 			);
 			return { kind: "blob" };
@@ -418,7 +412,7 @@ export class TypeWalker {
 		if (type.getProperties().length === 0) {
 			// No declared properties and no index signature: an opaque type
 			// (`unknown`, `Instance` and subclasses, or anything else this
-			// walk doesn't recognize) -- the blob passthrough channel.
+			// walk doesn't recognize) -- the blob channel.
 			return { kind: "blob" };
 		}
 
@@ -1094,7 +1088,7 @@ export class TypeWalker {
 		const opaque = all.some((f) => f.kind === "blob");
 		const fields = all.filter((f) => f.kind !== "blob");
 
-		// Every constituent routed to the opaque passthrough channel (for
+		// Every constituent routed to the blob channel (for
 		// example a union of `Instance` subclasses, now that they're
 		// nominally detected -- Transformer 4.4 in docs/specs/transformer.md):
 		// there is nothing left to guard on, since the blob

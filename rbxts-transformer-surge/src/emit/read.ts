@@ -338,7 +338,7 @@ function readArray(ctx: EmitContext, field: Extract<Field, { kind: "array" }>, o
 	const i = ctx.fresh("i");
 	const index = loopIndex(ctx, i, 0);
 	const body: ts.Statement[] = [];
-	const bytes = elementBytes(field.element);
+	const bytes = elementBytes(field.element, ctx.writeChecks);
 	if (bytes === undefined) {
 		storeElement(ctx, result, index, readField(ctx, field.element, body), body);
 	} else {
@@ -388,6 +388,7 @@ function readTuple(ctx: EmitContext, field: Extract<Field, { kind: "tuple" }>, o
 		elements,
 		(element) => fixedBytes(element.elementField) !== undefined,
 		(element) => element.elementField,
+		ctx.writeChecks,
 	);
 	ctx.pushScoped(
 		groups.map((group) =>
@@ -966,7 +967,7 @@ export function readObjectInline(
 	// cannot share a reservation; the others may, on the same terms as
 	// the write side.
 	const shareable = (entry: ObjectFieldEntry) => !bitExprs.has(entry) && fixedBytes(entry.field) !== undefined;
-	for (const group of allocRuns(fields, shareable, (entry) => entry.field)) {
+	for (const group of allocRuns(fields, shareable, (entry) => entry.field, ctx.writeChecks)) {
 		if (group.length > 1) {
 			const total = group.reduce((sum, entry) => sum + fixedBytes(entry.field)!, 0);
 			const props: Array<{ entry: ObjectFieldEntry; expr: ts.Expression }> = [];

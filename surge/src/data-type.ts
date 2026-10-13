@@ -22,23 +22,28 @@ export namespace DataType {
 	/**
 	 * Sets how `T`'s encoding says how much follows. Applies to a `string`,
 	 * an array, a `Map`, a `Set`, a `Record`, a `buffer`, and a tuple's rest
-	 * element; on anything else the transformer reports a diagnostic. Without
-	 * it, the count is variable-length: one byte below 254, three up to 65535,
-	 * and five above (Wire format 6.9 in docs/specs/wire-format.md).
+	 * element; on anything else the transformer reports a diagnostic. `L` is
+	 * one of two things: a count width, {@link u8}, {@link u16}, {@link u24}
+	 * or {@link u32}, as in `Length<string[], DataType.u8>`; or a whole
+	 * number literal, as in `Length<string, 8>`, which fixes the length and
+	 * writes no count. The constraint names only the widths, but a number
+	 * literal satisfies it, and the transformer reads it as the exact length.
+	 * Without `Length`, the count is variable-length: one byte below 254,
+	 * three up to 65535, and five above (Wire format 6.9 in
+	 * docs/specs/wire-format.md).
 	 *
-	 * With a width — {@link u8}, {@link u16}, {@link u24}, or {@link u32} —
-	 * a count of that width is written ahead of the contents. Above what it
-	 * can count, the count wraps unless `writeChecks` is on, which raises
-	 * instead (Wire format 6.8), so a width states a bound the shape is known
-	 * to keep.
+	 * With a width, a count of that width is written ahead of the contents.
+	 * Above what it can count, the count wraps unless `writeChecks` is on,
+	 * which raises instead (Wire format 6.8), so a width states a bound the
+	 * shape is known to keep.
 	 *
-	 * With a whole number literal (`Length<string, 8>`) no count is written
-	 * at all and both sides use exactly that many bytes or elements. The
-	 * value must have exactly that many, and only `writeChecks` checks it
-	 * (Runtime API 3.10 in docs/specs/runtime-api.md). Without it, a longer one
-	 * is truncated. A shorter string or buffer raises. A shorter array or
-	 * tuple rest writes each missing element as `nil` (Wire format 6.6 and
-	 * 6.7 in docs/specs/wire-format.md):
+	 * With a whole number literal, no count is written at all and both sides
+	 * use exactly that many bytes or elements. The value must have exactly
+	 * that many, and only `writeChecks` checks it (Runtime API 3.10 in
+	 * docs/specs/runtime-api.md). Without it, a longer one is truncated. A
+	 * shorter string or buffer raises. A shorter array or tuple rest writes
+	 * each missing element as `nil` (Wire format 6.6 and 6.7 in
+	 * docs/specs/wire-format.md):
 	 *
 	 * - an optional element, or a literal union that includes `undefined`,
 	 *   is written as absent, and the value comes back at its own length;
@@ -57,11 +62,18 @@ export namespace DataType {
 	 * to the subtree under it: in `Length<Array<Array<string>>, u16>` the
 	 * outer array takes the u16 count and the inner ones keep the
 	 * variable-length count.
+	 *
+	 * @typeParam T the container whose count this sets
+	 * @typeParam L a count width, or a whole number literal for an exact length
 	 */
 	export type Length<T, L extends u8 | u16 | u24 | u32> = T & { readonly _surge_length?: [T, L] };
 
-	/** Every width brand above, and the constraint a per-component width takes. */
-	type Width = f32 | f64 | u8 | u16 | u24 | u32 | i8 | i16 | i24 | i32;
+	/**
+	 * Every width brand above: the constraint a per-component width takes, and
+	 * one a type over widths can take, as in `Sample<W extends DataType.Width>`.
+	 * A property typed `Width` itself is a diagnostic, since it names no width.
+	 */
+	export type Width = f32 | f64 | u8 | u16 | u24 | u32 | i8 | i16 | i24 | i32;
 
 	/**
 	 * States the values a number takes: from `Min` to `Max`, both number
@@ -89,8 +101,8 @@ export namespace DataType {
 	 * so an all-default `Vector` and a `Vector3` produce the same bytes.
 	 *
 	 * An integer width truncates a component toward zero and wraps it modulo
-	 * its range, and nothing checks the value, with or without `writeChecks`.
-	 * A width states a range the shape is known to keep.
+	 * its range. With `writeChecks`, a component the width cannot hold raises
+	 * instead (Runtime API 3.10 in docs/specs/runtime-api.md).
 	 */
 	export type Vector<X extends Width = f32, Y extends Width = X, Z extends Width = X> = Vector3 & {
 		readonly _surge_vector?: [X, Y, Z];

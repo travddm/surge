@@ -92,7 +92,7 @@ export interface CheckedCodec<in out T> {
 }
 
 function notConfigured(): never {
-	throw "fixture @rbxts/surge: createCodec/createSerializer/createDeserializer have no real implementation.";
+	throw "fixture @rbxts/surge: createCodec/createSerializer/createDeserializer/createCursorCodec have no real implementation.";
 }
 
 export interface CodecOptions {

@@ -1639,6 +1639,8 @@ describe("Emitter local-register ceiling", () => {
 		["color3", { kind: "color3" } as Field],
 		["cframe", { kind: "cframe" } as Field],
 		["quantized cframe", { kind: "cframe", quantized: true } as Field],
+		["vector3 of i16", { kind: "vector3", components: ["i16", "i16", "i16"] } as Field],
+		["cframe with a u8 position", { kind: "cframe", position: ["u8", "u8", "u8"] } as Field],
 		["bitSet", { kind: "bitSet", members: ["a", "b", "c", "d", "e", "f", "g", "h", "i"] } as Field],
 		["enum", { kind: "enum", enumName: "Material", members: ["Air", "Brick", "Glass"] } as Field],
 		["literal", { kind: "literal", values: ["a", "b", "c"] } as Field],
@@ -1662,7 +1664,7 @@ describe("Emitter local-register ceiling", () => {
 		for (const side of ["write", "read"] as const) {
 			for (const options of [{}, { writeChecks: true, readChecks: true }]) {
 				const added = declaredLocals(object(2), side, options) - declaredLocals(object(1), side, options);
-				expect(added).toBeLessThanOrEqual(runLocals(field));
+				expect(added).toBeLessThanOrEqual(runLocals(field, options.writeChecks ?? false));
 			}
 		}
 	});
@@ -1912,6 +1914,31 @@ describe("Emitter write-side checks", () => {
 
 	// The read side checks no value: what a number means is the caller's to
 	// check (Runtime API 4.7 in docs/specs/runtime-api.md).
+	// Transformer 5.14: a number with no Range is held to what its integer width
+	// holds, the same way; a float width holds any number.
+	test("a number of an integer width is checked against the width's limits, and a float width is not", () => {
+		const u8 = checkedWrite({ kind: "num", width: "u8" });
+		expect(u8).toContain(">= 0 && ");
+		expect(u8).toContain("<= 255");
+		expect(u8).toContain("% 1 !== 0");
+		expect(u8).toContain("DataType.u8 width cannot hold");
+		expect(checkedWrite({ kind: "num", width: "i24" })).toContain("<= 8388607");
+		for (const width of ["f32", "f64"] as const) {
+			expect(checkedWrite({ kind: "num", width })).not.toContain("@rbxts/surge: ");
+		}
+		expect(emitSnapshot({ kind: "num", width: "u8" })).not.toContain("@rbxts/surge: ");
+	});
+
+	test("a Vector or Transform component of an integer width is checked, and a default one is not", () => {
+		const vector = checkedWrite({ kind: "vector3", components: ["i16", "i16", "f32"] });
+		expect(vector.match(/<= 32767/g)).toHaveLength(2);
+		expect(vector).toContain("DataType.i16 width cannot hold");
+		expect(checkedWrite({ kind: "vector3" })).not.toContain("@rbxts/surge: ");
+		const position = checkedWrite({ kind: "cframe", position: ["u8", "u8", "u8"] });
+		expect(position.match(/<= 255/g)).toHaveLength(3);
+		expect(checkedWrite({ kind: "cframe" })).not.toContain("@rbxts/surge: ");
+	});
+
 	test("a Range adds nothing to the read side", () => {
 		const field: Field = { kind: "num", width: "u8", range: { min: 0, max: 100, whole: true } };
 		// Local names are numbered across both sides, so the write side's extra

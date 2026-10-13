@@ -461,9 +461,9 @@ test("an array of objects that hold a blob is sized by its count", () => {
 	);
 });
 
-// Regression check for the conditional blob side channel. What it is worth is in
+// Regression check for the conditional blob channel. What it is worth is in
 // docs/research/per-call-overhead.md.
-test("a shape with no blob field pays nothing for the blob side channel", () => {
+test("a shape with no blob field pays nothing for the blob channel", () => {
 	const luau = readCompiledLuau("tests/basic.spec.luau");
 	// `Basic` has no Instance, `unknown` or `any` field, so neither side
 	// declares the blob channel's state -- the write side's list is a table
@@ -553,6 +553,7 @@ test("deserialize takes what serialize returned, as one argument", () => {
 test("generated code imports its helpers from the package's abi module", () => {
 	// `collections.spec` keeps the scratch buffer, so it calls `grow` and `finishWrite`.
 	const luau = readCompiledLuau("tests/collections.spec.luau");
+	// The import names `@rbxts/surge/abi`; the package's `typesVersions` maps it to `out/abi`.
 	assert.match(luau, /"@rbxts", "surge", "out", "abi"\)$/m);
 	// The package's own exports hold the consumer API and no helper.
 	const index = readFileSync(join(here, "..", "out", "index.d.ts"), "utf8");
