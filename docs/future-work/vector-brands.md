@@ -4,20 +4,22 @@ Part of the [surge](../architecture.md) design.
 
 ## What
 
-- `DataType.Vector<X, Y, Z>` is renamed `DataType.Vector3D<X, Y, Z>`. Its
-  bytes do not change.
+- `DataType.Vector<X, Y, Z>` is renamed `DataType.Vector3D<X, Y, Z>`, and its
+  widths are string literals ([literal-parameters.md](literal-parameters.md)):
+  `Vector3D<"i16">` where today's form is `Vector<DataType.i16>`. Its bytes do
+  not change.
 - `DataType.Vector2D<X, Y>` sets the widths of a `Vector2`'s components, as
-  `Vector3D` does for a `Vector3`'s. `Y` defaults to `X`, and `X` to `f32`, so
-  the all-default brand writes what a bare `Vector2` writes (Wire format 4.6
+  `Vector3D` does for a `Vector3`'s. `Y` defaults to `X`, and `X` to `"f32"`,
+  so the all-default brand writes what a bare `Vector2` writes (Wire format 4.6
   in [specs/wire-format.md](../specs/wire-format.md)).
-- `f64` is a diagnostic as a component width of `Vector2D`, `Vector3D` and
-  `Transform`. A `Vector2`, a `Vector3` and a `CFrame` hold `f32` components,
-  so an `f64` component writes 4 bytes more and keeps nothing `f32` does not.
+- `"f64"` is not a component width of `Vector2D`, `Vector3D` or `Transform`.
+  A `Vector2`, a `Vector3` and a `CFrame` hold `f32` components, so an `f64`
+  component writes 4 bytes more and keeps nothing `f32` does not.
 
 ```ts
 interface Cursor {
-	screen: DataType.Vector2D<DataType.i16>; // 4 bytes where a Vector2 is 8
-	world: DataType.Vector3D<DataType.i16, DataType.u16>; // Z defaults to X
+	screen: DataType.Vector2D<"i16">; // 4 bytes where a Vector2 is 8
+	world: DataType.Vector3D<"i16", "u16">; // Z defaults to X
 }
 ```
 
@@ -32,9 +34,8 @@ interface Cursor {
 - **`Vector2D`.** A `Vector2` is a screen, UI or 2D-world position: sent in
   volume and often bounded, where `i16` components halve it.
 - **No `f64`.** A component width wider than what the value holds only adds
-  bytes. No type constraint can reject it: each width brand is assignable to
-  every other, as an unbranded `number` is to each, so the diagnostic is what
-  enforces it.
+  bytes. With string widths the constraint leaves `"f64"` out, so the editor
+  rejects it.
 
 No other Roblox datatype takes a brand. The components of `UDim`, `UDim2`,
 `NumberRange`, `Rect` and `NumberSequence` are written at the widths Roblox's
@@ -48,20 +49,25 @@ are not fractions. A `Color3`, and a `ColorSequence` keypoint's color, stay 3×`
 
 ## Why deferred
 
-The rename and the `f64` diagnostic change a documented spelling and reject
-a shape that compiles today, so they land before the first release.
+The rename and the `"f64"` exclusion change a documented spelling and reject
+a shape that compiles today, so they land before the first release, after
+[literal-parameters.md](literal-parameters.md), whose rule the widths follow.
 `Vector2D` alone could land at any time, since a new brand changes no
 existing byte (rule 4 of the brand rules), but it shares the rename's code.
 
 ## How, briefly
 
 - `surge/src/data-type.ts` and the fixture copy declare `Vector3D`, recorded
-  in `_surge_vector3d`, and `Vector2D`, in `_surge_vector2d`;
+  in `_surge_vector3d`, and `Vector2D`, in `_surge_vector2d`, each width
+  constrained by `ComponentWidth`: every width's name but `"f64"`, an alias
+  the namespace does not export, which `Transform` shares. Whichever of this
+  and [transform-rotation.md](transform-rotation.md) lands first declares it.
   `PARAMETERIZED_BRANDS` in `rbxts-transformer-surge/src/detect.ts` names
-  both.
+  both brands.
 - In `rbxts-transformer-surge/src/walk.ts`, `componentWidths` takes a count
-  of components and reports `f64` for every brand that calls it, `Transform`
-  included. The `vector2` field gains the component widths `vector3` has.
+  of components, reads string literal widths, and reports anything else,
+  `"f64"` included, for every brand that calls it, `Transform` included. The
+  `vector2` field gains the component widths `vector3` has.
 - In `emit/`, a `vector2` is written and read through the component path a
   `vector3` takes, in place of `writeNum2` and `readVector2` at `f32`, and its
   sizes in `layout.ts` and its locals under `writeChecks` (Transformer 5.5)
@@ -73,7 +79,7 @@ existing byte (rule 4 of the brand rules), but it shares the rename's code.
   [data-types.md](../data-types.md)'s example and its Vector and CFrame widths
   section, and [supported-types.md](../supported-types.md)'s `Vector2`,
   `Vector3` row, follow.
-- `walk.test.ts`'s `Vector` block covers both brands and `f64`;
+- `walk.test.ts`'s `Vector` block covers both brands and `"f64"`;
   `bytes.spec.ts` pins a `Vector2D`; `checks.spec.ts` and `roblox.spec.ts`
   cover its integer widths. Every other use of `DataType.Vector` in the code,
   its comments and its tests spells `Vector3D`. The JSDoc of `writeChecks` in

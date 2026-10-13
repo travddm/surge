@@ -4,8 +4,9 @@ Part of the [surge](../architecture.md) design.
 
 ## What
 
-`DataType.Transform` sets a `CFrame`'s position widths, as it does today,
-and with its last argument the form of its rotation:
+`DataType.Transform` sets a `CFrame`'s position widths, as it does today, as
+string literals ([literal-parameters.md](literal-parameters.md)), and with
+its last argument the form of its rotation:
 
 | Form                    | Rotation bytes | Written as                                               | Round trip                      |
 | ----------------------- | -------------- | -------------------------------------------------------- | ------------------------------- |
@@ -18,9 +19,9 @@ The widths come first, and the first form ends them:
 ```ts
 DataType.Transform; // f32 position, "Matrix": 48 bytes, what a bare CFrame writes
 DataType.Transform<"AxisAngle">; // today's 24-byte CFrame
-DataType.Transform<DataType.i16>; // i16 position, "Matrix": 42 bytes
-DataType.Transform<DataType.i16, "Quantized">; // today's Quantized<Transform<i16>>: 12 bytes
-DataType.Transform<DataType.i16, DataType.i32, "AxisAngle">; // Z defaults to X, as today
+DataType.Transform<"i16">; // i16 position, "Matrix": 42 bytes
+DataType.Transform<"i16", "Quantized">; // today's Quantized<Transform<i16>>: 12 bytes
+DataType.Transform<"i16", "i32", "AxisAngle">; // Z defaults to X, as today
 ```
 
 `DataType.Quantized<T>` is removed. A bare `CFrame` writes the `"Matrix"`
@@ -33,7 +34,7 @@ default stays a diagnostic. A packed `CFrame` is 1, 13, 37 or 49 bytes with
 `"Matrix"`, 1, 13 or 25 with `"AxisAngle"` as today, and 1, 7, 13 or 19 with
 `"Quantized"`.
 
-`f64` is not a component width of `Transform`, as
+`"f64"` is not a component width of `Transform`, as
 [vector-brands.md](vector-brands.md) states for every brand that sets
 component widths.
 
@@ -63,13 +64,11 @@ component widths.
   named for a technique rather than for what it sets.
 - **Short where it matters.** With `"Matrix"` the default, `"AxisAngle"` is
   the opt-out a shape that counts bytes writes, so it is
-  `Transform<"AxisAngle">`, not `Transform<f32, f32, f32, "AxisAngle">`.
-- **String literals, not `DataType` members.** A string literal is never
-  assignable to a width brand, so the declaration's constraints reject a
-  width after a form, a second form, and an unknown one in the editor. The
-  width brands are each assignable to the others, so no constraint can do the
-  same for them. A `DataType.Quantized` form would also read as the brand it
-  replaces.
+  `Transform<"AxisAngle">`, not `Transform<"f32", "f32", "f32", "AxisAngle">`.
+- **String literals.** A form is a string literal, as a width is
+  ([literal-parameters.md](literal-parameters.md)). The forms and the widths
+  are different strings, so the declaration's constraints reject a width after
+  a form, a second form, an unknown form and `"f64"` in the editor.
 
 Rejected: a quaternion, 4×`f32`, 28 bytes with the position. It removes the
 trigonometry from the read, but it is no more exact than the axis-angle, and
@@ -80,9 +79,10 @@ its write needs the conversion from the matrix in Luau that measured slower.
 
 It removes a brand, changes a documented spelling, and changes the bytes of
 every unbranded `CFrame` and of a packed one's rotation that is not
-axis-aligned, so it lands before the first release. It waits on one check
-that only Roblox can run: the round-trip suite runs under Lune, whose
-`CFrame` is its own implementation.
+axis-aligned, so it lands before the first release, after
+[literal-parameters.md](literal-parameters.md), whose rule its parameters
+follow. It waits on one check that only Roblox can run: the round-trip suite
+runs under Lune, whose `CFrame` is its own implementation.
 
 ## How, briefly
 
@@ -93,24 +93,34 @@ that only Roblox can run: the round-trip suite runs under Lune, whose
   does not, the default is decided again before anything else here lands.
 - `surge/src/data-type.ts` and the fixture copy declare the forms and
   `Transform`, and lose `Quantized`; `PARAMETERIZED_BRANDS` in
-  `rbxts-transformer-surge/src/detect.ts` loses its row. This declaration
-  type-checked with TypeScript 5.5.3, on the five spellings above,
-  `Transform<i16, i32, u8, "Quantized">`, and four misuses that each failed:
+  `rbxts-transformer-surge/src/detect.ts` loses its row. `ComponentWidth` is
+  the alias [vector-brands.md](vector-brands.md) describes, declared by
+  whichever of the two lands first, and neither alias is exported. This
+  declaration type-checked with TypeScript 5.5.3, on the five spellings above
+  and `Transform<"i16", "i32", "u8", "Quantized">`. Five misuses each failed:
+  a width after a form, in two places, two forms, `"f64"`, and `number`.
 
     ```ts
-    export type Rotation = "AxisAngle" | "Quantized" | "Matrix";
+    type ComponentWidth = "f32" | "u8" | "u16" | "u24" | "u32" | "i8" | "i16" | "i24" | "i32";
+    type Rotation = "AxisAngle" | "Quantized" | "Matrix";
     export type Transform<
-    	X extends Width | Rotation = f32,
-    	Y extends (X extends Rotation ? never : Width | Rotation) = X extends Rotation ? never : X,
-    	Z extends ([X | Y] extends [Width] ? Width | Rotation : never) = [X | Y] extends [Width] ? X : never,
-    	R extends ([X | Y | Z] extends [Width] ? Rotation : never) = [X | Y | Z] extends [Width] ? "Matrix" : never,
+    	X extends ComponentWidth | Rotation = "f32",
+    	Y extends (X extends Rotation ? never : ComponentWidth | Rotation) = X extends Rotation ? never : X,
+    	Z extends ([X | Y] extends [ComponentWidth] ? ComponentWidth | Rotation : never) = [X | Y] extends [
+    		ComponentWidth,
+    	]
+    		? X
+    		: never,
+    	R extends ([X | Y | Z] extends [ComponentWidth] ? Rotation : never) = [X | Y | Z] extends [ComponentWidth]
+    		? "Matrix"
+    		: never,
     > = CFrame & { readonly _surge_transform?: [X, Y, Z, R] };
     ```
 
 - `walkTransform` in `rbxts-transformer-surge/src/walk.ts` reads the
-  arguments in order: widths up to the first string literal, which is the
-  form, and `never` after it. The `cframe` field's `quantized` flag becomes a
-  `rotation` of the three forms, and `walkQuantized` is removed.
+  arguments in order: widths up to the first form, and `never` after it. The
+  `cframe` field's `quantized` flag becomes a `rotation` of the three forms,
+  and `walkQuantized` is removed.
 - `writeCFrame` in `emit/write.ts` takes the twelve numbers from one
   `GetComponents` call for `"Matrix"`, and `readCFrame` in `emit/read.ts`
   reads twelve numbers into one `CFrame.new`. Transformer 5.5 counts the
@@ -129,9 +139,8 @@ that only Roblox can run: the round-trip suite runs under Lune, whose
   the three forms, and 8.6 the packed sizes and the form inside a packed
   subtree. Transformer 4.1's two brand rows become one, 4.3 drops
   `Quantized`, 4.15 is withdrawn, and 5.5, 5.12, 5.27, 7.2 and 8 follow. Rule
-  2 of the brand rules in [coding-standards.md](../coding-standards.md) admits
-  a string literal type for a choice among named forms, and rule 3 spells the
-  new `Transform`. [specs/runtime-api.md](../specs/runtime-api.md)'s mention
+  3 of the brand rules in [coding-standards.md](../coding-standards.md) spells
+  the new `Transform`. [specs/runtime-api.md](../specs/runtime-api.md)'s mention
   of `Transform`, [data-types.md](../data-types.md)'s Vector and CFrame widths
   and Packing sections, [supported-types.md](../supported-types.md)'s `CFrame`
   row, [schema-fingerprint.md](schema-fingerprint.md)'s list of flags, and
