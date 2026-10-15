@@ -18,8 +18,9 @@ Register it in a roblox-ts project's `tsconfig.json`:
 }
 ```
 
-It is not released yet. A project will install it beside `@rbxts/surge`, at
-the same version;
+It is not released yet. Until the first release, a project installs a
+pre-release build of it beside one of `@rbxts/surge`, at the same build,
+from the surge repository;
 [getting-started.md](https://github.com/travddm/surge/blob/master/docs/getting-started.md)
 has the rest of the setup.
 
