@@ -9,23 +9,23 @@ documentation.
 
 ## Documentation
 
-| Document                                                       | Owns                                                                            |
-| -------------------------------------------------------------- | ------------------------------------------------------------------------------- |
-| [README.md](README.md)                                         | What surge is, how to install it, and where to go next                          |
-| [docs/getting-started.md](docs/getting-started.md)             | Installing, registering the transformer, and a first serializer                 |
-| [docs/supported-types.md](docs/supported-types.md)             | What each type is written as, passed through, or rejected                       |
-| [docs/data-types.md](docs/data-types.md)                       | The `DataType` brands                                                           |
-| [docs/errors-and-guarantees.md](docs/errors-and-guarantees.md) | `readChecks`, `writeChecks`, what each side raises, and what is not guaranteed  |
-| [docs/performance.md](docs/performance.md)                     | The file directives, the module shape, and what to expect                       |
-| [docs/contributing.md](docs/contributing.md)                   | Setup, every task, working across both packages, and the editor                 |
-| [docs/coding-standards.md](docs/coding-standards.md)           | Formatting, types, naming, brands, boundaries, files, comments, generated files |
-| [docs/testing.md](docs/testing.md)                             | What `mise run ci` checks, how to write a suite, and the benchmarks             |
-| [docs/contributing-docs.md](docs/contributing-docs.md)         | What kind of statement goes where, and how to write it                          |
-| [docs/architecture.md](docs/architecture.md)                   | The two packages, how they are built together, and how a release reaches a user |
-| [docs/specs/](docs/specs/README.md)                            | What the code guarantees: runtime API, wire format, transformer, both harnesses |
-| [docs/research/](docs/research/README.md)                      | Dated papers on what was measured                                               |
-| [docs/benchmarks/](docs/benchmarks/)                           | The generated size, speed and code-size tables                                  |
-| [docs/future-work/](docs/future-work/README.md)                | Open work, in order                                                             |
+| Document                                                       | Owns                                                                               |
+| -------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| [README.md](README.md)                                         | What surge is, how to install it, and where to go next                             |
+| [docs/getting-started.md](docs/getting-started.md)             | Installing, registering the transformer, and a first serializer                    |
+| [docs/supported-types.md](docs/supported-types.md)             | What each type is written as, passed through, or rejected                          |
+| [docs/data-types.md](docs/data-types.md)                       | The `DataType` brands                                                              |
+| [docs/errors-and-guarantees.md](docs/errors-and-guarantees.md) | `readChecks`, `writeChecks`, what each side raises, and what is not guaranteed     |
+| [docs/performance.md](docs/performance.md)                     | The file directives, the module shape, and what to expect                          |
+| [docs/contributing.md](docs/contributing.md)                   | Setup, every task, working across both packages, branches and tags, and the editor |
+| [docs/coding-standards.md](docs/coding-standards.md)           | Formatting, types, naming, brands, boundaries, files, comments, generated files    |
+| [docs/testing.md](docs/testing.md)                             | What `mise run ci` checks, how to write a suite, and the benchmarks                |
+| [docs/contributing-docs.md](docs/contributing-docs.md)         | What kind of statement goes where, and how to write it                             |
+| [docs/architecture.md](docs/architecture.md)                   | The two packages, how they are built together, and how a release reaches a user    |
+| [docs/specs/](docs/specs/README.md)                            | What the code guarantees: runtime API, wire format, transformer, both harnesses    |
+| [docs/research/](docs/research/README.md)                      | Dated papers on what was measured                                                  |
+| [docs/benchmarks/](docs/benchmarks/)                           | The generated size, speed and code-size tables                                     |
+| [docs/future-work/](docs/future-work/README.md)                | Open work, in order                                                                |
 
 ## Setup
 
@@ -71,6 +71,8 @@ The full list is in [docs/contributing.md](docs/contributing.md).
   there is seen in `surge/tests/` only after `mise run tests:install` in
   `surge/`, which `mise run ci` runs.
 - `docs/`: every document, for both packages.
+- `scripts/tag-packages.mjs`: the one-package tags CI makes once the checks
+  pass ([docs/contributing.md](docs/contributing.md#branches-and-tags)).
 
 ## Rules
 
@@ -129,6 +131,7 @@ part of the change.
 | what the generated code costs, or what a file directive does to it     | [docs/performance.md](docs/performance.md), with a paper under [docs/research/](docs/research/README.md) for the measurement                                                                                                                                   |
 | a lint, format, type or naming rule, or the `DataType` brand rules     | [docs/coding-standards.md](docs/coding-standards.md)                                                                                                                                                                                                           |
 | how or when documentation is updated                                   | this table and [docs/contributing-docs.md](docs/contributing-docs.md)                                                                                                                                                                                          |
+| the tag script, the tag job, or a branch or tag rule                   | [docs/contributing.md](docs/contributing.md#branches-and-tags), and [docs/getting-started.md](docs/getting-started.md) where the install from a tag changes                                                                                                    |
 | deferred work started, finished or re-scoped                           | [docs/future-work/](docs/future-work/README.md) and its index                                                                                                                                                                                                  |
 
 How to write each kind of document is in

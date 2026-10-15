@@ -5,8 +5,24 @@ Install the two packages, register the transformer, and declare a serializer.
 ## Install
 
 Neither package is released yet, and both names on the npm registry hold
-only a placeholder. The first release publishes both to the npm registry, at
-the same version, and this section will give the install.
+only a placeholder. Until the first release, install a pre-release build
+from git. Each push to `master` tags one build of each package; install both
+at the same `N`:
+
+```sh
+npm install github:travddm/surge#surge-v0.1.0-next.<N>
+npm install --save-dev github:travddm/surge#transformer-v0.1.0-next.<N>
+```
+
+The latest build is the one with the highest `N`:
+
+```sh
+git ls-remote --tags --sort=-version:refname https://github.com/travddm/surge "surge-v*-next.*"
+```
+
+npm builds each package from its source as it installs it, so the install
+takes a minute. The first release publishes both packages to the npm
+registry, at the same version, and this section will then give that install.
 
 `@rbxts/surge` is the runtime package the generated code calls, so a project
 depends on it. `rbxts-transformer-surge` runs only at compile time, so it is

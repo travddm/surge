@@ -99,8 +99,9 @@ file the new version would reorder.
 
 ## CI
 
-`.github/workflows/ci.yml` runs on every push to `master` and every pull
-request into it, through `jdx/mise-action`, on `ubuntu-latest` and on
+`.github/workflows/ci.yml` runs on every push to `master`, every pull
+request into it, and on request for any branch, through `jdx/mise-action`,
+on `ubuntu-latest` and on
 `windows-latest` through Git Bash. It installs the root and each package
 with `npm ci`, restores the Prettier and cspell records of the newest run
 with the same lock files, then runs the root `mise run ci`, the task a
@@ -109,7 +110,9 @@ Both packages are checked at the same commit, so a transformer change that
 breaks the round-trip suite or a golden check fails its own run. Windows is
 in the run because roblox-ts projects are built on Windows or macOS, where the
 transformer runs inside `rbxtsc`, and because the mise tasks run there
-through Git Bash.
+through Git Bash. Once both jobs pass on a push to `master`, or on a run
+requested with `dev-tag`, a third job tags the commit
+([contributing.md](contributing.md#branches-and-tags)).
 
 The benchmarks are not part of CI. A timing needs a real Roblox process and
 has no pass or fail to gate on;

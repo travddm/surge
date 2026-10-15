@@ -70,6 +70,40 @@ surge only:
   table of which document each kind of change updates is Updating
   documentation in [AGENTS.md](../AGENTS.md).
 
+## Branches and tags
+
+`master` takes a change only through a pull request whose two `CI` jobs
+pass, and merges it with a merge commit, never a squash or a rebase. An
+admin can bypass the rule.
+
+npm installs a package from git only from the root of a commit
+([architecture.md](architecture.md)), so CI makes, for each package, a
+commit whose root is the package's directory, with the tag's version in its
+`package.json`, and tags it:
+
+| Tags                                                                  | Made                                                     |
+| --------------------------------------------------------------------- | -------------------------------------------------------- |
+| `surge-v<version>-next.<N>` and `transformer-v<version>-next.<N>`     | for each push to `master`, after its checks pass         |
+| `surge-v<version>-dev-<hash>` and `transformer-v<version>-dev-<hash>` | on request, for a branch's commit, after its checks pass |
+
+`<version>` is the version in the package's `package.json`, or its next
+patch once that version is released. `N` counts the commits on `master` that
+no release holds. `scripts/tag-packages.mjs` makes both kinds. A consumer's
+lockfile records the commit a tag names, so a tag ruleset keeps anyone from
+moving or deleting a pre-release tag. Dev tags are outside it, so that a
+release can delete old ones.
+
+To make the dev tags of a branch's latest commit, run the workflow on the
+branch with `dev-tag` set:
+
+```sh
+gh workflow run CI --ref <branch> -f dev-tag=true
+```
+
+GitHub runs the workflow file of the branch it runs on, so the branch must
+hold the `dev-tag` input: merge `master` into a branch made before the input
+landed.
+
 ## Editors
 
 Each package's `.vscode/tasks.json` maps its `mise` tasks to VS Code tasks,

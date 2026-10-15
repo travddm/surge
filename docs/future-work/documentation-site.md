@@ -30,8 +30,6 @@ differ.
 
 The first release waits for the site
 ([ci-and-release.md](ci-and-release.md)), and the release run deploys it.
-It does not depend on the one-package tags
-([one-package-tags.md](one-package-tags.md)).
 
 ## How, briefly
 

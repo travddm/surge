@@ -44,13 +44,13 @@ backstop that would check it.
 
 npm cannot install a package from a subdirectory of a git repository: the
 `github:owner/repo#ref::path:subdir` form parses, but the installer ignores
-the subdirectory and installs the repository root. Neither package is
-released yet, and nothing makes a one-package tag yet. A release will publish
-each package to the npm registry from its own directory, and a one-package
-tag, on a commit whose root is one package's directory, will let another
-project install a build from git
-([future-work/one-package-tags.md](future-work/one-package-tags.md) and
-[future-work/ci-and-release.md](future-work/ci-and-release.md)).
+the subdirectory and installs the repository root. So for each push to
+`master`, CI tags a one-package commit of each package, one whose root is
+that package's directory, which another project can install from git
+([contributing.md](contributing.md#branches-and-tags)). Neither package is
+released yet. A release will publish each package to the npm registry from
+its own directory
+([future-work/ci-and-release.md](future-work/ci-and-release.md)).
 
 ## Repository layout
 
@@ -67,6 +67,7 @@ surge/                        the repository
 │   ├── src/                  detection, the walk, the Field IR, and the emitter
 │   └── test/                 Jest suites, which compile against surge's own src/
 ├── docs/                     all documentation for both packages
+├── scripts/                  the tag script CI runs once the checks pass
 ├── AGENTS.md                 the entry point for contributors
 └── mise.toml, package.json, cspell.json, cspell.shared.json, .prettierrc,
     .markdownlint.json, .github/workflows/, .vscode/, .githooks/,
