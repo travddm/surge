@@ -19,6 +19,31 @@ function findCall(sourceFile: ts.SourceFile, callName: string): ts.CallExpressio
 	return found;
 }
 
+describe("@rbxts/surge in a fixture program", () => {
+	// The suites compile surge's own `src/` under this package's `@rbxts/types` and the harness's
+	// options, not surge's. An error there would make a brand or `Serialized<T>` an error type, and
+	// a test that expects detection to find nothing would still pass.
+	test("surge's source compiles with no diagnostics", () => {
+		const { program, cleanup } = createFixtureProgram(
+			`import { createCodec } from "@rbxts/surge";
+			import { grow } from "@rbxts/surge/abi";
+			export { createCodec, grow };`,
+			{ surge: true },
+		);
+		try {
+			const messages = ts
+				.getPreEmitDiagnostics(program)
+				.map(
+					(diagnostic) =>
+						`${diagnostic.file?.fileName}: ${ts.flattenDiagnosticMessageText(diagnostic.messageText, " ")}`,
+				);
+			expect(messages).toEqual([]);
+		} finally {
+			cleanup();
+		}
+	});
+});
+
 describe("resolveFactoryName", () => {
 	test("resolves a direct call to createSerializer from @rbxts/surge", () => {
 		const { checker, sourceFile, cleanup } = createFixtureProgram(

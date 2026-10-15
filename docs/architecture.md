@@ -65,7 +65,7 @@ surge/                        the repository
 │       └── scripts/          the Lune shim and runners, and the Studio runner
 ├── rbxts-transformer-surge/  the transformer
 │   ├── src/                  detection, the walk, the Field IR, and the emitter
-│   └── test/                 Jest suites, with a stand-in for @rbxts/surge's declarations
+│   └── test/                 Jest suites, which compile against surge's own src/
 ├── docs/                     all documentation for both packages
 ├── AGENTS.md                 the entry point for contributors
 └── mise.toml, package.json, cspell.json, .prettierrc, .markdownlint.json,

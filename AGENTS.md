@@ -78,7 +78,8 @@ Enforced by tooling, so breaking one fails `mise run ci`:
 
 - No `any`.
 - `surge/src/` never imports the transformer, the transformer never depends
-  on `@rbxts/surge` at run time, and only `surge/tests/` depends on both.
+  on `@rbxts/surge` at run time, and only `surge/tests/` declares a
+  dependency on both.
 - Every word in a Markdown file is one cspell knows, or one added to
   `cspell.json`. Locally, so is every word in the last commit message; CI
   checks out no commit message.

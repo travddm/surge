@@ -74,11 +74,10 @@ exchange bytes, and nothing in the type would say so. A brand is not named
 after a TypeScript global such as `String`, `Map` or `Set`, which it would
 shadow for the rest of the namespace.
 
-A brand is declared in surge's `src/data-type.ts` and in the transformer's
-`test/fixtures/rbxts-surge/data-type.ts` in the same change. One that takes
-arguments is also a row of `PARAMETERIZED_BRANDS` in the transformer's
-`detect.ts`, which recognizes it by alias and, re-aliased, by its brand
-property ([specs/transformer.md](specs/transformer.md) 4.3).
+A brand is declared in surge's `src/data-type.ts`. One that takes arguments
+is also a row of `PARAMETERIZED_BRANDS` in the transformer's `detect.ts`,
+which recognizes it by alias and, re-aliased, by its brand property
+([specs/transformer.md](specs/transformer.md) 4.3).
 
 ## Package boundaries
 
@@ -86,9 +85,13 @@ property ([specs/transformer.md](specs/transformer.md) 4.3).
 - The transformer never depends on `@rbxts/surge` at run time. It recognizes
   the runtime package's declarations through the TypeScript checker of the
   program it runs in ([specs/transformer.md](specs/transformer.md) 3.1).
-- `tests/` is the one project that depends on both.
+- `tests/` is the one project that declares a dependency on both.
+- The transformer's Jest suites compile against surge's `src/`, which their
+  harness reads by path from this repository, not through a declared
+  dependency. The package the transformer publishes holds no test.
 
-Each package's declared dependencies enforce these; no lint rule is needed.
+Each package's declared dependencies enforce the first three; no lint rule
+is needed.
 
 ## File organization
 

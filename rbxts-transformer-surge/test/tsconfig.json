@@ -8,6 +8,5 @@
 		"tsBuildInfoFile": null,
 		"types": ["node", "jest"]
 	},
-	"include": ["../src/**/*", "**/*"],
-	"exclude": ["fixtures/**"]
+	"include": ["../src/**/*", "**/*"]
 }

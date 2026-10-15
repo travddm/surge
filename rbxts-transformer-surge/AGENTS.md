@@ -46,9 +46,10 @@ and `mise run format:fix` also cover surge and the root files:
   statements, one module per concern; `src/field.ts` lists every switch a new
   kind needs. `src/index.ts` finds call sites and reads their options, and
   `src/detect.ts` recognizes surge's factories and brands.
-- `test/fixtures/rbxts-surge/` is a stand-in for `@rbxts/surge`'s public
-  declarations, which this package does not depend on. Change it in the
-  same commit as a change to what surge exports.
+- The Jest suites under `test/` compile their fixtures against surge's own
+  declarations in `surge/src/`, which `test/harness.ts` maps to
+  `@rbxts/surge` and `@rbxts/surge/abi`. Only the tests read them: this
+  package depends on nothing in surge at run time.
 - What the generated code does when it runs is tested by surge's round-trip
   suite in `surge/tests/`, which compiles through this transformer. Run
   `mise run ci` at the repository root after a change here: it checks this
