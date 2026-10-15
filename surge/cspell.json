@@ -8,21 +8,5 @@
 		"cacheLocation": "node_modules/.cache/cspell/.cspellcache",
 		"cacheStrategy": "content"
 	},
-	"ignorePaths": [
-		".gitignore",
-		".vscode/**",
-		"*-lock.yaml",
-		"*.aff",
-		"*.dic",
-		"*.gz",
-		"*.lock",
-		"*.log",
-		"*.snap",
-		"*.trie",
-		"**/.git/!(COMMIT_EDITMSG)",
-		"**/.git/!(COMMIT_EDITMSG)/**",
-		"CHANGELOG.md",
-		"/package.json",
-		"snapshots/**"
-	]
+	"ignorePaths": [".gitignore", ".vscode/**", "/package.json"]
 }
