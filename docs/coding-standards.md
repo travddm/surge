@@ -6,21 +6,33 @@ rest.
 
 ## Tooling
 
-| Tool         | Config               | Run                                             |
-| ------------ | -------------------- | ----------------------------------------------- |
-| ESLint       | `eslint.config.ts`   | `mise run lint:check` / `mise run lint:fix`     |
-| markdownlint | `.markdownlint.json` | `mise run lint:check` / `mise run lint:fix`     |
-| Prettier     | `.prettierrc`        | `mise run format:check` / `mise run format:fix` |
-| cspell       | `cspell.json`        | `mise run spell`                                |
+| Tool         | Config                              | Run                                             |
+| ------------ | ----------------------------------- | ----------------------------------------------- |
+| ESLint       | `eslint.config.ts`                  | `mise run lint:check` / `mise run lint:fix`     |
+| markdownlint | `.markdownlint.json`                | `mise run lint:check` / `mise run lint:fix`     |
+| Prettier     | `.prettierrc`                       | `mise run format:check` / `mise run format:fix` |
+| cspell       | `cspell.json`, `cspell.shared.json` | `mise run spell`                                |
 
 Run `mise run lint:fix` and `mise run format:fix` at the repository root
 before `mise run ci`; each covers the root files and both packages. Each
-package keeps its own copy of every config, trimmed to what it needs: the
-transformer is plain Node, so its ESLint config has no roblox-ts rules. The
-root keeps its own Prettier, markdownlint and cspell configs for `docs/` and
-the root files. cspell checks Markdown, text and YAML, and at the root the
-last commit message; add a real word to the `cspell.json` that covers the
-file it flags.
+package keeps its own ESLint config, trimmed to what it needs: the
+transformer is plain Node, so its config has no roblox-ts rules. The other
+three tools share the root's settings:
+
+- Prettier finds the root's `.prettierrc` from every file. Its `overrides`
+  entry adds the import-sorting plugin for the two packages' files only.
+  Prettier loads a plugin from the directory it runs in, and only the
+  packages install this one: each package's run loads it from its own
+  `node_modules`, and the root's `.prettierignore` keeps the root's run off
+  the packages' files.
+- Each package's `.markdownlint.json` extends the root's, because
+  markdownlint reads no config above the directory it runs in.
+- Each `cspell.json` imports the root's `cspell.shared.json`, which holds
+  the word list and the other settings all three share, such as
+  `ignoreRegExpList`. Each keeps its own `files`, `ignorePaths`,
+  `useGitignore` and cache. cspell checks Markdown, text and YAML, and at
+  the root the last commit message; add a real word to
+  `cspell.shared.json`.
 
 ## Formatting
 

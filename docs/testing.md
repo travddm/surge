@@ -16,23 +16,24 @@ benchmark speed tier needs Roblox Studio, and it is not part of `ci`.
 `lint:check`, `format:check` and `spell`, each package runs its steps in this
 order:
 
-| Step            | Where               | Catches                                                         | To fix                                                                                         |
-| --------------- | ------------------- | --------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
-| `tests:install` | surge               | a `tests/` install that cannot resolve either package           | `mise run setup` at the root, which installs the transformer's own dependencies first          |
-| `lint:check`    | root, both packages | an ESLint rule or a markdownlint rule                           | `mise run lint:fix`, then fix what it cannot                                                   |
-| `format:check`  | root, both packages | Prettier formatting                                             | `mise run format:fix`                                                                          |
-| `spell`         | root, both packages | a word cspell does not know, in docs or the last commit message | correct it, or add a real word to the `cspell.json` beside the file; the root's covers `docs/` |
-| `compile`       | both packages       | a type error, or roblox-ts refusing the runtime package         | the compiler's message                                                                         |
-| `tests:compile` | surge               | a type error in a suite, or in code the transformer generated   | a transformer defect if the error is in generated code                                         |
-| `tests:test`    | surge               | a failing round-trip fact                                       | the fact's message names the path of the first difference                                      |
-| `test`          | both packages       | a failing golden check, or a failing transformer unit test      | the test's message; a snapshot change is reviewed, then `npx jest -u`                          |
+| Step            | Where               | Catches                                                         | To fix                                                                                |
+| --------------- | ------------------- | --------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| `tests:install` | surge               | a `tests/` install that cannot resolve either package           | `mise run setup` at the root, which installs the transformer's own dependencies first |
+| `lint:check`    | root, both packages | an ESLint rule or a markdownlint rule                           | `mise run lint:fix`, then fix what it cannot                                          |
+| `format:check`  | root, both packages | Prettier formatting                                             | `mise run format:fix`                                                                 |
+| `spell`         | root, both packages | a word cspell does not know, in docs or the last commit message | correct it, or add a real word to the root's `cspell.shared.json`                     |
+| `compile`       | both packages       | a type error, or roblox-ts refusing the runtime package         | the compiler's message                                                                |
+| `tests:compile` | surge               | a type error in a suite, or in code the transformer generated   | a transformer defect if the error is in generated code                                |
+| `tests:test`    | surge               | a failing round-trip fact                                       | the fact's message names the path of the first difference                             |
+| `test`          | both packages       | a failing golden check, or a failing transformer unit test      | the test's message; a snapshot change is reviewed, then `npx jest -u`                 |
 
 `tests:install` runs first because ESLint resolves `tests/`'s imports against
 `tests/node_modules`, which a fresh checkout does not have.
 
 `format:check`, `format:fix` and `spell` record the files that passed in
-each project's `node_modules/.cache/`, and check a file again only when the
-file, Prettier's options or the `cspell.json` changes. Prettier's record
+each project's `node_modules/.cache/`. Prettier checks a file again only
+when the file or its options change, and cspell only when the file, the
+project's `cspell.json` or `cspell.shared.json` changes. Prettier's record
 does not include its plugins' versions: after an update to
 `@trivago/prettier-plugin-sort-imports`, delete
 `node_modules/.cache/prettier` in each package, or `format:check` can pass a

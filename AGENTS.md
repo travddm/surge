@@ -81,8 +81,8 @@ Enforced by tooling, so breaking one fails `mise run ci`:
   on `@rbxts/surge` at run time, and only `surge/tests/` declares a
   dependency on both.
 - Every word in a Markdown file is one cspell knows, or one added to
-  `cspell.json`. Locally, so is every word in the last commit message; CI
-  checks out no commit message.
+  `cspell.shared.json`. Locally, so is every word in the last commit
+  message; CI checks out no commit message.
 
 Not checked by a machine, and load-bearing:
 

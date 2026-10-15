@@ -54,7 +54,7 @@ Prose, in every document and in code comments:
 - `mise run lint:fix` and `mise run format:fix` before the change is
   finished. markdownlint holds a line to 100 columns outside tables and code
   blocks, and `mise run spell` checks every word — add a real one to
-  `cspell.json`.
+  `cspell.shared.json`.
 
 **Pages** (`docs/*.md`):
 
