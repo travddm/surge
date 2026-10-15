@@ -75,24 +75,22 @@ export function createFixtureProgram(source: string, options: FixtureOptions = {
 	const file = path.join(dir, "input.ts");
 	fs.writeFileSync(file, source);
 
+	const roblox = options.roblox === true || options.surge === true;
 	const compilerOptions: ts.CompilerOptions = {
 		strict: true,
 		skipLibCheck: true,
 		target: ts.ScriptTarget.ES2019,
 		module: ts.ModuleKind.CommonJS,
 		moduleResolution: ts.ModuleResolutionKind.Node10,
+		noLib: roblox,
+		typeRoots: roblox ? [ROBLOX_TYPE_ROOTS] : undefined,
 		baseUrl: options.surge ? SURGE_SRC_DIR : undefined,
 		paths: options.surge ? { "@rbxts/surge": ["index"], "@rbxts/surge/abi": ["abi"] } : undefined,
 		// Unset, `types` includes every `@types` package under this package's `node_modules`, such
 		// as Node's and Jest's, in each fixture.
-		types: [],
+		types: roblox ? ["types"] : [],
 		...options.compilerOptions,
 	};
-	if (options.roblox || options.surge) {
-		compilerOptions.noLib = true;
-		compilerOptions.typeRoots = [ROBLOX_TYPE_ROOTS];
-		compilerOptions.types = ["types"];
-	}
 
 	const program = ts.createProgram([file], compilerOptions, createCachingHost(compilerOptions));
 	const checker = program.getTypeChecker();
