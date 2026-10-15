@@ -100,6 +100,10 @@ branch with `dev-tag` set:
 gh workflow run CI --ref <branch> -f dev-tag=true
 ```
 
+GitHub runs the workflow file of the branch it runs on, so the branch must
+hold the `dev-tag` input: merge `master` into a branch made before the input
+landed.
+
 ## Editors
 
 Each package's `.vscode/tasks.json` maps its `mise` tasks to VS Code tasks,

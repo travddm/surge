@@ -30,7 +30,8 @@ nothing cuts, reviews or publishes one:
   does.
 - **No release documentation.** There is no `CHANGELOG`, no statement of
   which Roblox, roblox-ts and `@rbxts/types` versions the generated code
-  targets, and no install in [getting-started.md](../getting-started.md).
+  targets, and no install from the npm registry in
+  [getting-started.md](../getting-started.md).
 - **No promise about the bytes across releases.**
   [errors-and-guarantees.md](../errors-and-guarantees.md) tells a user to
   keep both sides on the same surge version, but nothing says what a
