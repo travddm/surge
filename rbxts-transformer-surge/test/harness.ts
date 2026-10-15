@@ -7,7 +7,7 @@ import * as ts from "typescript";
 import type { Field } from "../src/field";
 import { TypeWalker, type WalkDiagnostic } from "../src/walk";
 
-const FIXTURES_DIR = path.join(__dirname, "fixtures");
+const SURGE_SRC_DIR = path.join(__dirname, "..", "..", "surge", "src");
 const ROBLOX_TYPE_ROOTS = path.join(__dirname, "..", "node_modules", "@rbxts");
 
 export interface FixtureOptions {
@@ -21,13 +21,13 @@ export interface FixtureOptions {
 	 */
 	readonly roblox?: boolean;
 	/**
-	 * Adds `test/fixtures/rbxts-surge` (a hand-maintained stand-in for the
-	 * real `@rbxts/surge` in ../surge/, which this package does not depend on
-	 * -- see Package boundaries in docs/coding-standards.md) to the program under the
-	 * `@rbxts/surge` package name, so `DataType.*`, `Packed<T>`, and the
-	 * `createCodec`/`createSerializer`/`createDeserializer`
-	 * factories can appear in fixture source and be resolved by
-	 * `detect.ts`'s package-identity check.
+	 * Adds surge's own source, `../surge/src/`, to the program under the two
+	 * entry points the package declares, `@rbxts/surge` and
+	 * `@rbxts/surge/abi`, so `DataType.*`, `Packed<T>`, and the factories can
+	 * appear in fixture source and be resolved by `detect.ts`'s
+	 * package-identity check, which finds surge's `package.json`. Only the
+	 * tests read surge's source: the transformer depends on nothing in surge
+	 * at run time (Package boundaries in docs/coding-standards.md).
 	 */
 	readonly surge?: boolean;
 	/** Compiler options a consumer may set, over the defaults below. */
@@ -81,10 +81,8 @@ export function createFixtureProgram(source: string, options: FixtureOptions = {
 		target: ts.ScriptTarget.ES2019,
 		module: ts.ModuleKind.CommonJS,
 		moduleResolution: ts.ModuleResolutionKind.Node10,
-		baseUrl: FIXTURES_DIR,
-		paths: options.surge
-			? { "@rbxts/surge": ["rbxts-surge/index"], "@rbxts/surge/*": ["rbxts-surge/*"] }
-			: undefined,
+		baseUrl: options.surge ? SURGE_SRC_DIR : undefined,
+		paths: options.surge ? { "@rbxts/surge": ["index"], "@rbxts/surge/abi": ["abi"] } : undefined,
 		// Unset, `types` includes every `@types` package under this package's `node_modules`, such
 		// as Node's and Jest's, in each fixture.
 		types: [],
