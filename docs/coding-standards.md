@@ -47,8 +47,8 @@ tables and code blocks.
 
 - `strict` is on everywhere, and `mise run compile` is the type check.
 - No `any`. `roblox-ts/no-any` bans it in surge's `src/` and in `tests/`,
-  which roblox-ts compiles; `@typescript-eslint/no-explicit-any` bans it in
-  the transformer.
+  which roblox-ts compiles, apart from `tests/flamework2/`, which ESLint
+  skips; `@typescript-eslint/no-explicit-any` bans it in the transformer.
 
 ## Naming
 
