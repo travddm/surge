@@ -30,7 +30,13 @@ export interface FixtureOptions {
 	 * at run time (Package boundaries in docs/coding-standards.md).
 	 */
 	readonly surge?: boolean;
-	/** Compiler options a consumer may set, over the defaults below. */
+	/**
+	 * Compiler options a consumer may set, over the defaults below. Under
+	 * `roblox` or `surge`, `noLib`, `typeRoots` and `types` are set after
+	 * these, and a test cannot change them: roblox-ts rejects any other
+	 * `noLib`, and a program without the `@rbxts` type root or `@rbxts/types`
+	 * has no Roblox types to walk.
+	 */
 	readonly compilerOptions?: ts.CompilerOptions;
 }
 
