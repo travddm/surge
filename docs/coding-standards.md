@@ -85,9 +85,13 @@ which recognizes it by alias and, re-aliased, by its brand property
 - The transformer never depends on `@rbxts/surge` at run time. It recognizes
   the runtime package's declarations through the TypeScript checker of the
   program it runs in ([specs/transformer.md](specs/transformer.md) 3.1).
-- `tests/` is the one project that depends on both.
+- `tests/` is the one project that declares a dependency on both.
+- The transformer's Jest suites compile against surge's `src/`, which their
+  harness reads by path from this repository, not through a declared
+  dependency. The package the transformer publishes holds no test.
 
-Each package's declared dependencies enforce these; no lint rule is needed.
+Each package's declared dependencies enforce the first three; no lint rule
+is needed.
 
 ## File organization
 

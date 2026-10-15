@@ -61,6 +61,9 @@ surge only:
   ([specs/test-harness.md](specs/test-harness.md) section 6).
 - A change that spans both packages is one commit. CI checks both packages
   at the same commit (see CI in [testing.md](testing.md)).
+- The transformer's Jest suites compile against surge's declarations in
+  `surge/src/`, so a change there can fail them. `mise run ci` at the root
+  runs them; inside `surge/`, it does not.
 - A change that moves bytes changes `tests/src/tests/bytes.spec.ts` and the
   size table in the same commit.
 - Documentation changes in the same commit as the code it describes; the
