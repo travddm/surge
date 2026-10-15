@@ -71,6 +71,8 @@ The full list is in [docs/contributing.md](docs/contributing.md).
   there is seen in `surge/tests/` only after `mise run tests:install` in
   `surge/`, which `mise run ci` runs.
 - `docs/`: every document, for both packages.
+- `scripts/tag-packages.mjs`: the one-package tags CI makes once the checks
+  pass ([docs/contributing.md](docs/contributing.md#branches-and-tags)).
 
 ## Rules
 
@@ -129,6 +131,7 @@ part of the change.
 | what the generated code costs, or what a file directive does to it     | [docs/performance.md](docs/performance.md), with a paper under [docs/research/](docs/research/README.md) for the measurement                                                                                                                                   |
 | a lint, format, type or naming rule, or the `DataType` brand rules     | [docs/coding-standards.md](docs/coding-standards.md)                                                                                                                                                                                                           |
 | how or when documentation is updated                                   | this table and [docs/contributing-docs.md](docs/contributing-docs.md)                                                                                                                                                                                          |
+| the tag script, the tag job, or a branch or tag rule                   | [docs/contributing.md](docs/contributing.md#branches-and-tags), and [docs/getting-started.md](docs/getting-started.md) where the install from a tag changes                                                                                                    |
 | deferred work started, finished or re-scoped                           | [docs/future-work/](docs/future-work/README.md) and its index                                                                                                                                                                                                  |
 
 How to write each kind of document is in

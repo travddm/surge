@@ -47,11 +47,11 @@ nothing cuts, reviews or publishes one:
 ## Why deferred
 
 Only a release exercises the release pipeline, so the pipeline is built with
-the first one. `master` is protected earlier, with the pre-release tags
-([one-package-tags.md](one-package-tags.md)). The first release follows
-[one-package-tags.md](one-package-tags.md), whose tag script it uses,
-[documentation-site.md](documentation-site.md), which publishes it, and the
-benchmark fixes in [benchmark-tooling.md](benchmark-tooling.md).
+the first one. `master` is protected already, and CI already makes its
+pre-release tags with `scripts/tag-packages.mjs`, which the release uses too
+([contributing.md](../contributing.md#branches-and-tags)). The first release
+follows [documentation-site.md](documentation-site.md), which publishes it,
+and the benchmark fixes in [benchmark-tooling.md](benchmark-tooling.md).
 
 The version backstop is the only item that changes the transformer's code,
 and it lands with the first release it would protect. The test in
@@ -80,26 +80,27 @@ files are part of the release's documentation.
 - Each push to `release` starts the release run below, which also deploys
   the documentation site ([documentation-site.md](documentation-site.md)).
   Pre-release tags on `master` and dev tags are in
-  [one-package-tags.md](one-package-tags.md).
+  [contributing.md](../contributing.md#branches-and-tags).
 - Versions live in commits, and CI never pushes a commit to a branch. A
   release's pull request into `master` bumps both packages' versions and adds
   the changelog entry, and a second pull request merges `master` into
   `release`.
 - `release` is protected as `master` is
-  ([one-package-tags.md](one-package-tags.md)): it takes pull requests with
-  passing checks only. It takes merge commits, never squashes or rebases, so
-  that a pre-release's count of commits since the latest release stays
-  right.
+  ([contributing.md](../contributing.md#branches-and-tags)): it takes pull
+  requests with passing checks only, and merge commits only, never squashes
+  or rebases, so that a pre-release's count of commits since the latest
+  release stays right.
 - The release run checks that the version has no tag yet, and stages the
   npm publish. Once the maintainer approves it (Publishing, below), the run
   tags, creates the GitHub Release, deploys the documentation site, and
   prunes dev tags. Each is a job of the same workflow, because a tag that CI
   pushes with `GITHUB_TOKEN` starts no workflow run of its own.
 - For a release of 0.2.0, the tags are `surge-v0.2.0` and
-  `transformer-v0.2.0` on one-package commits made by the tag script in
-  [one-package-tags.md](one-package-tags.md), and `v0.2.0` on the commit
-  itself.
-- The tag ruleset of [one-package-tags.md](one-package-tags.md) adds release
+  `transformer-v0.2.0` on one-package commits made by
+  `scripts/tag-packages.mjs`, which gains a kind for a release, and `v0.2.0`
+  on the commit itself.
+- The tag ruleset that keeps pre-release tags in place
+  ([contributing.md](../contributing.md#branches-and-tags)) adds release
   tags, so that nobody moves or deletes one: a consumer's lockfile records a
   tag's commit, not the tag. Dev tags stay outside it so that a release can
   prune them.
