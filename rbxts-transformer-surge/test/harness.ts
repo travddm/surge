@@ -30,7 +30,13 @@ export interface FixtureOptions {
 	 * at run time (Package boundaries in docs/coding-standards.md).
 	 */
 	readonly surge?: boolean;
-	/** Compiler options a consumer may set, over the defaults below. */
+	/**
+	 * Compiler options a consumer may set, over the defaults below. Under
+	 * `roblox` or `surge`, `noLib`, `typeRoots` and `types` are set after
+	 * these, and a test cannot change them: roblox-ts rejects any other
+	 * `noLib`, and a program without the `@rbxts` type root or `@rbxts/types`
+	 * has no Roblox types to walk.
+	 */
 	readonly compilerOptions?: ts.CompilerOptions;
 }
 
@@ -75,22 +81,24 @@ export function createFixtureProgram(source: string, options: FixtureOptions = {
 	const file = path.join(dir, "input.ts");
 	fs.writeFileSync(file, source);
 
-	const roblox = options.roblox === true || options.surge === true;
 	const compilerOptions: ts.CompilerOptions = {
 		strict: true,
 		skipLibCheck: true,
 		target: ts.ScriptTarget.ES2019,
 		module: ts.ModuleKind.CommonJS,
 		moduleResolution: ts.ModuleResolutionKind.Node10,
-		noLib: roblox,
-		typeRoots: roblox ? [ROBLOX_TYPE_ROOTS] : undefined,
 		baseUrl: options.surge ? SURGE_SRC_DIR : undefined,
 		paths: options.surge ? { "@rbxts/surge": ["index"], "@rbxts/surge/abi": ["abi"] } : undefined,
 		// Unset, `types` includes every `@types` package under this package's `node_modules`, such
 		// as Node's and Jest's, in each fixture.
-		types: roblox ? ["types"] : [],
+		types: [],
 		...options.compilerOptions,
 	};
+	if (options.roblox || options.surge) {
+		compilerOptions.noLib = true;
+		compilerOptions.typeRoots = [ROBLOX_TYPE_ROOTS];
+		compilerOptions.types = ["types"];
+	}
 
 	const program = ts.createProgram([file], compilerOptions, createCachingHost(compilerOptions));
 	const checker = program.getTypeChecker();
