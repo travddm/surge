@@ -11,7 +11,7 @@ wins. This file adds only what is particular to Claude Code:
 - The spell step checks `.git/COMMIT_EDITMSG`, the last commit message. A
   commit message with a word cspell does not know fails the next
   `mise run ci`, so write commit messages in words it knows, or add a real
-  word to `cspell.json`.
+  word to `cspell.shared.json`.
 - The two packages are `surge/` and `rbxts-transformer-surge/`. Run
   `mise run ci` at the repository root, which checks the root files and
   both packages; inside a package's directory, the same command checks only

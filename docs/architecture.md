@@ -68,14 +68,18 @@ surge/                        the repository
 │   └── test/                 Jest suites, which compile against surge's own src/
 ├── docs/                     all documentation for both packages
 ├── AGENTS.md                 the entry point for contributors
-└── mise.toml, package.json, cspell.json, .prettierrc, .markdownlint.json,
-    .github/workflows/, .vscode/, .githooks/, surge.code-workspace
+└── mise.toml, package.json, cspell.json, cspell.shared.json, .prettierrc,
+    .markdownlint.json, .github/workflows/, .vscode/, .githooks/,
+    surge.code-workspace
 ```
 
 Each package's directory also holds its own tooling: `package.json` and its
-lock file, `mise.toml`, `eslint.config.ts`, `.prettierrc`, `cspell.json`,
-`.markdownlint.json` and `.vscode/`. The root's npm project checks only
-`docs/` and the root files; it is not an npm workspace.
+lock file, `mise.toml`, `eslint.config.ts`, `cspell.json`,
+`.markdownlint.json` and `.vscode/`. Its `cspell.json` and
+`.markdownlint.json` build on the root's, and the root's `.prettierrc`
+covers its files ([coding-standards.md](coding-standards.md#tooling)). The
+root's npm project checks only `docs/` and the root files; it is not an npm
+workspace.
 
 ## How the two are built together
 
