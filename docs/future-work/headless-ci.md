@@ -15,7 +15,8 @@ itself (section 5 of
 ## Why deferred
 
 The round-trip correctness suite (`tests/src/tests/`) already runs
-headlessly, on every push, via a Lune-based test runner (see
+headlessly, on every push to `master` and every pull request into it, via a
+Lune-based test runner (see
 [testing.md](../testing.md)). The speed
 tier can now also run without a human clicking Play — `run-in-roblox`
 drives a real Roblox Studio process for it (`mise run bench:speed`;

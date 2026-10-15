@@ -21,12 +21,13 @@ nothing cuts, reviews or publishes one:
   identify the package; reading its `version` too and reporting a diagnostic
   when it differs from the transformer's own version is a small, cheap
   backstop.
-- **No `typescript` peer dependency.** The transformer imports `typescript`
-  at run time but lists it only under `devDependencies`, and it resolves in
-  a consumer's project only because roblox-ts depends on `typescript` too.
-  Before its first registry publish, the transformer declares `typescript`
-  under `peerDependencies`, as `rbxts-transformer-flamework` does, so that
-  it uses the compiler's copy rather than one of its own.
+- **No `typescript` peer dependency.** The transformer runs on the
+  TypeScript compiler roblox-ts passes it, and imports `typescript` only for
+  its types, so it loads no copy of its own. It lists `typescript` only under
+  `devDependencies`, though, so nothing states which TypeScript versions it
+  works with. Before its first registry publish, the transformer declares
+  `typescript` under `peerDependencies`, as `rbxts-transformer-flamework`
+  does.
 - **No release documentation.** There is no `CHANGELOG`, no statement of
   which Roblox, roblox-ts and `@rbxts/types` versions the generated code
   targets, and no install in [getting-started.md](../getting-started.md).
@@ -37,8 +38,9 @@ nothing cuts, reviews or publishes one:
   `DataStore`, needs to know which releases can change what those bytes
   mean.
 - **No contributor files on GitHub.** `.github/` holds only the workflow.
-  There is no `CONTRIBUTING.md`, which GitHub links when someone opens an
-  issue or a pull request, and no issue or pull request template.
+  There is no root `CONTRIBUTING.md`, so GitHub links
+  [contributing.md](../contributing.md) when someone opens an issue or a
+  pull request, and there is no issue or pull request template.
 - **Benchmark tables recorded before the release's code.** The steps before
   the release change the generated code the tables measure
   ([README.md](README.md)), so a release's site would publish numbers for code
@@ -123,8 +125,8 @@ files are part of the release's documentation.
   authentication. `npm stage download` fetches a staged tarball for review.
   A published version number can never be used again, even after an
   unpublish, so this review is the last check.
-- Staged publishing needs npm 11.15.0 or later, newer than the pinned Node's
-  npm, so the release job installs it. It worked on 2026-10-08 with npm
+- Staged publishing needs npm 11.15.0 or later. The pinned Node ships npm
+  11.19.0. It worked on 2026-10-08 with npm
   11.21.0, when the maintainer's npm account claimed both names by staging
   a `0.0.0-claim` version of each and rejecting it:
     - Staging a package that did not exist published a placeholder,

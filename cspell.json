@@ -17,19 +17,10 @@
 	"ignorePaths": [
 		".gitignore",
 		".vscode/**",
-		"*-lock.yaml",
-		"*.aff",
-		"*.dic",
-		"*.gz",
-		"*.lock",
 		"*.log",
-		"*.snap",
-		"*.trie",
 		"**/.git/!(COMMIT_EDITMSG)",
 		"**/.git/!(COMMIT_EDITMSG)/**",
-		"CHANGELOG.md",
 		"/package.json",
-		"snapshots/**",
 		"surge/**",
 		"rbxts-transformer-surge/**"
 	]
