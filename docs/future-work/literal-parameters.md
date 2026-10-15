@@ -68,17 +68,19 @@ parameters by its rule.
   [exact-length-brand.md](exact-length-brand.md) moves it. `Length`'s JSDoc
   states what each width writes.
 - `walkLength` in `rbxts-transformer-surge/src/walk.ts` reads a string
-  literal width or a number literal, and any other `L` is the diagnostic it is
-  today.
+  literal width or a number literal, and any other `L` is a diagnostic, whose
+  text names the string widths where it names `DataType.u8` and the other
+  brands today.
 - Rule 2 of the brand rules in [coding-standards.md](../coding-standards.md)
-  states the rule above and why. Wire format 6.2, Transformer 4.1, 4.3, 7.2
-  and 8, and Runtime API 3.10 spell the string widths, as do
+  states the rule above and why. Wire format 6.2, Transformer 4.1, 4.3, 4.11,
+  7.2 and 8, and Runtime API 3.10 spell the string widths, as do
   [data-types.md](../data-types.md)'s opening sample, Counts section, paragraph
   on `DataType.Width` and Combining brands section, and
   [getting-started.md](../getting-started.md)'s sample.
 - `walk.test.ts`, `detect.test.ts`, `transform.test.ts`, `bytes.spec.ts`,
-  `checks.spec.ts`, `collections.spec.ts` and `strings.spec.ts` spell the
-  string widths, as does a comment in `detect.ts`. No
+  `checks.spec.ts`, `collections.spec.ts`, `recursion.spec.ts` and
+  `strings.spec.ts` spell the string widths, as do a comment in `detect.ts`
+  and one in `walk.ts`. No
   emitted code changes, so neither the size table nor the code-size table
   does.
 - Open: exporting the unions of widths and forms, for a generic type that
