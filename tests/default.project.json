@@ -1,0 +1,61 @@
+{
+	"name": "surge-tests",
+	"globIgnorePaths": ["**/package.json", "**/tsconfig.json"],
+	"tree": {
+		"$className": "DataModel",
+		"ServerScriptService": {
+			"MainServer": {
+				"$className": "Script",
+				"$properties": {
+					"Source": "require(game:GetService(\"ServerStorage\"):WaitForChild(\"tests\")).main()"
+				}
+			},
+			"MainBenchmarks": {
+				"$className": "Script",
+				"$properties": {
+					"Disabled": true,
+					"Source": "require(game:GetService(\"ServerStorage\"):WaitForChild(\"tests\")).runBenchmarks()"
+				}
+			}
+		},
+		"ServerStorage": {
+			"tests": {
+				"$path": "out"
+			}
+		},
+		"ReplicatedStorage": {
+			"rbxts_include": {
+				"$className": "Folder",
+				"$path": "include",
+				"node_modules": {
+					"$className": "Folder",
+					"@rbxts": {
+						"$path": "node_modules/@rbxts"
+					},
+					"@flamework": {
+						"$path": "node_modules/@flamework"
+					}
+				}
+			}
+		},
+		"Workspace": {
+			"$className": "Workspace",
+			"$properties": {
+				"FilteringEnabled": true,
+				"StreamingEnabled": true
+			}
+		},
+		"HttpService": {
+			"$className": "HttpService",
+			"$properties": {
+				"HttpEnabled": true
+			}
+		},
+		"SoundService": {
+			"$className": "SoundService",
+			"$properties": {
+				"RespectFilteringEnabled": true
+			}
+		}
+	}
+}
