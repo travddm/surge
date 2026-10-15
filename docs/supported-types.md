@@ -21,33 +21,32 @@ in the order the transformer applies it, is
 
 ## Written into the bytes
 
-| Type                                                                                                       | Written as                                                                                        |
-| ---------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
-| `number`                                                                                                   | 8 bytes, a double. A `DataType` width or `Range` chooses another ([data-types.md](data-types.md)) |
-| `boolean`                                                                                                  | 1 byte, or 1 bit inside `DataType.Packed<T>`                                                      |
-| `string`, `buffer`                                                                                         | a count of bytes, then the bytes                                                                  |
-| a union of literals, such as `"idle" \| "running"` or `1 \| 2 \| 3`                                        | an index into the values: 1 byte for up to 256 values, 2 beyond                                   |
-| one literal, such as `kind: "move"`, one enum item, such as `Enum.Material.Air`, and `undefined` or `void` | nothing: both sides know the value                                                                |
-| an enum type, such as `Enum.Material`, or a union of one enum's items                                      | an index into the items the type admits: 1 byte for up to 256, 2 beyond                           |
-| `T \| undefined`, or an optional property                                                                  | 1 presence byte, then `T` when present; 1 bit inside `Packed<T>`                                  |
-| an interface or object type                                                                                | its properties, sorted by name                                                                    |
-| `T[]`, `ReadonlyArray<T>`                                                                                  | a count, then each element                                                                        |
-| a tuple, with its rest element last if it has one                                                          | each fixed element, then a count and each rest element                                            |
-| `Map<K, V>`, `ReadonlyMap<K, V>`, `Record<string, V>`, `{ [k: string]: V }`                                | a count, then each key and value                                                                  |
-| `Set<K>`, `ReadonlySet<K>`                                                                                 | a count, then each key; 1 bit per value inside `Packed<T>` when `K` is literal values             |
-| `Record<"a" \| "b", V>`                                                                                    | an object with the properties `a` and `b`                                                         |
-| a union of object types that share a literal tag, such as `kind`                                           | an index into the variants, then the variant's other properties                                   |
-| any other union the code can tell apart at run time (below)                                                | a 1-byte index into the variants, 2 beyond 256, then the variant                                  |
-| a type that refers to itself, such as a tree node                                                          | the same bytes as the structure, through a helper function                                        |
-| `Vector2`, `Vector3`                                                                                       | 2 or 3 floats of 4 bytes; `DataType.Vector` chooses a `Vector3`'s widths                          |
-| `CFrame`                                                                                                   | 24 bytes: position and rotation. 18 with `DataType.Quantized`; 1, 13 or 25 inside `Packed<T>`     |
-| `Color3`                                                                                                   | 3 bytes, one per channel from 0 to 1; a channel outside that range is not representable           |
-| `ColorSequence`, `NumberSequence`                                                                          | a 1-byte keypoint count, then each keypoint                                                       |
-| `Vector3int16`, `UDim`, `UDim2`, `BrickColor`, `NumberRange`, `Rect`, `DateTime`                           | a fixed number of bytes each ([specs/wire-format.md](specs/wire-format.md) 4.10)                  |
+| Type                                                                                                       | Written as                                                                                                                             |
+| ---------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| `number`                                                                                                   | 8 bytes, a double. A `DataType` width or `Range` chooses another ([data-types.md](data-types.md))                                      |
+| `boolean`                                                                                                  | 1 byte, or 1 bit as an object's property inside `DataType.Packed<T>`                                                                   |
+| `string`, `buffer`                                                                                         | a count of bytes, then the bytes                                                                                                       |
+| a union of literals, such as `"idle" \| "running"` or `1 \| 2 \| 3`                                        | an index into the values: 1 byte for up to 256 values, 2 beyond                                                                        |
+| one literal, such as `kind: "move"`, one enum item, such as `Enum.Material.Air`, and `undefined` or `void` | nothing: both sides know the value                                                                                                     |
+| an enum type, such as `Enum.Material`, or a union of one enum's items                                      | an index into the items the type admits: 1 byte for up to 256, 2 beyond                                                                |
+| `T \| undefined`, or an optional property                                                                  | 1 presence byte, then `T` when present; 1 bit as an object's property inside `Packed<T>`                                               |
+| an interface or object type                                                                                | its properties, sorted by name                                                                                                         |
+| `T[]`, `ReadonlyArray<T>`                                                                                  | a count, then each element                                                                                                             |
+| a tuple, with its rest element last if it has one                                                          | each fixed element, then a count and each rest element                                                                                 |
+| `Map<K, V>`, `ReadonlyMap<K, V>`, `Record<string, V>`, `{ [k: string]: V }`                                | a count, then each key and value                                                                                                       |
+| `Set<K>`, `ReadonlySet<K>`                                                                                 | a count, then each key; 1 bit per value inside `Packed<T>` when `K` is literal values                                                  |
+| `Record<"a" \| "b", V>`                                                                                    | an object with the properties `a` and `b`                                                                                              |
+| a union of object types that share a literal tag, such as `kind`                                           | an index into the variants, then the variant's other properties                                                                        |
+| any other union the code can tell apart at run time (below)                                                | a 1-byte index into the variants, 2 beyond 256, then the variant                                                                       |
+| a type that refers to itself, such as a tree node                                                          | the same bytes as the structure, through a helper function                                                                             |
+| `Vector2`, `Vector3`                                                                                       | 2 or 3 floats of 4 bytes; `DataType.Vector` chooses a `Vector3`'s widths                                                               |
+| `CFrame`                                                                                                   | 24 bytes: position and rotation; `DataType.Transform`, `DataType.Quantized` and `Packed<T>` change it ([data-types.md](data-types.md)) |
+| `Color3`                                                                                                   | 3 bytes, one per channel from 0 to 1; a channel outside that range is not representable                                                |
+| `ColorSequence`, `NumberSequence`                                                                          | a 1-byte keypoint count, then each keypoint                                                                                            |
+| `Vector3int16`, `UDim`, `UDim2`, `BrickColor`, `NumberRange`, `Rect`, `DateTime`                           | a fixed number of bytes each ([specs/wire-format.md](specs/wire-format.md) 4.10)                                                       |
 
-A count is 1 byte below 254, 3 bytes up to 65535, and 5 above.
-`DataType.Length` gives a string, buffer, array, tuple rest or dictionary a
-count of a fixed width instead, or none ([data-types.md](data-types.md)).
+How many bytes a count takes, and how `DataType.Length` changes it, is in
+[data-types.md](data-types.md#counts-lengtht-l).
 
 A dictionary's key can be any supported type, including a `Vector3`, an enum
 item or an object. The order of its entries in the bytes is Luau's iteration
@@ -98,8 +97,8 @@ of these, and the call is left as it was:
 differ in a way Luau can see:
 
 - literal values, such as `1 | 2 | "auto"`, compare by value;
-- `string`, `number`, `boolean`, `buffer`, each Roblox type, and each enum's
-  items have their own type tag;
+- `string`, `number`, `boolean`, `buffer` and each Roblox type have their
+  own type tag, and an enum item is told apart by the enum it belongs to;
 - at most one member may be a table: an object, array, tuple, map or set.
   Two objects need a shared literal tag property, which makes the union a
   tagged union instead;

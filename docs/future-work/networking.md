@@ -38,7 +38,8 @@ up.
 - Not designed further than this until picked up — gets its own design
   pass (detection/dispatch model, batching strategy, channel semantics,
   and whether it needs a transformer of its own, as `@rbxts/surge` does) at
-  that point.
-- Until then, nothing for it exists yet — it isn't part of the "full
-  stack" the current tooling/tests exercise (see
-  [testing.md](../testing.md)).
+  that point. An API that takes codecs as values needs none, and is the
+  design to try first; what a transformer of its own would cost is in
+  [transformer-extension-point.md](transformer-extension-point.md).
+- Until then, nothing for it exists yet, and nothing in the current tooling
+  or tests exercises it ([testing.md](../testing.md)).

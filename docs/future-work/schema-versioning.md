@@ -12,9 +12,14 @@ producing incompatible bytes between an old and new build.
 
 Unaddressed by both fbs and this design so far. fbs has no versioning
 story at all, and this design hasn't needed one yet — every shape
-considered so far is compiled and consumed from the same build. Out of
-scope unless a concrete need for it shows up (e.g. rolling deploys where
-client and server briefly run different builds against the same shape).
+considered so far is compiled and consumed from the same build. It comes
+after [schema-fingerprint.md](schema-fingerprint.md), which detects the
+bytes it would read, and before the first release ([README.md](README.md)):
+if its design pass picks the first direction below with a tag that every
+value carries, adding the tag after the release would change the bytes of
+every shape a game has saved. The design pass weighs the directions against
+a case such as rolling deploys, where client and server briefly run
+different builds against the same shape.
 
 ## Version coupling this design already has
 
@@ -28,15 +33,14 @@ silent wire-format change carried entirely by a `@rbxts/types` version
 bump — the same class of problem this document is about, but triggered by
 a dependency update rather than an edit to the shape's own declaration.
 No mitigation exists yet; whatever direction is picked for schema
-evolution above should account for it.
+evolution below should account for it.
 [schema-fingerprint.md](schema-fingerprint.md) would detect it, because the
 fingerprint covers each enum's member list, but it would not read the old
 bytes.
 
 ## How, briefly
 
-Not designed — two directions worth considering when this is picked up,
-neither committed to:
+Not designed. The design pass chooses between two directions:
 
 - A leading version tag byte per top-level shape, with the transformer
   emitting one generated codec per known version and dispatching on the

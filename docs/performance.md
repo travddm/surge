@@ -71,7 +71,7 @@ measured in
 ## What to expect
 
 - **Against flamework-binary-serializer**, surge encodes and decodes faster on
-  every shape in the benchmark catalog but one, and writes the same bytes on
+  every shape in the benchmark catalog but one, and writes fewer bytes on
   most of them. On the layout row, fbs encodes faster because it passes each
   `Vector2` and `UDim2` beside the buffer instead of writing it. The numbers
   are in [benchmarks/speed.md](benchmarks/speed.md) and
@@ -88,12 +88,14 @@ measured in
   [research/exact-sizing-with-loops.md](research/exact-sizing-with-loops.md)),
   and the other shapes of the benchmark catalog are not measured against
   hand-written Luau.
-- **`Packed<T>`** saves bytes on booleans, optionals and axis-aligned
-  `CFrame`s, and adds a byte to an arbitrary `CFrame`. Packed booleans and
+- **`Packed<T>`**, whose bytes are in
+  [data-types.md](data-types.md#packing-packedt): packed booleans and
   optionals decode faster than unpacked ones
-  ([research/packed-bits-read-in-place.md](research/packed-bits-read-in-place.md)),
-  and an arbitrary `CFrame` encodes slower packed
+  ([research/packed-bits-read-in-place.md](research/packed-bits-read-in-place.md))
+  and encode within the noise of them, and an arbitrary `CFrame` encodes
+  slower packed
   ([research/packed-against-unpacked.md](research/packed-against-unpacked.md)).
+  Pack a `CFrame` when its size matters more than its encode time.
 
 Each benchmark result is one shape in a warm loop on one machine. Measure a
 game's own shapes before deciding on the strength of one.

@@ -14,7 +14,8 @@ in the others by hand.
 ## Why deferred
 
 Each copy works, and the move into one repository did not need them
-shared.
+shared. It lands ahead of the API changes ([README.md](README.md)), so that
+a word each of them adds goes into one word list.
 
 ## How, briefly
 

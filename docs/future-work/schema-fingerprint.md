@@ -26,13 +26,13 @@ Asking for it must take one change at the call site.
 
 ## Why deferred
 
-It needs a consumer. Nothing persists surge bytes across releases yet,
-because neither package has a release
-([ci-and-release.md](ci-and-release.md)), and no game has asked to detect a
-changed type. The consumer also decides between the two ways to enable it
-below. The design is small and depends on nothing else in this directory.
-It is the first work to revisit after the first release, which makes such a
-consumer possible ([README.md](README.md)).
+Nothing persists surge bytes across releases yet, because neither package
+has a release ([ci-and-release.md](ci-and-release.md)), and no game has
+asked to detect a changed type. It lands before the first release
+([README.md](README.md)), so that a game that persists surge bytes can store
+a fingerprint from its first save, and after the planned changes to the
+bytes, which change the `Field` tree it hashes. No consumer has chosen
+between the two ways to enable it below, so its design pass chooses.
 
 ## How, briefly
 
@@ -78,5 +78,5 @@ consumer possible ([README.md](README.md)).
 - **It is conservative.** An enum item added last shifts no index but still
   changes the fingerprint. Renaming a property changes it even where the
   field order, and so every byte, stays the same.
-- A version tag byte, the first direction in
+- A version tag, the first direction in
   [schema-versioning.md](schema-versioning.md), could carry the fingerprint.

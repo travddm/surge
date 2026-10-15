@@ -16,13 +16,12 @@ const [ok, request] = pcall(() => readRequest(input));
 
 ## Two options
 
-|                | `readChecks`                                                                                                                                                           | `writeChecks`                                                                                                                                                                                                                             |
-| -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Governs        | `deserialize`, and a cursor codec's `read`                                                                                                                             | `serialize`, and a cursor codec's `write`                                                                                                                                                                                                 |
-| Guards against | input a client crafted, read on the server                                                                                                                             | a value of the game's own that does not fit its `DataType` brands                                                                                                                                                                         |
-| Rejects        | an input that is not what `serialize` returns, a read past the end, a count the rest cannot hold, an enum index past its items, a packed rotation code that names none | an exact `Length<T, N>` value that is not `N` long, a count too large for its `u8`, `u16` or `u24` width, a number its `Range<T, Min, Max>` does not admit, a number or a `Vector` or `Transform` component its integer width cannot hold |
-| Taken by       | `createDeserializer`, `createCodec`, `createCursorCodec`                                                                                                               | `createSerializer`, `createCodec`, `createCursorCodec`                                                                                                                                                                                    |
-| Costs          | a branch per read and a shape check per call: a few percent of a decode ([research](research/read-checks-cost.md))                                                     | a branch per narrowed or exact `Length`, per `Range` number and per integer-width number or component; nothing for a type with none                                                                                                       |
+|                | `readChecks`                                                                                                                                                           | `writeChecks`                                                                                                                                                                                                                                                                        |
+| -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Governs        | `deserialize`, and a cursor codec's `read`                                                                                                                             | `serialize`, and a cursor codec's `write`                                                                                                                                                                                                                                            |
+| Guards against | input a client crafted, read on the server                                                                                                                             | a value of the game's own that does not fit its `DataType` brands                                                                                                                                                                                                                    |
+| Rejects        | an input that is not what `serialize` returns, a read past the end, a count the rest cannot hold, an enum index past its items, a packed rotation code that names none | an exact `Length<T, N>` value longer than `N`, or shorter where its elements cannot be absent, a count too large for its `u8`, `u16` or `u24` width, a number its `Range<T, Min, Max>` does not admit, a number or a `Vector` or `Transform` component its integer width cannot hold |
+| Taken by       | `createDeserializer`, `createCodec`, `createCursorCodec`                                                                                                               | `createSerializer`, `createCodec`, `createCursorCodec`                                                                                                                                                                                                                               |
 
 Both default to `false`, and both must be written as `true` or `false` at the
 call site, because they decide what code is generated. Every error either one
@@ -73,24 +72,21 @@ it keeps between calls is left half-read.
 ## Writing values
 
 Without `writeChecks`, `serialize` writes what it is given and examines
-nothing:
+nothing: a number outside its width, a count too large for its width, and an
+exact `Length<T, N>` value of another length are written as
+[data-types.md](data-types.md) states for each brand.
 
-- a number outside its width wraps, and a fraction in an integer width is
-  truncated ([data-types.md](data-types.md));
-- a count too large for a narrowed `Length` width wraps;
-- an exact `Length<T, N>` value of another length is truncated, padded, or
-  raises, depending on its element type.
-
-`writeChecks: true` makes all three raise before they are written. A number
+With `writeChecks: true`, each of these raises before it is written, except a
+shorter exact value whose elements may be absent, which is valid. A number
 is checked against its `Range<T, Min, Max>` where it has one, and otherwise
 against what its integer width holds, each component of a `Vector` or a
 `Transform` included: a value outside it, a NaN, and a fraction where it
 holds whole numbers raise. A plain `number`, an `f32` and an `f64` hold any
 number, and are not examined.
 
-`writeChecks` guards the game's own values, not what crosses the network. A
-type with no narrowed or exact `Length`, no `Range` and no integer width gets
-no check from it, so turning it on costs such a type nothing.
+`writeChecks` guards the game's own values, not what crosses the network.
+What each option costs is in
+[performance.md](performance.md#what-the-checks-cost).
 
 An enum item's write finds the item's index by the item itself, which works
 because Roblox gives each item one object. Outside Roblox, such as under
@@ -135,10 +131,10 @@ when one of its metamethods serializes, or when the iterator its `__iter`
 metamethod returns yields and another thread serializes before it resumes.
 
 A metamethod also matters when it answers the same question differently twice.
-For most types, `serialize` reads each array's length, whether each optional
-is there, which variant each union holds, and each string inside an optional
-or a union, once to size its result and again to write it, and it walks each
-array of unions twice as well.
+`serialize` can read an array's length, whether an optional is there, which
+variant a union holds, and a string inside an optional or a union, once to
+size its result and again to write it. It also walks twice each array whose
+elements are unions, objects or arrays and vary in size.
 A value whose metamethods give a longer answer the second time makes
 `serialize` raise, and a shorter one leaves bytes at the end of the result
 that `deserialize` does not read.
@@ -152,4 +148,5 @@ call that runs untransformed at run time raises an error that says the
 transformer is not registered in `tsconfig.json`.
 
 The full contract is [specs/runtime-api.md](specs/runtime-api.md) sections 3
-and 4, 5.5 to 5.8 for calls that overlap, and 5.9 for a value read twice.
+and 4, 5.6 to 5.8 for calls that overlap, and 5.5 and 5.9 for a value read
+more than once.

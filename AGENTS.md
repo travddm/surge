@@ -37,11 +37,11 @@ Clone this repository, then run `mise run setup` at its root.
 At the root, a task covers the root files and both packages; in a
 package's directory, it covers that package:
 
-| Command                                    | Does                                             |
-| ------------------------------------------ | ------------------------------------------------ |
-| `mise run setup`                           | install every tool and npm project (at the root) |
-| `mise run ci`                              | every check, in order                            |
-| `mise run lint:fix`, `mise run format:fix` | apply the lint and format fixes                  |
+| Command                                    | Does                                                                       |
+| ------------------------------------------ | -------------------------------------------------------------------------- |
+| `mise run setup`                           | install every tool and the root's and packages' npm projects (at the root) |
+| `mise run ci`                              | every check, in order                                                      |
+| `mise run lint:fix`, `mise run format:fix` | apply the lint and format fixes                                            |
 
 In `surge/`:
 
@@ -64,7 +64,8 @@ The full list is in [docs/contributing.md](docs/contributing.md).
   depends on surge through `file:..` and on the transformer through
   `file:../../rbxts-transformer-surge`. It holds the round-trip suite
   (`tests/src/tests/`) and the benchmark harness (`tests/src/bench/`).
-- `surge/test/`: the golden checks, plain Node, reading `tests/out/`.
+- `surge/test/`: the golden checks, plain Node, reading `tests/out/` and
+  `out/`.
 - `rbxts-transformer-surge/src/`: the transformer; its
   [`AGENTS.md`](rbxts-transformer-surge/AGENTS.md) says where in it. A change
   there is seen in `surge/tests/` only after `mise run tests:install` in
@@ -78,8 +79,9 @@ Enforced by tooling, so breaking one fails `mise run ci`:
 - No `any`.
 - `surge/src/` never imports the transformer, the transformer never depends
   on `@rbxts/surge` at run time, and only `surge/tests/` depends on both.
-- Every word in a Markdown file and in the last commit message is one cspell
-  knows, or one added to `cspell.json`.
+- Every word in a Markdown file is one cspell knows, or one added to
+  `cspell.json`. Locally, so is every word in the last commit message; CI
+  checks out no commit message.
 
 Not checked by a machine, and load-bearing:
 

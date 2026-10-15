@@ -56,12 +56,9 @@ typed `DataType.Width` itself is a build error, since it names no width.
 - `DataType.Range<DataType.f32, 0, 1>` admits fractions. With `number` or an
   integer width, the bounds must be whole numbers.
 
-The range writes no bytes of its own. It is what `writeChecks` checks: with
-`writeChecks: true` on the factory, `serialize` raises for a value outside the
-range, a NaN, and a fraction where the range holds whole numbers
-([errors-and-guarantees.md](errors-and-guarantees.md)). Without it, a value
-outside the range wraps as its width does. `deserialize` does not check a
-range, with or without `readChecks`.
+The range writes no bytes of its own. It is what `writeChecks` checks
+([errors-and-guarantees.md](errors-and-guarantees.md)). Without it, nothing
+checks the value, and one outside the width wraps as that width does.
 
 ## Counts: `Length<T, L>`
 
@@ -105,7 +102,9 @@ with `Transform`: `Quantized<Transform<DataType.i16>>` is 12 bytes in all.
 Inside `DataType.Packed<T>`, each `boolean` property, each optional
 property's presence, and the tag of a two-variant tagged union become one bit
 of the object's packed region instead of a byte. The region is rounded up to
-whole bytes, so up to eight of them cost one byte.
+whole bytes, so up to eight of them cost one byte. A tagged union that refers
+to itself keeps its tag's byte
+([specs/wire-format.md](specs/wire-format.md) 8.1).
 
 A `Set` of literal values anywhere inside `Packed<T>`, such as
 `Set<"read" | "write" | "admin">`, is one bit per value it can hold, with no
@@ -120,15 +119,8 @@ one byte more than outside `Packed<T>`, when it stands for neither. A
 errors inside `Packed<T>`, since the packed form writes its `CFrame` its own
 way.
 
-Packing saves bytes, and what it does to speed depends on what it packs.
-Booleans and optionals become bits that both sides handle inline: on the one
-shape measured, the packed form decodes faster than the unpacked one
-([research/packed-bits-read-in-place.md](research/packed-bits-read-in-place.md))
-and encodes within the noise of it
-([research/packed-against-unpacked.md](research/packed-against-unpacked.md)).
-A packed `CFrame` is written by a call into the package that classifies its
-rotation, and an arbitrary rotation is both larger and slower to encode
-packed. Pack a `CFrame` when its size matters more than its encode time.
+Packing saves bytes. What it does to speed differs between the bits and a
+`CFrame`, and is in [performance.md](performance.md#what-to-expect).
 
 ## Combining brands
 
@@ -136,4 +128,4 @@ Brands nest: `Packed<{ list: Length<Array<DataType.u8>, DataType.u16> }>`
 packs the object and gives the list a `u16` count. A brand applies to the type it
 wraps and to nothing that type contains, except `Packed<T>`, which covers
 every object, `Set` and `CFrame` inside it. A brand on a type it cannot apply
-to, such as `Length<number>`, is a build error.
+to, such as `Length<number, DataType.u8>`, is a build error.

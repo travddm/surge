@@ -600,6 +600,16 @@ describe("Emitter enum guards", () => {
 		const write = emitSnapshot({ kind: "guardedUnion", variants: [r15, { kind: "str" }] }).split("// read")[0];
 		expect(write).toContain("if (value === Enum.HumanoidRigType.R15) {");
 	});
+
+	// The enum sorts ahead of the item, so a bare "EnumItem" test would take the
+	// other enum's item and look it up in an index that does not hold it.
+	test("an enum beside another enum's item is guarded by membership in its own items' index", () => {
+		const write = emitSnapshot({ kind: "guardedUnion", variants: [order, r15] }).split("// read")[0];
+		expect(write).toMatch(
+			/if \(typeIs\(value, "EnumItem"\) && surge_SortOrder_\d+_index\.has\(value as unknown as EnumItem\)\) \{/,
+		);
+		expect(write).toContain("else {");
+	});
 });
 
 describe("Emitter union guards", () => {

@@ -4,8 +4,9 @@ Install the two packages, register the transformer, and declare a serializer.
 
 ## Install
 
-Neither package is released yet. The first release publishes both to the
-npm registry, at the same version, and this section will give the install.
+Neither package is released yet, and both names on the npm registry hold
+only a placeholder. The first release publishes both to the npm registry, at
+the same version, and this section will give the install.
 
 `@rbxts/surge` is the runtime package the generated code calls, so a project
 depends on it. `rbxts-transformer-surge` runs only at compile time, so it is
@@ -71,10 +72,8 @@ with code written for `PlayerState` alone. There is no schema at run time.
   `buffer` holds the bytes, and `blobs` those values in the order they were
   met. `deserialize` takes whichever `serialize` returned, so send it as it
   is. `PlayerState` holds none, so `serialize` returns its buffer alone.
-- `DataType.u8` and `DataType.Length` choose how many bytes a value takes.
-  Without them a `number` takes 8 bytes, and a container's count takes 1
-  byte below 254, 3 bytes up to 65535, and 5 above. See
-  [data-types.md](data-types.md).
+- `DataType.u8` and `DataType.Length` choose how many bytes a number and a
+  container's count take ([data-types.md](data-types.md)).
 - The `//!native` and `//!optimize 2` lines are the module shape
   [performance.md](performance.md) recommends.
 

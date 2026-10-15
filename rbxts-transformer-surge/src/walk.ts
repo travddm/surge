@@ -212,7 +212,7 @@ export class TypeWalker {
 		// other property of the type it is called with. A polymorphic `this`
 		// never reaches this check: the checker instantiates it as the type whose
 		// properties the walk is reading, so it walks as a recursion.
-		if ((type.flags & (ts_.TypeFlags.InstantiableNonPrimitive | ts_.TypeFlags.Index)) !== 0) {
+		if (this.dependsOnTypeParameter(type)) {
 			this.report(
 				`"${checker.typeToString(type)}" depends on a type parameter, so it has no single encoding -- a ` +
 					`serializer is generated at compile time for one concrete type. Call the factory where the type ` +
@@ -232,7 +232,10 @@ export class TypeWalker {
 			return inner ? this.walk(inner, node, true) : { kind: "blob" };
 		}
 		if (surgeBrand?.name === "Length") {
-			return this.walkLength(surgeBrand.args, node, packed);
+			// Guarded itself, so a cycle through the container it counts, as in
+			// `type Rows = DataType.Length<Rows[], DataType.u8>`, closes on the
+			// brand and the helper's body keeps the count.
+			return this.walkGuarded(type, packed, () => this.walkLength(surgeBrand.args, node, packed));
 		}
 		if (surgeBrand?.name === "Vector") {
 			const components = this.componentWidths("Vector", surgeBrand.args, node);
@@ -406,7 +409,7 @@ export class TypeWalker {
 		}
 
 		if (indexInfos.length > 0) {
-			return this.walkIndexSignature(indexInfos, node, packed);
+			return this.walkIndexSignature(type, node, packed);
 		}
 
 		if (type.getProperties().length === 0) {
@@ -448,6 +451,45 @@ export class TypeWalker {
 
 	private hasNoIndexOrProperties(type: ts.Type): boolean {
 		return this.checker.getIndexInfosOfType(type).length === 0;
+	}
+
+	/**
+	 * A type parameter, a type the checker leaves unresolved until one is
+	 * known, or an intersection, template literal or string mapping that holds
+	 * one. A union is left to `walkUnion`, which walks each of its types. A
+	 * mapped type over a type parameter, such as `Partial<T>`, is an object type
+	 * rather than any of these: walked on, it has the parameter's constraint's
+	 * properties, or none. Its keys decide it, and TypeScript has no public
+	 * accessor for them. Resolving the type's members records them in its
+	 * internal `constraintType`, which this reads; a TypeScript that no longer
+	 * records them there leaves the mapped type to the walk.
+	 */
+	private dependsOnTypeParameter(type: ts.Type): boolean {
+		const flags = this.typescript.TypeFlags;
+		const generic = (t: ts.Type): boolean => {
+			if ((t.flags & (flags.InstantiableNonPrimitive | flags.Index)) !== 0) {
+				return true;
+			}
+			if ((t.flags & flags.UnionOrIntersection) !== 0) {
+				return (t as ts.UnionOrIntersectionType).types.some(generic);
+			}
+			if ((t.flags & flags.TemplateLiteral) !== 0) {
+				return (t as ts.TemplateLiteralType).types.some(generic);
+			}
+			return (t.flags & flags.StringMapping) !== 0 && generic((t as ts.StringMappingType).type);
+		};
+		if ((type.flags & flags.Union) === 0 && generic(type)) {
+			return true;
+		}
+		if (
+			(type.flags & flags.Object) === 0 ||
+			((type as ts.ObjectType).objectFlags & this.typescript.ObjectFlags.Mapped) === 0
+		) {
+			return false;
+		}
+		this.checker.getPropertiesOfType(type);
+		const keys = (type as ts.Type & { constraintType?: ts.Type }).constraintType;
+		return keys !== undefined && generic(keys);
 	}
 
 	// ---- objects --------------------------------------------------------
@@ -844,7 +886,14 @@ export class TypeWalker {
 		return (symbol?.name === "Set" || symbol?.name === "ReadonlySet") && isBuiltinCollection(symbol.declarations);
 	}
 
+	// A `Map`, a `Set` or an index signature can hold itself, as in
+	// `interface D { [k: string]: D }`, with no object type of properties or
+	// union on the cycle to stop it, so each is guarded as an array is.
 	private walkMapOrSet(type: ts.Type, node: ts.Node, packed: boolean): Field {
+		return this.walkGuarded(type, packed, () => this.walkMapOrSetBody(type, node, packed));
+	}
+
+	private walkMapOrSetBody(type: ts.Type, node: ts.Node, packed: boolean): Field {
 		const checker = this.checker;
 		const isSet = this.isSetType(type);
 		const typeArgs = checker.getTypeArguments(type as ts.TypeReference);
@@ -857,12 +906,16 @@ export class TypeWalker {
 		return { kind: "dict", key: keyField, value: valueField, source: isSet ? "set" : "map" };
 	}
 
-	private walkIndexSignature(indexInfos: readonly ts.IndexInfo[], node: ts.Node, packed: boolean): Field {
+	private walkIndexSignature(type: ts.Type, node: ts.Node, packed: boolean): Field {
+		return this.walkGuarded(type, packed, () => this.walkIndexSignatureBody(type, node, packed));
+	}
+
+	private walkIndexSignatureBody(type: ts.Type, node: ts.Node, packed: boolean): Field {
 		// `Record<SomeUnion, V>` (a finite key union, not a true index
 		// signature) is intentionally out of scope for this kind -- a finite
 		// key union is walked as a fixed-property object instead, above,
 		// before this is ever reached.
-		const info = indexInfos[0];
+		const info = this.checker.getIndexInfosOfType(type)[0];
 		const keyField = this.walk(info.keyType, node, packed);
 		const valueField = this.walk(info.type, node, packed);
 		return { kind: "dict", key: keyField, value: valueField, source: "record" };
@@ -955,14 +1008,45 @@ export class TypeWalker {
 	 * helper's body from).
 	 */
 	private walkUnion(type: ts.UnionType, node: ts.Node, packed: boolean): Field {
+		const optional = this.optionalOf(type);
+		if (optional !== undefined) {
+			return { kind: "optional", inner: this.walk(optional, node, packed), packed };
+		}
 		return this.walkGuarded(type, packed, () => this.walkUnionBody(type, node, packed));
 	}
 
 	/**
+	 * The type a `T | undefined` is optional over, walked as `T` itself: guarded
+	 * and cached as `T`, so a recursive `T` has one helper whether a property
+	 * holds it or holds it optionally, and its presence is a bit of a packed
+	 * region (Wire format 8.1) rather than a byte of the helper. A brand alias on
+	 * `T`, such as `DataType.Width`, stays on it too. A union of literals or of
+	 * `true` and `false` keeps `undefined` as a value of its own (`walkUnionBody`),
+	 * and a union that holds `null` is left there for `classifyUnion` to report.
+	 */
+	private optionalOf(type: ts.UnionType): ts.Type | undefined {
+		const ts_ = this.typescript;
+		const nonUndefined = type.types.filter((t) => (t.flags & ts_.TypeFlags.Undefined) === 0);
+		const literalLike = (t: ts.Type): boolean =>
+			t.isStringLiteral() || t.isNumberLiteral() || (t.flags & ts_.TypeFlags.BooleanLiteral) !== 0;
+		if (
+			nonUndefined.length === type.types.length ||
+			nonUndefined.length === 0 ||
+			nonUndefined.every(literalLike) ||
+			nonUndefined.some((t) => (t.flags & ts_.TypeFlags.Null) !== 0)
+		) {
+			return undefined;
+		}
+		const inner = nonUndefined.length === 1 ? nonUndefined[0] : this.checker.getNonNullableType(type);
+		return inner === type ? undefined : inner;
+	}
+
+	/**
 	 * The recursion guard of {@link walkUnion}, for a type whose `Field` has no
-	 * `helperName` slot: a union, an array or a tuple. A type that reappears on
-	 * its own walk path becomes a `recursiveRef`, and once a helper exists every
-	 * reference to the type, the outermost included, is one.
+	 * `helperName` slot: a union, an array, a tuple, a `Map`, a `Set`, an index
+	 * signature or a `Length` brand. A type that reappears on its own walk path
+	 * becomes a `recursiveRef`, and once a helper exists every reference to the
+	 * type, the outermost included, is one.
 	 */
 	private walkGuarded(type: ts.Type, packed: boolean, walkBody: () => Field): Field {
 		const cached = this.getResolved(type, packed);
@@ -1031,9 +1115,10 @@ export class TypeWalker {
 			enumGroups.set(key, [...(enumGroups.get(key) ?? []), item]);
 		}
 
+		// A union of one enum's items and `undefined` is an `optional` of the
+		// enum by `optionalOf`, so `undefined` is not among these.
 		if (enumGroups.size === 1 && nonUndefined.every((t) => this.isEnumItemLike(t))) {
-			const enumField = this.walkEnum(nonUndefined, node);
-			return hasUndefined ? { kind: "optional", inner: enumField, packed } : enumField;
+			return this.walkEnum(nonUndefined, node);
 		}
 
 		if (hasUndefined && nonUndefined.length === 1) {

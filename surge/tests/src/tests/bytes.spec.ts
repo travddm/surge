@@ -2,13 +2,12 @@
 import { Assert, Fact } from "@rbxts/runit";
 import { DataType, createCodec } from "@rbxts/surge";
 
-import { hex } from "../support";
+import { difference, hex } from "../support";
 
 // Pins the exact bytes of shapes whose encoding is final, so a change to the
 // wire format fails here and must be made on purpose. Each expected string is
 // worked out from docs/specs/wire-format.md, not copied from the output.
-// All integers and floats are little-endian. Not pinned, because an open
-// future-work item changes their bytes: a union with an enum member.
+// All integers and floats are little-endian.
 
 // Declared out of name order: fields are written sorted by name.
 interface Primitives {
@@ -131,6 +130,16 @@ interface OneItem {
 }
 const oneItemSerializer = createCodec<OneItem>();
 const itemOrTextSerializer = createCodec<Enum.SortOrder.Name | string>();
+const rigOrItemSerializer = createCodec<Enum.HumanoidRigType | Enum.SortOrder.Name>();
+
+// A recursive object reached through an optional property: its presence is a
+// bit of the enclosing region, whichever type the walk of the shape starts at.
+interface PackedLink {
+	last: boolean;
+	next?: PackedLink;
+	value: DataType.u8;
+}
+const packedListSerializer = createCodec<DataType.Packed<{ head?: PackedLink; on: boolean }>>();
 
 interface Datatypes {
 	tint: Color3;
@@ -366,6 +375,31 @@ class BytesTest {
 		Assert.equal("01" + "00", hex(order));
 		Assert.equal(Enum.SortOrder.Custom, orderOrRigSerializer.deserialize(order));
 		Assert.equal("02" + "02" + "6869", hex(orderOrRigSerializer.serialize("hi")));
+	}
+
+	@Fact
+	public pinsAnEnumBesideAnotherEnumsItem(): void {
+		// Variants in `Field` kind order: the enum HumanoidRigType, then the item.
+		const rig = rigOrItemSerializer.serialize(Enum.HumanoidRigType.R6);
+		// Variant 0 | index 1 of R15, R6
+		Assert.equal("00" + "01", hex(rig));
+		Assert.equal(Enum.HumanoidRigType.R6, rigOrItemSerializer.deserialize(rig));
+		// The enum's own index does not hold the other enum's item, so the item
+		// is written as its variant and not looked up in that index.
+		const item = rigOrItemSerializer.serialize(Enum.SortOrder.Name);
+		Assert.equal("01", hex(item));
+		Assert.equal(Enum.SortOrder.Name, rigOrItemSerializer.deserialize(item));
+	}
+
+	@Fact
+	public pinsAnOptionalRecursiveObjectsPresenceAsABit(): void {
+		const value = { head: { last: false, next: { last: true, value: 2 }, value: 1 }, on: true };
+		const buffer = packedListSerializer.serialize(value);
+		// region: head present (bit 0), on (bit 1)
+		// | head: region, last (bit 0) and next present (bit 1) | head.next | value 1
+		// head.next: region, last (bit 0) | value 2
+		Assert.equal("03" + "02" + ("01" + "02") + "01", hex(buffer));
+		Assert.equal(undefined, difference(value, packedListSerializer.deserialize(buffer)));
 	}
 
 	@Fact

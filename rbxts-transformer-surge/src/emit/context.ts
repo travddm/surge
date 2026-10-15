@@ -1276,16 +1276,25 @@ export abstract class EmitContext {
 	}
 
 	/**
-	 * A rejection, as a thrown string so a caller's `pcall` sees the same shape
+	 * A rejection, as a raised string so a caller's `pcall` sees the same shape
 	 * it sees from the Luau `buffer` errors these replace. The message says what
 	 * failed and never quotes a number out of the payload: the bytes are the
-	 * hostile input, and a message is not the place to repeat them.
+	 * hostile input, and a message is not the place to repeat them. It is
+	 * raised at level 0, where a `throw` compiles to `error` at level 1, which
+	 * puts the chunk and line ahead of the message and hides its prefix.
 	 */
 	public throwIf(condition: ts.Expression, message: string): ts.Statement {
 		const f = this.factory;
 		return f.createIfStatement(
 			condition,
-			f.createBlock([f.createThrowStatement(f.createStringLiteral(`${ERROR_PREFIX}${message}`))], true),
+			f.createBlock(
+				[
+					f.createExpressionStatement(
+						this.callLocal("error", [f.createStringLiteral(`${ERROR_PREFIX}${message}`), this.num(0)]),
+					),
+				],
+				true,
+			),
 		);
 	}
 

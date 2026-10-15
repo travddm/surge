@@ -12,7 +12,9 @@ benchmark speed tier needs Roblox Studio, and it is not part of `ci`.
 
 ## Static checks
 
-`mise run ci` stops at the first step that fails:
+`mise run ci` stops at the first step that fails. After the root's own
+`lint:check`, `format:check` and `spell`, each package runs its steps in this
+order:
 
 | Step            | Where               | Catches                                                         | To fix                                                                                         |
 | --------------- | ------------------- | --------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
@@ -51,14 +53,15 @@ file the new version would reorder.
 - **Transformer unit tests** (transformer, `mise run test`): Jest suites for
   the walk (`walk.test.ts`), the emitter's output per `Field` kind
   (`emit.test.ts`, with snapshots), the whole transform (`transform.test.ts`),
-  and detection (`detect.test.ts`). `transform.test.ts` also type-checks the
-  generated code in a second program, as roblox-ts does before it emits.
+  the cursor fold (`fold.test.ts`), and detection (`detect.test.ts`).
+  `transform.test.ts` also type-checks the generated code in a second
+  program, as roblox-ts does before it emits.
 
 ## Writing suites
 
 - One suite per area: `numbers`, `strings`, `collections`, `literals`,
-  `unions`, `recursion`, `packed`, `roblox`, `factories`, `overlap` and
-  `checks`, with
+  `unions`, `recursion`, `packed`, `roblox`, `factories`, `overlap`,
+  `checks`, `counts` and `cursor`, with
   `basic` and `coverage` as regression suites and `bytes` for exact bytes.
 - Compare whole values: assert `difference(value, result) === undefined`,
   with `difference` from `tests/src/support.ts`. It returns the path of the
@@ -78,14 +81,10 @@ file the new version would reorder.
 - Once an encoding is final, pin its bytes in `bytes.spec.ts`. Work each
   expected string out by hand from [specs/wire-format.md](specs/wire-format.md),
   so the fact checks the specification as well as the code.
-- Lune cannot run every shape: no enum with more than 256 items, no
-  `DateTime` as a union member, and no `Map` or `Set` keyed by a `Vector3`.
-  Pin those at the transformer level instead
-  ([specs/test-harness.md](specs/test-harness.md) 4.5).
-- Lune gives an enum item a new object on each access, where Roblox gives it
-  one. The shim's stand-in `Enum` gives it one, so the generated code, which
-  keys an enum's index by the item, round-trips under Lune; the speed tier
-  checks the benchmark catalog's round trips in Roblox
+- Pin a shape Lune cannot run at the transformer level instead
+  ([specs/test-harness.md](specs/test-harness.md) 4.5). The shim's `Enum`
+  behaves as Roblox's (4.3), and the speed tier checks the benchmark
+  catalog's round trips in Roblox
   ([specs/benchmark-harness.md](specs/benchmark-harness.md) 6.6).
 - A transformer change that could break the generated code's types gets a
   `typeErrorsOfGeneratedCode` case in `transform.test.ts`, and one that
@@ -106,13 +105,10 @@ with `npm ci`, restores the Prettier and cspell records of the newest run
 with the same lock files, then runs the root `mise run ci`, the task a
 contributor runs, and fails if a lock file was rewritten during the run.
 Both packages are checked at the same commit, so a transformer change that
-breaks the round-trip suite or a golden check fails its own run. Windows is in the run
-because roblox-ts projects are built on Windows or macOS, where the
+breaks the round-trip suite or a golden check fails its own run. Windows is
+in the run because roblox-ts projects are built on Windows or macOS, where the
 transformer runs inside `rbxtsc`, and because the mise tasks run there
 through Git Bash.
-
-To run the same checks before pushing, `mise run hooks:install` installs a
-pre-push hook, or run the `repository: ci` VS Code task.
 
 The benchmarks are not part of CI. A timing needs a real Roblox process and
 has no pass or fail to gate on;
@@ -130,8 +126,7 @@ under [research/](research/README.md).
 - `mise run bench:speed` times each row in a Roblox Studio process through
   `run-in-roblox`, twice, and rewrites
   [benchmarks/speed.md](benchmarks/speed.md) and its trials. It needs Studio
-  installed and takes about twenty minutes. `mise run bench:speed:render`
-  rewrites `speed.md` from the trials without a run.
+  installed and takes about twenty minutes.
 - `mise run bench:code` compiles each codec module of the catalog to Luau
   bytecode under Lune and rewrites
   [benchmarks/code-size.md](benchmarks/code-size.md). The table changes when
@@ -141,22 +136,14 @@ under [research/](research/README.md).
   measure only the rows their patterns select, and write nothing under
   `benchmarks/`. A pattern is one word, because a mise task argument does not
   keep its quoting on Windows. Try a pattern on the size tier first, which is
-  quick.
-- `bench:speed:only` also takes `columns=fbs,serio` to keep only those
-  columns beside surge's and the baseline's, `halves=encode` or
-  `halves=decode`, `runs=1` for one run instead of two, and `out=<directory>`
-  to write its tables and trials there, such as
-  `out=docs/research/data/<paper>`, a path from the repository root
-  ([specs/benchmark-harness.md](specs/benchmark-harness.md) 9). It stops
-  where the columns kept leave a row fewer than two controls.
+  quick. The speed tier's options, such as `out=` for a paper's data, are
+  [specs/benchmark-harness.md](specs/benchmark-harness.md) section 9.
 
 Read a scoped size table against `size.md` directly. Read a scoped speed
 table only against another scoped run of the same scope, with the untouched
 columns as the control: a column is comparable only within one run,
 and two runs of unchanged code can differ widely on a single cell
 ([research/noise-in-the-speed-tier.md](research/noise-in-the-speed-tier.md)).
-A measurement worth keeping is a paper under `research/`, never an edit to a
-number in a page.
 
 Research a change's speed with scoped runs wherever they can measure it,
 with `out=` where a paper is read from the trials. A branch whose scoped runs

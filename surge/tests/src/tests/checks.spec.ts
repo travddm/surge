@@ -164,8 +164,9 @@ function rejection(run: () => unknown): string | undefined {
 function assertRejected(run: () => unknown): void {
 	const message = rejection(run);
 	Assert.defined(message);
-	// Every check raises a string a caller can tell from a bug in their own code.
-	Assert.true(message!.find("@rbxts/surge: ")[0] !== undefined);
+	// Every check raises a string a caller can tell from a bug in their own code,
+	// by its start: Luau puts no chunk or line ahead of it.
+	Assert.equal("@rbxts/surge: ", message!.sub(1, "@rbxts/surge: ".size()));
 }
 
 class ChecksTest {

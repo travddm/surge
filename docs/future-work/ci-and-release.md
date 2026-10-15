@@ -8,8 +8,8 @@ Neither package has a release. Both are `0.1.0` and `"private": true`, and
 nothing cuts, reviews or publishes one:
 
 - **No release pipeline.** Nothing tags a release, publishes to npm, or
-  creates a GitHub Release, and neither branch is protected. Users install
-  from the npm registry: `@rbxts/surge` under the `@rbxts` organization, and
+  creates a GitHub Release. Users install from the npm registry:
+  `@rbxts/surge` under the `@rbxts` organization, and
   `rbxts-transformer-surge` unscoped and outside it. Both names are claimed:
   each holds only npm's `0.0.0-stage` placeholder, which `latest` points at
   until the first release.
@@ -39,15 +39,16 @@ nothing cuts, reviews or publishes one:
 - **No contributor files on GitHub.** `.github/` holds only the workflow.
   There is no `CONTRIBUTING.md`, which GitHub links when someone opens an
   issue or a pull request, and no issue or pull request template.
-- **Benchmark tables recorded on older code.** Each table names the commits
-  it ran on, and later commits have changed the code since. A release's site
-  would publish numbers for code the release does not ship.
+- **Benchmark tables recorded before the release's code.** The steps before
+  the release change the generated code the tables measure
+  ([README.md](README.md)), so a release's site would publish numbers for code
+  the release does not ship.
 
 ## Why deferred
 
 Only a release exercises the release pipeline, so the pipeline is built with
-the first one. Protecting `master` changes how every change lands, through a
-pull request, so it waits for the release too. The first release follows
+the first one. `master` is protected earlier, with the pre-release tags
+([one-package-tags.md](one-package-tags.md)). The first release follows
 [one-package-tags.md](one-package-tags.md), whose tag script it uses,
 [documentation-site.md](documentation-site.md), which publishes it, and the
 benchmark fixes in [benchmark-tooling.md](benchmark-tooling.md).
@@ -76,20 +77,19 @@ files are part of the release's documentation.
 
 ### Branches and the release run
 
-- `release` is a protected branch. Each push to it runs the checks, then
-  stages the npm publish; after the maintainer approves it, the same run
-  tags the release, creates the GitHub Release, deploys the documentation
-  site ([documentation-site.md](documentation-site.md)), and prunes dev
-  tags. Pre-release tags on `master` and dev tags are in
+- Each push to `release` starts the release run below, which also deploys
+  the documentation site ([documentation-site.md](documentation-site.md)).
+  Pre-release tags on `master` and dev tags are in
   [one-package-tags.md](one-package-tags.md).
-- Versions live in commits, and CI never commits. A release's pull request
-  into `master` bumps both packages' versions and adds the changelog entry,
-  and a second pull request merges `master` into `release`.
-- Both branches are protected: each takes pull requests with passing checks
-  only. Each push to `master` makes pre-release tags that can never be
-  deleted, so nothing reaches `master` without review. `release` takes merge
-  commits, never squashes or rebases, so that a pre-release's count of
-  commits since the latest release stays right.
+- Versions live in commits, and CI never pushes a commit to a branch. A
+  release's pull request into `master` bumps both packages' versions and adds
+  the changelog entry, and a second pull request merges `master` into
+  `release`.
+- `release` is protected as `master` is
+  ([one-package-tags.md](one-package-tags.md)): it takes pull requests with
+  passing checks only. It takes merge commits, never squashes or rebases, so
+  that a pre-release's count of commits since the latest release stays
+  right.
 - The release run checks that the version has no tag yet, and stages the
   npm publish. Once the maintainer approves it (Publishing, below), the run
   tags, creates the GitHub Release, deploys the documentation site, and
@@ -99,11 +99,10 @@ files are part of the release's documentation.
   `transformer-v0.2.0` on one-package commits made by the tag script in
   [one-package-tags.md](one-package-tags.md), and `v0.2.0` on the commit
   itself.
-- A tag ruleset restricts updates and deletions of release and pre-release
+- The tag ruleset of [one-package-tags.md](one-package-tags.md) adds release
   tags, so that nobody moves or deletes one: a consumer's lockfile records a
-  tag's commit, not the tag. CI only creates tags, so it needs no bypass.
-  The tags CI creates are not signed; the ruleset is what keeps them in
-  place. Dev tags are outside the ruleset so that a release can prune them.
+  tag's commit, not the tag. Dev tags stay outside it so that a release can
+  prune them.
 - A major or minor release deletes the dev tags whose version is below the
   major or minor release before it. Releasing 0.5.0 after 0.4.0 deletes
   every dev tag below 0.4.0, so a dev tag outlives one more major or minor
@@ -160,7 +159,7 @@ files are part of the release's documentation.
 - Emit a diagnostic from the transformer when the resolved `@rbxts/surge`
   version does not equal the transformer's own. Document the release
   procedure above, with a `CHANGELOG.md` entry, and state the targeted
-  roblox-ts and `@rbxts/types` versions and the registry install in
+  Roblox, roblox-ts and `@rbxts/types` versions and the registry install in
   [getting-started.md](../getting-started.md).
 - State in a user page what each kind of release may change, and keep to
   it. A patch release changes neither the bytes any type is written as nor

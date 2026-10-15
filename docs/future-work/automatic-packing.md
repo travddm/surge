@@ -52,7 +52,7 @@ Not in this change:
 - It changes the bytes of most shapes. The first release freezes them for a
   game that persists surge bytes
   ([schema-fingerprint.md](schema-fingerprint.md)), so it lands before that
-  release or waits for [schema-versioning.md](schema-versioning.md).
+  release.
 
 ## How, briefly
 
@@ -79,16 +79,18 @@ Not in this change:
   which must not count a byte that a bit replaces. `minBytes` leaves the
   region out today, so with a region in every object, `readChecks` bounds
   each object with a `bool` lower than it can until the region is counted.
-- Wire format 4.3, 5.5, 8.1 to 8.5 and 9.3 state the region for every
-  object, and Transformer 4.1's `Packed<T>` row, 5.5, 5.20, 5.24 and 5.25
-  follow. [data-types.md](../data-types.md)'s Packing section keeps only the `cframe`
-  and the `bitSet`, [supported-types.md](../supported-types.md)'s `boolean`
-  and optional rows drop "inside `Packed<T>`", and `Packed`'s JSDoc in
-  `surge/src/data-type.ts` and its fixture copy follow.
+- Wire format 4.3, 5.1, 5.5, 8.1 to 8.5 and 9.3 state the region for every
+  object, and Transformer 4.1's `Packed<T>` row, 5.5, 5.20, 5.24 and 5.25,
+  and Runtime API 5.3, follow. [data-types.md](../data-types.md)'s Packing
+  section keeps only the `cframe` and the `bitSet`,
+  [supported-types.md](../supported-types.md)'s `boolean` and optional rows
+  drop "inside `Packed<T>`", and `Packed`'s JSDoc in `surge/src/data-type.ts`
+  follows.
 - `bytes.spec.ts` pins the region outside `Packed<T>`, `mise run bench:size`
-  re-records the size table, and `mise run bench:code` the code-size table. In the catalog, surge's
-  `toggles (unpacked)` row writes the packed bytes; the row stays for fbs and
-  serio, and its description changes.
+  re-records the size table, and `mise run bench:code` the code-size table.
+  In the catalog, surge's `toggles (unpacked)` row writes the packed bytes;
+  the row stays for the other libraries' columns, and its description
+  changes.
 - Open: a two-value `literal`, such as `"left" | "right"`, could be one bit
   of the region as a two-variant tag is. A `literal` or `enum` of more values
   would take a field of several bits, which is a wire-format rule of its own.

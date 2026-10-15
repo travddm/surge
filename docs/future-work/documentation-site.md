@@ -30,18 +30,24 @@ differ.
 
 The first release waits for the site
 ([ci-and-release.md](ci-and-release.md)), and the release run deploys it.
-It comes after the one-package tags ([one-package-tags.md](one-package-tags.md)),
-which finish the move into one repository.
+It does not depend on the one-package tags
+([one-package-tags.md](one-package-tags.md)).
 
 ## How, briefly
 
 - Build with VitePress. It reads `docs/` in place (`srcDir`), and a relative
-  link between Markdown files, such as `../specs/runtime-api.md`, resolves
-  as written, so the documents need no change to be published. It has local
+  link between Markdown files inside `docs/`, such as
+  `../specs/runtime-api.md`, resolves as written. It has local
   search, a dark mode, and a home-page layout with a hero and feature cards.
   It is a Node tool, a devDependency of the root npm project. Starlight's
   documentation shows links written as site routes only, and Material for
   MkDocs has been in maintenance mode since November 2025.
+- Two kinds of link do not resolve on the site, and VitePress fails a build
+  on a dead link unless told otherwise. A link from the root of the
+  repository, such as `/docs/benchmarks/size.md`, which the benchmark tables
+  and the papers' data files hold and the speed recorder writes; and a link
+  out of `docs/`, such as the contributor pages' links to `AGENTS.md`. Either
+  the links and the recorder change, or the site links them to GitHub.
 - The home page is a new `docs/index.md` in that layout. The root
   `README.md` stays the home page on GitHub.
 - The navigation has one part per audience. `docs/guide/` keeps the user
@@ -56,19 +62,23 @@ which finish the move into one repository.
   exception: when a file moves, a link to it is updated, because the new
   path changes nothing the paper reports. The move then updates the five
   links.
-- [contributing-docs.md](../contributing-docs.md) names the user pages, and
-  the index in `AGENTS.md` and the root `README.md` link to them. All three
-  change with the move.
+- Every link to a moved page changes with the move: in
+  [contributing-docs.md](../contributing-docs.md), which names the user
+  pages, the index in `AGENTS.md`, the root `README.md`, the specifications,
+  whose edits take a Changes line, the packages' `README.md` files, the
+  transformer's `AGENTS.md`, the future-work documents, and code comments.
 - A folder's `README.md` stays a page at its own path, such as
   `/specs/README`. A `rewrites` entry could make it the folder's index page,
-  but links would then have to name the rewritten path, and fourteen links
-  in `docs/` name a `README.md`.
+  but links would then have to name the rewritten path, and links across
+  `docs/` name a `README.md`.
 - Papers link to their data files under `research/data/`: Markdown tables
   and `.tsv` files. The site publishes them, or links them to GitHub at the
   release's tag.
-- VitePress compiles each page as a Vue component, so `{{ }}` or a tag-like
-  `<Name>` outside code would be read as a template; fenced code blocks are
-  exempt. Today every such text in `docs/` is in a fenced block. Building
+- VitePress compiles each page as a Vue component, so a tag-like `<Name>`
+  outside code, or `{{ }}` outside a fenced code block, would be read as a
+  template. Its guide shows HTML inside inline code as written, and does not
+  say whether a code span exempts `{{ }}`: the first build checks it. Today
+  `docs/` holds neither but this item's own `{{ }}`, in a code span. Building
   the site on every pull request keeps it that way, and `v-pre` escapes a
   case that needs it.
 - Check that the code highlighter, Shiki, colors Luau as well as TypeScript.

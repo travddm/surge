@@ -1,8 +1,8 @@
 //!optimize 2
 import { Assert, Fact } from "@rbxts/runit";
-import { createCodec } from "@rbxts/surge";
+import { DataType, createCodec } from "@rbxts/surge";
 
-import { Rng, difference } from "../support";
+import { Rng, difference, hex } from "../support";
 
 // Mutual recursion: neither type refers to itself directly.
 interface Folder {
@@ -29,6 +29,21 @@ type Nest = Nest[];
 const nestSerializer = createCodec<Nest>();
 type Branch = [number, Branch[]];
 const branchSerializer = createCodec<Branch>();
+
+// Recursion through a dictionary alone, an index signature or a `Map` that
+// holds itself, with no object of properties or union on the cycle.
+interface Tree {
+	[name: string]: Tree;
+}
+const treeSerializer = createCodec<Tree>();
+type Graph = Map<string, Graph>;
+const graphSerializer = createCodec<Graph>();
+
+// A count width around the container the cycle runs through.
+type Rows = DataType.Length<Rows[], DataType.u8>;
+const rowsSerializer = createCodec<Rows>();
+type Counted = DataType.Length<Map<string, Counted>, DataType.u16>;
+const countedSerializer = createCodec<Counted>();
 
 function randomFolder(rng: Rng, depth: number): Folder {
 	const entries = new Array<Entry>();
@@ -90,6 +105,33 @@ class RecursionTest {
 		];
 		const writtenBranch = branchSerializer.serialize(branch);
 		Assert.equal(undefined, difference(branch, branchSerializer.deserialize(writtenBranch)));
+	}
+
+	@Fact
+	public roundTripsRecursionThroughADictionaryAlone(): void {
+		const tree: Tree = { a: {}, b: { c: {}, d: { e: {} } } };
+		const writtenTree = treeSerializer.serialize(tree);
+		Assert.equal(undefined, difference(tree, treeSerializer.deserialize(writtenTree)));
+
+		const graph: Graph = new Map<string, Graph>([
+			["a", new Map<string, Graph>()],
+			["b", new Map<string, Graph>([["c", new Map<string, Graph>()]])],
+		]);
+		const writtenGraph = graphSerializer.serialize(graph);
+		Assert.equal(undefined, difference(graph, graphSerializer.deserialize(writtenGraph)));
+	}
+
+	@Fact
+	public roundTripsACountedContainerOfItself(): void {
+		const rows: Rows = [[], [[]]];
+		const writtenRows = rowsSerializer.serialize(rows);
+		Assert.equal(undefined, difference(rows, rowsSerializer.deserialize(writtenRows)));
+
+		const counted: Counted = new Map<string, Counted>([["a", new Map<string, Counted>()]]);
+		const writtenCounted = countedSerializer.serialize(counted);
+		// count 1 as a u16 | "a" | its value's count 0 as a u16
+		Assert.equal("0100" + "0161" + "0000", hex(writtenCounted));
+		Assert.equal(undefined, difference(counted, countedSerializer.deserialize(writtenCounted)));
 	}
 
 	@Fact

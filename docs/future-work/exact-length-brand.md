@@ -30,13 +30,11 @@ each form its own sentence in every document and its own diagnostics.
 
 It renames a documented form, so it lands before the first release, after
 [literal-parameters.md](literal-parameters.md), which gives `Length` its
-string widths. The branch that found it only moved the exact form to the front
-of `Length`'s JSDoc.
+string widths.
 
 ## How, briefly
 
-- `surge/src/data-type.ts` and the fixture copy in
-  `rbxts-transformer-surge/test/fixtures/rbxts-surge/data-type.ts` declare
+- `surge/src/data-type.ts` declares
   `Exact<T, N extends number> = T & { readonly _surge_exact?: [T, N] }`, which
   follows the brand rules in [coding-standards.md](../coding-standards.md):
   the value type first, and `N` with no default, as `Length`'s `L` has none.
@@ -46,11 +44,15 @@ of `Length`'s JSDoc.
   and a new `walkExact` parses the literal and calls `withLength` with the
   number, so the `Field` tree and the emitter are unchanged.
 - Wire format 6.1 to 6.8 name `Exact` where they say "a whole number
-  literal"; Transformer 4.1, 4.3, 5.14, 5.18, 5.19, 5.22 and 7.2 follow, and
-  Runtime API 3.10 and 3.11. [data-types.md](../data-types.md)'s Counts
-  section becomes two, and [supported-types.md](../supported-types.md)'s
-  sentence on `Length` names both.
-- The tests that spell the exact form, in `walk.test.ts`, `bytes.spec.ts`,
-  `checks.spec.ts` and `collections.spec.ts`, spell `Exact` instead, and
+  literal"; Transformer 4.1, 4.3, 5.14, 5.19, 5.20, 5.21, 5.22, 7.2 and 8
+  follow, and Runtime API 3.10 and 3.11, and the JSDoc of `writeChecks` in
+  `surge/src/serializer.ts`. [data-types.md](../data-types.md)'s opening
+  sample and its Counts section, which becomes two,
+  [errors-and-guarantees.md](../errors-and-guarantees.md)'s Two options table
+  and Writing values section, and
+  [supported-types.md](../supported-types.md)'s sentence on `Length` name
+  both.
+- The tests that spell the exact form, in `walk.test.ts`, `transform.test.ts`,
+  `bytes.spec.ts`, `checks.spec.ts` and `collections.spec.ts`, spell `Exact` instead, and
   `walk.test.ts` gains the diagnostic for a literal under `Length`, which the
   transformer keeps where the constraint is bypassed, as through `any`.

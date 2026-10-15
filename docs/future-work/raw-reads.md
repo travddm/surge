@@ -33,6 +33,9 @@ or `__iter` metamethod of the value then runs.
   conformance table names: the value's properties, lengths and `for … in`
   loops under `emit/` in `rbxts-transformer-surge`. Each needs its raw form,
   and the facts that pin the round trip need to run under both.
+- Only a table has raw reads. A datatype's component, such as a `Vector3`'s
+  `X`, is read from userdata, where `rawget` raises, so the option reads a
+  datatype as it does today.
 - With the option, 5.7 changes from "only through metamethods" to "never",
   and 5.6 and 5.9 no longer apply to a value read raw.
 - Its speed against plain reads is unmeasured. The speed tier would measure

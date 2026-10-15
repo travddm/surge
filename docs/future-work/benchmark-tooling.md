@@ -21,17 +21,16 @@ control than one whose code cannot, and a measurement that reads fbs or
 serio as a control on a single row can read a change of field order as
 drift.
 
-**A readable `Blink: Booleans` encode cell.** surge's encode of that row lands
-in one of two modes per Studio run, about 157k to 177k values a second or
-about 215k, with nothing changed between the runs. Four invocations on
-2026-09-27 ran one of each mode three times and the lower one twice
-([per-element-encode.md](../research/per-element-encode.md)). fbs's and serio's
-cells on the row agree across the runs of each invocation. A cell that pools
-a run of each mode is past the recorder's 10% spread rule, so the row's
-encode has not been readable in the last two measurements. The cause is not
-known. The row is a thousand booleans, each a one-byte write, so a cost per
-element that differs between Studio processes, such as where native code or
-the buffer lands, would show here first.
+**A readable `Blink: Booleans` encode cell.** The row's encode lands in one
+of two modes per Studio run, with nothing changed between the runs. surge's
+cell lands at about 157k to 177k values a second or about 215k: four
+invocations on 2026-09-27 ran one of each mode three times and the lower one
+twice ([per-element-encode.md](../research/per-element-encode.md)). A cell
+that pools a run of each mode is past the recorder's 10% spread rule. fbs's
+and serio's cells agree across the runs. The cause is not known. The row is a
+thousand booleans, each a one-byte write, so a cost per element that differs
+between Studio processes, such as where native code or the buffer lands,
+would show here first.
 
 **A third tier, for wire cost.** `Stats.DataSendKbps` in a real Roblox
 client and server is Blink's own benchmark method, and the only measure that
@@ -45,9 +44,10 @@ unchanged `catalog.zap` gave three different `server.luau` and
 Zap modules when no definition changed, and that diff can hide one that
 matters.
 
-**A row that gives `writeChecks` code.** No row has a `DataType.Range`
-number or an exact `DataType.Length`, so `writeChecks` generates nothing on
-any of them, and what it costs a `serialize` is not measured
+**A `surge (writeChecks)` column.** `writeChecks` generates code on most rows,
+since it compares each number of an integer width with what the width holds
+(Transformer 5.14 in [specs/transformer.md](../specs/transformer.md)), but no
+column times it, so what it costs a `serialize` is not measured
 ([read-checks-cost.md](../research/read-checks-cost.md)).
 
 **A Zap-shaped timing.** Zap has no callable encoder, so it is a size column
@@ -65,8 +65,8 @@ batches it, and [networking.md](networking.md) is where that would come from.
 A Zap-shaped timing has no driver either, and a transcription would measure
 the transcription as much as Zap.
 
-A `writeChecks` row has no driver: the option costs nothing on a type with
-neither brand, and nothing yet asks what it costs on one that has them.
+A `surge (writeChecks)` column has no driver: nothing yet asks what the
+option costs.
 
 Zap's order changes no number, and a regeneration that changed no
 definition can be reverted.
@@ -100,7 +100,5 @@ booleans`) across several Studio processes, and look for what differs
 5. Look for a `zap` option or a later version that orders its output.
    Otherwise, have `bench:definitions` leave the Zap modules as they are when
    `catalog.zap` has not changed.
-6. Have the recorders' notes count the baseline's rows from the catalog rather
-   than state a number, and add `code-size.md` to the generated-files table.
-7. A `writeChecks` row, with a `surge (writeChecks)` column timed on encode
-   only, only if what the option costs becomes a question.
+6. A `surge (writeChecks)` column, timed on encode only, only if what the
+   option costs becomes a question.

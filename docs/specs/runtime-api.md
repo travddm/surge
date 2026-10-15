@@ -1,7 +1,7 @@
 # Runtime API specification
 
 Status: current
-Applies to: commit `7915680` (no tagged release yet)
+Applies to: commit `6742343` (no tagged release yet)
 
 ## 1. Scope
 
@@ -87,8 +87,9 @@ them what to emit. Each defaults to `false`. `readChecks` governs
 3.11).
 
 **3.9** The package exports the `DataType` namespace of width, length, range,
-quantization and packing brands, and `DataType.Width`, the union of the width
-brands, for a type over widths to take as a constraint. What each brand does
+per-component width (`Vector`, `Transform`), quantization and packing
+brands, and `DataType.Width`, the union of the width brands, for a type over
+widths to take as a constraint. What each brand does
 to the bytes is in [wire-format.md](wire-format.md). A property typed
 `DataType.Width` itself is a diagnostic (Transformer 7.2).
 
@@ -110,8 +111,8 @@ or numbers: a value in the exact form is truncated or padded as
 [wire-format.md](wire-format.md) 6.3 and 6.7 state, a count too large for its
 width wraps as 6.8 states, and a number outside its width wraps as 4.15
 states, whatever its `DataType.Range`. `writeChecks` examines no other value,
-and no number of a float width: a plain `number`, an `f32` and an `f64` hold
-any number.
+and no number of a float width that has no `DataType.Range`: a plain
+`number`, an `f32` and an `f64` hold any number.
 
 **3.12** `Serialized<T>` decides in the type system whether `T` can hold a
 blob field, by the rows of Transformer 4.1 that make a `blob`: `unknown`,
@@ -121,8 +122,9 @@ properties. It looks through unions, arrays, tuples, `Map`, `Set`, objects,
 records and the `DataType` brands, and meets each type on a recursive path
 once. Where it cannot tell, it is the table, whose `blobs` is then always
 empty. A type that declares its own `_nominal_*` property is one such `T`. A
-call site whose `serialize` passes a blob where `Serialized<T>` is `buffer` is
-a diagnostic (Transformer 7.3).
+call site other than a cursor codec's whose `serialize` writes, or whose
+`deserialize` reads, a blob where `Serialized<T>` is `buffer` is a diagnostic
+(Transformer 7.3).
 
 **3.13** The package's own exports are the four factories, `createCursor`,
 the types `Codec`, `CheckedCodec`, `Serializer`, `Deserializer`,
@@ -162,8 +164,8 @@ the caller read from `cursor.buffer` before the call is then not the one
 written to. `write` appends the value's blobs to `cursor.blobs`, after the
 values already in it, in the order 3.6 states. `writeChecks` governs `write`
 as it governs `serialize` (3.10 and 3.11). `write` does not check the
-cursor, which the caller builds: an `offset` past the buffer's length raises a
-Luau error, not one of the package's.
+cursor, which the caller builds: for a `T` that writes bytes, an `offset` past
+the buffer's length raises a Luau error, not one of the package's.
 
 **3.17** `read(cursor)` reads a value of `T` at `cursor.offset` of
 `cursor.buffer`, takes its blobs from `cursor.blobs` starting at
@@ -176,7 +178,9 @@ itself, which the caller builds.
 
 **3.18** `size` is the number of bytes every value of `T` writes, where that
 does not depend on the value, and `undefined` otherwise: the size of
-Transformer 5.20 where it reads nothing of the value.
+Transformer 5.20 where it reads nothing of the value. A `T` that 5.20 does
+not size has none, such as an object whose packed region holds a tag bit,
+even where every value writes the same bytes.
 
 **3.19** `createCursor(bytes?: buffer, blobs?: Array<defined>): Cursor`
 returns a new cursor whose `buffer` is `bytes`, whose `blobs` is `blobs`, and
@@ -278,7 +282,8 @@ recursive type, and into the closure otherwise (3.16 and 3.17).
 
 **5.3** Neither side of a `Packed<T>` bit region calls a helper. The write
 side is emitted inline, one whole byte at a time, and the read side reads
-each byte once and tests its bits inline (Transformer 5.24).
+each of the region's first 32 bytes once, and a later byte once per bit, and
+tests its bits inline (Transformer 5.24).
 
 **5.4** A `serialize` of a `T` that reserves no bytes, such as a `T` whose
 every field is a `blob`, has no scratch buffer. It calls neither `grow` nor
@@ -291,7 +296,8 @@ blobs are appended and read inline. A serializer whose `T` holds no recursive
 type declares this state in `serialize` and `deserialize` themselves, so it
 belongs to a call (Transformer 5.9). Such a `serialize` creates its list at
 the most blobs its value appends, where Transformer 5.9 counts them, for
-which it reads the length of each `array` that holds a blob one more time.
+which it reads the length of each `array` that holds a blob one more time,
+unless the size bound that length to a local (Transformer 5.20).
 Otherwise it creates the list empty. A value whose `__len`
 metamethod answers that read differently changes only the length the list is
 created at, unless `table.create` does not accept the answer, which raises.
@@ -317,7 +323,7 @@ call that 5.6 forbids: by calling a serializer itself, or, in the case
 of the iterator function that an `__iter` metamethod returns, by yielding
 while another thread calls one. Luau lets that iterator yield from release
 0.736, and from release 0.722 behind a flag; in an earlier release, the yield
-raises. `__index` and `__len` cannot yield.
+raises. `__index`, `__newindex` and `__len` cannot yield.
 
 **5.8** A call of one serializer may start while a call of a different
 serializer is running. Each call then returns what it returns when it runs
@@ -327,12 +333,14 @@ alone.
 5.20) creates its result at that size and writes into it. It calls neither
 `grow` nor `finishWrite`, and its buffer and write cursor belong to the call.
 It reads each length, count and presence it sizes the result from twice, once
-to size the result and once to write it, except the length of a `str` or a
-`buffer` that the size binds to a local (Transformer 5.20), which it reads
-once, and the length of an `array` that holds a blob, which it reads a third
-time for its blob list (5.5). It makes each union's tests, a tag's comparisons or a guarded union's
-guards, twice. It iterates each `array` of unions, of objects whose size
-varies, or of arrays twice, so an `__iter`
+to size the result and once to write it, except one that the size binds to a
+local (Transformer 5.20), which it reads once: the length of a `str`, of a
+`buffer`, or of an `array` whose count is variable-length, and the presence
+of an `optional` whose value it binds. It reads the length of an `array`
+that holds a blob one more time for its blob list, as 5.5 states. It makes
+the tests of each union whose variants differ in size, a tag's comparisons or
+a guarded union's guards, twice. It iterates twice each `array` whose
+elements are unions, objects or arrays whose size varies, so an `__iter`
 metamethod's iterator runs twice in one call. A value whose metamethods answer
 the second read or iteration differently gets a result of the wrong size: a
 longer answer raises, and a shorter one leaves bytes at the end that
@@ -358,11 +366,11 @@ A test file named `*.spec.ts` is under `tests/src/tests/`. A path starting
 | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 3.1–3.3                     | `factories.spec.ts`: round trip through a codec and through a separate serializer and deserializer                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | 3.4                         | Source only: `notConfigured` in `src/serializer.ts`; no test runs a factory untransformed                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
-| 3.5                         | `bytes.spec.ts`, which compares every pinned encoding's whole buffer                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| 3.5                         | `bytes.spec.ts`, which compares every pinned encoding's whole buffer, except the long forms of a count, whose head and length it compares                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 | 3.6                         | `roblox.spec.ts`: `passesUnknownAndInstanceValuesThroughTheBlobChannel`, `keepsLaterBlobsInPlaceWhenAnUnknownIsUndefined`, `writesNoBlobForAnAbsentOptionalBlob`; the buffer alone: `factories.spec.ts`: `passesTheBufferAloneForAShapeWithNoBlob`, and `test/golden.test.mjs`: a shape with no blob field returns the buffer alone; the empty array: `rbxts-transformer-surge` `test/transform.test.ts`, `transform (end-to-end)`                                                                                                                                                                                              |
 | 3.7                         | `factories.spec.ts`: `passesTheBufferAloneForAShapeWithNoBlob`; `test/golden.test.mjs`: `deserialize` takes what `serialize` returned; `rbxts-transformer-surge` `test/transform.test.ts`, `transform (end-to-end)`: the declared table at a `createDeserializer` call site                                                                                                                                                                                                                                                                                                                                                     |
 | 3.8                         | `test/golden.test.mjs`: a serializer without `readChecks` carries no read-side check, and one with it carries them; `rbxts-transformer-surge` `test/transform.test.ts`: `transform readChecks option`, `transform writeChecks option`                                                                                                                                                                                                                                                                                                                                                                                           |
-| 3.9                         | Source: `src/data-type.ts`; each brand's bytes are pinned in `bytes.spec.ts`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| 3.9                         | Source: `src/data-type.ts`; `bytes.spec.ts` pins the bytes of each brand but `DataType.i32`, which `numbers.spec.ts` round-trips                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
 | 3.10                        | `checks.spec.ts`: `rejectsAnExactLengthValueOfAnyOtherLength`, `letsAnExactArrayOfOptionalsBeShorterButNotLonger`, `rejectsACountPastItsWidth`, `rejectsANumberItsRangeDoesNotAdmit`, `rejectsANumberItsWidthCannotHold`                                                                                                                                                                                                                                                                                                                                                                                                        |
 | 3.11                        | `checks.spec.ts`: `wrapsACountPastItsWidthWithoutWriteChecks`, `wrapsANumberOutsideItsRangeWithoutWriteChecks`, `wrapsANumberOutsideItsWidthWithoutWriteChecks`; a float width: `rejectsANumberItsWidthCannotHold`; `collections.spec.ts`: `padsAShortExactArrayOfOptionalsInsteadOfRaising`                                                                                                                                                                                                                                                                                                                                    |
 | 3.12                        | `rbxts-transformer-surge` `test/transform.test.ts`, `transform (end-to-end)`: the declared result has a blobs array exactly when the walk finds a blob, on fourteen shapes; every call site under `tests/src/`, each of which Transformer 7.3 would reject. Source: `Serialized` in `src/serializer.ts`                                                                                                                                                                                                                                                                                                                         |
@@ -397,6 +405,15 @@ A test file named `*.spec.ts` is under `tests/src/tests/`. A path starting
 
 ## Changes
 
+- `6742343`: 3.11 excepts a float width under a range from what `writeChecks`
+  leaves unexamined; 5.9 reads once every length and presence the size binds
+  (Transformer 5.20), not only a `str`'s or a `buffer`'s length, and names the
+  unions and arrays it reads twice. 3.9 names the per-component brands; 3.12
+  adds the read side to its diagnostic; 3.16 limits its Luau error to a `T`
+  that writes bytes; 3.18 gives no size to a `T` Transformer 5.20 does not
+  size; 5.3 reads a region's bytes past its first 32 once per bit; 5.5 reads a
+  bound length from its local; 5.7 names `__newindex`. Conformance 3.5 and 3.9
+  name what `bytes.spec.ts` leaves out.
 - `7915680`: 5.6 adds that a `serialize` that copies the scratch buffer from
   the closure writes over the bytes a running call has written in it.
 - `5745202`: 5.2 has a `serialize` that is not sized exactly, of a `T` that

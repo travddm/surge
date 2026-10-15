@@ -37,7 +37,7 @@ They share one repository so that every commit holds a pair that works
 together. The generated code calls the runtime package's helpers with no
 version negotiation, so the two work together only at the versions they were
 built against ([specs/runtime-api.md](specs/runtime-api.md) section 6). CI
-checks both packages at each commit, and a change that spans both is one
+checks both packages at the same commit, and a change that spans both is one
 commit. A consumer installs both at the same version;
 [future-work/ci-and-release.md](future-work/ci-and-release.md) holds the
 backstop that would check it.
@@ -45,9 +45,10 @@ backstop that would check it.
 npm cannot install a package from a subdirectory of a git repository: the
 `github:owner/repo#ref::path:subdir` form parses, but the installer ignores
 the subdirectory and installs the repository root. Neither package is
-released yet. A release publishes each package to the npm registry from its
-own directory, and a one-package tag, on a commit whose root is one package's
-directory, lets another project install a build from git
+released yet, and nothing makes a one-package tag yet. A release will publish
+each package to the npm registry from its own directory, and a one-package
+tag, on a commit whose root is one package's directory, will let another
+project install a build from git
 ([future-work/one-package-tags.md](future-work/one-package-tags.md) and
 [future-work/ci-and-release.md](future-work/ci-and-release.md)).
 

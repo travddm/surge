@@ -32,13 +32,14 @@ it lands before the first release or not at all.
 
 ## How, briefly
 
-- `CursorCodec` in `surge/src/serializer.ts` and the fixture copy; the
-  property names `buildReplacement` in `rbxts-transformer-surge/src/index.ts`
-  emits for a cursor codec.
-- Runtime API 3.15 to 3.17, 5.2 and 5.6, Transformer 5.3 and 5.30,
+- `CursorCodec` in `surge/src/serializer.ts`, and the property names
+  `buildReplacement` in `rbxts-transformer-surge/src/index.ts` emits for a
+  cursor codec.
+- Runtime API 3.15 to 3.17, 3.19, 5.2 and 5.6, Transformer 5.3 and 5.30,
   [getting-started.md](../getting-started.md)'s Four factories table and Many
   values in one buffer section, and
-  [errors-and-guarantees.md](../errors-and-guarantees.md)'s Two options table.
+  [errors-and-guarantees.md](../errors-and-guarantees.md)'s Two options table
+  and its Reading what a client sent and One call at a time sections.
 - `cursor.spec.ts`, the golden check of a cursor codec in
   `surge/test/golden.test.mjs`, the cursor codec's type checks in
   `transform.test.ts`, and the `surge (cursor)` adapter in

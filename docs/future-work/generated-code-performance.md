@@ -116,7 +116,10 @@ that two runs of unchanged code disagree by
 ([baseline-cframe-read.md](../research/baseline-cframe-read.md)). The one
 difference left in that read is the `Vector3` surge reads the rotation
 into, where the hand-written codec holds three numbers; three numbers
-would take two more locals than 5.5 counts for a `cframe`. The gap had
+would take two more locals than 5.5 counts for a `cframe`. That read is
+today's axis-angle form, which [transform-rotation.md](transform-rotation.md)
+keeps as `"AxisAngle"`; its `"Matrix"` default reads no `Vector3`, so the
+row is measured again in that form. The gap had
 a part paid once per call and a part paid per element
 ([generated-code-against-hand-written.md](../research/generated-code-against-hand-written.md)
 and its correction), and the papers listed above measured each change that
@@ -156,7 +159,7 @@ cursor codec (Runtime API 3.15 in
 caller owns and reuses instead. The speed tier's `surge (cursor)` column
 times writing that way against `serialize` (Benchmark harness 4.14 in
 [specs/benchmark-harness.md](../specs/benchmark-harness.md)), and no paper
-has read it yet.
+has compared the two yet.
 
 **A cursor codec's write.** A cursor codec writes every shape through the
 scratch path, with a capacity check at each reservation (Transformer 5.3). A
@@ -222,7 +225,11 @@ blocks is read as `const result = {}` plus one assignment per field, so its
 table grows by rehashing instead of being sized once by a table constructor.
 A tuple's table is created at the number of its fixed elements (Transformer
 5.21), because the rest's count follows them in the bytes, so a tuple with a
-rest still grows its table as the rest is stored.
+rest still grows its table as the rest is stored. Where an object's packed
+region holds a two-variant tag, the region's byte compares the tag property,
+and the union's write then reads the property again into a local for its own
+tests (Transformer 5.25): two reads where the write could bind one local for
+both. A value whose tag property has an `__index` metamethod runs it twice.
 
 **The per-function `@native` attribute, and typed Luau.** Neither is reachable
 through the AST roblox-ts hands a transformer. `@native` has no `ts.factory`
@@ -262,8 +269,8 @@ not add them itself: the generated code is inlined into the call site's own
 file (Transformer 5.1 in [specs/transformer.md](../specs/transformer.md)), so
 a file-level `--!native` would also compile whatever unrelated code that file
 holds. If surge is ever to inject it, the check is not "one serializer call
-and its export": a module may declare several serializers, three of the
-benchmark fixtures do, and may import types from anywhere, since none of that
+and its export": a module may declare several serializers, and may import
+types from anywhere, since none of that
 reaches the Luau. What a check would have to establish is that the module
 emits no other runtime code, which is a statement about what its statements
 compile to and not about how many serializers it declares. `--!optimize 2` is
@@ -277,16 +284,22 @@ its own run against a reference taken in the same session, scoped as
 [testing.md](../testing.md#benchmarks) requires, and read against the
 untouched libraries in the same runs as controls. The
 per-call gap is closed on the flat struct, the nested object, the `CFrame`
-array, the packed toggles, the leaderboard, the tree, the instance
+array's encode, the packed toggles, the leaderboard, the tree, the instance
 references, the tagged union, the tuples and the nested arrays.
 Everything else is small, or has had a row to be measured on only since the
 catalog gained the tuples with a rest and the sequences (Benchmark harness
 3.1 in [specs/benchmark-harness.md](../specs/benchmark-harness.md)).
 
+The items with a row come after the planned changes to the bytes, which
+change the `CFrame` read and the paths a packed object takes, and before the
+first release, which records the speed tier on its code
+([README.md](README.md)). No item changes a byte, so an item the release
+does not take stays open here for a later release.
+
 ## How, briefly
 
 - Measure each change on its own, as a probe or a before-and-after pair,
-  with the four untouched columns in the same run as the control. Read medians,
+  with the untouched columns in the same run as the control. Read medians,
   not single cells: how far two runs of unchanged code differ, on a column and
   on a cell, is [noise-in-the-speed-tier.md](../research/noise-in-the-speed-tier.md).
 - A golden check in `test/golden.test.mjs` for each change that lands. The

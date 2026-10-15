@@ -1639,15 +1639,23 @@ function writeVariants(
 	}
 }
 
-/** Whether a union holds more than one `enum` variant, which `typeIs` alone cannot tell apart. */
+/**
+ * Whether a union holds an `enum` variant beside another enum's items, a
+ * second `enum` or one item of another enum, which `typeIs` alone cannot tell
+ * apart: the `enum` variant sorts first, so its bare `"EnumItem"` test would
+ * take the other enum's item.
+ */
 export function severalEnums(variants: ReadonlyArray<Field>): boolean {
-	return variants.filter((variant) => variant.kind === "enum").length > 1;
+	const enums = variants.filter((variant) => variant.kind === "enum").length;
+	const items = variants.filter((variant) => variant.kind === "literalConst" && typeof variant.value === "object");
+	return enums > 1 || (enums === 1 && items.length > 0);
 }
 
 /**
  * The test that picks `field` among a guarded union's variants. Where the
- * union holds more than one enum (`byEnumType`), an `enum` variant is also
- * tested by membership in its own items' index, which holds only the items
+ * union holds another enum's items beside an enum (`byEnumType`, by
+ * `severalEnums`), an `enum` variant is also tested by membership in its own
+ * items' index, which holds only the items
  * it admits. The index is keyed by the item itself (`ensureEnumTable` in
  * context.ts), so the test reads no property of the item.
  */

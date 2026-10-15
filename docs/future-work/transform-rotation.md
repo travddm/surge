@@ -91,14 +91,13 @@ runs under Lune, whose `CFrame` is its own implementation.
   the original, for random rotations, the 24 axis-aligned ones, and rotations
   built with `CFrame.Angles`, `CFrame.lookAt` and `CFrame.fromMatrix`. If it
   does not, the default is decided again before anything else here lands.
-- `surge/src/data-type.ts` and the fixture copy declare the forms and
-  `Transform`, and lose `Quantized`; `PARAMETERIZED_BRANDS` in
-  `rbxts-transformer-surge/src/detect.ts` loses its row. `ComponentWidth` is
-  the alias [vector-brands.md](vector-brands.md) describes, declared by
-  whichever of the two lands first, and neither alias is exported. This
-  declaration type-checked with TypeScript 5.5.3, on the five spellings above
-  and `Transform<"i16", "i32", "u8", "Quantized">`. Five misuses each failed:
-  a width after a form, in two places, two forms, `"f64"`, and `number`.
+- `surge/src/data-type.ts` declares the forms and `Transform`, and loses
+  `Quantized`; `PARAMETERIZED_BRANDS` in `rbxts-transformer-surge/src/detect.ts`
+  loses its row. `ComponentWidth` is the alias
+  [vector-brands.md](vector-brands.md) declares, and neither alias is exported.
+  This declaration type-checked with TypeScript 5.5.3, on the five spellings
+  above and `Transform<"i16", "i32", "u8", "Quantized">`. Five misuses each
+  failed: a width after a form, in two places, two forms, `"f64"`, and `number`.
 
     ```ts
     type ComponentWidth = "f32" | "u8" | "u16" | "u24" | "u32" | "i8" | "i16" | "i24" | "i32";
@@ -118,33 +117,39 @@ runs under Lune, whose `CFrame` is its own implementation.
     ```
 
 - `walkTransform` in `rbxts-transformer-surge/src/walk.ts` reads the
-  arguments in order: widths up to the first form, and `never` after it. The
+  arguments in order: string literal widths up to the first form, through the
+  `componentWidths` that [vector-brands.md](vector-brands.md) leaves for the
+  vector brands, and `never` after it. The
   `cframe` field's `quantized` flag becomes a `rotation` of the three forms,
   and `walkQuantized` is removed.
 - `writeCFrame` in `emit/write.ts` takes the twelve numbers from one
   `GetComponents` call for `"Matrix"`, and `readCFrame` in `emit/read.ts`
   reads twelve numbers into one `CFrame.new`. Transformer 5.5 counts the
   twelve locals the write declares, where it counts five today, so fewer
-  `CFrame`s share a run. `cframeBytes` and the rotation constants in
-  `emit/constants.ts` follow.
+  `CFrame`s share a run. `cframeBytes` in `emit/layout.ts` and the
+  rotation constants in `emit/constants.ts` follow.
 - `writePackedCFrame` and `readPackedCFrame` in `surge/src/cframe.ts` write
   and read rotation code 31 in the field's form, which the generated call
   passes; whether that is an argument or one function per form is measured.
-  `PACKED_CFRAME_MAX_BYTES` and the `readChecks` bound of Transformer 5.12
+  `PACKED_CFRAME_MAX_BYTES` in the transformer's `emit/constants.ts` and the
+  `readChecks` bound of Transformer 5.12
   follow the form. The 1e-6 snap of Wire format 8.7 stays: a rotation that
   close to axis-aligned comes back as the aligned one even under
   `"Matrix"`, and [data-types.md](../data-types.md)'s Packing section says
   so.
-- Wire format 4.8 states the `"Matrix"` form and its components' order, 7.4
-  the three forms, and 8.6 the packed sizes and the form inside a packed
-  subtree. Transformer 4.1's two brand rows become one, 4.3 drops
-  `Quantized`, 4.15 is withdrawn, and 5.5, 5.12, 5.27, 7.2 and 8 follow. Rule
-  3 of the brand rules in [coding-standards.md](../coding-standards.md) spells
-  the new `Transform`. [specs/runtime-api.md](../specs/runtime-api.md)'s mention
-  of `Transform`, [data-types.md](../data-types.md)'s Vector and CFrame widths
-  and Packing sections, [supported-types.md](../supported-types.md)'s `CFrame`
-  row, [schema-fingerprint.md](schema-fingerprint.md)'s list of flags, and
-  the `CFrame` note of
+- Wire format 4.8 states the `"Matrix"` form and its components' order, 7.1
+  and 7.2 `Transform`'s last argument and its default, 7.4 the three forms,
+  and 8.6 the packed sizes and the form inside a packed subtree. Transformer
+  4.1's two brand rows become one, 4.3 drops `Quantized`, 4.15 is withdrawn,
+  and 5.5, 5.12, 5.27, 7.2 and 8 follow. Rule 3 of the brand rules in
+  [coding-standards.md](../coding-standards.md) spells the new `Transform`.
+  [specs/runtime-api.md](../specs/runtime-api.md)'s mention of `Transform`,
+  the brands its 3.9 names, and the `writePackedCFrame` and
+  `readPackedCFrame` rows of its 5.1 if their signature changes,
+  [data-types.md](../data-types.md)'s Vector and CFrame widths and Packing
+  sections, [supported-types.md](../supported-types.md)'s `CFrame` row,
+  [schema-fingerprint.md](schema-fingerprint.md)'s list of flags, and the
+  `CFrame` note of
   [generated-code-performance.md](generated-code-performance.md) follow.
 - `walk.test.ts`'s `Quantized<T>` block moves into the `Transform` block,
   with each spelling and each misuse. `bytes.spec.ts` pins each form and the

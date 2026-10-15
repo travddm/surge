@@ -39,6 +39,23 @@ function propertySignature(ctx: EmitContext, entry: ObjectFieldEntry): ts.Proper
 	);
 }
 
+/**
+ * A `Record` keyed by `string` or `number`, written as the type literal
+ * `{ [key: K]: V }`. `Record` is an alias itself, and a helper's alias that
+ * holds `Record<string, T>` where the checker resolves it at once, as in
+ * `type T = Record<string, T> | number`, is circular, where a type literal may
+ * name the alias it is part of. Any other key keeps `Record`, which a type
+ * literal's index signature may not take.
+ */
+function recordTypeNode(ctx: EmitContext, key: Field, value: Field): ts.TypeNode {
+	const f = ctx.factory;
+	if (key.kind !== "str" && key.kind !== "num") {
+		return f.createTypeReferenceNode("Record", [fieldToTypeNode(ctx, key), fieldToTypeNode(ctx, value)]);
+	}
+	const parameter = f.createParameterDeclaration(undefined, undefined, "key", undefined, fieldToTypeNode(ctx, key));
+	return f.createTypeLiteralNode([f.createIndexSignature(undefined, [parameter], fieldToTypeNode(ctx, value))]);
+}
+
 export function objectShapeTypeNode(
 	ctx: EmitContext,
 	fields: ReadonlyArray<ObjectFieldEntry>,
@@ -104,10 +121,7 @@ export function fieldToTypeNode(ctx: EmitContext, field: Field): ts.TypeNode {
 		case "dict":
 			// A `Record` is not assignable to a `Map`, and `readDict` returns one for this source.
 			if (field.source === "record" && field.value) {
-				return f.createTypeReferenceNode("Record", [
-					fieldToTypeNode(ctx, field.key),
-					fieldToTypeNode(ctx, field.value),
-				]);
+				return recordTypeNode(ctx, field.key, field.value);
 			}
 			return field.value
 				? f.createTypeReferenceNode("Map", [fieldToTypeNode(ctx, field.key), fieldToTypeNode(ctx, field.value)])

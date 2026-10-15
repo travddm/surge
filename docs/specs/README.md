@@ -67,7 +67,7 @@ what a reader needs in order to apply a statement correctly.
 | [wire-format.md](wire-format.md)             | The bytes each `Field` kind writes, the brands that change them, `Packed<T>`, the blob channel, and determinism.                   |
 | [transformer.md](transformer.md)             | Which calls the transformer transforms, how each type is classified, what it emits, and the diagnostics it reports.                |
 | [test-harness.md](test-harness.md)           | The correctness suites, how the round-trip suite runs under Lune, its sentinel line and exit code, and what a run rebuilds first.  |
-| [benchmark-harness.md](benchmark-harness.md) | The benchmark catalog and columns, both tiers' protocols, the sentinel lines, and what each results file records.                  |
+| [benchmark-harness.md](benchmark-harness.md) | The benchmark catalog and columns, each tier's protocol, the sentinel lines, and what each results file records.                   |
 
 Every specification the restructure planned is written. A new one follows the
 format above and is listed here.

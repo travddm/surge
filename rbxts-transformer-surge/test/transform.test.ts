@@ -459,6 +459,17 @@ describe("transform generated code", () => {
 		["a required property of type unknown", `interface T { anything: unknown; }`],
 		["an array of itself", `type T = T[];`],
 		["a tuple holding an array of itself", `type T = [number, T[]];`],
+		// The helper's own type alias names itself, which a `Record` cannot.
+		["an index signature of itself", `interface T { [k: string]: T; }`],
+		["a Map of itself", `type T = Map<string, T>;`],
+		["a Set of itself", `type T = Set<T>;`],
+		["a union holding an index signature of itself", `interface D { [k: string]: T; } type T = D | number;`],
+		["an array of index signatures of itself", `interface D { [k: number]: T; } type T = D[];`],
+		["a tuple holding a Record of itself", `type T = [number, Record<string, T>];`],
+		[
+			"a counted Map of itself",
+			`import { DataType } from "@rbxts/surge"; type T = DataType.Length<Map<string, T>, DataType.u16>;`,
+		],
 		["properties of type undefined and void", `interface T { a: undefined; b: void; c: number; }`],
 		["an optional property of type unknown", `interface T { anything?: unknown; list: unknown[]; }`],
 		// More than five items, so the item list is filled from a string of names.

@@ -22,7 +22,7 @@ At the root, each task covers the root files and both packages:
 
 | Task                                           | Does                                                                      |
 | ---------------------------------------------- | ------------------------------------------------------------------------- |
-| `mise run setup`                               | install every tool and every npm project                                  |
+| `mise run setup`                               | install every tool, and the npm projects of the root and both packages    |
 | `mise run ci`                                  | every check, in order; must pass before a change is done                  |
 | `mise run lint:fix`, `mise run format:fix`     | apply ESLint, markdownlint and Prettier fixes                             |
 | `mise run lint:check`, `mise run format:check` | the same checks, reporting without fixing                                 |
@@ -57,10 +57,10 @@ surge only:
 
 - `surge/tests/` holds copies of both packages, not links. After a change to
   either one, `mise run tests:install` copies it again; `mise run ci` and the
-  benchmark tasks do that first
+  benchmark tasks that build `tests/` do that first
   ([specs/test-harness.md](specs/test-harness.md) section 6).
 - A change that spans both packages is one commit. CI checks both packages
-  at every commit (see CI in [testing.md](testing.md)).
+  at the same commit (see CI in [testing.md](testing.md)).
 - A change that moves bytes changes `tests/src/tests/bytes.spec.ts` and the
   size table in the same commit.
 - Documentation changes in the same commit as the code it describes; the
@@ -72,8 +72,8 @@ surge only:
 Each package's `.vscode/tasks.json` maps its `mise` tasks to VS Code tasks,
 labeled `surge: <task>` or `transformer: <task>`, except surge's
 `bench:code`, `bench:definitions` and the two `:only` tasks. The root's adds
-`repository: <task>` for the root tasks. Each has a Windows shell override to
-Git Bash, because the tasks assume a POSIX shell.
+`repository: <task>` for `setup`, `ci`, `lint:fix` and `format:fix`. Each has
+a Windows shell override to Git Bash, because the tasks assume a POSIX shell.
 
 `surge.code-workspace` opens three folders in one window: surge, the
 transformer, and the repository root, which shows `docs/` and the root files

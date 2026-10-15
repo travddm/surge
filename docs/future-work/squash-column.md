@@ -23,7 +23,7 @@ library that consumers weigh against surge, not a new design.
 The column is a new comparison, not part of the generated-code work it was
 found during, and its version has to be chosen first (below).
 
-## Constraints
+## How, briefly
 
 - **Which Squash.** The current release is 5.0.0, on Wally and GitHub
   (2026-01-04). The only npm package, `@rbxts/squash` 3.0.0-ts.0
@@ -42,17 +42,11 @@ found during, and its version has to be chosen first (below).
   untagged union is counted.
 - **Each cell round-trips** as Benchmark harness 6.6 requires, so a cell the
   size table records as exact must be exact in Roblox too.
-
-## Result
-
-A Squash column in `docs/benchmarks/size.md`, `code-size.md` and
-`speed.md`, its version pinned in the benchmark's header, and a research
-paper that reports its bytes, bytecode and speed against surge, as
-[research/flamework2-column.md](../research/flamework2-column.md) does for
-Flamework 2.
-
-## Notes
-
+- **The result** is a Squash column in `docs/benchmarks/size.md`,
+  `code-size.md` and `speed.md`, its version pinned in the benchmark's header,
+  and a research paper that reports its bytes, bytecode and speed against
+  surge, as [research/flamework2-column.md](../research/flamework2-column.md)
+  does for Flamework 2.
 - Squash is a runtime library with no transformer, so unlike Flamework 2
   (Benchmark harness 4.10–4.12) it needs no project of its own: its
   definitions can live in `tests/src/bench/codecs/` beside fbs's and

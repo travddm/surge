@@ -19,8 +19,6 @@ Assert.equal(undefined, difference(value, createCodec<Reading>().deserialize(buf
 a module constant, the form [getting-started.md](../getting-started.md)
 shows, is not affected.
 
-## Why
-
 surge's transformer runs before Flamework's, as getting-started.md
 recommends. It replaces the factory call with the generated code, and
 TypeScript's visitor then rebuilds every node that encloses the call,
@@ -41,7 +39,7 @@ The fix belongs in Flamework, and reporting it upstream is a separate
 decision. The pattern is rare outside tests, and assigning the factory's
 result, or the value read through it, to a local first avoids it.
 
-## Constraints
+## How, briefly
 
 - The transformers' order is the consumer's, set in their `tsconfig.json`.
   surge runs before Flamework because Flamework rewrites its macros into
@@ -49,20 +47,13 @@ result, or the value read through it, to a local first avoids it.
   nodes that Flamework rebuilt.
 - surge cannot keep TypeScript from rebuilding the nodes around a node it
   replaces, so the macro's call has no source file whatever surge emits.
-
-## Result
-
-One of these:
-
-- **Upstream.** Flamework reads caller metadata from
-  `ts.getOriginalNode(node)`, which still has its source file. A test in
-  `tests/src/tests/factories.spec.ts` would then call `Assert.equal` with a
-  factory call inside its arguments.
-- **Documented.** getting-started.md states the limitation and the
-  workaround, next to the order of the transformers.
-
-## Notes
-
+- The fix is one of these:
+    - **Upstream.** Flamework reads caller metadata from
+      `ts.getOriginalNode(node)`, which still has its source file. A test in
+      `tests/src/tests/factories.spec.ts` would then call `Assert.equal` with
+      a factory call inside its arguments.
+    - **Documented.** getting-started.md states the limitation and the
+      workaround, next to the order of the transformers.
 - `roundTripsThroughFactoriesCalledInPlace` in
   `tests/src/tests/factories.spec.ts` reads its results into locals for this
   reason, and its comment says so.

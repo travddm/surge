@@ -1,7 +1,7 @@
 # Test harness specification
 
 Status: current
-Applies to: commit `ea6d802` (no tagged release yet)
+Applies to: commit `6742343` (no tagged release yet)
 
 ## 1. Scope
 
@@ -27,8 +27,8 @@ tiers are in [benchmark-harness.md](benchmark-harness.md). What each step of
 ## 3. The suites
 
 **3.1** The transformer tests run in Node with no Luau involved, and cover
-the walk, the emitter's output for each `Field` kind, the end-to-end
-transform of a fixture program, and detection.
+the walk, the emitter's output for each `Field` kind, the cursor fold, the
+end-to-end transform of a fixture program, and detection.
 
 **3.2** The golden checks run in Node against the compiled Luau under
 `tests/out/`, and two of them against this package's own `out/`: its
@@ -46,6 +46,13 @@ compare otherwise:
 - Part of `checks.spec.ts` decodes hand-written payloads that no `serialize`
   writes, and asserts what the read accepts or rejects.
 - `support.spec.ts` tests `difference` itself.
+- `cursor.spec.ts` compares a cursor's fields, a codec's `size` and blob
+  fields, and calls `grow` directly.
+- The blob and sequence facts of `roblox.spec.ts` compare fields by identity,
+  and the sequences with `Assert.equal`.
+- Part of `packed.spec.ts` asserts header bytes and bits.
+- Facts in `strings.spec.ts` and `unions.spec.ts` check only a byte length.
+- A fact of `bytes.spec.ts` checks a length and decoded fields (3.5).
 - `selection.spec.ts` runs no generated code: it tests which columns a scoped
   benchmark run keeps (Benchmark harness 9.3 in
   [benchmark-harness.md](benchmark-harness.md)).
@@ -56,7 +63,8 @@ suite runs as part of the round-trip suite.
 
 **3.5** `tests/src/tests/bytes.spec.ts` pins the exact bytes of shapes whose
 encoding is final: each fact compares an encoding with a fixed expected
-string. It does not pin a union with an enum member.
+string, but `roundTripsAHeadWiderThanTheScratchBufferStartsAt`, which checks a
+length and decoded fields.
 
 ## 4. The round-trip suite under Lune
 
@@ -96,12 +104,13 @@ resolved against that package's directory.
 **4.5** Lune does not provide `Random`, so a fuzz loop draws from the seeded
 `Rng` in `tests/src/support.ts`. Because the `DateTime` stand-in reports as a
 table, no fixture uses a `DateTime` as a union member, and because Lune's
-enum database lacks members of every enum above 256 members, no fixture uses
-one; the wide enum index is pinned at the transformer level instead. Lune
-returns a new `Vector3` value on every access, equal by `==` but not the
-same table key, so no round trip keys a `Map` or `Set` by one. No round trip
-keys one by an enum item either, though the `Enum` of 4.3 would allow it.
-The transformer's type check of the generated code covers both keys.
+enum database lacks members of `Enum.KeyCode`, the enum above 256 members a
+fixture would use, no fixture uses one; the wide enum index is pinned at the
+transformer level instead. Lune returns a new `Vector3` value on every access,
+equal by `==` but not the same table key, so no round trip keys a `Map` or `Set`
+by one. No round trip keys one by an enum item either, though the `Enum` of 4.3
+would allow it. The transformer's type check of the generated code covers both
+keys.
 
 **4.6** The shim creates, in `ReplicatedStorage`, the remotes the generated
 Blink and Zap server modules look up when they are required:
@@ -127,15 +136,16 @@ the last sentinel line it printed is `RUNIT_RESULT: PASSED`.
 
 **5.4** `check-test-output.mjs` kills the Lune command and exits non-zero
 when the command has not exited `SURGE_TEST_TIMEOUT` seconds plus a fixed 10
-seconds after it started. `SURGE_TEST_TIMEOUT` is 60 by default. A value that
-is not a positive whole number stops the script with exit code 2 before the
-command runs.
+seconds after it started. `SURGE_TEST_TIMEOUT` is 60 by default, and when it is
+empty. Any other value that is not a positive whole number stops the script
+with exit code 2 before the command runs.
 
 ## 6. Rebuilding before a run
 
 **6.1** The snapshot is a copy, not a link: `tests/.npmrc` sets
 `install-links=true`. An edit to either package does not reach a run until
-`npm run tests:install` copies it again.
+`npm run tests:install` copies it again and `npm run tests:compile` builds
+`tests/out/` from the copy.
 
 **6.2** `npm run tests:install` deletes both snapshots and
 `tests/out/tsconfig.tsbuildinfo` before installing, through
@@ -152,9 +162,9 @@ file in its `lib/` for the snapshot to copy.
 
 | Statement | Pinned by                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 3.1       | `rbxts-transformer-surge` `test/`: `walk.test.ts`, `emit.test.ts`, `transform.test.ts`, `detect.test.ts`                                                                                                                                                                                                                                                                                                                                                                                                      |
+| 3.1       | `rbxts-transformer-surge` `test/`: `walk.test.ts`, `emit.test.ts`, `fold.test.ts`, `transform.test.ts`, `detect.test.ts`                                                                                                                                                                                                                                                                                                                                                                                      |
 | 3.2       | `test/golden.test.mjs`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
-| 3.3       | `tests/src/tests/*.spec.ts`; `tests/src/tests/support.spec.ts` tests the whole-value comparison itself. The exceptions: `basic.spec.ts`, part of `coverage.spec.ts`, the `CFrame` comparisons in `roblox.spec.ts` and `packed.spec.ts`, part of `checks.spec.ts`, and `selection.spec.ts`                                                                                                                                                                                                                     |
+| 3.3       | `tests/src/tests/*.spec.ts`; `tests/src/tests/support.spec.ts` tests the whole-value comparison itself. The exceptions: `basic.spec.ts`, part of `coverage.spec.ts`, the `CFrame` comparisons in `roblox.spec.ts` and `packed.spec.ts`, part of `checks.spec.ts`, `selection.spec.ts`, `cursor.spec.ts`, the blob and sequence facts of `roblox.spec.ts`, part of `packed.spec.ts`, facts in `strings.spec.ts` and `unions.spec.ts`, and a fact of `bytes.spec.ts`                                            |
 | 3.4       | Source: `main()` in `tests/src/index.ts` runs only `script.WaitForChild("tests")`                                                                                                                                                                                                                                                                                                                                                                                                                             |
 | 3.5       | `tests/src/tests/bytes.spec.ts`. Unverified: that every encoding [wire-format.md](wire-format.md) treats as final has a fact there                                                                                                                                                                                                                                                                                                                                                                            |
 | 4.1–4.3   | Source: `tests/scripts/lune-test-runner.luau` and `tests/scripts/lune-roblox-shim.luau`; every round-trip run exercises them                                                                                                                                                                                                                                                                                                                                                                                  |
@@ -169,6 +179,11 @@ file in its `lib/` for the snapshot to copy.
 
 ## Changes
 
+- `6742343`: 3.1 and its row name the cursor fold's tests; 3.5 no longer says
+  that a union with an enum member is unpinned, which `bytes.spec.ts` pins,
+  and names its fact that compares no string. 3.3 and its row list every fact
+  that compares otherwise; 4.5 names the enum Lune lacks; 5.4 reads an empty
+  timeout as the default; 6.1 needs `tests:compile` as well.
 - `ea6d802`: no statement changes. The 3.3 row names part of `coverage.spec.ts`
   and part of `checks.spec.ts` among the exceptions, as 3.3 does.
 - `9da6b2c`: 3.3 adds `selection.spec.ts` among the facts that compare

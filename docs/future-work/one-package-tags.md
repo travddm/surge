@@ -23,6 +23,10 @@ run:
 Release tags, which the same script makes, come with the release
 ([ci-and-release.md](ci-and-release.md)).
 
+A consumer's lockfile records a tag's commit, so a pre-release tag must stay
+where CI made it, and each push to `master` makes two. `master` is not
+protected, and the repository has no tag ruleset.
+
 Both facts this rests on were checked on 2026-10-08 with npm 11.5.2:
 
 - npm ignores a `::path:<subdir>` suffix on a git dependency and installs
@@ -36,8 +40,11 @@ Both facts this rests on were checked on 2026-10-08 with npm 11.5.2:
 
 ## Why deferred
 
-It lands right after the move into one repository, which it needs: a
-one-package commit is made from a package's directory.
+It needs one repository holding both packages, since a one-package commit is
+made from a package's directory. It comes before the API changes
+([README.md](README.md)), so that each can be tried in another project
+through a pre-release tag before the first release freezes it. The first
+release uses its tag script ([ci-and-release.md](ci-and-release.md)).
 
 ## How, briefly
 
@@ -59,8 +66,13 @@ one-package commit is made from a package's directory.
   version.
 - `workflow_dispatch` exists only once the workflow file is on the default
   branch. It can then run against any branch.
-- The tags CI creates are not signed. Protecting release and pre-release
-  tags, and pruning dev tags, come with the release
-  ([ci-and-release.md](ci-and-release.md)).
+- `master` is protected: it takes pull requests with passing checks only, so
+  nothing reaches it, and its pre-release tags, without review. `release` and
+  its protection come with the release ([ci-and-release.md](ci-and-release.md)).
+- A tag ruleset restricts updates and deletions of pre-release tags, so that
+  nobody moves or deletes one. CI only creates tags, so it needs no bypass.
+  The tags CI creates are not signed; the ruleset is what keeps them in
+  place. Release tags join the ruleset with the release, and dev tags stay
+  outside it, so that a release can prune them.
 - [getting-started.md](../getting-started.md) then gives the install from a
   pre-release tag, until the first release.

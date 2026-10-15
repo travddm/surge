@@ -32,7 +32,8 @@ Every column but serio runs with `--!native` and `--!optimize 2`.
 `flamework2` is the experimental Flamework 2's `Flamework.createSerializer`.
 On every call, its `deserialize` checks each count against the bytes left,
 raises on a union tag it does not know, and raises unless it read the whole
-buffer; surge's examines its input only under `readChecks`.
+buffer; surge's examines its buffer only under `readChecks`, and raises the
+blob channel's two errors without it.
 
 `surge (cursor)` is surge's cursor codec, writing every value into one
 `Cursor` it reuses.

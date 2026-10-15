@@ -457,10 +457,10 @@ if (value !== undefined) {
 
 // read
 if (__surge_readBlobs === undefined) {
-    throw "@rbxts/surge: deserialize() encountered a blob field but its input has no blobs array";
+    error("@rbxts/surge: deserialize() encountered a blob field but its input has no blobs array", 0);
 }
 if (__surge_readBlobIndex >= __surge_readBlobs!.size()) {
-    throw "@rbxts/surge: deserialize read past the end of the blobs array";
+    error("@rbxts/surge: deserialize read past the end of the blobs array", 0);
 }
 const blob1 = __surge_readBlobs![__surge_readBlobIndex] as unknown as defined;
 __surge_readBlobIndex += 1;
@@ -1370,10 +1370,10 @@ buffer.writef64(__surge_scratch, pos2, value.b);
 
 // read
 if (__surge_readBlobs === undefined) {
-    throw "@rbxts/surge: deserialize() encountered a blob field but its input has no blobs array";
+    error("@rbxts/surge: deserialize() encountered a blob field but its input has no blobs array", 0);
 }
 if (__surge_readBlobIndex >= __surge_readBlobs!.size()) {
-    throw "@rbxts/surge: deserialize read past the end of the blobs array";
+    error("@rbxts/surge: deserialize read past the end of the blobs array", 0);
 }
 const blob3 = __surge_readBlobs![__surge_readBlobIndex] as unknown as defined;
 __surge_readBlobIndex += 1;
@@ -1460,23 +1460,23 @@ exports[`Emitter read-side checks a count is bounded by what the rest of the inp
 const pos7 = __surge_readCursor;
 __surge_readCursor = pos7 + 1;
 if (__surge_readCursor > __surge_inputLength) {
-    throw "@rbxts/surge: deserialize read past the end of the input buffer";
+    error("@rbxts/surge: deserialize read past the end of the input buffer", 0);
 }
 let count8 = buffer.readu8(__surge_input, pos7);
 if (count8 >= 254) {
     if (pos7 + (count8 === 254 ? 3 : 5) > __surge_inputLength) {
-        throw "@rbxts/surge: deserialize read past the end of the input buffer";
+        error("@rbxts/surge: deserialize read past the end of the input buffer", 0);
     }
     [count8, __surge_readCursor] = __surge_readLongCount(__surge_input, pos7, count8);
 }
 if (count8 * 8 > __surge_inputLength - __surge_readCursor) {
-    throw "@rbxts/surge: deserialize found a count larger than the input buffer can hold";
+    error("@rbxts/surge: deserialize found a count larger than the input buffer can hold", 0);
 }
 const result9 = new Array<number>(count8);
 const pos11 = __surge_readCursor;
 __surge_readCursor = pos11 + count8 * 8;
 if (__surge_readCursor > __surge_inputLength) {
-    throw "@rbxts/surge: deserialize read past the end of the input buffer";
+    error("@rbxts/surge: deserialize read past the end of the input buffer", 0);
 }
 let element12 = pos11;
 for (const i10 of $range(1, count8)) {
@@ -1491,7 +1491,7 @@ exports[`Emitter read-side checks every read is bounded against the input length
 const pos2 = __surge_readCursor;
 __surge_readCursor = pos2 + 4;
 if (__surge_readCursor > __surge_inputLength) {
-    throw "@rbxts/surge: deserialize read past the end of the input buffer";
+    error("@rbxts/surge: deserialize read past the end of the input buffer", 0);
 }
 return buffer.readu32(__surge_input, pos2);"
 `;
@@ -1561,7 +1561,7 @@ exports[`Emitter write-side checks a Range is checked against both bounds, and a
 "// write
 const n1 = value;
 if (!(n1 >= -100 && n1 <= 100) || n1 % 1 !== 0) {
-    throw "@rbxts/surge: serialize given a number its DataType.Range does not admit";
+    error("@rbxts/surge: serialize given a number its DataType.Range does not admit", 0);
 }
 const pos2 = __surge_cursor;
 __surge_cursor = pos2 + 1;

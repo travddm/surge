@@ -683,6 +683,126 @@ describe("TypeWalker recursion through arrays and tuples", () => {
 	});
 });
 
+// No object type of properties or union is on these cycles, so before the
+// guard the walk recursed until the stack overflowed.
+describe("TypeWalker recursion through dictionaries", () => {
+	test.each([
+		["an index signature of itself", "interface Nest { [k: string]: Nest; }", "record"],
+		["an aliased index signature of itself", "type Nest = { [k: string]: Nest };", "record"],
+		["a Map of itself", "type Nest = Map<string, Nest>;", "map"],
+		["a Set of itself", "type Nest = Set<Nest>;", "set"],
+	])("%s resolves to a helper reference, not a stack overflow", (_name, source, dictSource) => {
+		const { type, node, walker, cleanup } = loadDeclaration(source, "Nest");
+		try {
+			const field = walker.walk(type, node, false);
+			expect(walker.diagnostics).toEqual([]);
+			expect(field.kind).toBe("recursiveRef");
+			if (field.kind !== "recursiveRef") throw new Error("unreachable");
+			const resolved = walker.getHelperFields().get(field.helperName);
+			expect(resolved?.kind).toBe("dict");
+			if (resolved?.kind !== "dict") throw new Error("unreachable");
+			expect(resolved.source).toBe(dictSource);
+		} finally {
+			cleanup();
+		}
+	});
+
+	test.each([
+		["an array", "export type Nest = DataType.Length<Nest[], DataType.u8>;", "array"],
+		["a Map", "export type Nest = DataType.Length<Map<string, Nest>, DataType.u8>;", "dict"],
+		[
+			"an index signature",
+			"export interface Inner { [k: string]: Nest; } export type Nest = DataType.Length<Inner, DataType.u8>;",
+			"dict",
+		],
+	])("a Length around %s of itself keeps its count in the helper", (_name, source, kind) => {
+		const { type, node, walker, cleanup } = loadDeclaration(
+			`import { DataType } from "@rbxts/surge";\n${source}`,
+			"Nest",
+			{ surge: true },
+		);
+		try {
+			const field = walker.walk(type, node, false);
+			expect(walker.diagnostics).toEqual([]);
+			if (field.kind !== "recursiveRef") throw new Error("unreachable");
+			expect(walker.getHelperFields().get(field.helperName)).toMatchObject({ kind, length: "u8" });
+		} finally {
+			cleanup();
+		}
+	});
+
+	test("a property holding a dictionary of itself resolves to a helper reference", () => {
+		const { field, diagnostics } = walkDeclaration(
+			"interface Nest { [k: string]: Nest; } interface T { tree: Nest; }",
+			"T",
+		);
+		expect(diagnostics).toEqual([]);
+		if (field.kind !== "object") throw new Error("unreachable");
+		expect(field.fields[0].field.kind).toBe("recursiveRef");
+	});
+});
+
+describe("TypeWalker recursion through an optional", () => {
+	// `next?: Link` is `Link | undefined`, which is walked as an optional
+	// `Link`: the helper is the object's, wherever the walk starts, so its
+	// presence is a packed bit and not a byte inside the helper.
+	test("an optional recursive object is an optional of the object's helper, from a property as from the root", () => {
+		const source = "interface Link { value: number; next?: Link; } interface Holder { head?: Link; }";
+		const walkPacked = (name: string): Field => {
+			const { type, node, walker, cleanup } = loadDeclaration(source, name);
+			try {
+				const field = walker.walk(type, node, true);
+				expect(walker.diagnostics).toEqual([]);
+				return field;
+			} finally {
+				cleanup();
+			}
+		};
+		const fromRoot = walkPacked("Link");
+		const fromProperty = walkPacked("Holder");
+		if (fromRoot.kind !== "object" || fromProperty.kind !== "object") throw new Error("unreachable");
+		const optionalNode = {
+			kind: "optional",
+			inner: { kind: "recursiveRef", helperName: expect.any(String) },
+			packed: true,
+		};
+		expect(fromRoot.fields.find((entry) => entry.name === "next")?.field).toEqual(optionalNode);
+		const head = fromProperty.fields[0].field;
+		if (head.kind !== "optional") throw new Error("unreachable");
+		expect(head.packed).toBe(true);
+		expect(head.inner.kind).toBe("object");
+		if (head.inner.kind !== "object") throw new Error("unreachable");
+		expect(head.inner.fields.find((entry) => entry.name === "next")?.field).toEqual(optionalNode);
+	});
+
+	test("an array of an optional recursive object is an array of optionals", () => {
+		const { field, diagnostics } = walkDeclaration(
+			"interface Link { next?: Link; } interface T { list: Array<Link | undefined>; }",
+			"T",
+		);
+		expect(diagnostics).toEqual([]);
+		if (field.kind !== "object") throw new Error("unreachable");
+		const list = field.fields[0].field;
+		if (list.kind !== "array") throw new Error("unreachable");
+		expect(list.element.kind).toBe("optional");
+	});
+
+	test.each([
+		["an optional literal union keeps undefined as a value", 'type T = "a" | "b" | undefined;', "literal"],
+		["an optional boolean is an optional bool", "type T = boolean | undefined;", "optional"],
+		["a union with void keeps void as a variant", "type T = string | void;", "guardedUnion"],
+	])("%s", (_name, source, kind) => {
+		const { field, diagnostics } = walkDeclaration(source, "T");
+		expect(diagnostics).toEqual([]);
+		expect(field.kind).toBe(kind);
+	});
+
+	test("an optional union with null still reports null", () => {
+		const { diagnostics } = walkDeclaration("interface T { a?: string | null; }", "T");
+		expect(diagnostics.map((diagnostic) => diagnostic.message)).toEqual([expect.stringContaining('"null"')]);
+	});
+});
+
 describe("TypeWalker undefined, void and never", () => {
 	test("undefined and void walk as a constant that writes nothing", () => {
 		const { field, diagnostics } = walkDeclaration("interface T { a: undefined; b: void; }", "T");
@@ -768,6 +888,30 @@ describe("TypeWalker type parameters", () => {
 		["a type parameter constrained to an object type", "interface Box<T extends { a: number }> { v: T; }"],
 		["keyof a type parameter", "interface Box<T> { k: keyof T; }"],
 		["an indexed access on a type parameter", 'interface Box<T extends { a: number }> { a: T["a"]; }'],
+		// A mapped type over a type parameter is an object type with the
+		// constraint's properties, or none, rather than a type parameter.
+		["Partial of a type parameter", "interface Box<T> { p: Partial<T>; }"],
+		["Partial of a constrained type parameter", "interface Box<T extends { a: number }> { p: Partial<T>; }"],
+		["a Record keyed by keyof a type parameter", "interface Box<T> { r: Record<keyof T, number>; }"],
+		["a mapped type over keyof a type parameter", "interface Box<T> { m: { [K in keyof T]: number }; }"],
+		["Omit of a type parameter", 'interface Box<T extends { a: number }> { o: Omit<T, "a">; }'],
+		[
+			"a mapped type over keyof a type parameter and string",
+			"interface Box<T> { m: { [K in keyof T & string]: number }; }",
+		],
+		[
+			"a mapped type over a type parameter's keys or a literal",
+			'interface Box<K extends string> { m: { [P in K | "x"]: number }; }',
+		],
+		[
+			"a Record keyed by a template of a type parameter",
+			"interface Box<K extends string> { r: Record<`id-${K}`, number>; }",
+		],
+		[
+			"a Record keyed by an uppercase type parameter",
+			"interface Box<K extends string> { r: Record<Uppercase<K>, number>; }",
+		],
+		["a type parameter and an object", "interface Box<T> { v: T & { a: number }; }"],
 	])("a property whose type is %s is a diagnostic", (_name, source) => {
 		const { diagnostics } = walkDeclaration(source, "Box");
 		expect(diagnostics.map((diagnostic) => diagnostic.message)).toEqual([
@@ -788,6 +932,45 @@ describe("TypeWalker type parameters", () => {
 					name: "box",
 					field: { kind: "object", fields: [{ name: "v", field: { kind: "num", width: "f64" } }] },
 				},
+			],
+		});
+	});
+
+	test("a mapped type over a concrete type walks as the type it maps to", () => {
+		const { field, diagnostics } = walkDeclaration(
+			`interface Foo { a: number; }
+			interface T {
+				p: Partial<Foo>;
+				r: Readonly<Foo>;
+				s: Record<string, number>;
+				k: Record<"x" | "y", number>;
+			}`,
+			"T",
+		);
+		expect(diagnostics).toEqual([]);
+		const num = { kind: "num", width: "f64" };
+		expect(field).toEqual({
+			kind: "object",
+			fields: [
+				{
+					name: "k",
+					field: {
+						kind: "object",
+						fields: [
+							{ name: "x", field: num },
+							{ name: "y", field: num },
+						],
+					},
+				},
+				{
+					name: "p",
+					field: {
+						kind: "object",
+						fields: [{ name: "a", field: { kind: "optional", inner: num, packed: false } }],
+					},
+				},
+				{ name: "r", field: { kind: "object", fields: [{ name: "a", field: num }] } },
+				{ name: "s", field: { kind: "dict", key: { kind: "str" }, value: num, source: "record" } },
 			],
 		});
 	});
@@ -1523,6 +1706,16 @@ describe("TypeWalker Width", () => {
 		expect(diagnostics[0].message).toContain('"DataType.Width" is the union of the number widths');
 		expect(diagnostics[0].message).toContain('"DataType.u8"');
 		expect(diagnostics[0].node.getText()).toBe("w: DataType.Width;");
+	});
+
+	test("an optional property typed as the union is the same diagnostic", () => {
+		const { diagnostics } = walkDeclaration(
+			`import { DataType } from "@rbxts/surge"; interface T { w?: DataType.Width; }`,
+			"T",
+			{ surge: true },
+		);
+		expect(diagnostics).toHaveLength(1);
+		expect(diagnostics[0].message).toContain('"DataType.Width" is the union of the number widths');
 	});
 
 	test("the union as a Length width is Length's own diagnostic", () => {

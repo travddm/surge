@@ -25,7 +25,8 @@ read the package's version too.
 The stand-in waits on nothing. A drift between it and surge's declarations
 fails surge's round-trip suite, which compiles through the transformer
 against the real package, so the copy is extra upkeep rather than a hidden
-risk.
+risk. It goes first in the order ([README.md](README.md)), since each change
+to surge's declarations planned after it edits the copy as well.
 
 ## How, briefly
 

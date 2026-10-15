@@ -12,7 +12,8 @@ Part of the [surge](../architecture.md) design.
   `Vector3D` does for a `Vector3`'s. `Y` defaults to `X`, and `X` to `"f32"`,
   so the all-default brand writes what a bare `Vector2` writes (Wire format 4.6
   in [specs/wire-format.md](../specs/wire-format.md)).
-- `"f64"` is not a component width of `Vector2D`, `Vector3D` or `Transform`.
+- `"f64"` is not a component width of `Vector2D` or `Vector3D`, nor, from
+  [transform-rotation.md](transform-rotation.md), of `Transform`.
   A `Vector2`, a `Vector3` and a `CFrame` hold `f32` components, so an `f64`
   component writes 4 bytes more and keeps nothing `f32` does not.
 
@@ -57,17 +58,17 @@ existing byte (rule 4 of the brand rules), but it shares the rename's code.
 
 ## How, briefly
 
-- `surge/src/data-type.ts` and the fixture copy declare `Vector3D`, recorded
-  in `_surge_vector3d`, and `Vector2D`, in `_surge_vector2d`, each width
-  constrained by `ComponentWidth`: every width's name but `"f64"`, an alias
-  the namespace does not export, which `Transform` shares. Whichever of this
-  and [transform-rotation.md](transform-rotation.md) lands first declares it.
-  `PARAMETERIZED_BRANDS` in `rbxts-transformer-surge/src/detect.ts` names
-  both brands.
+- `surge/src/data-type.ts` declares `Vector3D`, recorded in `_surge_vector3d`,
+  and `Vector2D`, in `_surge_vector2d`, each width constrained by
+  `ComponentWidth`: every width's name but `"f64"`, an alias the namespace does
+  not export, which [transform-rotation.md](transform-rotation.md) reuses for
+  `Transform`. `PARAMETERIZED_BRANDS` in `rbxts-transformer-surge/src/detect.ts`
+  names both brands.
 - In `rbxts-transformer-surge/src/walk.ts`, `componentWidths` takes a count
-  of components, reads string literal widths, and reports anything else,
-  `"f64"` included, for every brand that calls it, `Transform` included. The
-  `vector2` field gains the component widths `vector3` has.
+  of components, reads string literal widths for `Vector3D` and `Vector2D`,
+  and reports anything else, `"f64"` included. `Transform` keeps its
+  `DataType` widths until [transform-rotation.md](transform-rotation.md)
+  respells them. The `vector2` field gains the component widths `vector3` has.
 - In `emit/`, a `vector2` is written and read through the component path a
   `vector3` takes, in place of `writeNum2` and `readVector2` at `f32`, and its
   sizes in `layout.ts` and its locals under `writeChecks` (Transformer 5.5)
@@ -77,8 +78,9 @@ existing byte (rule 4 of the brand rules), but it shares the rename's code.
   mention of `Vector`, and rule 3 of the brand rules in
   [coding-standards.md](../coding-standards.md) follow.
   [data-types.md](../data-types.md)'s example and its Vector and CFrame widths
-  section, and [supported-types.md](../supported-types.md)'s `Vector2`,
-  `Vector3` row, follow.
+  section, [supported-types.md](../supported-types.md)'s `Vector2`, `Vector3`
+  row, and [errors-and-guarantees.md](../errors-and-guarantees.md)'s Two
+  options table and Writing values section, follow.
 - `walk.test.ts`'s `Vector` block covers both brands and `"f64"`;
   `bytes.spec.ts` pins a `Vector2D`; `checks.spec.ts` and `roblox.spec.ts`
   cover its integer widths. Every other use of `DataType.Vector` in the code,
