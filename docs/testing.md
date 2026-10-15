@@ -31,9 +31,9 @@ order:
 `tests/node_modules`, which a fresh checkout does not have.
 
 `format:check`, `format:fix` and `spell` record the files that passed in
-each project's `node_modules/.cache/`, and check a file again only when the
-file, Prettier's options, or a `cspell.json` or the `cspell.shared.json` it
-imports changes. Prettier's record
+each project's `node_modules/.cache/`. Prettier checks a file again only
+when the file or its options change, and cspell only when the file, the
+project's `cspell.json` or `cspell.shared.json` changes. Prettier's record
 does not include its plugins' versions: after an update to
 `@trivago/prettier-plugin-sort-imports`, delete
 `node_modules/.cache/prettier` in each package, or `format:check` can pass a

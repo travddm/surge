@@ -20,14 +20,19 @@ transformer is plain Node, so its config has no roblox-ts rules. The other
 three tools share the root's settings:
 
 - Prettier finds the root's `.prettierrc` from every file. Its `overrides`
-  entry adds the import-sorting plugin for the two packages' files only,
-  because each package installs the plugin and the root does not.
+  entry adds the import-sorting plugin for the two packages' files only.
+  Prettier loads a plugin from the directory it runs in, and only the
+  packages install this one: each package's run loads it from its own
+  `node_modules`, and the root's `.prettierignore` keeps the root's run off
+  the packages' files.
 - Each package's `.markdownlint.json` extends the root's, because
   markdownlint reads no config above the directory it runs in.
 - Each `cspell.json` imports the root's `cspell.shared.json`, which holds
-  the one word list, and keeps its own `files` and `ignorePaths`. cspell
-  checks Markdown, text and YAML, and at the root the last commit message;
-  add a real word to `cspell.shared.json`.
+  the word list and the other settings all three share, such as
+  `ignoreRegExpList`. Each keeps its own `files`, `ignorePaths`,
+  `useGitignore` and cache. cspell checks Markdown, text and YAML, and at
+  the root the last commit message; add a real word to
+  `cspell.shared.json`.
 
 ## Formatting
 

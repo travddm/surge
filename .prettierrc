@@ -8,7 +8,7 @@
 			"files": ["surge/**", "rbxts-transformer-surge/**"],
 			"options": {
 				"plugins": ["@trivago/prettier-plugin-sort-imports"],
-				"importOrder": ["^typescript$", "^@rbxts/(.*)$", "^[../]", "^[./]"],
+				"importOrder": ["^typescript$", "^@rbxts/(.*)$", "^[./]"],
 				"importOrderParserPlugins": ["typescript", "decorators-legacy"],
 				"importOrderSeparation": true,
 				"importOrderSortSpecifiers": true
