@@ -118,7 +118,7 @@ difference left in that read is the `Vector3` surge reads the rotation
 into, where the hand-written codec holds three numbers; three numbers
 would take two more locals than 5.5 counts for a `cframe`. That read is
 today's axis-angle form, which [transform-rotation.md](transform-rotation.md)
-keeps as `"AxisAngle"`; its `"Matrix"` default reads no `Vector3`, so the
+keeps as `AxisAngle`; its `Matrix` default reads no `Vector3`, so the
 row is measured again in that form. The gap had
 a part paid once per call and a part paid per element
 ([generated-code-against-hand-written.md](../research/generated-code-against-hand-written.md)
