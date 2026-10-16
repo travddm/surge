@@ -53,8 +53,7 @@ a guarded value is written as its unbranded type is.
   or middleware in `surge-net` ([networking.md](networking.md)).
 - It changes no byte, and every call that compiles today still compiles. It
   lands with the other API changes before the first release
-  ([README.md](README.md)), after
-  [literal-parameters.md](literal-parameters.md), whose rule its `K` follows.
+  ([README.md](README.md)).
 - It is the first brand that only checks: `Range` also chooses a width where
   it names none. The rule it adds to the brand rules in
   [coding-standards.md](../coding-standards.md), and the option it adds to
@@ -64,7 +63,7 @@ a guarded value is written as its unbranded type is.
 
 - `DataType.Guarded<T, K extends string> = T & { readonly _surge_guarded?: [T, K] }`
   in `surge/src/data-type.ts`, by the brand rules. `K` is a string literal,
-  by [literal-parameters.md](literal-parameters.md).
+  since it is a name, and rule 2 of the brand rules gains that case.
 - `guards` is an object literal at the call site, as `readChecks` and
   `writeChecks` are literals (Runtime API 3.8 in
   [specs/runtime-api.md](../specs/runtime-api.md)): the transformer reads its
