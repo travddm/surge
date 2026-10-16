@@ -731,6 +731,22 @@ describe("TypeWalker recursion through dictionaries", () => {
 		}
 	});
 
+	test("an Exact around an array of itself keeps its length in the helper", () => {
+		const { type, node, walker, cleanup } = loadDeclaration(
+			`import { DataType } from "@rbxts/surge";\nexport type Nest = DataType.Exact<Array<Nest | undefined>, 2>;`,
+			"Nest",
+			{ surge: true },
+		);
+		try {
+			const field = walker.walk(type, node, false);
+			expect(walker.diagnostics).toEqual([]);
+			if (field.kind !== "recursiveRef") throw new Error("unreachable");
+			expect(walker.getHelperFields().get(field.helperName)).toMatchObject({ kind: "array", length: 2 });
+		} finally {
+			cleanup();
+		}
+	});
+
 	test("a property holding a dictionary of itself resolves to a helper reference", () => {
 		const { field, diagnostics } = walkDeclaration(
 			"interface Nest { [k: string]: Nest; } interface T { tree: Nest; }",
@@ -1332,7 +1348,7 @@ describe("TypeWalker Packed<T>", () => {
 	});
 });
 
-describe("TypeWalker Length<T, L>", () => {
+describe("TypeWalker Length<T, L> and Exact<T, N>", () => {
 	/** The `length` each named field of `T` carries, `undefined` where it carries none. */
 	function lengths(source: string): Map<string, unknown> {
 		const { field, diagnostics } = walkDeclaration(source, "T", { surge: true });
@@ -1447,14 +1463,28 @@ describe("TypeWalker Length<T, L>", () => {
 		expect(diagnostics[0].message).toContain("writes no count");
 	});
 
-	test("a numeric literal is the exact form, on every kind that can promise one", () => {
+	// A width brand is a `number`, so TypeScript accepts a number literal
+	// under `L`'s constraint, and only the walk rejects it.
+	test("a number literal is a diagnostic that names Exact", () => {
+		const { field, diagnostics } = walkDeclaration(
+			`import { DataType } from "@rbxts/surge"; interface T { s: DataType.Length<string, 8>; }`,
+			"T",
+			{ surge: true },
+		);
+		expect(diagnostics).toHaveLength(1);
+		expect(diagnostics[0].message).toContain('"DataType.Exact<T, 8>"');
+		if (field.kind !== "object") throw new Error("expected an object");
+		expect(field.fields[0].field).toEqual({ kind: "str" });
+	});
+
+	test("Exact fixes the length on every kind that can promise one", () => {
 		const byName = lengths(
 			`import { DataType } from "@rbxts/surge";
 			interface T {
-				s: DataType.Length<string, 8>;
-				arr: DataType.Length<Array<number>, 3>;
-				buf: DataType.Length<buffer, 16>;
-				tup: DataType.Length<[string, ...number[]], 2>;
+				s: DataType.Exact<string, 8>;
+				arr: DataType.Exact<Array<number>, 3>;
+				buf: DataType.Exact<buffer, 16>;
+				tup: DataType.Exact<[string, ...number[]], 2>;
 			}`,
 		);
 		expect([...byName.entries()].sort()).toEqual([
@@ -1467,28 +1497,58 @@ describe("TypeWalker Length<T, L>", () => {
 
 	// The write side counts entries as it iterates them, so it cannot promise
 	// a fixed number, and a mismatch would misread the rest of the buffer.
-	test("the exact form is a diagnostic on a Map, a Set, and a Record", () => {
+	test("Exact is a diagnostic on a Map, a Set, and a Record", () => {
 		for (const container of ["Map<string, number>", "Set<string>", "Record<string, number>"]) {
 			const { diagnostics } = walkDeclaration(
-				`import { DataType } from "@rbxts/surge"; interface T { c: DataType.Length<${container}, 4>; }`,
+				`import { DataType } from "@rbxts/surge"; interface T { c: DataType.Exact<${container}, 4>; }`,
 				"T",
 				{ surge: true },
 			);
 			expect(diagnostics).toHaveLength(1);
+			expect(diagnostics[0].message).toContain('"DataType.Exact"');
 			expect(diagnostics[0].message).toContain("counts entries as it iterates");
 		}
 	});
 
-	test("a negative or fractional exact count is a diagnostic", () => {
+	test("a negative or fractional Exact length is a diagnostic", () => {
 		for (const count of ["-1", "2.5"]) {
 			const { diagnostics } = walkDeclaration(
-				`import { DataType } from "@rbxts/surge"; interface T { arr: DataType.Length<Array<number>, ${count}>; }`,
+				`import { DataType } from "@rbxts/surge"; interface T { arr: DataType.Exact<Array<number>, ${count}>; }`,
 				"T",
 				{ surge: true },
 			);
 			expect(diagnostics).toHaveLength(1);
 			expect(diagnostics[0].message).toContain("whole number that is not negative");
 		}
+	});
+
+	// `N extends number` admits a width brand and `number` itself, and
+	// neither names a length.
+	test("an Exact length that is not a number literal is a diagnostic", () => {
+		for (const [count, expected] of [
+			["DataType.u8", '"DataType.Length<T, DataType.u8>"'],
+			["number", 'not "number"'],
+		]) {
+			const { diagnostics } = walkDeclaration(
+				`import { DataType } from "@rbxts/surge"; interface T { s: DataType.Exact<string, ${count}>; }`,
+				"T",
+				{ surge: true },
+			);
+			expect(diagnostics).toHaveLength(1);
+			expect(diagnostics[0].message).toContain("must be a whole number literal");
+			expect(diagnostics[0].message).toContain(expected);
+		}
+	});
+
+	test("Exact on a type with no length of its own is a diagnostic", () => {
+		const { diagnostics } = walkDeclaration(
+			`import { DataType } from "@rbxts/surge"; interface T { n: DataType.Exact<number, 4>; }`,
+			"T",
+			{ surge: true },
+		);
+		expect(diagnostics).toHaveLength(1);
+		expect(diagnostics[0].message).toContain('"DataType.Exact"');
+		expect(diagnostics[0].message).toContain("has no length");
 	});
 
 	// The inner type is walked before the width is checked, so a brand nested

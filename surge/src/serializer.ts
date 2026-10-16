@@ -168,7 +168,7 @@ export interface CodecOptions {
 	readonly readChecks?: boolean;
 	/**
 	 * Check, on every write, that a value fits its type: that a
-	 * `DataType.Length<T, N>` value is exactly `N` long, that a count fits the
+	 * `DataType.Exact<T, N>` value is exactly `N` long, that a count fits the
 	 * width `DataType.Length<T, L>` gives it, and that a number is one its
 	 * `DataType.Range<T, Min, Max>` admits, or, without a range, one its
 	 * integer width holds, a `DataType.Vector` or `DataType.Transform`
@@ -178,9 +178,9 @@ export interface CodecOptions {
 	 *
 	 * It catches a value this game built wrong rather than input it was sent,
 	 * so it costs a branch per container and per ranged or integer-width
-	 * number, on the write side only. A type with no narrowed or exact
-	 * `DataType.Length`, no `DataType.Range` and no integer width gets no
-	 * check, and pays nothing.
+	 * number, on the write side only. A type with no `DataType.Exact`, no
+	 * narrowed `DataType.Length`, no `DataType.Range` and no integer width gets
+	 * no check, and pays nothing.
 	 */
 	readonly writeChecks?: boolean;
 }
