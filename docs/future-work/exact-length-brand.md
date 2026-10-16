@@ -17,11 +17,10 @@ rejects it. The bytes of both forms do not change.
 
 One brand carries two encodings, and one parameter takes both: `Length`'s
 `L` is a count width or a whole number literal. The two forms differ in what
-they promise. The width form writes a count and wraps or raises past it; the exact
-form writes
-nothing, truncates or pads a value of another length, is rejected on a
-`Map`, a `Set` or a `Record`, and is compared with `!==` or `>` under
-`writeChecks` (Transformer 5.14 in
+they promise. The width form writes a count and wraps or raises past it; the
+exact form writes nothing, truncates or pads a value of another length, is
+rejected on a `Map`, a `Set` or a `Record`, and is compared with `!==` or `>`
+under `writeChecks` (Transformer 5.14 in
 [specs/transformer.md](../specs/transformer.md)). A name of its own gives
 each form its own sentence in every document and its own diagnostics.
 
@@ -41,8 +40,9 @@ It renames a documented form, so it lands before the first release.
   number, so the `Field` tree and the emitter are unchanged.
 - Wire format 6.1 to 6.8 name `Exact` where they say "a whole number
   literal"; Transformer 4.1, 4.3, 5.14, 5.19, 5.20, 5.21, 5.22, 7.2 and 8
-  follow, and Runtime API 3.10 and 3.11, and the JSDoc of `writeChecks` in
-  `surge/src/serializer.ts`. [data-types.md](../data-types.md)'s opening
+  follow, and Runtime API 3.10 and 3.11, `Length`'s JSDoc in
+  `surge/src/data-type.ts`, which documents the exact form today, and the
+  JSDoc of `writeChecks` in `surge/src/serializer.ts`. [data-types.md](../data-types.md)'s opening
   sample and its Counts section, which becomes two,
   [errors-and-guarantees.md](../errors-and-guarantees.md)'s Two options table
   and Writing values section, and

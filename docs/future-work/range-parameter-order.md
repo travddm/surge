@@ -31,6 +31,11 @@ format 4.16 in [specs/wire-format.md](../specs/wire-format.md)).
   `rbxts-transformer-surge/src/detect.ts` needs no change to find the outer
   brand.
 
+What it costs: `number` as a width means three things. In `Range` it is the
+narrowest width, as a property's type it is `f64`, and as a width of
+`Vector3D` or `Transform` it is a diagnostic
+([vector-brands.md](vector-brands.md)).
+
 ## Why deferred
 
 It changes a documented spelling, so it lands before the first release.
@@ -38,14 +43,20 @@ It changes a documented spelling, so it lands before the first release.
 ## How, briefly
 
 - `surge/src/data-type.ts` declares
-  `Range<Min extends number, Max extends number, W extends Width | number = number>`
-  as `number & { readonly _surge_range?: [Min, Max, W] }`.
+  `Range<Min extends number, Max extends number, W extends number = number>`
+  as `number & { readonly _surge_range?: [Min, Max, W] }`. `W` is a width
+  brand or `number`; every width brand is a `number`, so the constraint can
+  say no more, and the transformer reports any other `W`, such as `7`, as
+  `explicitRangeWidth` does today. `Range`'s JSDoc lists what `W` takes.
 - `walkRange` in `rbxts-transformer-surge/src/walk.ts` reads its arguments in
   the new order, and reads a `W` of `number` as it reads a `T` of `number`
   today. No width brand sits under a `Range` any more, so `getSurgeBrand`'s
   comment on one goes.
-- Rule 3 names `Range` beside `Vector` and `Transform`, and rule 4's
-  sentence on `Range` spells the new form. Wire format 4.1, 4.15, 4.16 and
+- Rule 2 of the brand rules names `number` as `Range`'s width for the
+  narrowest. Rule 3 names `Range` beside `Vector` and `Transform`. Rule 4's
+  sentence on `Range` spells the new form, and says why its width's default
+  is not `f64`: no `Range` encodes what a bare `number` does, since its
+  bounds have no default. Wire format 4.1, 4.15, 4.16 and
   4.17, Runtime API 3.10 and 3.11, Transformer 4.1, 4.3, 4.14, 5.14, 7.2 and
   8,
   [data-types.md](../data-types.md),

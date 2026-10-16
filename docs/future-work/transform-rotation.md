@@ -34,9 +34,14 @@ default stays a diagnostic. A packed `CFrame` is 1, 13, 37 or 49 bytes with
 `Matrix`, 1, 13 or 25 with `AxisAngle` as today, and 1, 7, 13 or 19 with
 `Quantized`.
 
-`DataType.f64` is not a component width of `Transform`, as
-[vector-brands.md](vector-brands.md) states for every brand that sets
-component widths, and the transformer reports it.
+`DataType.f64` stays a diagnostic as a component width of `Transform`, as
+[vector-brands.md](vector-brands.md) makes it.
+
+A property typed as a form itself, such as `cf: DataType.Quantized`, is a
+diagnostic, as one typed `DataType.Width` is: a form configures a
+`Transform` and is not the type of a value. Without it, the walk would read
+the marker as an object with one literal property, and write the `CFrame` as
+no bytes.
 
 ## Why
 
@@ -96,10 +101,13 @@ that only Roblox can run: the round-trip suite runs under Lune, whose
   does not, the default is decided again before anything else here lands.
 - `surge/src/data-type.ts` declares the three forms and `Transform`, and
   loses the `Quantized<T>` brand; `PARAMETERIZED_BRANDS` in
-  `rbxts-transformer-surge/src/detect.ts` loses its row, and `detect.ts`
-  recognizes a form by its `_surge_rotation` property, as it recognizes a
-  width brand by its own. `Rotation`, the union of the forms, is not
-  exported. This declaration type-checked with TypeScript 5.5.3 on
+  `rbxts-transformer-surge/src/detect.ts` loses its row. `detect.ts`
+  recognizes a form by the `_surge_rotation` property that surge declares,
+  and reads which form from that property's string literal type: unlike a
+  width brand, which is an intersection with a property of its own name,
+  every form is a plain object type with the same property. `Packed`'s JSDoc,
+  which names `Quantized` and the packed sizes, follows. `Rotation`, the
+  union of the forms, is not exported. This declaration type-checked with TypeScript 5.5.3 on
   2026-10-15, beside today's width brands, on the five spellings above,
   `Transform<DataType.i16, DataType.i32, DataType.u8, DataType.Quantized>`
   and `Transform<DataType.Quantized>`. Five misuses each failed: a width
@@ -155,14 +163,19 @@ that only Roblox can run: the round-trip suite runs under Lune, whose
   `CFrame` note of
   [generated-code-performance.md](generated-code-performance.md) follow.
 - `walk.test.ts`'s `Quantized<T>` block moves into the `Transform` block,
-  with each spelling and each misuse. `bytes.spec.ts` pins each form and the
-  packed sizes, and `roblox.spec.ts` round-trips each, the `Matrix` form
-  by `==`. In the catalog, surge's `CFrame` rows write `Matrix`, the
-  quantized row spells `Transform<DataType.Quantized>`, and a surge cell
-  keeps today's `AxisAngle` form measured, which
+  with each spelling and each misuse, and a property typed as a form.
+  `bytes.spec.ts` pins each form and the packed sizes, and `roblox.spec.ts`
+  round-trips each, the `Matrix` form by `==`. In the catalog, surge's
+  `CFrame` rows write `Matrix`, the quantized row spells
+  `Transform<DataType.Quantized>`, and a surge cell keeps today's `AxisAngle`
+  form measured, which
   [specs/benchmark-harness.md](../specs/benchmark-harness.md) records. The
   hand-written codec writes surge's bytes (Benchmark harness 4.5), so it
   writes `Matrix` too. `mise run bench:size`, `bench:code` and a full
   `bench:speed` re-record the tables, and a paper under
   [research/](../research/README.md) records what the new default costs and
   saves on the `CFrame` rows.
+- Open: exporting `Rotation`, for a generic type that passes a form through,
+  as `DataType.Width` is exported for one that passes a width. It is
+  additive, so it waits for a user who needs it; until then such a type
+  spells the union of the three forms.
