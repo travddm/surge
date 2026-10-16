@@ -74,13 +74,13 @@ interface Bounded {
 }
 const boundedSerializer = createCodec<Bounded>();
 
-// The exact form: a numeric literal instead of a width, so no count is
-// written at all and both sides use exactly that many bytes or elements.
+// `DataType.Exact`: no count is written at all and both sides use exactly
+// that many bytes or elements.
 interface Exact {
-	bytes: DataType.Length<buffer, 3>;
-	list: DataType.Length<DataType.u16[], 2>;
-	pair: DataType.Length<[DataType.u8, ...DataType.u8[]], 2>;
-	text: DataType.Length<string, 4>;
+	bytes: DataType.Exact<buffer, 3>;
+	list: DataType.Exact<DataType.u16[], 2>;
+	pair: DataType.Exact<[DataType.u8, ...DataType.u8[]], 2>;
+	text: DataType.Exact<string, 4>;
 }
 const exactSerializer = createCodec<Exact>();
 

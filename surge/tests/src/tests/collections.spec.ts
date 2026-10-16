@@ -80,14 +80,14 @@ const boundsSerializer = createCodec<WithBounds>();
 const EXACT_ELEMENTS = 3;
 const EXACT_BYTES = 5;
 interface WithExactLengths {
-	bytes: DataType.Length<buffer, 5>;
-	list: DataType.Length<Point[], 3>;
-	pair: DataType.Length<[string, ...number[]], 3>;
-	text: DataType.Length<string, 5>;
+	bytes: DataType.Exact<buffer, 5>;
+	list: DataType.Exact<Point[], 3>;
+	pair: DataType.Exact<[string, ...number[]], 3>;
+	text: DataType.Exact<string, 5>;
 }
 const exactSerializer = createCodec<WithExactLengths>();
 
-type ExactOptionals = DataType.Length<Array<Point | undefined>, 3>;
+type ExactOptionals = DataType.Exact<Array<Point | undefined>, 3>;
 const exactOptionalsSerializer = createCodec<ExactOptionals>();
 
 const FUZZ_ITERATIONS = 100;

@@ -10,7 +10,7 @@ interface Snapshot {
 	tick: DataType.u32; // 4 bytes instead of 8
 	health: DataType.Range<number, 0, 100>; // 1 byte, the narrowest that holds 0 to 100
 	name: DataType.Length<string, DataType.u8>; // a 1-byte count
-	code: DataType.Length<string, 4>; // exactly 4 bytes, no count
+	code: DataType.Exact<string, 4>; // exactly 4 bytes, no count
 	velocity: DataType.Vector<DataType.i16>; // 3 × 2 bytes
 	flags: DataType.Packed<{ grounded: boolean; crouching: boolean; target?: Player }>;
 }
@@ -64,25 +64,31 @@ checks the value, and one outside the width wraps as that width does.
 
 A string, a buffer, an array, a tuple's rest, a `Map`, a `Set` and a
 `Record` write a count ahead of their contents: 1 byte below 254, 3 bytes up
-to 65535, and 5 above. `Length<T, L>` changes it:
+to 65535, and 5 above. `DataType.Length<T, DataType.u8>`, `u16`, `u24` or
+`u32` writes a count of that fixed width instead. A count too large for it
+wraps, so 256 elements under a `u8` count read back as none. Set
+`writeChecks: true` on the factory to have `serialize` raise instead
+([errors-and-guarantees.md](errors-and-guarantees.md)).
 
-- `DataType.Length<T, DataType.u8>`, `u16`, `u24` or `u32` writes a count of
-  that fixed width. A count too large for it wraps, so 256 elements under a
-  `u8` count read back as none. Set `writeChecks: true` on the factory to have
-  `serialize` raise instead
-  ([errors-and-guarantees.md](errors-and-guarantees.md)).
-- `DataType.Length<T, 8>`, with a whole number, writes no count: both sides
-  use exactly that many bytes or elements. A value of any other length is
-  truncated, padded, or raises, depending on its element type, unless
-  `writeChecks` is set, which makes it raise. An array of optional elements,
-  or of a literal union that includes `undefined`, may be shorter: the missing
-  elements read back as absent.
+`Length` applies to the container it wraps, not to containers inside it, and
+always takes its second argument: only a container without it writes the
+count that depends on its value. A tuple with no rest element takes no
+`Length`, since it has no count. A number, as in `Length<string, 8>`, is a
+build error: a length fixed with no count is `Exact`.
 
-A `Map`, `Set` or `Record` takes a fixed width but not an exact count. A
-tuple with no rest element takes neither, since it has no count. `Length`
-applies to the container it wraps, not to containers inside it, and always
-takes its second argument: only a container without it writes the count that
-depends on its value.
+## Exact lengths: `Exact<T, N>`
+
+`DataType.Exact<T, N>`, with `N` a whole number, as in `Exact<string, 8>`,
+writes no count: both sides use exactly `N` bytes or elements. It applies to
+a string, a buffer, an array and a tuple's rest, and to the container it
+wraps only. A `Map`, `Set` or `Record` cannot take it, since the write side
+counts entries as it iterates them.
+
+A value of any other length is truncated, padded, or raises, depending on
+its element type, unless `writeChecks` is set, which makes it raise. An array
+of optional elements, or of a literal union that includes `undefined`, may be
+shorter: the missing elements read back as absent. Use `Exact` only where the
+length is fixed by construction.
 
 ## Vector and CFrame widths
 

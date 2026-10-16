@@ -289,6 +289,18 @@ describe("getDataTypeBrand / getSurgeBrand", () => {
 		).toEqual(expected);
 	});
 
+	test("reads Exact<T, N>'s two type arguments, aliased and re-aliased", () => {
+		const expected = { name: "Exact", args: ["string", "4"] };
+		expect(
+			brandOfP(`import { DataType } from "@rbxts/surge"; interface T { p: DataType.Exact<string, 4>; }`),
+		).toEqual(expected);
+		expect(
+			brandOfP(
+				`import { DataType } from "@rbxts/surge"; type Code = DataType.Exact<string, 4>; interface T { p: Code; }`,
+			),
+		).toEqual(expected);
+	});
+
 	// The width brand's property is on the same intersection as the range's,
 	// and it is the inner brand, so reading it first would drop the range.
 	test("a re-aliased Range over a width brand is not read as the width", () => {

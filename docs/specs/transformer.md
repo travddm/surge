@@ -1,7 +1,7 @@
 # Transformer specification
 
 Status: current
-Applies to: commit `6742343` (no tagged release yet)
+Applies to: commit `9a131ce` (no tagged release yet)
 
 ## 1. Scope
 
@@ -67,6 +67,7 @@ declarations (4.10).
 | a type that depends on a type parameter, such as `T`, `keyof T` or `T["a"]`                                                                      | a diagnostic (4.9)                                                |
 | `DataType.Packed<T>`                                                                                                                             | `T`'s kind, with `T` walked as a packed subtree                   |
 | `DataType.Length<T, L>`                                                                                                                          | `T`'s kind, with the count `L` sets                               |
+| `DataType.Exact<T, N>`                                                                                                                           | `T`'s kind, with the exact length `N`                             |
 | `DataType.Vector<X, Y, Z>`, `DataType.Transform<X, Y, Z>`                                                                                        | `vector3` with component widths, `cframe` with position widths    |
 | `DataType.Range<T, Min, Max>`                                                                                                                    | `num` with a range (4.14)                                         |
 | `DataType.Quantized<T>`                                                                                                                          | `cframe` with a quantized rotation (4.15)                         |
@@ -108,15 +109,17 @@ any value but `undefined` into it, a number or a string included, and zero
 bytes would read that value back as an empty table.
 
 **4.2** An object type, a union, an array, a tuple, a `Map`, a `Set`, a type
-with an index signature or a `DataType.Length<T, L>` that reappears on its own
-walk path is a `recursiveRef` to its first occurrence.
+with an index signature, a `DataType.Length<T, L>` or a `DataType.Exact<T, N>`
+that reappears on its own walk path is a `recursiveRef` to its first
+occurrence.
 
-**4.3** `DataType.Packed<T>`, `DataType.Length<T, L>`, `DataType.Vector<X, Y, Z>`,
-`DataType.Transform<X, Y, Z>`, `DataType.Range<T, Min, Max>` and
-`DataType.Quantized<T>` are recognized both by alias identity and, for a
-re-aliased brand, by their brand property. Alias identity is tried for all six
-brands before any brand property, and a width brand's property is tried after
-theirs, because `Range<T, Min, Max>` over a width brand carries both. In a
+**4.3** `DataType.Packed<T>`, `DataType.Length<T, L>`, `DataType.Exact<T, N>`,
+`DataType.Vector<X, Y, Z>`, `DataType.Transform<X, Y, Z>`,
+`DataType.Range<T, Min, Max>` and `DataType.Quantized<T>` are recognized both
+by alias identity and, for a re-aliased brand, by their brand property. Alias
+identity is tried for all seven brands before any brand property, and a width
+brand's property is tried after theirs, because `Range<T, Min, Max>` over a
+width brand carries both. In a
 composition of brands, the walk resolves the outermost brand and then walks
 its inner type, which resolves the next.
 
@@ -335,8 +338,8 @@ side it returns, recursion helpers included, so its generated code refers to
 no state its closure does not declare (5.3).
 
 **5.14** Write-side checks are emitted only at a call site that sets
-`writeChecks: true`: a comparison of each exact-form value's length with its
-`N` before it is written, which is `>` for an `array` or tuple rest whose
+`writeChecks: true`: a comparison of each `Exact<T, N>` value's length with
+its `N` before it is written, which is `>` for an `array` or tuple rest whose
 element is `optional` or a `literal` that includes `undefined`, and `!==`
 otherwise, and a comparison of each count with
 the largest its `u8`, `u16` or `u24` width holds. A `dict`'s count is compared
@@ -386,8 +389,8 @@ reserves each element on its own.
 and reserves the count and the bytes at once, in a variable-length count's
 one-byte form inline and in its long form in the call that writes it
 (5.28). The read side reads the count, then moves the read
-cursor past the count and the bytes in one step. The exact form, which writes
-no count, reserves its bytes alone.
+cursor past the count and the bytes in one step. One under `Exact<T, N>`,
+which writes no count, reserves its bytes alone.
 
 Such a `str` or `buffer` next to a run of fixed-size properties of the same
 object (5.5), with a variant's index at the run's head where 5.25 puts one
@@ -418,7 +421,7 @@ shape is built only of the fixed-size kinds of 5.5, `str`, `buffer`, `blob`,
 `optional`, an `object` that is not emitted as a recursion helper, a
 `guardedUnion`, and a `taggedUnion` whose tag is not a bit of a packed region,
 whose variants are such shapes, an `array` whose element is of a constant
-size or, outside the exact form, such a union, such an `object` or such an
+size or, outside `Exact<T, N>`, such a union, such an `object` or such an
 `array`, and a
 tuple whose rest
 element, if it has one, is of a constant size. An element of a constant size
@@ -471,15 +474,15 @@ term, and its size stays one expression.
 table with `new Array(size)`, which roblox-ts compiles to `table.create(size)`,
 and stores each element at its index, except a tuple inside a run of 5.5,
 which is one table constructor. The size is the count an `array` reads
-back or the count of its exact form, the keypoint count a sequence reads back,
+back or its `N` under `Exact<T, N>`, the keypoint count a sequence reads back,
 and the number of fixed elements for a tuple, whose rest elements are stored
 past them. An
 element read back as absent leaves its index empty, and the elements after it
 keep their indexes. Under `readChecks: true`, the bound (5.10) of the count
 that sizes the table comes before the table is created.
 
-**5.22** An element that the write side reads at an index, in the exact form
-of an `array` or in a tuple's rest, is cast to the element's type, so the
+**5.22** An element that the write side reads at an index, in an `array`
+under `Exact<T, N>` or in a tuple's rest, is cast to the element's type, so the
 generated code type-checks under a consumer's `noUncheckedIndexedAccess`.
 
 **5.23** An `object` of more than one property, written outside a run of 5.5,
@@ -620,9 +623,11 @@ is the string `" surge"`, with a leading space, so roblox-ts prints it as
   covers, two or more table-shaped constituents with no discriminant, or two
   or more constituents other than literal values with the same runtime type;
 - a `Length<T, L>` whose `T` writes no count, a `bitSet` included, whose `L`
-  is not `u8`, `u16`, `u24`, `u32` or a whole number that is not negative,
-  whose `T` is a tuple with no rest element, or whose exact form is applied to
-  a `dict`;
+  is not `u8`, `u16`, `u24` or `u32`, a number literal included, or whose `T`
+  is a tuple with no rest element;
+- an `Exact<T, N>` whose `T` is not a `str`, a `buffer`, an `array` or a
+  tuple with a rest element, or whose `N` is not a whole number literal that
+  is not negative;
 - a `Vector<X, Y, Z>` or `Transform<X, Y, Z>` component width that is not a
   `DataType` number width;
 - a `Transform<X, Y, Z>` with a width other than the default inside a packed
@@ -663,7 +668,7 @@ of `rbxts-transformer-surge`, cited by `describe` block. Source paths are in
 | 3.4       | `tests/src/tests/factories.spec.ts`: `writesTheSameBytesFromTwoCallSitesForOneType`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | 4.1       | `walk`: `TypeWalker classification`, `TypeWalker classification with fixture packages`, `TypeWalker blob classification`, `TypeWalker tuples`, `TypeWalker union guards`, `TypeWalker wire-format determinism`, and the brand blocks under 4.3                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
 | 4.2       | `walk`: `TypeWalker recursion through unions`, `TypeWalker union guards` (a recursive object type); `test/golden.test.mjs`: the recursion-helper checks; `walk`: `TypeWalker recursion through arrays and tuples`, `TypeWalker recursion through dictionaries`, `TypeWalker recursion through an optional`; `tests/src/tests/bytes.spec.ts`: `pinsAnOptionalRecursiveObjectsPresenceAsABit`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
-| 4.3       | `detect`: `getDataTypeBrand / getSurgeBrand`; `walk`: `TypeWalker Packed<T>`, `TypeWalker Length<T, L>`, `TypeWalker Vector<X, Y, Z> and Transform<X, Y, Z>`, `TypeWalker Range<T, Min, Max>`, `TypeWalker Quantized<T>`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| 4.3       | `detect`: `getDataTypeBrand / getSurgeBrand`; `walk`: `TypeWalker Packed<T>`, `TypeWalker Length<T, L> and Exact<T, N>`, `TypeWalker Vector<X, Y, Z> and Transform<X, Y, Z>`, `TypeWalker Range<T, Min, Max>`, `TypeWalker Quantized<T>`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
 | 4.4       | `walk`: `TypeWalker union guards`, `TypeWalker wire-format determinism` (two literal values of one runtime type), `TypeWalker classification with fixture packages` (a union of `Instance` subclasses is a `blob`, and an enum next to another type is one `enum` variant); `tests/src/tests/bytes.spec.ts`: `pinsAnEnumNextToAnotherType`, `pinsAnEnumBesideAnotherEnumsItem`; `emit`: `Emitter union guards`, `Emitter enum guards`; `transform`: `transform generated code` (a union of two enums and a string in a tagged union's variant)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
 | 4.5       | `walk`: `TypeWalker generic instantiation identity`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | 4.6       | `walk`: `TypeWalker classification` (a finite key union walks as a fixed-property object)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
@@ -720,6 +725,10 @@ of `rbxts-transformer-surge`, cited by `describe` block. Source paths are in
 
 ## Changes
 
+- `9a131ce`: 4.1 adds a row for `DataType.Exact<T, N>`, which takes over
+  `Length<T, L>`'s exact form; 4.2 and 4.3 recognize it, 5.14 and 5.19 to
+  5.22 name it, and 7.2 reports a number literal under `Length` and splits
+  `Exact`'s diagnostics from it.
 - `6742343`: the 4.1 row of a `bitSet` excepts an enum item, as 4.16 does;
   5.10 caps a count where the element's minimum size is zero, as Runtime API
   4.3 does; 5.14 limits the float widths it does not compare to those with

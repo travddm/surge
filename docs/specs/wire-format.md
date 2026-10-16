@@ -1,7 +1,7 @@
 # Wire format specification
 
 Status: current
-Applies to: commit `6742343` (no tagged release yet)
+Applies to: commit `9a131ce` (no tagged release yet)
 
 ## 1. Scope
 
@@ -173,33 +173,33 @@ constituent of the union, is the last, whatever its kind name.
 
 **5.8** `recursiveRef` writes exactly what the type it refers to writes.
 
-## 6. Counts and `Length<T, L>`
+## 6. Counts, `Length<T, L>` and `Exact<T, N>`
 
 **6.1** `str`, `buffer`, `array`, `dict` and a tuple's rest element write a
 count. It is the variable-length count of 6.9 unless `DataType.Length<T, L>`
-sets it.
+or `DataType.Exact<T, N>` sets it.
 
 **6.2** With `L` a width — `u8`, `u16`, `u24` or `u32` — the count is written
 at that width. `Length<T, L>` has no default `L`.
 
-**6.3** With `L` a whole number literal, no count is written and both sides
-use exactly `L` bytes (for `str` and `buffer`) or elements (for `array` and a
-tuple's rest). Without `writeChecks` ([runtime-api.md](runtime-api.md) 3.11),
-nothing checks the value's length: a longer value is truncated to `L`, and a
-shorter `str` or `buffer` raises. A shorter `array` or tuple rest is in 6.6
-and 6.7.
+**6.3** With `DataType.Exact<T, N>`, where `N` is a whole number literal, no
+count is written and both sides use exactly `N` bytes (for `str` and
+`buffer`) or elements (for `array` and a tuple's rest). Without
+`writeChecks` ([runtime-api.md](runtime-api.md) 3.11), nothing checks the
+value's length: a longer value is truncated to `N`, and a shorter `str` or
+`buffer` raises. A shorter `array` or tuple rest is in 6.6 and 6.7.
 
-**6.4** A `dict` takes a width but not a whole number literal.
+**6.4** A `dict` takes `Length<T, L>` but not `Exact<T, N>`.
 
-**6.5** `Length<T, L>` applies to the container it wraps, not to containers
-nested inside it.
+**6.5** `Length<T, L>` and `Exact<T, N>` apply to the container they wrap,
+not to containers nested inside it.
 
-**6.6** In the exact form of 6.3, a shorter `array` or tuple rest writes each
+**6.6** Under `Exact<T, N>`, a shorter `array` or tuple rest writes each
 missing element as `nil`. An `optional` element, or a `literal` element whose
 last value in canonical literal order is `undefined`, writes `nil` as absent,
 and the value reads back at its own length.
 
-**6.7** Without `writeChecks`, in the exact form of 6.3, a missing element
+**6.7** Without `writeChecks`, under `Exact<T, N>`, a missing element
 that 6.6 does not cover raises or changes the value without raising:
 
 - a `bool` is written as `false`;
@@ -218,7 +218,7 @@ that 6.6 does not cover raises or changes the value without raising:
   `literalConst`, reads back as a present value.
 
 Each element that does not raise and is not a `blob` reads back present, so
-the value reads back at length `L`. With `writeChecks`, such a value raises
+the value reads back at length `N`. With `writeChecks`, such a value raises
 before any of its elements is written ([runtime-api.md](runtime-api.md) 3.10).
 
 **6.8** A count is written at its width modulo that width's range. Without
@@ -373,9 +373,9 @@ in `@rbxts/surge`.
 | 5.6                | `bytes.spec.ts`: `pinsATaggedUnion`; the choice of tag: `walk.test.ts`, `TypeWalker wire-format determinism`; the `u16` index: source only, `writeVariants` in `emit/write.ts`                                                                                                                                                                                                                                      |
 | 5.7                | `bytes.spec.ts`: `pinsAGuardedUnion`, `pinsAnEnumNextToAnotherType`, `pinsItemsOfTwoEnums`, `pinsAnEnumItemAsNoBytes`; `roblox.spec.ts`: `writesAnOpaqueUnionMemberAsTheLastVariantAndABlob`; the `literalConst` and `datatype` order: `walk.test.ts`, `TypeWalker wire-format determinism` and `TypeWalker classification with fixture packages`. The `u16` index: source only, `writeVariants` in `emit/write.ts` |
 | 5.8                | Source only: `ensureHelper` in `emit/index.ts` builds the helper from the write functions an inlined field uses; `recursion.spec.ts` round-trips recursive shapes                                                                                                                                                                                                                                                   |
-| 6.2                | `bytes.spec.ts`: `pinsBoundedContainers`, `pinsU32LengthAsFourBytes`; a `u24` count: `walk.test.ts`, `TypeWalker Length<T, L>`                                                                                                                                                                                                                                                                                      |
-| 6.3                | `bytes.spec.ts`: `pinsExactLengthContainers`. Truncation and a shorter `str` or `buffer`: source only, `writeStr`, `writeBuffer`, `writeArray` and `writeTuple` in `emit/write.ts` write exactly `L`                                                                                                                                                                                                                |
-| 6.4                | `walk.test.ts`, `TypeWalker Length<T, L>`                                                                                                                                                                                                                                                                                                                                                                           |
+| 6.2                | `bytes.spec.ts`: `pinsBoundedContainers`, `pinsU32LengthAsFourBytes`; a `u24` count: `walk.test.ts`, `TypeWalker Length<T, L> and Exact<T, N>`                                                                                                                                                                                                                                                                      |
+| 6.3                | `bytes.spec.ts`: `pinsExactLengthContainers`. Truncation and a shorter `str` or `buffer`: source only, `writeStr`, `writeBuffer`, `writeArray` and `writeTuple` in `emit/write.ts` write exactly `N`                                                                                                                                                                                                                |
+| 6.4                | `walk.test.ts`, `TypeWalker Length<T, L> and Exact<T, N>`                                                                                                                                                                                                                                                                                                                                                           |
 | 6.5                | `bytes.spec.ts`: `pinsBoundedContainers`                                                                                                                                                                                                                                                                                                                                                                            |
 | 6.6                | An `optional`: `collections.spec.ts`: `padsAShortExactArrayOfOptionalsInsteadOfRaising`. A `literal`: `checks.spec.ts`: `letsAnExactArrayOfOptionalsBeShorterButNotLonger`; `literalIndexExpr` in `emit/write.ts` maps `nil` to the last index                                                                                                                                                                      |
 | 6.7                | Source only: `writeBool`, `literalIndexExpr` and `writeVariants` in `emit/write.ts`; `pushBlob` in `emit/context.ts` stores a blob only when it is not `nil`. With `writeChecks`: `checks.spec.ts`: `rejectsAnExactLengthValueOfAnyOtherLength`                                                                                                                                                                     |
@@ -397,6 +397,9 @@ in `@rbxts/surge`.
 
 ## Changes
 
+- `9a131ce`: 6.1 and 6.3 to 6.7 state the exact form as
+  `DataType.Exact<T, N>`, where `Length<T, L>`'s `L` took a whole number
+  literal. No byte changes.
 - `6742343`: 8.8 leaves a `literalConst` that is an enum item out of a
   `bitSet`, as Transformer 4.16 does; 6.3 cites Runtime API 3.11 for a value
   without `writeChecks`. 6.7 lets a `guardedUnion`'s last variant that reads

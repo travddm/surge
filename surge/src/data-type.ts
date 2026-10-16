@@ -20,30 +20,44 @@ export namespace DataType {
 	export type i32 = number & { readonly _surge_i32?: never };
 
 	/**
-	 * Sets how `T`'s encoding says how much follows. Applies to a `string`,
-	 * an array, a `Map`, a `Set`, a `Record`, a `buffer`, and a tuple's rest
-	 * element; on anything else the transformer reports a diagnostic. `L` is
-	 * one of two things: a count width, {@link u8}, {@link u16}, {@link u24}
-	 * or {@link u32}, as in `Length<string[], DataType.u8>`; or a whole
-	 * number literal, as in `Length<string, 8>`, which fixes the length and
-	 * writes no count. The constraint names only the widths, but a number
-	 * literal satisfies it, and the transformer reads it as the exact length.
-	 * Without `Length`, the count is variable-length: one byte below 254,
-	 * three up to 65535, and five above (Wire format 6.9 in
-	 * docs/specs/wire-format.md).
+	 * Sets the width of the count `T` writes ahead of its contents. Applies to
+	 * a `string`, an array, a `Map`, a `Set`, a `Record`, a `buffer`, and a
+	 * tuple's rest element; on anything else the transformer reports a
+	 * diagnostic. `L` is {@link u8}, {@link u16}, {@link u24} or {@link u32},
+	 * as in `Length<string[], DataType.u8>`. Without `Length`, the count is
+	 * variable-length: one byte below 254, three up to 65535, and five above
+	 * (Wire format 6.9 in docs/specs/wire-format.md).
 	 *
-	 * With a width, a count of that width is written ahead of the contents.
 	 * Above what it can count, the count wraps unless `writeChecks` is on,
 	 * which raises instead (Wire format 6.8), so a width states a bound the
-	 * shape is known to keep.
+	 * shape is known to keep. A number literal satisfies the constraint, since
+	 * a width brand is a `number`, but the transformer reports it: a length
+	 * fixed with no count is {@link Exact}.
 	 *
-	 * With a whole number literal, no count is written at all and both sides
-	 * use exactly that many bytes or elements. The value must have exactly
-	 * that many, and only `writeChecks` checks it (Runtime API 3.10 in
-	 * docs/specs/runtime-api.md). Without it, a longer one is truncated. A
-	 * shorter string or buffer raises. A shorter array or tuple rest writes
-	 * each missing element as `nil` (Wire format 6.6 and 6.7 in
-	 * docs/specs/wire-format.md):
+	 * Unlike {@link Packed}, this applies to the container it wraps and not
+	 * to the subtree under it: in `Length<Array<Array<string>>, u16>` the
+	 * outer array takes the u16 count and the inner ones keep the
+	 * variable-length count.
+	 *
+	 * @typeParam T the container whose count this sets
+	 * @typeParam L the count's width
+	 */
+	export type Length<T, L extends u8 | u16 | u24 | u32> = T & { readonly _surge_length?: [T, L] };
+
+	/**
+	 * Fixes `T`'s length at `N` and writes no count: both sides use exactly
+	 * `N` bytes or elements (Wire format 6.3 in docs/specs/wire-format.md), as
+	 * in `Exact<string, 8>`. `N` is a whole number literal. Applies to a
+	 * `string`, an array, a `buffer`, and a tuple's rest element; on anything
+	 * else the transformer reports a diagnostic. A `Map`, `Set`, or `Record`
+	 * cannot take it — the write side counts entries as it iterates them, so
+	 * it cannot promise a fixed number.
+	 *
+	 * The value must have exactly `N`, and only `writeChecks` checks it
+	 * (Runtime API 3.10 in docs/specs/runtime-api.md). Without it, a longer
+	 * one is truncated. A shorter string or buffer raises. A shorter array or
+	 * tuple rest writes each missing element as `nil` (Wire format 6.6 and
+	 * 6.7 in docs/specs/wire-format.md):
 	 *
 	 * - an optional element, or a literal union that includes `undefined`,
 	 *   is written as absent, and the value comes back at its own length;
@@ -54,19 +68,14 @@ export namespace DataType {
 	 *   blobs;
 	 * - any other element raises, except those Wire format 6.7 lists.
 	 *
-	 * So use the exact form only where the length is fixed by construction.
-	 * A `Map`, `Set`, or `Record` cannot take it — the write side counts
-	 * entries as it iterates them, so it cannot promise a fixed number.
+	 * So use `Exact` only where the length is fixed by construction. Like
+	 * {@link Length}, it applies to the container it wraps and not to the
+	 * subtree under it.
 	 *
-	 * Unlike {@link Packed}, this applies to the container it wraps and not
-	 * to the subtree under it: in `Length<Array<Array<string>>, u16>` the
-	 * outer array takes the u16 count and the inner ones keep the
-	 * variable-length count.
-	 *
-	 * @typeParam T the container whose count this sets
-	 * @typeParam L a count width, or a whole number literal for an exact length
+	 * @typeParam T the container whose length this fixes
+	 * @typeParam N the length, a whole number literal
 	 */
-	export type Length<T, L extends u8 | u16 | u24 | u32> = T & { readonly _surge_length?: [T, L] };
+	export type Exact<T, N extends number> = T & { readonly _surge_exact?: [T, N] };
 
 	/**
 	 * Every width brand above: the constraint a per-component width takes, and

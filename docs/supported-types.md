@@ -46,7 +46,9 @@ in the order the transformer applies it, is
 | `Vector3int16`, `UDim`, `UDim2`, `BrickColor`, `NumberRange`, `Rect`, `DateTime`                           | a fixed number of bytes each ([specs/wire-format.md](specs/wire-format.md) 4.10)                                                       |
 
 How many bytes a count takes, and how `DataType.Length` changes it, is in
-[data-types.md](data-types.md#counts-lengtht-l).
+[data-types.md](data-types.md#counts-lengtht-l). `DataType.Exact` fixes a
+length and writes no count
+([data-types.md](data-types.md#exact-lengths-exactt-n)).
 
 A dictionary's key can be any supported type, including a `Vector3`, an enum
 item or an object. The order of its entries in the bytes is Luau's iteration

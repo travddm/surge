@@ -26,10 +26,11 @@ export const LENGTH_WIDTHS: ReadonlySet<string> = new Set<LengthWidth>(["u8", "u
 
 /**
  * How a variable-length kind says how much follows. A `LengthWidth` writes a
- * count of that width ahead of the contents; a number writes no count at all
- * and both sides use exactly that many elements or bytes, which is Blink's
- * and Zap's exact form. Absent is the variable-length count of Wire format
- * 6.9: one byte below 254, and a marker and a `u16` or a `u32` above.
+ * count of that width ahead of the contents; a number, set by
+ * `DataType.Exact<T, N>`, writes no count at all and both sides use exactly
+ * that many elements or bytes, which is Blink's and Zap's exact form. Absent
+ * is the variable-length count of Wire format 6.9: one byte below 254, and a
+ * marker and a `u16` or a `u32` above.
  */
 export type CountSpec = LengthWidth | number;
 
