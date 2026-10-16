@@ -1,0 +1,100 @@
+//!optimize 2
+import { Assert, Fact } from "@rbxts/runit";
+import { createCodec, createDeserializer, createSerializer, createCodec as makeCodec } from "@rbxts/surge";
+
+import { Rng, SharedShape, difference, hex, sharedShapeSerializer } from "../support";
+
+interface Reading {
+	sensor: string;
+	values: number[];
+}
+const writeReading = createSerializer<Reading>();
+const readReading = createDeserializer<Reading>();
+
+// Transformer 5.13 in docs/specs/transformer.md: a factory that returns one
+// side emits the recursion helpers of that side only, since its closure
+// declares only that side's state.
+interface Outline {
+	title: string;
+	children: Outline[];
+	next?: Outline;
+}
+const writeOutline = createSerializer<Outline>();
+const readOutline = createDeserializer<Outline>();
+const aliasedCodec = makeCodec<Reading>();
+
+// The second call site for `SharedShape`. The first is in `support.ts`.
+const localSharedShapeSerializer = createCodec<SharedShape>();
+
+class FactoriesTest {
+	@Fact
+	public roundTripsThroughASeparateSerializerAndDeserializer(): void {
+		const value: Reading = { sensor: "thermal", values: [1, 2.5, -3] };
+		const buffer = writeReading(value);
+		Assert.equal(undefined, difference(value, readReading(buffer)));
+	}
+
+	@Fact
+	public roundTripsARecursiveTypeThroughASeparateSerializerAndDeserializer(): void {
+		const value: Outline = {
+			title: "root",
+			children: [
+				{ title: "a", children: [] },
+				{ title: "b", children: [{ title: "b1", children: [] }], next: { title: "c", children: [] } },
+			],
+		};
+		const buffer = writeOutline(value);
+		Assert.equal(undefined, difference(value, readOutline(buffer)));
+	}
+
+	@Fact
+	public transformsAFactoryImportedUnderAnotherName(): void {
+		const value: Reading = { sensor: "", values: [] };
+		const buffer = aliasedCodec.serialize(value);
+		Assert.equal(undefined, difference(value, aliasedCodec.deserialize(buffer)));
+	}
+
+	// Transformer 5.1: a call site whose closure would declare nothing is the
+	// functions alone, so a factory's result used in place is a table or a
+	// function where it was a call, which roblox-ts must parenthesize. The
+	// results are read into locals first: Flamework's transformer fails on a
+	// call to a macro such as `Assert.equal` whose arguments hold a node another
+	// transformer replaced, since the rebuilt call has no source file.
+	@Fact
+	public roundTripsThroughFactoriesCalledInPlace(): void {
+		const value: Reading = { sensor: "in place", values: [7, -1.5] };
+		const fromCodec = createCodec<Reading>().deserialize(createCodec<Reading>().serialize(value));
+		const fromFunctions = createDeserializer<Reading>()(createSerializer<Reading>()(value));
+		Assert.equal(undefined, difference(value, fromCodec));
+		Assert.equal(undefined, difference(value, fromFunctions));
+	}
+
+	@Fact
+	public passesTheBufferAloneForAShapeWithNoBlob(): void {
+		const value: Reading = { sensor: "s", values: [4] };
+		const buffer = writeReading(value);
+		Assert.equal("buffer", typeOf(buffer));
+		Assert.equal(undefined, difference(value, readReading(buffer)));
+	}
+
+	@Fact
+	public writesTheSameBytesFromTwoCallSitesForOneType(): void {
+		const rng = new Rng(13);
+		for (const _ of $range(1, 50)) {
+			const value: SharedShape = {
+				zebra: rng.f64(),
+				apple: rng.str(),
+				mango: [rng.bool(), rng.bool()],
+				kind: rng.bool() ? "left" : "right",
+			};
+			const here = hex(localSharedShapeSerializer.serialize(value));
+			const there = hex(sharedShapeSerializer.serialize(value));
+			Assert.equal(there, here);
+			// Each side reads what the other wrote.
+			const written = sharedShapeSerializer.serialize(value);
+			Assert.equal(undefined, difference(value, localSharedShapeSerializer.deserialize(written)));
+		}
+	}
+}
+
+export = FactoriesTest;

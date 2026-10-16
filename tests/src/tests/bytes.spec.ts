@@ -1,0 +1,620 @@
+//!optimize 2
+import { Assert, Fact } from "@rbxts/runit";
+import { DataType, createCodec } from "@rbxts/surge";
+
+import { difference, hex } from "../support";
+
+// Pins the exact bytes of shapes whose encoding is final, so a change to the
+// wire format fails here and must be made on purpose. Each expected string is
+// worked out from docs/specs/wire-format.md, not copied from the output.
+// All integers and floats are little-endian.
+
+// Declared out of name order: fields are written sorted by name.
+interface Primitives {
+	d: string;
+	c: boolean;
+	b: DataType.i16;
+	a: DataType.u8;
+}
+const primitivesSerializer = createCodec<Primitives>();
+
+// Every property has a fixed size, so the nested object shares one
+// reservation with its neighbours (Transformer 5.5), and its own name still
+// puts its properties between `a` and `z`.
+interface Nested {
+	z: DataType.u8;
+	middle: { y: DataType.i16; x: DataType.u8 };
+	a: DataType.u8;
+}
+const nestedSerializer = createCodec<Nested>();
+
+interface Floats {
+	double: number;
+	single: DataType.f32;
+}
+const floatsSerializer = createCodec<Floats>();
+
+interface Containers {
+	list: DataType.u16[];
+	pair: [DataType.u8, boolean, ...DataType.u8[]];
+	record: Record<string, DataType.u8>;
+}
+const containersSerializer = createCodec<Containers>();
+
+// Ten `number`s, 80 bytes, past the 64 the scratch buffer starts at, ahead of a
+// `string[]`, which keeps the scratch buffer (Transformer 5.20). Their
+// reservation grows the buffer from a position known as a number (Transformer
+// 5.30).
+interface WideHead {
+	f0: number;
+	f1: number;
+	f2: number;
+	f3: number;
+	f4: number;
+	f5: number;
+	f6: number;
+	f7: number;
+	f8: number;
+	f9: number;
+	names: string[];
+}
+
+const wideHeadSerializer = createCodec<WideHead>();
+
+// The same five count-writing kinds as `Containers`, each with a fixed-width
+// count. `record`'s key stays unbranded, so its own variable-length count is
+// the check that `Length` applies to the container it wraps and not to the
+// subtree under it.
+interface Bounded {
+	bytes: DataType.Length<buffer, DataType.u8>;
+	list: DataType.Length<DataType.u16[], DataType.u8>;
+	pair: DataType.Length<[DataType.u8, boolean, ...DataType.u8[]], DataType.u8>;
+	record: DataType.Length<Record<string, DataType.u8>, DataType.u8>;
+	text: DataType.Length<string, DataType.u16>;
+}
+const boundedSerializer = createCodec<Bounded>();
+
+// The exact form: a numeric literal instead of a width, so no count is
+// written at all and both sides use exactly that many bytes or elements.
+interface Exact {
+	bytes: DataType.Length<buffer, 3>;
+	list: DataType.Length<DataType.u16[], 2>;
+	pair: DataType.Length<[DataType.u8, ...DataType.u8[]], 2>;
+	text: DataType.Length<string, 4>;
+}
+const exactSerializer = createCodec<Exact>();
+
+// A `u32` width is a fixed four-byte count, as the other widths are fixed:
+// only an unbranded container writes the variable-length count.
+interface U32Containers {
+	list: DataType.Length<DataType.u16[], DataType.u32>;
+	pair: DataType.Length<[DataType.u8, boolean, ...DataType.u8[]], DataType.u32>;
+	record: DataType.Length<Record<string, DataType.u8>, DataType.u32>;
+}
+const u32Serializer = createCodec<U32Containers>();
+
+// One of each kind that writes a count, for the long forms of Wire format 6.9.
+const numbersSerializer = createCodec<DataType.u8[]>();
+const shortsSerializer = createCodec<Set<DataType.u16>>();
+
+interface WithOptional {
+	n?: DataType.u8;
+}
+const optionalSerializer = createCodec<WithOptional>();
+
+interface Flags {
+	a: boolean;
+	b: boolean;
+	c: boolean;
+}
+const flagsSerializer = createCodec<DataType.Packed<Flags>>();
+
+interface Choices {
+	direction: "north" | "east" | "south" | "west";
+	rig: Enum.HumanoidRigType;
+	version: 1;
+}
+const choicesSerializer = createCodec<Choices>();
+
+type Shape = { kind: "circle"; radius: number } | { kind: "rect"; width: number; height: number };
+const shapeSerializer = createCodec<Shape>();
+
+type StringOrNumber = string | number;
+const guardedSerializer = createCodec<StringOrNumber>();
+const orderOrTextSerializer = createCodec<Enum.SortOrder | string>();
+const orderOrRigSerializer = createCodec<Enum.SortOrder | Enum.HumanoidRigType | string>();
+// One enum item as a type has one value, so it writes no bytes.
+interface OneItem {
+	rig: Enum.HumanoidRigType.R15;
+	count: DataType.u8;
+}
+const oneItemSerializer = createCodec<OneItem>();
+const itemOrTextSerializer = createCodec<Enum.SortOrder.Name | string>();
+const rigOrItemSerializer = createCodec<Enum.HumanoidRigType | Enum.SortOrder.Name>();
+
+// A recursive object reached through an optional property: its presence is a
+// bit of the enclosing region, whichever type the walk of the shape starts at.
+interface PackedLink {
+	last: boolean;
+	next?: PackedLink;
+	value: DataType.u8;
+}
+const packedListSerializer = createCodec<DataType.Packed<{ head?: PackedLink; on: boolean }>>();
+
+interface Datatypes {
+	tint: Color3;
+	offset: Vector2;
+	position: Vector3;
+}
+const datatypesSerializer = createCodec<Datatypes>();
+
+// One fact per row of `FIXED_DATATYPES` in the transformer.
+const vector3int16Serializer = createCodec<Vector3int16>();
+const insetSerializer = createCodec<UDim>();
+const sizeSerializer = createCodec<UDim2>();
+const paintSerializer = createCodec<BrickColor>();
+const spanSerializer = createCodec<NumberRange>();
+const boundsSerializer = createCodec<Rect>();
+const rawSerializer = createCodec<buffer>();
+const sequencesSerializer = createCodec<{ colors: ColorSequence; numbers: NumberSequence }>();
+const mediumSerializer = createCodec<{ signed: DataType.i24; unsigned: DataType.u24 }>();
+const placementSerializer = createCodec<CFrame>();
+const packedOptionalsSerializer =
+	createCodec<DataType.Packed<{ count?: DataType.u8; flag: boolean; maybeFlag?: boolean; text: string }>>();
+const stampSerializer = createCodec<DateTime>();
+const packedPlacementSerializer = createCodec<DataType.Packed<CFrame>>();
+const packedTagSerializer =
+	createCodec<DataType.Packed<{ first: { mode: "off" } | { mode: "on"; level: DataType.u8 }; flag: boolean }>>();
+
+// Per-component widths: `cell` stores a `Vector3`'s three components at a
+// width each, and `placement` a `CFrame`'s position, whose rotation stays an
+// f32 triple.
+interface Narrowed {
+	cell: DataType.Vector<DataType.u8, DataType.i16, DataType.u24>;
+	placement: DataType.Transform<DataType.i16>;
+}
+const narrowedSerializer = createCodec<Narrowed>();
+
+// Every argument defaulted. Rule 4 of the brand convention in
+// docs/coding-standards.md says this has to write what an unbranded `Vector3`
+// and `CFrame` write.
+interface DefaultedComponents {
+	cell: DataType.Vector;
+	placement: DataType.Transform<DataType.f32>;
+}
+const defaultedComponentsSerializer = createCodec<DefaultedComponents>();
+
+// `number` narrows to the narrowest width that holds the range, and a width
+// brand is kept. The range itself writes nothing.
+interface Ranged {
+	health: DataType.Range<number, 0, 100>;
+	offset: DataType.Range<number, -1000, 1000>;
+	ratio: DataType.Range<DataType.f32, 0, 1>;
+	turn: DataType.Range<number, -1, 1>;
+}
+const rangedSerializer = createCodec<Ranged>();
+
+const quantizedSerializer = createCodec<DataType.Quantized<CFrame>>();
+
+const tagsSerializer = createCodec<DataType.Packed<{ tags: Set<"c" | "a" | "b"> }>>();
+const lettersSerializer = createCodec<DataType.Packed<Set<"a" | "b" | "c" | "d" | "e" | "f" | "g" | "h" | "i">>>();
+const mixedSerializer = createCodec<DataType.Packed<Set<"x" | 2 | true>>>();
+
+class BytesTest {
+	@Fact
+	public pinsPrimitivesInNameOrder(): void {
+		const buffer = primitivesSerializer.serialize({ a: 7, b: -2, c: true, d: "hi" });
+		// a: u8 | b: i16 | c: bool | d: one-byte count + bytes
+		Assert.equal("07" + "feff" + "01" + "02" + "6869", hex(buffer));
+	}
+
+	@Fact
+	public pinsANestedObjectInNameOrder(): void {
+		const buffer = nestedSerializer.serialize({ a: 7, middle: { x: 1, y: -2 }, z: 9 });
+		// a: u8 | middle.x: u8 | middle.y: i16 | z: u8
+		Assert.equal("07" + "01" + "feff" + "09", hex(buffer));
+	}
+
+	@Fact
+	public pinsFloats(): void {
+		const buffer = floatsSerializer.serialize({ double: 1.5, single: 1.5 });
+		// double: f64 0x3FF8000000000000 | single: f32 0x3FC00000
+		Assert.equal("000000000000f83f" + "0000c03f", hex(buffer));
+	}
+
+	@Fact
+	public pinsContainers(): void {
+		// One record entry: the order of several entries is not specified.
+		const buffer = containersSerializer.serialize({ list: [1, 258], pair: [9, true, 4, 5], record: { k: 3 } });
+		// Each count below 254 is one byte (Wire format 6.9).
+		const list = "02" + "0100" + "0201";
+		// Fixed elements, then the count of rest elements.
+		const pair = "09" + "01" + "02" + "04" + "05";
+		// The count, then key (count + bytes) and value per entry.
+		const record = "01" + "01" + "6b" + "03";
+		Assert.equal(list + pair + record, hex(buffer));
+	}
+
+	@Fact
+	public pinsBoundedContainers(): void {
+		const buf = boundedSerializer.serialize({
+			bytes: buffer.fromstring(string.char(170, 187)),
+			list: [1, 258],
+			pair: [9, true, 4, 5],
+			record: { k: 3 },
+			text: "hi",
+		});
+		// Fields in name order, each count at the width its brand asked for.
+		const bytes = "02" + "aabb";
+		const list = "02" + "0100" + "0201";
+		const pair = "09" + "01" + "02" + "04" + "05";
+		// The dict's own count is a u8; the key string's is variable-length.
+		const record = "01" + "01" + "6b" + "03";
+		const text = "0200" + "6869";
+		Assert.equal(bytes + list + pair + record + text, hex(buf));
+	}
+
+	@Fact
+	public pinsExactLengthContainers(): void {
+		const buf = exactSerializer.serialize({
+			bytes: buffer.fromstring(string.char(1, 2, 3)),
+			list: [1, 258],
+			pair: [9, 4, 5],
+			text: "abcd",
+		});
+		// Fields in name order, and not one count byte among them.
+		Assert.equal("010203" + "0100" + "0201" + "09" + "04" + "05" + "61626364", hex(buf));
+	}
+
+	@Fact
+	public pinsU32LengthAsFourBytes(): void {
+		const buf = u32Serializer.serialize({ list: [1, 258], pair: [9, true, 4, 5], record: { k: 3 } });
+		const list = "02000000" + "0100" + "0201";
+		const pair = "09" + "01" + "02000000" + "04" + "05";
+		// The key string keeps its variable-length count.
+		const record = "01000000" + "01" + "6b" + "03";
+		Assert.equal(list + pair + record, hex(buf));
+	}
+
+	@Fact
+	public pinsTheLongFormsOfACount(): void {
+		// The first bytes of a buffer of `size` bytes: its count, then the bytes.
+		const head = (size: number, bytes: number) =>
+			hex(rawSerializer.serialize(buffer.create(size))).sub(1, bytes * 2);
+		Assert.equal("fd" + "00", head(253, 2));
+		// 254 is the first count past one byte: the marker 254, then a u16.
+		Assert.equal("fe" + "fe00" + "00", head(254, 4));
+		Assert.equal("fe" + "ffff" + "00", head(65535, 4));
+		// Past a u16: the marker 255, then a u32.
+		Assert.equal("ff" + "00000100" + "00", head(65536, 6));
+		const numbers = new Array<number>(300, 7);
+		Assert.equal("fe" + "2c01" + "07", hex(numbersSerializer.serialize(numbers)).sub(1, 8));
+		// A dict counts its entries as it writes them, into one reserved byte,
+		// so 300 entries move along to make room for the long form.
+		const shorts = new Set<number>();
+		for (const i of $range(1, 300)) {
+			shorts.add(i);
+		}
+		const set = shortsSerializer.serialize(shorts);
+		Assert.equal(3 + 600, buffer.len(set));
+		Assert.equal("fe" + "2c01", hex(set).sub(1, 6));
+		Assert.equal(300, shortsSerializer.deserialize(set).size());
+	}
+
+	@Fact
+	public pinsAnOptional(): void {
+		Assert.equal("01" + "05", hex(optionalSerializer.serialize({ n: 5 })));
+		Assert.equal("00", hex(optionalSerializer.serialize({})));
+	}
+
+	@Fact
+	public pinsPackedBooleans(): void {
+		// Bit 0 is the first field in name order.
+		Assert.equal("05", hex(flagsSerializer.serialize({ a: true, b: false, c: true })));
+	}
+
+	@Fact
+	public pinsLiteralAndEnumIndexes(): void {
+		const buffer = choicesSerializer.serialize({
+			direction: "south",
+			rig: Enum.HumanoidRigType.R6,
+			version: 1,
+		});
+		// direction: index 2 of east, north, south, west | rig: index 1 of R15, R6 | version: no bytes
+		Assert.equal("02" + "01", hex(buffer));
+	}
+
+	@Fact
+	public pinsATaggedUnion(): void {
+		const buffer = shapeSerializer.serialize({ kind: "rect", width: 2, height: 3 });
+		// Variant 1 of circle, rect | height: f64 3 | width: f64 2. The tag itself is not written.
+		Assert.equal("01" + "0000000000000840" + "0000000000000040", hex(buffer));
+	}
+
+	@Fact
+	public pinsAGuardedUnion(): void {
+		// Variants in `Field` kind order: num, str.
+		Assert.equal("00" + "0000000000004540", hex(guardedSerializer.serialize(42)));
+		Assert.equal("01" + "02" + "6869", hex(guardedSerializer.serialize("hi")));
+	}
+
+	@Fact
+	public pinsAnEnumNextToAnotherType(): void {
+		// Variants in `Field` kind order: enum, str. The enum is one variant, whatever item it holds.
+		const item = orderOrTextSerializer.serialize(Enum.SortOrder.Name);
+		// Variant 0 | index 2 of Custom, LayoutOrder, Name
+		Assert.equal("00" + "02", hex(item));
+		Assert.equal(Enum.SortOrder.Name, orderOrTextSerializer.deserialize(item));
+		const text = orderOrTextSerializer.serialize("hi");
+		Assert.equal("01" + "02" + "6869", hex(text));
+		Assert.equal("hi", orderOrTextSerializer.deserialize(text));
+	}
+
+	@Fact
+	public pinsAnEnumItemAsNoBytes(): void {
+		const buffer = oneItemSerializer.serialize({ rig: Enum.HumanoidRigType.R15, count: 7 });
+		// count: u8 7. The item itself is not written.
+		Assert.equal("07", hex(buffer));
+		Assert.equal(Enum.HumanoidRigType.R15, oneItemSerializer.deserialize(buffer).rig);
+		// Variants in `Field` kind order: the item, a `literalConst`, then str.
+		const item = itemOrTextSerializer.serialize(Enum.SortOrder.Name);
+		Assert.equal("00", hex(item));
+		Assert.equal(Enum.SortOrder.Name, itemOrTextSerializer.deserialize(item));
+		Assert.equal("01" + "02" + "6869", hex(itemOrTextSerializer.serialize("hi")));
+	}
+
+	@Fact
+	public pinsItemsOfTwoEnums(): void {
+		// Variants in `Field` kind order, and two enums by name: HumanoidRigType, SortOrder, str.
+		const rig = orderOrRigSerializer.serialize(Enum.HumanoidRigType.R6);
+		// Variant 0 | index 1 of R15, R6
+		Assert.equal("00" + "01", hex(rig));
+		Assert.equal(Enum.HumanoidRigType.R6, orderOrRigSerializer.deserialize(rig));
+		const order = orderOrRigSerializer.serialize(Enum.SortOrder.Custom);
+		// Variant 1 | index 0 of Custom, LayoutOrder, Name
+		Assert.equal("01" + "00", hex(order));
+		Assert.equal(Enum.SortOrder.Custom, orderOrRigSerializer.deserialize(order));
+		Assert.equal("02" + "02" + "6869", hex(orderOrRigSerializer.serialize("hi")));
+	}
+
+	@Fact
+	public pinsAnEnumBesideAnotherEnumsItem(): void {
+		// Variants in `Field` kind order: the enum HumanoidRigType, then the item.
+		const rig = rigOrItemSerializer.serialize(Enum.HumanoidRigType.R6);
+		// Variant 0 | index 1 of R15, R6
+		Assert.equal("00" + "01", hex(rig));
+		Assert.equal(Enum.HumanoidRigType.R6, rigOrItemSerializer.deserialize(rig));
+		// The enum's own index does not hold the other enum's item, so the item
+		// is written as its variant and not looked up in that index.
+		const item = rigOrItemSerializer.serialize(Enum.SortOrder.Name);
+		Assert.equal("01", hex(item));
+		Assert.equal(Enum.SortOrder.Name, rigOrItemSerializer.deserialize(item));
+	}
+
+	@Fact
+	public pinsAnOptionalRecursiveObjectsPresenceAsABit(): void {
+		const value = { head: { last: false, next: { last: true, value: 2 }, value: 1 }, on: true };
+		const buffer = packedListSerializer.serialize(value);
+		// region: head present (bit 0), on (bit 1)
+		// | head: region, last (bit 0) and next present (bit 1) | head.next | value 1
+		// head.next: region, last (bit 0) | value 2
+		Assert.equal("03" + "02" + ("01" + "02") + "01", hex(buffer));
+		Assert.equal(undefined, difference(value, packedListSerializer.deserialize(buffer)));
+	}
+
+	@Fact
+	public pinsFixedSizeDatatypes(): void {
+		const buffer = datatypesSerializer.serialize({
+			tint: Color3.fromRGB(255, 128, 0),
+			offset: new Vector2(1, -2),
+			position: new Vector3(0.5, 0, 2),
+		});
+		// offset: 2 x f32 | position: 3 x f32 | tint: 3 x u8
+		const offset = "0000803f" + "000000c0";
+		const position = "0000003f" + "00000000" + "00000040";
+		Assert.equal(offset + position + "ff8000", hex(buffer));
+	}
+
+	@Fact
+	public pinsVector3int16(): void {
+		// 3 x i16
+		Assert.equal("0100" + "feff" + "0300", hex(vector3int16Serializer.serialize(new Vector3int16(1, -2, 3))));
+	}
+
+	@Fact
+	public pinsUDim(): void {
+		// f32 scale + i32 offset
+		Assert.equal("0000003f" + "f9ffffff", hex(insetSerializer.serialize(new UDim(0.5, -7))));
+	}
+
+	@Fact
+	public pinsUDim2(): void {
+		// 2 x UDim: f32 + i32 for X, then for Y
+		Assert.equal(
+			"0000003f" + "f9ffffff" + "0000803e" + "03000000",
+			hex(sizeSerializer.serialize(new UDim2(0.5, -7, 0.25, 3))),
+		);
+	}
+
+	@Fact
+	public pinsBrickColor(): void {
+		// u16 `.Number`
+		Assert.equal("ec03", hex(paintSerializer.serialize(new BrickColor(1004))));
+	}
+
+	@Fact
+	public pinsNumberRange(): void {
+		// 2 x f32: Min, Max
+		Assert.equal("0000803f" + "00002040", hex(spanSerializer.serialize(new NumberRange(1, 2.5))));
+	}
+
+	@Fact
+	public pinsRect(): void {
+		// 4 x f32: Min.X, Min.Y, Max.X, Max.Y
+		Assert.equal(
+			"00000000" + "000020c0" + "00000040" + "0000803f",
+			hex(boundsSerializer.serialize(new Rect(0, -2.5, 2, 1))),
+		);
+	}
+
+	@Fact
+	public pinsABuffer(): void {
+		// One-byte count + bytes
+		Assert.equal("03" + "0102ff", hex(rawSerializer.serialize(buffer.fromstring(string.char(1, 2, 255)))));
+	}
+
+	@Fact
+	public pinsSequences(): void {
+		const buffer = sequencesSerializer.serialize({
+			colors: new ColorSequence(Color3.fromRGB(255, 0, 128)),
+			numbers: new NumberSequence([new NumberSequenceKeypoint(0, 2, 0.5), new NumberSequenceKeypoint(1, 0.5, 0)]),
+		});
+		// u8 count, then f32 time + 3 x u8 per keypoint. One color makes two keypoints, at 0 and 1.
+		const colors = "02" + "00000000" + "ff0080" + "0000803f" + "ff0080";
+		// u8 count, then f32 time + f32 value + f32 envelope per keypoint.
+		const numbers = "02" + "00000000" + "00000040" + "0000003f" + "0000803f" + "0000003f" + "00000000";
+		Assert.equal(colors + numbers, hex(buffer));
+	}
+
+	@Fact
+	public pinsThe24BitWidths(): void {
+		// signed: -2 in two's complement | unsigned: 0x010203, low byte first
+		Assert.equal("feffff" + "030201", hex(mediumSerializer.serialize({ signed: -2, unsigned: 0x010203 })));
+	}
+
+	@Fact
+	public pinsACFrameWithNoRotation(): void {
+		// 3 x f32 position, then 3 x f32 axis * angle, which is zero with no
+		// rotation. A rotation is not pinned: its axis-angle form is not exact.
+		const position = "0000803f" + "00000040" + "00004040";
+		Assert.equal(position + string.rep("00", 12), hex(placementSerializer.serialize(new CFrame(1, 2, 3))));
+	}
+
+	@Fact
+	public pinsPerComponentWidths(): void {
+		// cell: u8 | i16 | u24, whose low u16 comes first | placement: 3 x i16
+		// position, then the rotation's 3 x f32, zero with no rotation.
+		const cell = "03" + "feff" + "030201";
+		const position = "0100" + "0200" + "0300";
+		const buffer = narrowedSerializer.serialize({
+			cell: new Vector3(3, -2, 0x010203),
+			placement: new CFrame(1, 2, 3),
+		});
+		Assert.equal(cell + position + string.rep("00", 12), hex(buffer));
+	}
+
+	@Fact
+	public pinsThatDefaultedComponentWidthsMoveNoBytes(): void {
+		// The same values, and so the same bytes, `pinsFixedSizeDatatypes` and
+		// `pinsACFrameWithNoRotation` pin for the unbranded types.
+		const cell = "0000003f" + "00000000" + "00000040";
+		const position = "0000803f" + "00000040" + "00004040";
+		const buffer = defaultedComponentsSerializer.serialize({
+			cell: new Vector3(0.5, 0, 2),
+			placement: new CFrame(1, 2, 3),
+		});
+		Assert.equal(cell + position + string.rep("00", 12), hex(buffer));
+	}
+
+	@Fact
+	public pinsRangeWidths(): void {
+		const buffer = rangedSerializer.serialize({ health: 100, offset: -2, ratio: 0.5, turn: -1 });
+		// health: u8 | offset: i16 | ratio: f32, as its brand asks | turn: i8
+		Assert.equal("64" + "feff" + "0000003f" + "ff", hex(buffer));
+	}
+
+	@Fact
+	public pinsAQuantizedRotation(): void {
+		// 3 x f32 position, then the axis-angle vector, each component times
+		// 32767 / pi and rounded to an i16: an eighth turn about X is 8191.75,
+		// which rounds to 8192.
+		const position = "0000803f" + "00000040" + "00004040";
+		const eighth = CFrame.fromAxisAngle(Vector3.xAxis, math.pi / 4).add(new Vector3(1, 2, 3));
+		Assert.equal(position + "0020" + "0000" + "0000", hex(quantizedSerializer.serialize(eighth)));
+		// Five eighths of a turn about Y is folded to three eighths the other way
+		// round: -24575.25, which rounds to -24575, 0xa001.
+		const folded = CFrame.fromAxisAngle(Vector3.yAxis, (math.pi * 5) / 4);
+		Assert.equal(string.rep("00", 12) + "0000" + "01a0" + "0000", hex(quantizedSerializer.serialize(folded)));
+	}
+
+	@Fact
+	public pinsABitSet(): void {
+		// One bit per member in canonical literal order, least significant first,
+		// and no count: a and c are bits 0 and 2.
+		Assert.equal("05", hex(tagsSerializer.serialize({ tags: new Set(["a", "c"]) })));
+		Assert.equal("00", hex(tagsSerializer.serialize({ tags: new Set() })));
+		// Nine members take two bytes, and i is bit 8, the first bit of the second.
+		Assert.equal("01" + "01", hex(lettersSerializer.serialize(new Set(["a", "i"]))));
+		// Booleans, then numbers, then strings: true, 2, "x".
+		Assert.equal("05", hex(mixedSerializer.serialize(new Set<"x" | 2 | true>([true, "x"]))));
+	}
+
+	@Fact
+	public pinsPackedOptionals(): void {
+		// The packed region is first. Bits in name order: count present, flag,
+		// maybeFlag present, maybeFlag value. Then count: u8, and text.
+		const present = packedOptionalsSerializer.serialize({ count: 9, flag: true, maybeFlag: false, text: "a" });
+		Assert.equal("07" + "09" + "01" + "61", hex(present));
+		const absent = packedOptionalsSerializer.serialize({ flag: false, text: "" });
+		Assert.equal("00" + "00", hex(absent));
+		const flagged = packedOptionalsSerializer.serialize({ flag: false, maybeFlag: true, text: "" });
+		Assert.equal("0c" + "00", hex(flagged));
+	}
+
+	@Fact
+	public pinsDateTime(): void {
+		// f64 `UnixTimestampMillis`
+		Assert.equal("0000000000408f40", hex(stampSerializer.serialize(DateTime.fromUnixTimestampMillis(1000))));
+	}
+
+	@Fact
+	public pinsAPackedCFrame(): void {
+		// Header: bits 0-4 the rotation (0-23 axis-aligned, 31 other), bits 5-6
+		// the position (1 zero, 3 one, 0 other, then 3 x f32).
+		const header = (value: CFrame) => hex(packedPlacementSerializer.serialize(value));
+		// The identity is rotation 0: X along +X, and Y the first of the four directions off the X axis.
+		Assert.equal("20", header(new CFrame()));
+		Assert.equal("60", header(new CFrame(1, 1, 1)));
+		Assert.equal("00" + "0000803f" + "00000040" + "00004040", header(new CFrame(1, 2, 3)));
+		// A half turn about Y: X along -X (code 1), Y along +Y (rank 0), so rotation 1 * 4 + 0.
+		Assert.equal("24", header(CFrame.Angles(0, math.pi, 0)));
+	}
+
+	@Fact
+	public pinsAPackedTagBit(): void {
+		// Region bits in name order: the tag of `first` (set for "on", the second variant), then `flag`.
+		const on = packedTagSerializer.serialize({ first: { mode: "on", level: 7 }, flag: false });
+		Assert.equal("01" + "07", hex(on));
+		const off = packedTagSerializer.serialize({ first: { mode: "off" }, flag: true });
+		Assert.equal("02", hex(off));
+	}
+	@Fact
+	public roundTripsAHeadWiderThanTheScratchBufferStartsAt(): void {
+		const value: WideHead = {
+			f0: 0.5,
+			f1: 1.5,
+			f2: 2.5,
+			f3: 3.5,
+			f4: 4.5,
+			f5: 5.5,
+			f6: 6.5,
+			f7: 7.5,
+			f8: 8.5,
+			f9: 9.5,
+			names: ["a", "bc"],
+		};
+		// The first call grows the buffer; the second writes into it as grown.
+		for (const _ of $range(1, 2)) {
+			const buf = wideHeadSerializer.serialize(value);
+			Assert.equal(80 + 1 + 2 + 3, buffer.len(buf));
+			const result = wideHeadSerializer.deserialize(buf);
+			Assert.equal(value.f0, result.f0);
+			Assert.equal(value.f9, result.f9);
+			Assert.equal(2, result.names.size());
+			Assert.equal("a", result.names[0]);
+			Assert.equal("bc", result.names[1]);
+		}
+	}
+}
+
+export = BytesTest;

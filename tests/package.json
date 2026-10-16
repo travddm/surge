@@ -1,0 +1,39 @@
+{
+	"name": "surge-tests",
+	"version": "0.1.0",
+	"private": true,
+	"description": "Round-trip and benchmark suite exercising rbxts-transformer-surge and @rbxts/surge together.",
+	"scripts": {
+		"compile": "rbxtsc -p tsconfig.json --rojo default.project.json",
+		"compile:watch": "npm run compile -- -w",
+		"sourcemap": "rojo sourcemap default.project.json -o out/sourcemap.json --absolute",
+		"serve": "rojo serve default.project.json",
+		"build": "node scripts/ensure-dist.mjs && rojo build default.project.json -o dist/tests.rbxl",
+		"test": "node scripts/check-test-output.mjs lune run scripts/lune-test-runner.luau",
+		"bench:definitions": "blink src/bench/definitions/catalog.blink -y && zap src/bench/definitions/catalog.zap && npm ci --prefix flamework2 && npm run compile --prefix flamework2 && node scripts/copy-flamework2-codecs.mjs",
+		"bench:size": "lune run scripts/lune-size-runner.luau",
+		"bench:size:only": "npm run bench:size -- --only",
+		"bench:code": "lune run scripts/lune-code-size-runner.luau",
+		"bench:speed": "npm run build && node scripts/record-speed-benchmarks.mjs",
+		"bench:speed:only": "npm run bench:speed -- --only",
+		"bench:speed:render": "node scripts/record-speed-benchmarks.mjs --render"
+	},
+	"author": "travddm",
+	"license": "MIT",
+	"dependencies": {
+		"@rbxts/surge": "file:..",
+		"@flamework/core": "^1.3.2",
+		"@rbxts/flamework-binary-serializer": "0.7.0",
+		"@rbxts/repr": "1.0.2",
+		"@rbxts/runit": "^1.4.7",
+		"@rbxts/serio": "1.2.7"
+	},
+	"devDependencies": {
+		"@rbxts/compiler-types": "^3.0.0-types.0",
+		"@rbxts/types": "^1.0.896",
+		"rbxts-transformer-flamework": "^1.3.2",
+		"rbxts-transformer-surge": "file:../../rbxts-transformer-surge",
+		"roblox-ts": "3.0.0",
+		"typescript": "5.5.3"
+	}
+}

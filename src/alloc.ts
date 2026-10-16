@@ -1,0 +1,54 @@
+//!native
+//!optimize 2
+// Two Luau file pragmas. Both are honoured anywhere ahead of the first line of code, not only on
+// line 1. Native code is worth nothing the speed tier can read on this module
+// (docs/research/native-on-the-package.md): both functions below run once per `serialize()` at
+// most, and the per-field work they used to do is four instructions in the caller's own generated
+// file now. `optimize 2` is the level a published place compiles at, where Studio compiles at 1,
+// so it is what makes a profile taken in Studio a profile of what runs live, and every module this
+// repository compiles carries it.
+// This module owns no cursor and no buffer. A generated serializer declares
+// its own scratch buffer, capacity and write cursor in the closure it is
+// emitted into, so that reserving bytes is a compare and two moves inline
+// rather than a call into this module (Transformer 5.3 and 5.4 in
+// docs/specs/transformer.md). What removing that call was worth is in
+// docs/research/generated-code-against-hand-written.md. A serializer whose
+// shape the transformer sizes exactly calls neither function here
+// (Transformer 5.20).
+
+/**
+ * Doubles `current` until it holds `needed` bytes and copies the first `live`
+ * across. Generated code calls this only on the reservation that runs past
+ * the end of its buffer, which is once per doubling. A buffer of no bytes,
+ * which a cursor's may be, grows from one, since nothing doubles from zero.
+ *
+ * Returns the new buffer and its length, the caller's new capacity, so that
+ * each reservation's growth is one call and one assignment in the caller.
+ * The buffer is never shorter than `current`: a `serialize` checks no capacity
+ * where a reservation is known to end within the bytes its scratch buffer is
+ * created with (Transformer 5.30 in docs/specs/transformer.md).
+ */
+// eslint-disable-next-line roblox-ts/no-user-defined-lua-tuple -- a real Luau multi-return, not a stored value.
+export function grow(current: buffer, live: number, needed: number): LuaTuple<[grown: buffer, capacity: number]> {
+	let capacity = math.max(buffer.len(current), 1);
+	while (capacity < needed) {
+		capacity *= 2;
+	}
+	const grown = buffer.create(capacity);
+	buffer.copy(grown, 0, current, 0, live);
+	// eslint-disable-next-line roblox-ts/no-user-defined-lua-tuple -- the sanctioned way to return one.
+	return $tuple(grown, capacity);
+}
+
+/**
+ * Copies the first `size` bytes of `written` into an exact-size result
+ * buffer. Called once per top-level `serialize()` of a type that reserves
+ * bytes and is not sized exactly (Runtime API 5.4 and 5.9), which is why it
+ * is still a call: measured at 1.00x, both as a cost of its own and as one
+ * more call per serialize.
+ */
+export function finishWrite(written: buffer, size: number): buffer {
+	const result = buffer.create(size);
+	buffer.copy(result, 0, written, 0, size);
+	return result;
+}
