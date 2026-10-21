@@ -1,0 +1,30 @@
+import type { DataType } from "@rbxts/surge";
+
+/**
+ * No width brands, so the unpacked shape is the same for all three; only the
+ * `Packed<T>` wrapper comes from each library's own namespace. serio stores a
+ * rotation quantized to about 0.05 radians per component, so its round trip
+ * is inexact by design on every row here -- see the coverage matrix in
+ * docs/research/type-coverage-across-libraries.md.
+ *
+ * Neither packed row has a Zap cell: it has no packed mode, and its
+ * `AlignedCFrame`, which would answer the axis-aligned one, looks a rotation
+ * up by exact equality in a table built from `CFrame.Angles`, the same table
+ * fbs and serio miss on these rotations, and Zap asserts on a miss instead of
+ * falling back to a general form.
+ */
+export interface Transforms {
+	list: CFrame[];
+}
+
+/**
+ * The same rotations in surge's 18-byte `Quantized` form. fbs and serio have
+ * no such brand, so their cells write their `CFrame` as the CFrame array's do:
+ * serio quantized to 18 bytes as it always is, which is the comparison, and
+ * fbs at full width, a second control for a scoped run (Benchmark harness 9.3
+ * in docs/specs/benchmark-harness.md). Flamework 2, Blink and Zap would write
+ * full width too, and the CFrame array row times them on the same rotations.
+ */
+export interface QuantizedTransforms {
+	list: Array<DataType.Quantized<CFrame>>;
+}

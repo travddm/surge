@@ -1,0 +1,44 @@
+//!native
+//!optimize 2
+import { Rng } from "../../support";
+import type { Fixture } from "../adapter";
+import { defineEntry } from "../adapter";
+import { baselineAdapter } from "../adapters/baseline";
+import { flamework2Adapter } from "../adapters/flamework2";
+import { surgeAdapter } from "../adapters/surge";
+import { cursorAdapter } from "../adapters/surge-cursor";
+import { tree as baselineCodec } from "../baseline/codecs";
+import { flamework2Serializer } from "../codecs/tree/flamework2";
+import type { TreeNode } from "../codecs/tree/shapes";
+import { serializer } from "../codecs/tree/surge";
+import { checkedSerializer } from "../codecs/tree/surge-checked";
+import { cursorSerializer } from "../codecs/tree/surge-cursor";
+
+const BRANCHING = 4;
+const DEPTH = 3;
+
+const rng = new Rng(5113);
+
+function grow(depth: number): TreeNode {
+	const children = new Array<TreeNode>();
+	if (depth > 0) {
+		for (const _ of $range(1, BRANCHING)) {
+			children.push(grow(depth - 1));
+		}
+	}
+	return { id: rng.int(0, 65535), children };
+}
+
+const value = grow(DEPTH);
+
+export const tree: Fixture = {
+	name: "tree",
+	note: `85 nodes of a u16, ${BRANCHING} children each to a depth of ${DEPTH}, through a recursion helper`,
+	entries: [
+		defineEntry<TreeNode>("surge", value, surgeAdapter(serializer)),
+		defineEntry<TreeNode>("surge (cursor)", value, cursorAdapter(cursorSerializer)),
+		defineEntry<TreeNode>("surge (readChecks)", value, surgeAdapter(checkedSerializer)),
+		defineEntry<TreeNode>("flamework2", value, flamework2Adapter(flamework2Serializer)),
+		defineEntry("baseline", value, baselineAdapter(baselineCodec)),
+	],
+};
