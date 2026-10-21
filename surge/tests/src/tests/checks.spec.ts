@@ -34,7 +34,7 @@ const constants = createCodec<WithConstants>({ readChecks: true });
 // The exact form reads no count, so the one bound on its elements'
 // reservation (Transformer 5.18) is all that stops a short payload.
 interface WithTriple {
-	triple: DataType.Length<Array<DataType.u16>, 3>;
+	triple: DataType.Exact<Array<DataType.u16>, 3>;
 }
 const triple = createCodec<WithTriple>({ readChecks: true });
 
@@ -85,11 +85,11 @@ interface WithEnum {
 const withEnum = createCodec<WithEnum>({ readChecks: true });
 
 interface Exact {
-	code: DataType.Length<string, 4>;
-	triple: DataType.Length<Array<DataType.u8>, 3>;
-	bytes: DataType.Length<buffer, 2>;
-	slots: DataType.Length<Array<DataType.u8 | undefined>, 3>;
-	marks: DataType.Length<Array<"a" | "b" | undefined>, 3>;
+	code: DataType.Exact<string, 4>;
+	triple: DataType.Exact<Array<DataType.u8>, 3>;
+	bytes: DataType.Exact<buffer, 2>;
+	slots: DataType.Exact<Array<DataType.u8 | undefined>, 3>;
+	marks: DataType.Exact<Array<"a" | "b" | undefined>, 3>;
 }
 const exact = createCodec<Exact>({ writeChecks: true });
 

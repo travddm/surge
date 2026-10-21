@@ -109,7 +109,7 @@ the server,
 for what clients send, and not where the bytes are the game's own
 ([errors-and-guarantees.md](errors-and-guarantees.md)).
 
-`writeChecks` adds a comparison to every narrowed or exact `Length`, every
-`Range` number, and every number or component of an integer width it writes,
-and nothing to a type with none of these. Turn it on where such a value is
-built at run time.
+`writeChecks` adds a comparison to every narrowed `Length`, every `Exact`,
+every `Range` number, and every number or component of an integer width it
+writes, and nothing to a type with none of these. Turn it on where such a
+value is built at run time.

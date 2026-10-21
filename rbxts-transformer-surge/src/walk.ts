@@ -237,6 +237,10 @@ export class TypeWalker {
 			// brand and the helper's body keeps the count.
 			return this.walkGuarded(type, packed, () => this.walkLength(surgeBrand.args, node, packed));
 		}
+		if (surgeBrand?.name === "Exact") {
+			// Guarded for the same reason as `Length`.
+			return this.walkGuarded(type, packed, () => this.walkExact(surgeBrand.args, node, packed));
+		}
 		if (surgeBrand?.name === "Vector") {
 			const components = this.componentWidths("Vector", surgeBrand.args, node);
 			return components === undefined ? { kind: "vector3" } : { kind: "vector3", components };
@@ -556,7 +560,7 @@ export class TypeWalker {
 		return name;
 	}
 
-	// ---- DataType.Length<T, L> -------------------------------------------
+	// ---- DataType.Length<T, L> / DataType.Exact<T, N> --------------------
 
 	/**
 	 * `DataType.Length<T, L>` sets the width of the count `T` writes ahead of
@@ -574,35 +578,32 @@ export class TypeWalker {
 		const field = this.walk(innerType, node, packed);
 		if (widthType === undefined) {
 			this.report(
-				`"DataType.Length" needs its second argument: "DataType.u8", "DataType.u16", "DataType.u24", ` +
-					`"DataType.u32", or a whole number literal for the exact form. Without the brand, a count ` +
-					`is variable-length.`,
+				`"DataType.Length" needs its second argument: "DataType.u8", "DataType.u16", "DataType.u24" or ` +
+					`"DataType.u32". Without the brand, a count is variable-length.`,
 				node,
 			);
 			return field;
 		}
 
-		// A numeric literal is the exact form: no count is written at all and
-		// both sides use exactly that many. A width brand is the counted form.
+		// A width brand is a `number`, so a number literal satisfies `L`'s
+		// constraint, and only the walk can reject it. `Exact` is named only
+		// for a length it takes.
 		if (widthType.isNumberLiteral()) {
-			const exact = widthType.value;
-			if (!Number.isInteger(exact) || exact < 0) {
-				this.report(
-					`"DataType.Length"'s exact count must be a whole number that is not negative, not "${exact}".`,
-					node,
-				);
-				return field;
-			}
-			return this.withLength(field, exact, node);
+			const value = widthType.value;
+			const exactHint =
+				Number.isInteger(value) && value >= 0
+					? ` A length fixed with no count is "DataType.Exact<T, ${value}>".`
+					: "";
+			this.report(`"DataType.Length" takes a count width, not "${value}".${exactHint}`, node);
+			return field;
 		}
 
 		const width = getDataTypeBrand(widthType);
 		if (width === undefined || !LENGTH_WIDTHS.has(width)) {
 			this.report(
-				`"DataType.Length"'s second argument must be "DataType.u8", "DataType.u16", "DataType.u24", ` +
-					`"DataType.u32", or a whole number literal for the exact form` +
-					`${width === undefined ? "" : `, not "DataType.${width}"`} -- a count is never negative and ` +
-					`never fractional.`,
+				`"DataType.Length"'s second argument must be "DataType.u8", "DataType.u16", "DataType.u24" or ` +
+					`"DataType.u32"${width === undefined ? "" : `, not "DataType.${width}"`} -- a count is never ` +
+					`negative and never fractional.`,
 				node,
 			);
 			return field;
@@ -611,23 +612,62 @@ export class TypeWalker {
 	}
 
 	/**
+	 * `DataType.Exact<T, N>` fixes `T`'s length at `N` and writes no count.
+	 * It walks to the same field as `Length` does, with the number as the
+	 * length, so the emitter tells the two forms apart by the `CountSpec`
+	 * alone.
+	 */
+	private walkExact(args: readonly ts.Type[], node: ts.Node, packed: boolean): Field {
+		const [innerType, countType] = args;
+		if (!innerType) {
+			return { kind: "blob" };
+		}
+		const field = this.walk(innerType, node, packed);
+		if (countType === undefined || !countType.isNumberLiteral()) {
+			// `Length` is named only for a width it takes.
+			const width = countType === undefined ? undefined : getDataTypeBrand(countType);
+			const lengthHint =
+				width !== undefined && LENGTH_WIDTHS.has(width)
+					? ` A count width is "DataType.Length<T, DataType.${width}>".`
+					: "";
+			this.report(
+				`"DataType.Exact"'s second argument must be a whole number literal, such as 8` +
+					`${countType === undefined ? "" : `, not "${this.checker.typeToString(countType)}"`}.${lengthHint}`,
+				node,
+			);
+			return field;
+		}
+		const exact = countType.value;
+		if (!Number.isInteger(exact) || exact < 0) {
+			this.report(`"DataType.Exact"'s length must be a whole number that is not negative, not "${exact}".`, node);
+			return field;
+		}
+		return this.withLength(field, exact, node);
+	}
+
+	/**
 	 * Every width is recorded, `u32` included: absence is the variable-length
 	 * count an unbranded container writes (Wire format 6.9 in
 	 * docs/specs/wire-format.md), which no width brand names, so `Length` has
-	 * no default (rule 4 of DataType brands in docs/coding-standards.md).
+	 * no default (rule 4 of DataType brands in docs/coding-standards.md). A
+	 * number is `Exact`'s length, and the diagnostics name the brand it
+	 * came from.
 	 */
 	private withLength(field: Field, length: CountSpec, node: ts.Node): Field {
+		const exact = typeof length === "number";
+		const brand = exact ? "DataType.Exact" : "DataType.Length";
 		switch (field.kind) {
 			case "str":
 			case "buffer":
 			case "array":
 				return { ...field, length };
 			case "dict": {
-				if (typeof length === "number") {
+				if (exact) {
 					this.report(
-						`"DataType.Length"'s exact form does not apply to a Map, a Set, or a Record: the write ` +
-							`side counts entries as it iterates them, so it cannot promise a fixed number, and a ` +
-							`mismatch would misread every field after this one. Give it a count width instead.`,
+						`"DataType.Exact" does not apply to a Map, a Set, or a Record: the write side counts ` +
+							`entries as it iterates them, so it cannot promise a fixed number, and a mismatch ` +
+							`would misread every field after this one. Give it "DataType.Length" with a count ` +
+							`width instead.`,
 						node,
 					);
 					return field;
@@ -637,7 +677,7 @@ export class TypeWalker {
 			case "tuple": {
 				if (field.rest === undefined) {
 					this.report(
-						`"DataType.Length" has nothing to set on a tuple with no rest element -- its elements are ` +
+						`"${brand}" has nothing to set on a tuple with no rest element -- its elements are ` +
 							`written inline and it has no count.`,
 						node,
 					);
@@ -647,15 +687,18 @@ export class TypeWalker {
 			}
 			case "bitSet":
 				this.report(
-					`"DataType.Length" has nothing to set on a Set of literal values inside "DataType.Packed" -- ` +
+					`"${brand}" has nothing to set on a Set of literal values inside "DataType.Packed" -- ` +
 						`it is written as one bit per value it can hold, with no count.`,
 					node,
 				);
 				return field;
 			default:
 				this.report(
-					`"DataType.Length" applies to a string, an array, a Map, a Set, a Record, a buffer, or a ` +
-						`tuple's rest element, and "${field.kind}" writes no count.`,
+					exact
+						? `"${brand}" applies to a string, an array, a buffer, or a tuple's rest element, ` +
+								`and "${field.kind}" has no length.`
+						: `"${brand}" applies to a string, an array, a Map, a Set, a Record, a buffer, or ` +
+								`a tuple's rest element, and "${field.kind}" writes no count.`,
 					node,
 				);
 				return field;
@@ -1044,9 +1087,9 @@ export class TypeWalker {
 	/**
 	 * The recursion guard of {@link walkUnion}, for a type whose `Field` has no
 	 * `helperName` slot: a union, an array, a tuple, a `Map`, a `Set`, an index
-	 * signature or a `Length` brand. A type that reappears on its own walk path
-	 * becomes a `recursiveRef`, and once a helper exists every reference to the
-	 * type, the outermost included, is one.
+	 * signature, or a `Length` or `Exact` brand. A type that reappears on its
+	 * own walk path becomes a `recursiveRef`, and once a helper exists every
+	 * reference to the type, the outermost included, is one.
 	 */
 	private walkGuarded(type: ts.Type, packed: boolean, walkBody: () => Field): Field {
 		const cached = this.getResolved(type, packed);

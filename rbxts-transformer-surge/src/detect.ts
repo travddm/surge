@@ -207,6 +207,7 @@ function widthFromBrandProperty(type: ts.Type): string | undefined {
 const PARAMETERIZED_BRANDS = [
 	{ name: "Packed", property: "_surge_packed" },
 	{ name: "Length", property: "_surge_length" },
+	{ name: "Exact", property: "_surge_exact" },
 	{ name: "Vector", property: "_surge_vector" },
 	{ name: "Transform", property: "_surge_transform" },
 	{ name: "Range", property: "_surge_range" },
@@ -237,8 +238,9 @@ function argumentsFromBrandProperty(
 /**
  * The outermost `DataType.*` brand on `type`, with its type arguments
  * (`Packed<T>` and `Quantized<T>` give `[T]`, `Length<T, L>` gives `[T, L]`,
- * `Vector<X, Y, Z>` and `Transform<X, Y, Z>` give `[X, Y, Z]`,
- * `Range<T, Min, Max>` gives `[T, Min, Max]`, and a width brand gives none).
+ * `Exact<T, N>` gives `[T, N]`, `Vector<X, Y, Z>` and `Transform<X, Y, Z>`
+ * give `[X, Y, Z]`, `Range<T, Min, Max>` gives `[T, Min, Max]`, and a width
+ * brand gives none).
  *
  * Alias identity is tried first, and for every brand rather than one brand at
  * a time, because a composition flattens into an intersection carrying both

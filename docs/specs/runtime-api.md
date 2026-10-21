@@ -1,7 +1,7 @@
 # Runtime API specification
 
 Status: current
-Applies to: commit `6742343` (no tagged release yet)
+Applies to: commit `9a131ce` (no tagged release yet)
 
 ## 1. Scope
 
@@ -86,28 +86,28 @@ them what to emit. Each defaults to `false`. `readChecks` governs
 `deserialize` (section 4) and `writeChecks` governs `serialize` (3.10 and
 3.11).
 
-**3.9** The package exports the `DataType` namespace of width, length, range,
-per-component width (`Vector`, `Transform`), quantization and packing
-brands, and `DataType.Width`, the union of the width brands, for a type over
-widths to take as a constraint. What each brand does
-to the bytes is in [wire-format.md](wire-format.md). A property typed
-`DataType.Width` itself is a diagnostic (Transformer 7.2).
+**3.9** The package exports the `DataType` namespace of width, length
+(`Length`, `Exact`), range, per-component width (`Vector`, `Transform`),
+quantization and packing brands, and `DataType.Width`, the union of the
+width brands, for a type over widths to take as a constraint. What each
+brand does to the bytes is in [wire-format.md](wire-format.md). A property
+typed `DataType.Width` itself is a diagnostic (Transformer 7.2).
 
 **3.10** With `writeChecks`, `serialize` raises a string beginning
-`@rbxts/surge:` for a value that does not fit its type: a value in the exact
-form of `DataType.Length<T, N>` that is not `N` long, a count larger than the
+`@rbxts/surge:` for a value that does not fit its type: a
+`DataType.Exact<T, N>` value that is not `N` long, a count larger than the
 `u8`, `u16` or `u24` width `DataType.Length<T, L>` gives it, a number that
 its `DataType.Range<T, Min, Max>` does not admit
 ([wire-format.md](wire-format.md) 4.17), and a number with no range that its
 integer width cannot hold, or a fraction in one, a component of a
 `DataType.Vector<X, Y, Z>` or a `DataType.Transform<X, Y, Z>` included
-([wire-format.md](wire-format.md) 4.15 and 7.3). An `array` or tuple rest in the exact
-form whose element is `optional`, or a `literal` that includes `undefined`,
-may be shorter than `N`, which [wire-format.md](wire-format.md) 6.6 makes
-valid; only a longer one raises.
+([wire-format.md](wire-format.md) 4.15 and 7.3). An `array` or tuple rest
+under `Exact<T, N>` whose element is `optional`, or a `literal` that
+includes `undefined`, may be shorter than `N`, which
+[wire-format.md](wire-format.md) 6.6 makes valid; only a longer one raises.
 
 **3.11** Without `writeChecks`, `serialize` does not examine lengths, counts
-or numbers: a value in the exact form is truncated or padded as
+or numbers: an `Exact<T, N>` value is truncated or padded as
 [wire-format.md](wire-format.md) 6.3 and 6.7 state, a count too large for its
 width wraps as 6.8 states, and a number outside its width wraps as 4.15
 states, whatever its `DataType.Range`. `writeChecks` examines no other value,
@@ -405,6 +405,9 @@ A test file named `*.spec.ts` is under `tests/src/tests/`. A path starting
 
 ## Changes
 
+- `9a131ce`: 3.9 lists `DataType.Exact<T, N>` among the length brands, and
+  3.10 and 3.11 name it for the exact form, which was `Length<T, N>` with a
+  whole number literal.
 - `6742343`: 3.11 excepts a float width under a range from what `writeChecks`
   leaves unexamined; 5.9 reads once every length and presence the size binds
   (Transformer 5.20), not only a `str`'s or a `buffer`'s length, and names the

@@ -681,7 +681,7 @@ describe("transform generated code", () => {
 
 	test.each([
 		["an array", "{ x: number }[]"],
-		["an exact array", "DataType.Length<{ x: number }[], 3>"],
+		["an exact array", "DataType.Exact<{ x: number }[], 3>"],
 		["a tuple's rest", "[string, ...{ x: number }[]]"],
 		["an enum of three items", "Enum.SortOrder"],
 		["an enum of five items", "Enum.ScaleType"],
@@ -759,9 +759,9 @@ describe("transform generated code", () => {
 		// not identifiers, a packed region with optionals in it, and a blob.
 		const source = (options: string) => `import { DataType, createCodec } from "@rbxts/surge";
 			interface T {
-				name: string; nick?: string; code: DataType.Length<string, 4>;
+				name: string; nick?: string; code: DataType.Exact<string, 4>;
 				bytes: buffer; maybeBytes?: buffer;
-				list: DataType.u16[]; triple: DataType.Length<DataType.u8[], 3>;
+				list: DataType.u16[]; triple: DataType.Exact<DataType.u8[], 3>;
 				pair: [DataType.u8, string, ...DataType.i16[]];
 				inner?: { label: string; at: Vector3 }; "odd-key"?: string; 0: string;
 				flags: DataType.Packed<{ on: boolean; count?: DataType.u8; text?: string }>;
@@ -1069,7 +1069,7 @@ describe("transform readChecks option", () => {
 describe("transform writeChecks option", () => {
 	test("writeChecks: true emits the write-side checks, and the same shape without them does not", () => {
 		const source = `import { DataType, createCodec } from "@rbxts/surge";
-			interface P { name: DataType.Length<string, DataType.u8>; code: DataType.Length<string, 4>; }
+			interface P { name: DataType.Length<string, DataType.u8>; code: DataType.Exact<string, 4>; }
 			const guarded = createCodec<P>({ writeChecks: true });
 			const plain = createCodec<P>();`;
 		const { printed, diagnostics, cleanup } = runTransform(source);
@@ -1088,7 +1088,7 @@ describe("transform writeChecks option", () => {
 		expect(
 			typeErrorsOfGeneratedCode(
 				`import { DataType, createSerializer } from "@rbxts/surge";
-				interface P { list: DataType.Length<Array<number>, DataType.u16>; pair: DataType.Length<Array<string | undefined>, 2>; tags: DataType.Length<Map<string, number>, DataType.u8>; }
+				interface P { list: DataType.Length<Array<number>, DataType.u16>; pair: DataType.Exact<Array<string | undefined>, 2>; tags: DataType.Length<Map<string, number>, DataType.u8>; }
 				const s = createSerializer<P>({ writeChecks: true });`,
 			),
 		).toEqual([]);
