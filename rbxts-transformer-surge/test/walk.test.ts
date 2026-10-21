@@ -1477,6 +1477,27 @@ describe("TypeWalker Length<T, L> and Exact<T, N>", () => {
 		expect(field.fields[0].field).toEqual({ kind: "str" });
 	});
 
+	// Transformer 4.17: the outer brand walks the inner one first, then sets
+	// the container's count over it.
+	test("of two length brands on one container, the outer one sets the count, with no diagnostic", () => {
+		const byName = lengths(
+			`import { DataType } from "@rbxts/surge";
+			type Ids = DataType.Exact<DataType.Length<string[], DataType.u8>, 3>;
+			interface T {
+				exactOutside: DataType.Exact<DataType.Length<string[], DataType.u8>, 3>;
+				lengthOutside: DataType.Length<DataType.Exact<string, 4>, DataType.u8>;
+				twoLengths: DataType.Length<DataType.Length<string[], DataType.u8>, DataType.u16>;
+				reAliased: Ids;
+			}`,
+		);
+		expect([...byName.entries()].sort()).toEqual([
+			["exactOutside", 3],
+			["lengthOutside", "u8"],
+			["reAliased", 3],
+			["twoLengths", "u16"],
+		]);
+	});
+
 	test("a number literal Exact cannot take is a diagnostic that does not name Exact", () => {
 		for (const count of ["-1", "2.5"]) {
 			const { diagnostics } = walkDeclaration(
