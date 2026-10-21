@@ -1477,6 +1477,19 @@ describe("TypeWalker Length<T, L> and Exact<T, N>", () => {
 		expect(field.fields[0].field).toEqual({ kind: "str" });
 	});
 
+	test("a number literal Exact cannot take is a diagnostic that does not name Exact", () => {
+		for (const count of ["-1", "2.5"]) {
+			const { diagnostics } = walkDeclaration(
+				`import { DataType } from "@rbxts/surge"; interface T { s: DataType.Length<string, ${count}>; }`,
+				"T",
+				{ surge: true },
+			);
+			expect(diagnostics).toHaveLength(1);
+			expect(diagnostics[0].message).toContain(`not "${count}"`);
+			expect(diagnostics[0].message).not.toContain("DataType.Exact");
+		}
+	});
+
 	test("Exact fixes the length on every kind that can promise one", () => {
 		const byName = lengths(
 			`import { DataType } from "@rbxts/surge";
@@ -1536,6 +1549,33 @@ describe("TypeWalker Length<T, L> and Exact<T, N>", () => {
 			);
 			expect(diagnostics).toHaveLength(1);
 			expect(diagnostics[0].message).toContain("must be a whole number literal");
+			expect(diagnostics[0].message).toContain(expected);
+		}
+	});
+
+	test("a width Length cannot take, as an Exact length, is a diagnostic that does not name Length", () => {
+		const { diagnostics } = walkDeclaration(
+			`import { DataType } from "@rbxts/surge"; interface T { s: DataType.Exact<string, DataType.f32>; }`,
+			"T",
+			{ surge: true },
+		);
+		expect(diagnostics).toHaveLength(1);
+		expect(diagnostics[0].message).toContain("must be a whole number literal");
+		expect(diagnostics[0].message).not.toContain("DataType.Length");
+	});
+
+	test("Exact on a tuple with no rest element, or on a bit set, names Exact", () => {
+		for (const [type, expected] of [
+			["DataType.Exact<[string, number], 2>", "no rest element"],
+			['DataType.Packed<{ s: DataType.Exact<Set<"a" | "b">, 2> }>', "one bit per value"],
+		]) {
+			const { diagnostics } = walkDeclaration(
+				`import { DataType } from "@rbxts/surge"; interface T { p: ${type}; }`,
+				"T",
+				{ surge: true },
+			);
+			expect(diagnostics).toHaveLength(1);
+			expect(diagnostics[0].message).toContain('"DataType.Exact" has nothing to set');
 			expect(diagnostics[0].message).toContain(expected);
 		}
 	});

@@ -88,10 +88,10 @@ them what to emit. Each defaults to `false`. `readChecks` governs
 
 **3.9** The package exports the `DataType` namespace of width, length
 (`Length`, `Exact`), range, per-component width (`Vector`, `Transform`),
-quantization and packing brands, and `DataType.Width`, the union of the width brands, for a type over
-widths to take as a constraint. What each brand does
-to the bytes is in [wire-format.md](wire-format.md). A property typed
-`DataType.Width` itself is a diagnostic (Transformer 7.2).
+quantization and packing brands, and `DataType.Width`, the union of the
+width brands, for a type over widths to take as a constraint. What each
+brand does to the bytes is in [wire-format.md](wire-format.md). A property
+typed `DataType.Width` itself is a diagnostic (Transformer 7.2).
 
 **3.10** With `writeChecks`, `serialize` raises a string beginning
 `@rbxts/surge:` for a value that does not fit its type: a
@@ -102,9 +102,9 @@ its `DataType.Range<T, Min, Max>` does not admit
 integer width cannot hold, or a fraction in one, a component of a
 `DataType.Vector<X, Y, Z>` or a `DataType.Transform<X, Y, Z>` included
 ([wire-format.md](wire-format.md) 4.15 and 7.3). An `array` or tuple rest
-under `Exact<T, N>` whose element is `optional`, or a `literal` that includes `undefined`,
-may be shorter than `N`, which [wire-format.md](wire-format.md) 6.6 makes
-valid; only a longer one raises.
+under `Exact<T, N>` whose element is `optional`, or a `literal` that
+includes `undefined`, may be shorter than `N`, which
+[wire-format.md](wire-format.md) 6.6 makes valid; only a longer one raises.
 
 **3.11** Without `writeChecks`, `serialize` does not examine lengths, counts
 or numbers: an `Exact<T, N>` value is truncated or padded as

@@ -586,13 +586,15 @@ export class TypeWalker {
 		}
 
 		// A width brand is a `number`, so a number literal satisfies `L`'s
-		// constraint, and only the walk can reject it.
+		// constraint, and only the walk can reject it. `Exact` is named only
+		// for a length it takes.
 		if (widthType.isNumberLiteral()) {
-			this.report(
-				`"DataType.Length" takes a count width, not "${widthType.value}". A length fixed with no count ` +
-					`is "DataType.Exact<T, ${widthType.value}>".`,
-				node,
-			);
+			const value = widthType.value;
+			const exactHint =
+				Number.isInteger(value) && value >= 0
+					? ` A length fixed with no count is "DataType.Exact<T, ${value}>".`
+					: "";
+			this.report(`"DataType.Length" takes a count width, not "${value}".${exactHint}`, node);
 			return field;
 		}
 
@@ -622,11 +624,15 @@ export class TypeWalker {
 		}
 		const field = this.walk(innerType, node, packed);
 		if (countType === undefined || !countType.isNumberLiteral()) {
+			// `Length` is named only for a width it takes.
 			const width = countType === undefined ? undefined : getDataTypeBrand(countType);
+			const lengthHint =
+				width !== undefined && LENGTH_WIDTHS.has(width)
+					? ` A count width is "DataType.Length<T, DataType.${width}>".`
+					: "";
 			this.report(
 				`"DataType.Exact"'s second argument must be a whole number literal, such as 8` +
-					`${countType === undefined ? "" : `, not "${this.checker.typeToString(countType)}"`}.` +
-					`${width === undefined ? "" : ` A count width is "DataType.Length<T, DataType.${width}>".`}`,
+					`${countType === undefined ? "" : `, not "${this.checker.typeToString(countType)}"`}.${lengthHint}`,
 				node,
 			);
 			return field;
@@ -648,14 +654,15 @@ export class TypeWalker {
 	 * came from.
 	 */
 	private withLength(field: Field, length: CountSpec, node: ts.Node): Field {
-		const brand = typeof length === "number" ? "DataType.Exact" : "DataType.Length";
+		const exact = typeof length === "number";
+		const brand = exact ? "DataType.Exact" : "DataType.Length";
 		switch (field.kind) {
 			case "str":
 			case "buffer":
 			case "array":
 				return { ...field, length };
 			case "dict": {
-				if (typeof length === "number") {
+				if (exact) {
 					this.report(
 						`"DataType.Exact" does not apply to a Map, a Set, or a Record: the write side counts ` +
 							`entries as it iterates them, so it cannot promise a fixed number, and a mismatch ` +
@@ -687,10 +694,10 @@ export class TypeWalker {
 				return field;
 			default:
 				this.report(
-					typeof length === "number"
-						? `"DataType.Exact" applies to a string, an array, a buffer, or a tuple's rest element, ` +
+					exact
+						? `"${brand}" applies to a string, an array, a buffer, or a tuple's rest element, ` +
 								`and "${field.kind}" has no length.`
-						: `"DataType.Length" applies to a string, an array, a Map, a Set, a Record, a buffer, or ` +
+						: `"${brand}" applies to a string, an array, a Map, a Set, a Record, a buffer, or ` +
 								`a tuple's rest element, and "${field.kind}" writes no count.`,
 					node,
 				);
@@ -1080,9 +1087,9 @@ export class TypeWalker {
 	/**
 	 * The recursion guard of {@link walkUnion}, for a type whose `Field` has no
 	 * `helperName` slot: a union, an array, a tuple, a `Map`, a `Set`, an index
-	 * signature, or a `Length` or `Exact` brand. A type that reappears on its own walk path
-	 * becomes a `recursiveRef`, and once a helper exists every reference to the
-	 * type, the outermost included, is one.
+	 * signature, or a `Length` or `Exact` brand. A type that reappears on its
+	 * own walk path becomes a `recursiveRef`, and once a helper exists every
+	 * reference to the type, the outermost included, is one.
 	 */
 	private walkGuarded(type: ts.Type, packed: boolean, walkBody: () => Field): Field {
 		const cached = this.getResolved(type, packed);
