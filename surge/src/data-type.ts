@@ -89,22 +89,29 @@ export namespace DataType {
 
 	/**
 	 * States the values a number takes: from `Min` to `Max`, both number
-	 * literals. `T` is `number` or one of the width brands above.
+	 * literals. `W` is `number`, the default, or one of the width brands
+	 * above; the transformer reports anything else, since every width brand is
+	 * a `number` and the constraint can say no more.
 	 *
 	 * With `number`, the value is a whole number, stored at the narrowest width
 	 * that holds the range: {@link u8}, {@link u16}, {@link u24} or
 	 * {@link u32} when `Min` is not negative, {@link i8} to {@link i32}
-	 * otherwise, and {@link f64} past 32 bits. `Range<number, 0, 100>` is one
-	 * byte. With a width brand, that width is kept, and a range it cannot hold
-	 * is a diagnostic; {@link f32} and {@link f64} also admit fractions.
+	 * otherwise, and {@link f64} past 32 bits. `Range<0, 100>` is one byte.
+	 * With a width brand, as in `Range<0, 100, DataType.u16>`, that width is
+	 * kept, and a range it cannot hold is a diagnostic; {@link f32} and
+	 * {@link f64} also admit fractions.
 	 *
 	 * The range changes no byte beyond the width. With `writeChecks`,
 	 * `serialize` raises for a value outside the range, a NaN, and a fraction
 	 * where the range holds whole numbers. Without it, nothing checks the
 	 * value, and one outside the width wraps as that width does.
+	 *
+	 * @typeParam Min the lowest value, a number literal
+	 * @typeParam Max the highest value, a number literal
+	 * @typeParam W the width: `number` for the narrowest, or a width brand
 	 */
-	export type Range<T extends number, Min extends number, Max extends number> = T & {
-		readonly _surge_range?: [T, Min, Max];
+	export type Range<Min extends number, Max extends number, W extends number = number> = number & {
+		readonly _surge_range?: [Min, Max, W];
 	};
 
 	/**

@@ -250,7 +250,7 @@ function brandRecords(checker: ts.TypeChecker, type: ts.Type): BrandRecord[] {
  * The outermost `DataType.*` brand on `type`, with its type arguments
  * (`Packed<T>` and `Quantized<T>` give `[T]`, `Length<T, L>` gives `[T, L]`,
  * `Exact<T, N>` gives `[T, N]`, `Vector<X, Y, Z>` and `Transform<X, Y, Z>`
- * give `[X, Y, Z]`, `Range<T, Min, Max>` gives `[T, Min, Max]`, and a width
+ * give `[X, Y, Z]`, `Range<Min, Max, W>` gives `[Min, Max, W]`, and a width
  * brand gives none).
  *
  * Alias identity is tried first, and for every brand rather than one brand at
@@ -267,13 +267,15 @@ function brandRecords(checker: ts.TypeChecker, type: ts.Type): BrandRecord[] {
  * outside it were applied. Counting records rather than testing for a
  * property keeps a chain that repeats a brand, as in a re-aliased
  * `Exact<Length<Exact<T[], 2>, u8>, 3>`, from resolving to an inner brand. A
- * brand that fixes its own value type records widths instead of a type and
- * so is never the outer one: `Vector` and `Transform` cannot wrap anything.
+ * brand that fixes its own value type records configuration instead of a
+ * type and so is never the outer one: `Vector`, `Transform` and `Range`
+ * cannot wrap anything.
  * Where no record carries all the others, as in `Vector<i16> & Vector<u8>`,
  * no brand is outermost and none applies.
  *
- * A width brand's property is read last. `Range<DataType.u8, 0, 100>` carries
- * `_surge_u8` as well as `_surge_range`, and the width is the inner brand.
+ * A width brand's property is read only where no parameterized brand is
+ * present: a width brand wraps nothing, so in `Packed<DataType.u8>` it is the
+ * inner brand.
  */
 export function getSurgeBrand(checker: ts.TypeChecker, type: ts.Type): SurgeBrand | undefined {
 	const aliasSymbol = (type as ts.Type & { aliasSymbol?: ts.Symbol }).aliasSymbol;

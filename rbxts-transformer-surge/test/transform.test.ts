@@ -122,7 +122,7 @@ describe("transform (end-to-end)", () => {
 				d: DataType.Vector<DataType.i16>;
 				e: DataType.Transform<DataType.i16>;
 				f: DataType.Quantized<CFrame>;
-				g: DataType.Range<DataType.u8, 0, 100>;
+				g: DataType.Range<0, 100, DataType.u8>;
 			}`,
 			false,
 		],
@@ -639,10 +639,10 @@ describe("transform generated code", () => {
 			const errors = typeErrorsOfGeneratedCode(
 				`import { DataType, createCodec } from "@rbxts/surge";
 				interface T {
-					health: DataType.Range<number, 0, 100>;
-					offset: DataType.Range<number, -1000, 1000>;
-					ratio: DataType.Range<DataType.f32, 0, 1>;
-					scores: Map<DataType.Range<DataType.u16, 1, 500>, DataType.Range<number, -1, 1>>;
+					health: DataType.Range<0, 100>;
+					offset: DataType.Range<-1000, 1000>;
+					ratio: DataType.Range<0, 1, DataType.f32>;
+					scores: Map<DataType.Range<1, 500, DataType.u16>, DataType.Range<-1, 1>>;
 					turn: -1 | 0 | 1;
 					placement: DataType.Quantized<CFrame>;
 					narrow?: DataType.Quantized<DataType.Transform<DataType.i16>>;

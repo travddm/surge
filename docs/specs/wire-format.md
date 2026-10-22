@@ -1,7 +1,7 @@
 # Wire format specification
 
 Status: current
-Applies to: commit `9a131ce` (no tagged release yet)
+Applies to: commit `bc9b386` (no tagged release yet)
 
 ## 1. Scope
 
@@ -59,7 +59,7 @@ requires a deserializer generated for the same type.
 | `u32` / `i32` | 4     | unsigned / two's complement |
 
 A plain `number` is `f64`. A width brand (`DataType.u8` and the rest) selects
-another, and so does `DataType.Range<T, Min, Max>` (4.16).
+another, and so does `DataType.Range<Min, Max, W>` (4.16).
 
 **4.2** A `u24` or `i24` is a `u16` holding the low 16 bits followed by a `u8`
 holding the high 8. An `i24` is stored in two's complement and sign-extended
@@ -122,19 +122,19 @@ enum item, is a constant of the type on both sides.
 its range, as 7.3 states for a component. Nothing raises without
 `writeChecks` ([runtime-api.md](runtime-api.md) 3.11). With it, a number the
 width cannot hold, or a fraction, raises before it is written, as 4.17 states
-for a number under `DataType.Range<T, Min, Max>`
+for a number under `DataType.Range<Min, Max, W>`
 ([runtime-api.md](runtime-api.md) 3.10).
 
-**4.16** `DataType.Range<T, Min, Max>` writes a `num` at a width that `T`
-chooses. With `T` a width brand, the width is that brand's. With `T`
-`number`, it is the first width that holds every whole number from `Min` to
-`Max`: of `u8`, `u16`, `u24` and `u32` when `Min` is not negative, of `i8`,
-`i16`, `i24` and `i32` otherwise, and `f64` when none of the four does. The
-range writes nothing of its own.
+**4.16** `DataType.Range<Min, Max, W>` writes a `num` at a width that `W`
+chooses. With `W` a width brand, the width is that brand's. With `W`
+`number`, the default, it is the first width that holds every whole number
+from `Min` to `Max`: of `u8`, `u16`, `u24` and `u32` when `Min` is not
+negative, of `i8`, `i16`, `i24` and `i32` otherwise, and `f64` when none of
+the four does. The range writes nothing of its own.
 
 **4.17** With `writeChecks` ([runtime-api.md](runtime-api.md) 3.10), a `num`
-under `DataType.Range<T, Min, Max>` raises before it is written when the value
-is not both at least `Min` and at most `Max`, which a NaN never is. Unless `T`
+under `DataType.Range<Min, Max, W>` raises before it is written when the value
+is not both at least `Min` and at most `Max`, which a NaN never is. Unless `W`
 is `DataType.f32` or `DataType.f64`, it also raises when the value is not a
 whole number.
 
@@ -367,7 +367,7 @@ in `@rbxts/surge`.
 | 4.13               | `bytes.spec.ts`: `pinsLiteralAndEnumIndexes`; `walk.test.ts`, `TypeWalker wire-format determinism`                                                                                                                                                                                                                                                                                                                  |
 | 4.14               | `bytes.spec.ts`: `pinsLiteralAndEnumIndexes`; `literals.spec.ts`: `writesNoBytesForASingleLiteral`                                                                                                                                                                                                                                                                                                                  |
 | 4.15               | Source only: `writeNumberAt` in `emit/context.ts` passes the number unconverted to Luau's `buffer` writes and `bit32`. Under `DataType.Range`: `checks.spec.ts`: `wrapsANumberOutsideItsRangeWithoutWriteChecks`; a width brand: `checks.spec.ts`: `wrapsANumberOutsideItsWidthWithoutWriteChecks`, `rejectsANumberItsWidthCannotHold`                                                                              |
-| 4.16               | `bytes.spec.ts`: `pinsRangeWidths`; `numbers.spec.ts`: `roundTripsRangesAtTheirNarrowedWidths`; each width's edge: `walk.test.ts`, `TypeWalker Range<T, Min, Max>`                                                                                                                                                                                                                                                  |
+| 4.16               | `bytes.spec.ts`: `pinsRangeWidths`; `numbers.spec.ts`: `roundTripsRangesAtTheirNarrowedWidths`; each width's edge: `walk.test.ts`, `TypeWalker Range<Min, Max, W>`                                                                                                                                                                                                                                                  |
 | 4.17               | `checks.spec.ts`: `rejectsANumberItsRangeDoesNotAdmit`                                                                                                                                                                                                                                                                                                                                                              |
 | 5.4                | A `Record`: `bytes.spec.ts`: `pinsContainers`. A `Set`: source only, `writeDict` in `emit/write.ts` writes the key alone, and `readDict` in `emit/read.ts` sets it to `true`; `collections.spec.ts`: `roundTripsDictionaries` round-trips one                                                                                                                                                                       |
 | 5.6                | `bytes.spec.ts`: `pinsATaggedUnion`; the choice of tag: `walk.test.ts`, `TypeWalker wire-format determinism`; the `u16` index: source only, `writeVariants` in `emit/write.ts`                                                                                                                                                                                                                                      |
@@ -397,6 +397,8 @@ in `@rbxts/surge`.
 
 ## Changes
 
+- `bc9b386`: 4.1, 4.15, 4.16 and 4.17 spell `DataType.Range<Min, Max, W>`,
+  whose width `W` is last and defaults to `number`. No byte changes.
 - `9a131ce`: 6.1 and 6.3 to 6.7 state the exact form as
   `DataType.Exact<T, N>`, where `Length<T, L>`'s `L` took a whole number
   literal. No byte changes.

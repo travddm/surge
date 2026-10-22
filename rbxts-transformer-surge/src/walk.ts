@@ -800,38 +800,43 @@ export class TypeWalker {
 		return { ...field, quantized: true };
 	}
 
-	// ---- DataType.Range<T, Min, Max> --------------------------------------
+	// ---- DataType.Range<Min, Max, W> --------------------------------------
 
 	/**
-	 * `DataType.Range<T, Min, Max>` states the values a number takes. `T` is
-	 * `number`, which narrows to the smallest integer width holding every whole
-	 * number from `Min` to `Max`, or a width brand, which is kept and must hold
-	 * them. The range itself is recorded for `writeChecks` and changes no byte.
+	 * `DataType.Range<Min, Max, W>` states the values a number takes. `W` is
+	 * `number`, the default, which narrows to the smallest integer width
+	 * holding every whole number from `Min` to `Max`, or a width brand, which
+	 * is kept and must hold them. The range itself is recorded for
+	 * `writeChecks` and changes no byte.
 	 *
 	 * A range the width cannot hold is a diagnostic rather than a silent
 	 * widening, and so is a fractional bound on anything but a float width:
 	 * narrowing to an integer width is what makes the value a whole number.
 	 */
 	private walkRange(args: readonly ts.Type[], node: ts.Node): Field {
-		const [valueType, minType, maxType] = args;
+		const [minType, maxType, widthType] = args;
 		const fallback: Field = { kind: "num", width: "f64" };
-		if (valueType === undefined || minType === undefined || maxType === undefined) {
+		if (minType === undefined || maxType === undefined) {
 			return fallback;
 		}
-		const explicitWidth = this.explicitRangeWidth(valueType, node);
-		if (explicitWidth === null) {
-			return fallback;
-		}
+		// The bounds are checked first, and their example shows the order the
+		// brand takes: a width put first, as in `Range<number, 0, 100>`,
+		// type-checks, with `number` as `Min` and `100` as the width.
 		if (!minType.isNumberLiteral() || !maxType.isNumberLiteral()) {
 			this.report(
-				`"DataType.Range"'s bounds must each be a number literal, such as "DataType.Range<number, 0, 100>".`,
+				`"DataType.Range"'s bounds must each be a number literal, such as "DataType.Range<0, 100>".`,
 				node,
 			);
-			return explicitWidth === undefined ? fallback : { kind: "num", width: explicitWidth };
+			return fallback;
+		}
+		const explicitWidth = widthType === undefined ? undefined : this.explicitRangeWidth(widthType, node);
+		if (explicitWidth === null) {
+			return fallback;
 		}
 		const min = minType.value;
 		const max = maxType.value;
 		const width = explicitWidth ?? narrowestWidth(min, max);
+		const spelled = `DataType.Range<${min}, ${max}${explicitWidth === undefined ? "" : `, DataType.${explicitWidth}`}>`;
 		if (min > max) {
 			this.report(`"DataType.Range"'s minimum ${min} is greater than its maximum ${max}.`, node);
 			return { kind: "num", width };
@@ -839,9 +844,8 @@ export class TypeWalker {
 		const whole = width !== "f32" && width !== "f64" ? true : explicitWidth === undefined;
 		if (whole && (!Number.isInteger(min) || !Number.isInteger(max))) {
 			this.report(
-				`"DataType.Range<${explicitWidth === undefined ? "number" : `DataType.${explicitWidth}`}, ${min}, ` +
-					`${max}>" holds whole numbers, so its bounds must be whole numbers. Give a fractional range a ` +
-					`float width, such as "DataType.Range<DataType.f32, ${min}, ${max}>".`,
+				`"${spelled}" holds whole numbers, so its bounds must be whole numbers. Give a fractional range a ` +
+					`float width, such as "DataType.Range<${min}, ${max}, DataType.f32>".`,
 				node,
 			);
 			return { kind: "num", width };
@@ -849,8 +853,8 @@ export class TypeWalker {
 		const [lowest, highest] = WIDTH_LIMITS[width];
 		if (min < lowest || max > highest) {
 			this.report(
-				`"DataType.${width}" cannot hold every value of "DataType.Range<DataType.${width}, ${min}, ${max}>" ` +
-					`-- give the range a wider width, or "number" to have the narrowest one chosen.`,
+				`"DataType.${width}" cannot hold every value of "${spelled}" -- give the range a wider width, or ` +
+					`leave the width out to have the narrowest one chosen.`,
 				node,
 			);
 			return { kind: "num", width };
@@ -859,21 +863,21 @@ export class TypeWalker {
 	}
 
 	/**
-	 * The width a `Range`'s value type asks for: `undefined` for `number`,
-	 * which narrows, a width for a width brand, and `null`, reported, for
-	 * anything else.
+	 * The width a `Range`'s `W` asks for: `undefined` for `number`, which
+	 * narrows, a width for a width brand, and `null`, reported, for anything
+	 * else.
 	 */
-	private explicitRangeWidth(valueType: ts.Type, node: ts.Node): NumWidth | undefined | null {
-		const width = getSurgeBrand(this.checker, valueType)?.name;
+	private explicitRangeWidth(widthType: ts.Type, node: ts.Node): NumWidth | undefined | null {
+		const width = getSurgeBrand(this.checker, widthType)?.name;
 		if (width !== undefined && NUM_BRAND_WIDTHS.has(width)) {
 			return width as NumWidth;
 		}
-		if (width === undefined && (valueType.flags & this.typescript.TypeFlags.Number) !== 0) {
+		if (width === undefined && (widthType.flags & this.typescript.TypeFlags.Number) !== 0) {
 			return undefined;
 		}
 		this.report(
-			`"DataType.Range"'s first argument must be "number" or one of the "DataType" number widths, not ` +
-				`"${this.checker.typeToString(valueType)}".`,
+			`"DataType.Range"'s width must be "number" or one of the "DataType" number widths, not ` +
+				`"${this.checker.typeToString(widthType)}".`,
 			node,
 		);
 		return null;

@@ -1877,7 +1877,7 @@ describe("TypeWalker Width", () => {
 	});
 });
 
-describe("TypeWalker Range<T, Min, Max>", () => {
+describe("TypeWalker Range<Min, Max, W>", () => {
 	/** The field a one-property `T` walks its property `n` to, with no diagnostic expected. */
 	function rangeField(type: string): Field {
 		const { field, diagnostics } = walkDeclaration(
@@ -1917,8 +1917,8 @@ describe("TypeWalker Range<T, Min, Max>", () => {
 		[-32769, 0, "i24"],
 		[-8388609, 0, "i32"],
 		[-2147483649, 0, "f64"],
-	])("Range<number, %d, %d> narrows to %s and records the range", (min, max, width) => {
-		expect(rangeField(`DataType.Range<number, ${min}, ${max}>`)).toEqual({
+	])("Range<%d, %d> narrows to %s and records the range", (min, max, width) => {
+		expect(rangeField(`DataType.Range<${min}, ${max}>`)).toEqual({
 			kind: "num",
 			width,
 			range: { min, max, whole: true },
@@ -1926,12 +1926,12 @@ describe("TypeWalker Range<T, Min, Max>", () => {
 	});
 
 	test("an explicit width is kept, and only a float width admits fractions", () => {
-		expect(rangeField("DataType.Range<DataType.u16, 0, 10>")).toEqual({
+		expect(rangeField("DataType.Range<0, 10, DataType.u16>")).toEqual({
 			kind: "num",
 			width: "u16",
 			range: { min: 0, max: 10, whole: true },
 		});
-		expect(rangeField("DataType.Range<DataType.f32, -0.5, 0.5>")).toEqual({
+		expect(rangeField("DataType.Range<-0.5, 0.5, DataType.f32>")).toEqual({
 			kind: "num",
 			width: "f32",
 			range: { min: -0.5, max: 0.5, whole: false },
@@ -1943,7 +1943,7 @@ describe("TypeWalker Range<T, Min, Max>", () => {
 	test("a re-alias of a Range over a width brand resolves to the Range", () => {
 		const { field, diagnostics } = walkDeclaration(
 			`import { DataType } from "@rbxts/surge";
-			type Health = DataType.Range<DataType.u8, 0, 100>;
+			type Health = DataType.Range<0, 100, DataType.u8>;
 			interface T { n: Health; }`,
 			"T",
 			{ surge: true },
@@ -1954,7 +1954,7 @@ describe("TypeWalker Range<T, Min, Max>", () => {
 	});
 
 	test("a Record keyed by a Range keeps the range on its key", () => {
-		expect(rangeField("Record<DataType.Range<number, 0, 10>, number>")).toEqual({
+		expect(rangeField("Record<DataType.Range<0, 10>, number>")).toEqual({
 			kind: "dict",
 			key: { kind: "num", width: "u8", range: { min: 0, max: 10, whole: true } },
 			value: { kind: "num", width: "f64" },
@@ -1964,8 +1964,8 @@ describe("TypeWalker Range<T, Min, Max>", () => {
 
 	test("a fractional bound is a diagnostic unless the width is a float", () => {
 		const messages = [
-			...rangeDiagnostics("DataType.Range<number, 0, 0.5>"),
-			...rangeDiagnostics("DataType.Range<DataType.u8, 0, 2.5>"),
+			...rangeDiagnostics("DataType.Range<0, 0.5>"),
+			...rangeDiagnostics("DataType.Range<0, 2.5, DataType.u8>"),
 		];
 		expect(messages).toHaveLength(2);
 		for (const message of messages) {
@@ -1974,29 +1974,35 @@ describe("TypeWalker Range<T, Min, Max>", () => {
 	});
 
 	test("a range the explicit width cannot hold is a diagnostic, not a silent widening", () => {
-		const messages = rangeDiagnostics("DataType.Range<DataType.u8, 0, 300>");
+		const messages = rangeDiagnostics("DataType.Range<0, 300, DataType.u8>");
 		expect(messages).toHaveLength(1);
 		expect(messages[0]).toContain('"DataType.u8" cannot hold every value');
-		expect(rangeDiagnostics("DataType.Range<DataType.i8, -129, 0>")).toHaveLength(1);
-		expect(rangeDiagnostics("DataType.Range<DataType.u16, -1, 0>")).toHaveLength(1);
+		expect(rangeDiagnostics("DataType.Range<-129, 0, DataType.i8>")).toHaveLength(1);
+		expect(rangeDiagnostics("DataType.Range<-1, 0, DataType.u16>")).toHaveLength(1);
 	});
 
 	test("a minimum above the maximum is a diagnostic", () => {
-		const messages = rangeDiagnostics("DataType.Range<number, 10, 0>");
+		const messages = rangeDiagnostics("DataType.Range<10, 0>");
 		expect(messages).toHaveLength(1);
 		expect(messages[0]).toContain("minimum 10 is greater than its maximum 0");
 	});
 
 	test("a bound that is not a number literal is a diagnostic", () => {
-		const messages = rangeDiagnostics("DataType.Range<number, 0, number>");
+		const messages = rangeDiagnostics("DataType.Range<0, number>");
 		expect(messages).toHaveLength(1);
 		expect(messages[0]).toContain("bounds must each be a number literal");
 	});
 
-	test("a first argument that is neither number nor a width brand is a diagnostic", () => {
-		const messages = rangeDiagnostics("DataType.Range<5, 0, 10>");
+	test("a width put first, as in Range<number, 0, 100>, is a bounds diagnostic that shows the order", () => {
+		const messages = rangeDiagnostics("DataType.Range<number, 0, 100>");
 		expect(messages).toHaveLength(1);
-		expect(messages[0]).toContain('first argument must be "number" or one of the "DataType" number widths');
+		expect(messages[0]).toContain('such as "DataType.Range<0, 100>"');
+	});
+
+	test("a width that is neither number nor a width brand is a diagnostic", () => {
+		const messages = rangeDiagnostics("DataType.Range<0, 10, 5>");
+		expect(messages).toHaveLength(1);
+		expect(messages[0]).toContain('width must be "number" or one of the "DataType" number widths');
 	});
 });
 

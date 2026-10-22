@@ -275,16 +275,30 @@ describe("getDataTypeBrand / getSurgeBrand", () => {
 		}
 	}
 
-	test("reads Range<T, Min, Max>'s three type arguments, aliased and re-aliased", () => {
-		const expected = { name: "Range", args: ["u8", "0", "100"] };
+	test("reads Range<Min, Max, W>'s three type arguments, aliased and re-aliased", () => {
+		const expected = { name: "Range", args: ["0", "100", "u8"] };
 		expect(
 			brandOfP(
-				`import { DataType } from "@rbxts/surge"; interface T { p: DataType.Range<DataType.u8, 0, 100>; }`,
+				`import { DataType } from "@rbxts/surge"; interface T { p: DataType.Range<0, 100, DataType.u8>; }`,
 			),
 		).toEqual(expected);
 		expect(
 			brandOfP(
-				`import { DataType } from "@rbxts/surge"; type Health = DataType.Range<DataType.u8, 0, 100>; interface T { p: Health; }`,
+				`import { DataType } from "@rbxts/surge"; type Health = DataType.Range<0, 100, DataType.u8>; interface T { p: Health; }`,
+			),
+		).toEqual(expected);
+	});
+
+	// The default is filled in on both paths, so the walk reads a width of
+	// `number` rather than a missing one.
+	test("reads Range<Min, Max>'s defaulted width as number, aliased and re-aliased", () => {
+		const expected = { name: "Range", args: ["0", "100", "number"] };
+		expect(brandOfP(`import { DataType } from "@rbxts/surge"; interface T { p: DataType.Range<0, 100>; }`)).toEqual(
+			expected,
+		);
+		expect(
+			brandOfP(
+				`import { DataType } from "@rbxts/surge"; type Health = DataType.Range<0, 100>; interface T { p: Health; }`,
 			),
 		).toEqual(expected);
 	});
@@ -350,11 +364,12 @@ describe("getDataTypeBrand / getSurgeBrand", () => {
 		).toBeUndefined();
 	});
 
-	// The width brand's property is on the same intersection as the range's,
-	// and it is the inner brand, so reading it first would drop the range.
-	test("a re-aliased Range over a width brand is not read as the width", () => {
+	// The width brand's property is on the same intersection as the packed
+	// brand's, and it is the inner brand, so reading it first would drop the
+	// packed brand.
+	test("a re-aliased Packed over a width brand is not read as the width", () => {
 		const { checker, sourceFile, cleanup } = createFixtureProgram(
-			`import { DataType } from "@rbxts/surge"; type Health = DataType.Range<DataType.u8, 0, 100>; interface T { p: Health; }`,
+			`import { DataType } from "@rbxts/surge"; type Flag = DataType.Packed<DataType.u8>; interface T { p: Flag; }`,
 			{ surge: true },
 		);
 		try {
@@ -362,7 +377,7 @@ describe("getDataTypeBrand / getSurgeBrand", () => {
 			const prop = checker.getTypeAtLocation(declarationNode).getProperty("p")!;
 			const propType = checker.getTypeOfSymbolAtLocation(prop, declarationNode);
 			expect(propType.getProperty("_surge_u8")).toBeDefined();
-			expect(getSurgeBrand(checker, propType)?.name).toBe("Range");
+			expect(getSurgeBrand(checker, propType)?.name).toBe("Packed");
 		} finally {
 			cleanup();
 		}

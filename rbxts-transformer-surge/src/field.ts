@@ -46,7 +46,7 @@ export type ComponentWidths = readonly [NumWidth, NumWidth, NumWidth];
 export const DEFAULT_COMPONENT_WIDTH: NumWidth = "f32";
 
 /**
- * The values a `num` admits, set by `DataType.Range<T, Min, Max>` (Wire
+ * The values a `num` admits, set by `DataType.Range<Min, Max, W>` (Wire
  * format 4.16 in docs/specs/wire-format.md). It changes no
  * byte: the width it narrowed to is the field's own `width`. It is what
  * `writeChecks` compares the value with. `whole` holds unless the width is an

@@ -26,11 +26,11 @@ const floatsSerializer = createCodec<Floats>();
 // Each range narrows to a different width (Wire format 4.16 in
 // docs/specs/wire-format.md), and `ratio` keeps the float width it asks for.
 interface Ranged {
-	small: DataType.Range<number, 0, 200>;
-	signed: DataType.Range<number, -300, 300>;
-	wide: DataType.Range<number, -9000000, 9000000>;
-	huge: DataType.Range<number, 0, 1e12>;
-	ratio: DataType.Range<DataType.f32, -1, 1>;
+	small: DataType.Range<0, 200>;
+	signed: DataType.Range<-300, 300>;
+	wide: DataType.Range<-9000000, 9000000>;
+	huge: DataType.Range<0, 1e12>;
+	ratio: DataType.Range<-1, 1, DataType.f32>;
 }
 const rangedSerializer = createCodec<Ranged>();
 
