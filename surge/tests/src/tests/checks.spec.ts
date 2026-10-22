@@ -110,9 +110,9 @@ const narrowListUnchecked = createCodec<NarrowList>();
 // `writeChecks` holds a number to its `Range` (Runtime API 3.10): outside the
 // bounds, a NaN, and a fraction where the range holds whole numbers.
 interface Ranged {
-	health: DataType.Range<number, 0, 100>;
-	offset: DataType.Range<DataType.i16, -1000, 1000>;
-	ratio: DataType.Range<DataType.f32, 0, 1>;
+	health: DataType.Range<0, 100>;
+	offset: DataType.Range<-1000, 1000, DataType.i16>;
+	ratio: DataType.Range<0, 1, DataType.f32>;
 }
 const ranged = createCodec<Ranged>({ writeChecks: true });
 const rangedUnchecked = createCodec<Ranged>();

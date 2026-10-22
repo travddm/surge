@@ -1,7 +1,7 @@
 # Runtime API specification
 
 Status: current
-Applies to: commit `9a131ce` (no tagged release yet)
+Applies to: commit `bc9b386` (no tagged release yet)
 
 ## 1. Scope
 
@@ -97,7 +97,7 @@ typed `DataType.Width` itself is a diagnostic (Transformer 7.2).
 `@rbxts/surge:` for a value that does not fit its type: a
 `DataType.Exact<T, N>` value that is not `N` long, a count larger than the
 `u8`, `u16` or `u24` width `DataType.Length<T, L>` gives it, a number that
-its `DataType.Range<T, Min, Max>` does not admit
+its `DataType.Range<Min, Max, W>` does not admit
 ([wire-format.md](wire-format.md) 4.17), and a number with no range that its
 integer width cannot hold, or a fraction in one, a component of a
 `DataType.Vector<X, Y, Z>` or a `DataType.Transform<X, Y, Z>` included
@@ -224,7 +224,7 @@ that passes them deserializes to a value of the right type, except in its blob
 fields: each holds whatever `blobs` holds at its position, which checks
 do not examine. Which value of the right type it is, such as a number outside
 the range a caller expects, is the caller's to check, and that includes a
-number outside its `DataType.Range<T, Min, Max>`: checks do not compare it.
+number outside its `DataType.Range<Min, Max, W>`: checks do not compare it.
 
 **4.8** The input buffer and the read cursor are reset at the start of every
 `deserialize` of a `T` that reads bytes, and the blob index at the start of
@@ -405,6 +405,7 @@ A test file named `*.spec.ts` is under `tests/src/tests/`. A path starting
 
 ## Changes
 
+- `bc9b386`: 3.10 and 4.7 spell `DataType.Range<Min, Max, W>`.
 - `9a131ce`: 3.9 lists `DataType.Exact<T, N>` among the length brands, and
   3.10 and 3.11 name it for the exact form, which was `Length<T, N>` with a
   whole number literal.

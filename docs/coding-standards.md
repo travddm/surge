@@ -66,17 +66,20 @@ have to invent an answer:
 
 1. A brand is `T & { readonly _surge_<name>?: ... }`. It erases to `T`, so an
    unbranded value still assigns to a branded field.
-2. Parameters are types, never values. A width is one of the width brands; a
+2. Parameters are types, never values. A width is one of the width brands,
+   except that `Range`'s width may be `number`, for the narrowest one; a
    count or a bound is a number literal type.
 3. The first parameter is the value type, and configuration follows it. A
-   brand that fixes its own value type, as `Vector<X, Y, Z>` and
-   `Transform<X, Y, Z>` do, takes configuration only, and so is never the
-   outer brand of a composition.
+   brand that fixes its own value type, as `Vector<X, Y, Z>`,
+   `Transform<X, Y, Z>` and `Range<Min, Max, W>` do, takes configuration
+   only, and so is never the outer brand of a composition.
 4. A configuration parameter has a default wherever one value encodes exactly
    what the unbranded type encodes, and a brand with all of its defaults
    encodes that. This keeps every buffer `bytes.spec.ts` pins unchanged as a
-   brand lands. `Range<T, Min, Max>` has no such bounds, so its bounds have no
-   default.
+   brand lands. `Range<Min, Max, W>` is the exception: no bounds encode what a
+   bare `number` does, so its bounds have no default and no `Range` encodes an
+   unbranded `number`. That leaves its width's default free to be `number`,
+   the narrowest width, rather than `f64`.
 5. A brand applies to the type it wraps, not to that type's subtree.
    `Packed<T>` is the one exception.
 

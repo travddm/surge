@@ -20,7 +20,7 @@ const [ok, request] = pcall(() => readRequest(input));
 | -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Governs        | `deserialize`, and a cursor codec's `read`                                                                                                                             | `serialize`, and a cursor codec's `write`                                                                                                                                                                                                                                     |
 | Guards against | input a client crafted, read on the server                                                                                                                             | a value of the game's own that does not fit its `DataType` brands                                                                                                                                                                                                             |
-| Rejects        | an input that is not what `serialize` returns, a read past the end, a count the rest cannot hold, an enum index past its items, a packed rotation code that names none | an `Exact<T, N>` value longer than `N`, or shorter where its elements cannot be absent, a count too large for its `u8`, `u16` or `u24` width, a number its `Range<T, Min, Max>` does not admit, a number or a `Vector` or `Transform` component its integer width cannot hold |
+| Rejects        | an input that is not what `serialize` returns, a read past the end, a count the rest cannot hold, an enum index past its items, a packed rotation code that names none | an `Exact<T, N>` value longer than `N`, or shorter where its elements cannot be absent, a count too large for its `u8`, `u16` or `u24` width, a number its `Range<Min, Max, W>` does not admit, a number or a `Vector` or `Transform` component its integer width cannot hold |
 | Taken by       | `createDeserializer`, `createCodec`, `createCursorCodec`                                                                                                               | `createSerializer`, `createCodec`, `createCursorCodec`                                                                                                                                                                                                                        |
 
 Both default to `false`, and both must be written as `true` or `false` at the
@@ -78,7 +78,7 @@ nothing: a number outside its width, a count too large for its width, and an
 
 With `writeChecks: true`, each of these raises before it is written, except a
 shorter `Exact` value whose elements may be absent, which is valid. A number
-is checked against its `Range<T, Min, Max>` where it has one, and otherwise
+is checked against its `Range<Min, Max, W>` where it has one, and otherwise
 against what its integer width holds, each component of a `Vector` or a
 `Transform` included: a value outside it, a NaN, and a fraction where it
 holds whole numbers raise. A plain `number`, an `f32` and an `f64` hold any

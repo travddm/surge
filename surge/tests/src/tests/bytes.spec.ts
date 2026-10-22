@@ -187,10 +187,10 @@ const defaultedComponentsSerializer = createCodec<DefaultedComponents>();
 // `number` narrows to the narrowest width that holds the range, and a width
 // brand is kept. The range itself writes nothing.
 interface Ranged {
-	health: DataType.Range<number, 0, 100>;
-	offset: DataType.Range<number, -1000, 1000>;
-	ratio: DataType.Range<DataType.f32, 0, 1>;
-	turn: DataType.Range<number, -1, 1>;
+	health: DataType.Range<0, 100>;
+	offset: DataType.Range<-1000, 1000>;
+	ratio: DataType.Range<0, 1, DataType.f32>;
+	turn: DataType.Range<-1, 1>;
 }
 const rangedSerializer = createCodec<Ranged>();
 

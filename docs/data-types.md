@@ -8,7 +8,7 @@ import { DataType, createCodec } from "@rbxts/surge";
 
 interface Snapshot {
 	tick: DataType.u32; // 4 bytes instead of 8
-	health: DataType.Range<number, 0, 100>; // 1 byte, the narrowest that holds 0 to 100
+	health: DataType.Range<0, 100>; // 1 byte, the narrowest that holds 0 to 100
 	name: DataType.Length<string, DataType.u8>; // a 1-byte count
 	code: DataType.Exact<string, 4>; // exactly 4 bytes, no count
 	velocity: DataType.Vector<DataType.i16>; // 3 × 2 bytes
@@ -43,18 +43,18 @@ holds every value the field takes, or state the range and let surge choose.
 parameter: `interface Sample<W extends DataType.Width> { x: W }`. A property
 typed `DataType.Width` itself is a build error, since it names no width.
 
-## Ranges: `Range<T, Min, Max>`
+## Ranges: `Range<Min, Max, W>`
 
-`DataType.Range<T, Min, Max>` states the values a number takes, from `Min` to
-`Max`:
+`DataType.Range<Min, Max, W>` states the values a number takes, from `Min` to
+`Max`. The width `W` comes last, and is most often left out:
 
-- `DataType.Range<number, 0, 100>` is a whole number, stored at the narrowest
-  width that holds the range: `u8` here. A range with a negative `Min` takes a
+- `DataType.Range<0, 100>` is a whole number, stored at the narrowest width
+  that holds the range: `u8` here. A range with a negative `Min` takes a
   signed width, and one past 32 bits an `f64`.
-- `DataType.Range<DataType.u16, 0, 100>` keeps the width it names. A range the
+- `DataType.Range<0, 100, DataType.u16>` keeps the width it names. A range the
   width cannot hold is a build error, never a wider width.
-- `DataType.Range<DataType.f32, 0, 1>` admits fractions. With `number` or an
-  integer width, the bounds must be whole numbers.
+- `DataType.Range<0, 1, DataType.f32>` admits fractions. Without a width, or
+  with an integer width, the bounds must be whole numbers.
 
 The range writes no bytes of its own. It is what `writeChecks` checks
 ([errors-and-guarantees.md](errors-and-guarantees.md)). Without it, nothing

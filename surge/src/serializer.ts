@@ -170,7 +170,7 @@ export interface CodecOptions {
 	 * Check, on every write, that a value fits its type: that a
 	 * `DataType.Exact<T, N>` value is exactly `N` long, that a count fits the
 	 * width `DataType.Length<T, L>` gives it, and that a number is one its
-	 * `DataType.Range<T, Min, Max>` admits, or, without a range, one its
+	 * `DataType.Range<Min, Max, W>` admits, or, without a range, one its
 	 * integer width holds, a `DataType.Vector` or `DataType.Transform`
 	 * component included. A value that does not raises a string beginning
 	 * `@rbxts/surge: ` from `serialize`, where unchecked it would be padded,
