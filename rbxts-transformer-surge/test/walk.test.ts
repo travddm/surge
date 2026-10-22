@@ -1483,18 +1483,24 @@ describe("TypeWalker Length<T, L> and Exact<T, N>", () => {
 		const byName = lengths(
 			`import { DataType } from "@rbxts/surge";
 			type Ids = DataType.Exact<DataType.Length<string[], DataType.u8>, 3>;
+			type Ids8 = DataType.Length<string[], DataType.u8>;
+			type Ids16 = DataType.Length<Ids8, DataType.u16>;
 			interface T {
 				exactOutside: DataType.Exact<DataType.Length<string[], DataType.u8>, 3>;
 				lengthOutside: DataType.Length<DataType.Exact<string, 4>, DataType.u8>;
 				twoLengths: DataType.Length<DataType.Length<string[], DataType.u8>, DataType.u16>;
 				reAliased: Ids;
+				aliasInside: DataType.Length<Ids8, DataType.u16>;
+				twoLengthsReAliased: Ids16;
 			}`,
 		);
 		expect([...byName.entries()].sort()).toEqual([
+			["aliasInside", "u16"],
 			["exactOutside", 3],
 			["lengthOutside", "u8"],
 			["reAliased", 3],
 			["twoLengths", "u16"],
+			["twoLengthsReAliased", "u16"],
 		]);
 	});
 

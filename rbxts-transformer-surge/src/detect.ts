@@ -221,18 +221,41 @@ export interface SurgeBrand {
 	readonly args: readonly ts.Type[];
 }
 
-/** The type arguments `property` records, or `undefined` if it is not surge's. */
+/**
+ * The type arguments `property` records on `type`, one list per application
+ * of its brand, or none if the property is not surge's. A brand applied twice
+ * carries the property twice, and the two intersect: `[A] & [B]`.
+ */
+function brandRecords(checker: ts.TypeChecker, type: ts.Type, property: string): ReadonlyArray<readonly ts.Type[]> {
+	const brandProperty = type.getProperty(property);
+	if (!brandProperty || !isFromSurgePackage(brandProperty.declarations)) {
+		return [];
+	}
+	const brandType = checker.getNonNullableType(checker.getTypeOfSymbol(brandProperty));
+	return (brandType.isIntersection() ? brandType.types : [brandType])
+		.filter((record) => checker.isTupleType(record))
+		.map((record) => checker.getTypeArguments(record as ts.TypeReference));
+}
+
+/**
+ * The type arguments of the outermost application of `property`'s brand, or
+ * `undefined` if there is none. Of a brand applied more than once, as in a
+ * re-aliased `Length<Length<T, u8>, u16>`, the outer application recorded the
+ * whole inner type, so its inner type carries every other record. Where none
+ * does, as in `Vector<i16> & Vector<u8>`, no application is outermost.
+ */
 function argumentsFromBrandProperty(
 	checker: ts.TypeChecker,
 	type: ts.Type,
 	property: string,
 ): readonly ts.Type[] | undefined {
-	const brandProperty = type.getProperty(property);
-	if (!brandProperty || !isFromSurgePackage(brandProperty.declarations)) {
-		return undefined;
+	const records = brandRecords(checker, type, property);
+	if (records.length <= 1) {
+		return records[0];
 	}
-	const brandType = checker.getNonNullableType(checker.getTypeOfSymbol(brandProperty));
-	return checker.isTupleType(brandType) ? checker.getTypeArguments(brandType as ts.TypeReference) : undefined;
+	return records.find(
+		(args) => args[0] !== undefined && brandRecords(checker, args[0], property).length === records.length - 1,
+	);
 }
 
 /**

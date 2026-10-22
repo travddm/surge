@@ -301,6 +301,40 @@ describe("getDataTypeBrand / getSurgeBrand", () => {
 		).toEqual(expected);
 	});
 
+	// A brand applied twice carries its property twice, and the two records
+	// intersect. The outer one recorded the whole inner type, which carries
+	// every other record.
+	test("a re-aliased brand applied more than once resolves to its outer application", () => {
+		const ids = `import { DataType } from "@rbxts/surge"; type Ids = DataType.Length<string[], DataType.u8>;`;
+		expect(brandOfP(`${ids} type Ids16 = DataType.Length<Ids, DataType.u16>; interface T { p: Ids16; }`)).toEqual({
+			name: "Length",
+			args: ["Ids", "u16"],
+		});
+		expect(
+			brandOfP(
+				`${ids} type Ids16 = DataType.Length<Ids, DataType.u16>; type Ids32 = DataType.Length<Ids16, DataType.u32>; interface T { p: Ids32; }`,
+			),
+		).toEqual({ name: "Length", args: ["Ids16", "u32"] });
+		expect(
+			brandOfP(
+				`import { DataType } from "@rbxts/surge"; type Code = DataType.Exact<DataType.Exact<string, 3>, 4>; interface T { p: Code; }`,
+			),
+		).toMatchObject({ name: "Exact", args: [expect.anything(), "4"] });
+		expect(
+			brandOfP(
+				`import { DataType } from "@rbxts/surge"; type Q = DataType.Quantized<DataType.Quantized<CFrame>>; interface T { p: Q; }`,
+			),
+		).toMatchObject({ name: "Quantized" });
+	});
+
+	test("two applications of a brand where neither wraps the other have no outermost one", () => {
+		expect(
+			brandOfP(
+				`import { DataType } from "@rbxts/surge"; interface T { p: DataType.Vector<DataType.i16> & DataType.Vector<DataType.u8>; }`,
+			).name,
+		).toBeUndefined();
+	});
+
 	// The width brand's property is on the same intersection as the range's,
 	// and it is the inner brand, so reading it first would drop the range.
 	test("a re-aliased Range over a width brand is not read as the width", () => {
