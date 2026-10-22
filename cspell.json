@@ -1,0 +1,12 @@
+{
+	"version": "0.2",
+	"import": ["../cspell.shared.json"],
+	"files": ["*.{md,txt,yaml,yml}", "**/*.{md,txt,yaml,yml}", "LICENSE"],
+	"useGitignore": true,
+	"cache": {
+		"useCache": true,
+		"cacheLocation": "node_modules/.cache/cspell/.cspellcache",
+		"cacheStrategy": "content"
+	},
+	"ignorePaths": [".gitignore", ".vscode/**", "/package.json"]
+}
