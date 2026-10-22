@@ -397,8 +397,9 @@ in `@rbxts/surge`.
 
 ## Changes
 
-- `bc9b386`: 4.1, 4.15, 4.16 and 4.17 spell `DataType.Range<Min, Max, W>`,
-  whose width `W` is last and defaults to `number`. No byte changes.
+- `bc9b386`: 4.1, 4.15, 4.16, 4.17 and the 4.16 row of Conformance spell
+  `DataType.Range<Min, Max, W>`, whose width `W` is last and defaults to
+  `number`. No byte changes.
 - `9a131ce`: 6.1 and 6.3 to 6.7 state the exact form as
   `DataType.Exact<T, N>`, where `Length<T, L>`'s `L` took a whole number
   literal. No byte changes.

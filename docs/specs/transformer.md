@@ -121,11 +121,11 @@ identity is tried for all seven brands before any brand property, and a width
 brand's property is tried after theirs, because a brand over a width brand,
 such as `Packed<DataType.u8>`, carries both. In a composition of brands, the
 walk resolves the outermost brand and then walks its inner type, which
-resolves the next. A
-re-aliased composition resolves the same way, one that repeats a brand
-included, as in `type Ids16 = DataType.Length<Ids, DataType.u16>` where `Ids`
-is a `Length`, or a re-aliased `Exact<Length<Exact<T[], 2>, DataType.u8>, 3>`.
-An intersection of brands where none wraps the others, as in
+resolves the next. A re-aliased composition resolves the same way, one that
+repeats a brand included, as in
+`type Ids16 = DataType.Length<Ids, DataType.u16>` where `Ids` is a `Length`,
+or a re-aliased `Exact<Length<Exact<T[], 2>, DataType.u8>, 3>`. An
+intersection of brands where none wraps the others, as in
 `Vector<DataType.i16> & Vector<DataType.u8>`, has no outermost brand, so none
 of them applies.
 
@@ -192,8 +192,9 @@ format 4.16, carrying `Min` and `Max` for 5.14. `Min` and `Max` must be
 number literals, with `Min` not greater than `Max`, and `W` must be `number`
 or a width brand. A width brand `W` must hold both. Unless `W` is
 `DataType.f32` or `DataType.f64`, both must be whole numbers. A width put
-first, as in `Range<number, 0, 100>`, type-checks, and is reported as a bound
-that is not a number literal.
+first, as in `Range<DataType.u16, 0, 100>`, type-checks, and is reported with
+the order the brand takes, `Range<0, 100, DataType.u16>`. A bound that is not
+a number literal is reported together with a `W` that names no width.
 
 **4.15** `DataType.Quantized<T>` walks `T`, which must walk to a `cframe`
 outside a packed subtree, and quantizes that `cframe`'s rotation (Wire format
@@ -742,9 +743,10 @@ of `rbxts-transformer-surge`, cited by `describe` block. Source paths are in
 
 ## Changes
 
-- `bc9b386`: 4.1, 4.3, 4.14, 5.14 and 7.2 spell `DataType.Range<Min, Max, W>`;
-  4.14 reports a width put first as a bound that is not a number literal,
-  and 4.3 names `Packed<DataType.u8>` for a brand over a width brand.
+- `bc9b386`: 4.1, 4.3, 4.14, 5.14, 7.2 and Conformance spell
+  `DataType.Range<Min, Max, W>`; 4.14 reports a width put first with the
+  order the brand takes, and 4.3 names `Packed<DataType.u8>` for a brand over
+  a width brand.
 - `418e160`: adds 4.17 (of two length brands on one container, the outer one
   sets the count). 4.3 resolves a re-aliased composition that repeats a
   brand, which failed to compile or resolved to an inner brand, and states

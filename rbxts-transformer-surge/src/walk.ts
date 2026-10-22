@@ -74,6 +74,18 @@ function narrowestWidth(min: number, max: number): NumWidth {
 }
 
 /**
+ * The width a `Range`'s `W` asks for: `undefined` for `number`, which
+ * narrows, a width for a width brand, and `null` for anything else.
+ */
+function rangeWidth(checker: ts.TypeChecker, typescript: typeof ts, widthType: ts.Type): NumWidth | undefined | null {
+	const width = getSurgeBrand(checker, widthType)?.name;
+	if (width !== undefined && NUM_BRAND_WIDTHS.has(width)) {
+		return width as NumWidth;
+	}
+	return width === undefined && (widthType.flags & typescript.TypeFlags.Number) !== 0 ? undefined : null;
+}
+
+/**
  * The members of a `Set` whose key is a fixed list of literal values, in
  * canonical literal order, or `undefined` for any other key. Inside
  * `Packed<T>`, such a set is one bit per member (Wire format 8.8 in
@@ -816,20 +828,29 @@ export class TypeWalker {
 	private walkRange(args: readonly ts.Type[], node: ts.Node): Field {
 		const [minType, maxType, widthType] = args;
 		const fallback: Field = { kind: "num", width: "f64" };
-		if (minType === undefined || maxType === undefined) {
+		if (minType === undefined || maxType === undefined || widthType === undefined) {
 			return fallback;
 		}
-		// The bounds are checked first, and their example shows the order the
-		// brand takes: a width put first, as in `Range<number, 0, 100>`,
-		// type-checks, with `number` as `Min` and `100` as the width.
 		if (!minType.isNumberLiteral() || !maxType.isNumberLiteral()) {
+			// A width put first, as in `Range<DataType.u16, 0, 100>`, type-checks,
+			// since a width brand is a `number`, with the width as `Min` and the
+			// bounds as `Max` and `W`. It is reported in the order the brand takes.
+			const firstWidth = rangeWidth(this.checker, this.typescript, minType);
+			if (firstWidth !== null && maxType.isNumberLiteral() && widthType.isNumberLiteral()) {
+				const reordered =
+					`DataType.Range<${maxType.value}, ${widthType.value}` +
+					`${firstWidth === undefined ? "" : `, DataType.${firstWidth}`}>`;
+				this.report(`"DataType.Range" takes its bounds first and its width last, as in "${reordered}".`, node);
+				return fallback;
+			}
 			this.report(
 				`"DataType.Range"'s bounds must each be a number literal, such as "DataType.Range<0, 100>".`,
 				node,
 			);
-			return fallback;
+			const width = this.explicitRangeWidth(widthType, node);
+			return width ? { kind: "num", width } : fallback;
 		}
-		const explicitWidth = widthType === undefined ? undefined : this.explicitRangeWidth(widthType, node);
+		const explicitWidth = this.explicitRangeWidth(widthType, node);
 		if (explicitWidth === null) {
 			return fallback;
 		}
@@ -862,18 +883,11 @@ export class TypeWalker {
 		return { kind: "num", width, range: { min, max, whole } };
 	}
 
-	/**
-	 * The width a `Range`'s `W` asks for: `undefined` for `number`, which
-	 * narrows, a width for a width brand, and `null`, reported, for anything
-	 * else.
-	 */
+	/** {@link rangeWidth}, reporting a `W` that names no width. */
 	private explicitRangeWidth(widthType: ts.Type, node: ts.Node): NumWidth | undefined | null {
-		const width = getSurgeBrand(this.checker, widthType)?.name;
-		if (width !== undefined && NUM_BRAND_WIDTHS.has(width)) {
-			return width as NumWidth;
-		}
-		if (width === undefined && (widthType.flags & this.typescript.TypeFlags.Number) !== 0) {
-			return undefined;
+		const width = rangeWidth(this.checker, this.typescript, widthType);
+		if (width !== null) {
+			return width;
 		}
 		this.report(
 			`"DataType.Range"'s width must be "number" or one of the "DataType" number widths, not ` +

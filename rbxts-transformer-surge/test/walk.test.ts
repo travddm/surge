@@ -1938,9 +1938,9 @@ describe("TypeWalker Range<Min, Max, W>", () => {
 		});
 	});
 
-	// A re-alias has lost the brand alias, and the width brand's own property
-	// is on the same intersection, so the width must not be read first.
-	test("a re-alias of a Range over a width brand resolves to the Range", () => {
+	// A re-alias has lost the brand alias, so the Range and its width are
+	// read from its brand property.
+	test("a re-alias of a Range with a width brand resolves to the Range", () => {
 		const { field, diagnostics } = walkDeclaration(
 			`import { DataType } from "@rbxts/surge";
 			type Health = DataType.Range<0, 100, DataType.u8>;
@@ -1993,10 +1993,25 @@ describe("TypeWalker Range<Min, Max, W>", () => {
 		expect(messages[0]).toContain("bounds must each be a number literal");
 	});
 
-	test("a width put first, as in Range<number, 0, 100>, is a bounds diagnostic that shows the order", () => {
-		const messages = rangeDiagnostics("DataType.Range<number, 0, 100>");
-		expect(messages).toHaveLength(1);
-		expect(messages[0]).toContain('such as "DataType.Range<0, 100>"');
+	// A width brand is a `number`, so a width put first type-checks, with
+	// the bounds as `Max` and `W`.
+	test("a width put first is a diagnostic that spells the order, with that width", () => {
+		for (const [type, expected] of [
+			["DataType.Range<number, 0, 100>", '"DataType.Range<0, 100>"'],
+			["DataType.Range<DataType.u16, 0, 1000>", '"DataType.Range<0, 1000, DataType.u16>"'],
+		]) {
+			const messages = rangeDiagnostics(type);
+			expect(messages).toHaveLength(1);
+			expect(messages[0]).toContain("bounds first and its width last");
+			expect(messages[0]).toContain(expected);
+		}
+	});
+
+	test("a bound that is not a number literal and a bad width are reported together", () => {
+		const messages = rangeDiagnostics("DataType.Range<0, number, 5>");
+		expect(messages).toHaveLength(2);
+		expect(messages[0]).toContain("bounds must each be a number literal");
+		expect(messages[1]).toContain('width must be "number"');
 	});
 
 	test("a width that is neither number nor a width brand is a diagnostic", () => {
