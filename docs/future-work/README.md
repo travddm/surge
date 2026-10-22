@@ -34,8 +34,7 @@ the same specifications.
 
 ## No step of its own
 
-These are small, have no dependency on the order above, and can land at any
-time:
+These have no dependency on the order above, and can land at any time:
 
 - In [benchmark-tooling.md](benchmark-tooling.md): Zap's output, which
   changes order from one run to the next.
@@ -47,6 +46,10 @@ time:
 - [flamework-macro-interop.md](flamework-macro-interop.md): a factory call
   inside the arguments of a Flamework macro that takes caller metadata, such
   as runit's `Assert.equal`, makes Flamework's transformer fail.
+- [project-config.md](project-config.md): opt-in strict rules that reject
+  what the transformer accepts today, such as a brand that does nothing, and
+  a project default for the checks, on the `tsconfig.json` plugin entry.
+  Neither changes a byte, so either can land after the first release.
 
 ## Deferred indefinitely
 
@@ -70,6 +73,3 @@ above depends on them:
 - [raw-reads.md](raw-reads.md): an option to serialize a value without running
   its metamethods. Plain tables and class instances read the same either way,
   and a proxy would read wrong.
-- [project-config.md](project-config.md): a project default for the checks,
-  carried on the `tsconfig.json` plugin entry. Nothing needs it yet, and a
-  setting that changes a byte is ruled out: a type alone sets its encoding.
