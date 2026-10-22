@@ -1,7 +1,7 @@
 # Transformer specification
 
 Status: current
-Applies to: commit `9a131ce` (no tagged release yet)
+Applies to: commit `418e160` (no tagged release yet)
 
 ## 1. Scope
 
@@ -119,9 +119,14 @@ occurrence.
 by alias identity and, for a re-aliased brand, by their brand property. Alias
 identity is tried for all seven brands before any brand property, and a width
 brand's property is tried after theirs, because `Range<T, Min, Max>` over a
-width brand carries both. In a
-composition of brands, the walk resolves the outermost brand and then walks
-its inner type, which resolves the next.
+width brand carries both. In a composition of brands, the walk resolves the
+outermost brand and then walks its inner type, which resolves the next. A
+re-aliased composition resolves the same way, one that repeats a brand
+included, as in `type Ids16 = DataType.Length<Ids, DataType.u16>` where `Ids`
+is a `Length`, or a re-aliased `Exact<Length<Exact<T[], 2>, DataType.u8>, 3>`.
+An intersection of brands where none wraps the others, as in
+`Vector<DataType.i16> & Vector<DataType.u8>`, has no outermost brand, so none
+of them applies.
 
 **4.4** A union is a `guardedUnion` only if the write side can tell every
 constituent that is not opaque apart at run time: at most one constituent is
@@ -196,6 +201,14 @@ outside a packed subtree, and quantizes that `cframe`'s rotation (Wire format
 or an enum item, is a `bitSet` of those values (Wire format 8.8). Any other `Set`, and every
 `Set` outside a packed subtree, is a `dict`. `Set<boolean>` is a `dict`,
 because `boolean` walks to `bool`; `Set<true>` is a `bitSet`.
+
+**4.17** A `Length<T, L>` or `Exact<T, N>` whose `T` is itself a `Length` or
+an `Exact` walks to the container the inner brand wraps, with the outer
+brand's count. The inner brand's count has no effect, and the walk reports no
+diagnostic for it: `Exact<Length<string[], DataType.u8>, 3>` is an `array` of
+exactly 3 elements, with no count written. Where the outer brand does not
+apply to that container, as `Exact` does not to a `dict`, the walk reports
+that diagnostic (7.2) and keeps the inner brand's count.
 
 ## 5. Emission
 
@@ -682,6 +695,7 @@ of `rbxts-transformer-surge`, cited by `describe` block. Source paths are in
 | 4.14      | `walk`: `TypeWalker Range<T, Min, Max>`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 | 4.15      | `walk`: `TypeWalker Quantized<T>`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
 | 4.16      | `walk`: `TypeWalker bit sets inside Packed<T>`; `Set<true>`, `Set<boolean>` and a `Set` of one enum item: source only, `setMembers` in `src/walk.ts`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| 4.17      | `walk`: `TypeWalker Length<T, L> and Exact<T, N>`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
 | 5.1       | `emit`: `Emitter read-order for side-effecting fields`; `transform`: `transform (end-to-end)` (a call site whose closure would declare nothing, and a `createSerializer` call site); `test/golden.test.mjs`: a serializer whose closure would declare nothing is its functions alone; `tests/src/tests/factories.spec.ts`: `roundTripsThroughFactoriesCalledInPlace`; every round trip under `tests/src/tests/`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | 5.2       | `emit`: `Emitter per-kind write/read snapshots`; `test/golden.test.mjs`: a non-recursive shape never calls a helper. Source only for the closure the helpers are declared in: `buildReplacement` in `src/index.ts`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 | 5.3       | `emit`: `Emitter read-side checks` (the read state), `Emitter read state`, `Emitter exact sizing` (the write state); `test/golden.test.mjs`: a deserialize that reaches no recursion helper holds its input and cursor in locals, a serialize on the scratch path that reaches no recursion helper holds its state in locals, a recursion helper's write takes the write cursor and returns it; `transform`: `transform injected imports` (the scratch buffer). Source only for the state a side with no bytes omits: `writeStateDecls` and `readStateDecls` in `src/emit/context.ts`; a cursor codec: `transform`: `transform generated code` (a cursor codec's generated code passes the type check, and takes its state from the cursor), `test/golden.test.mjs`: a cursor codec writes into the caller's buffer and gives its state back, `tests/src/tests/cursor.spec.ts`                                                                                                                                                                                                                                                                                                                                   |
@@ -725,6 +739,11 @@ of `rbxts-transformer-surge`, cited by `describe` block. Source paths are in
 
 ## Changes
 
+- `418e160`: adds 4.17 (of two length brands on one container, the outer one
+  sets the count). 4.3 resolves a re-aliased composition that repeats a
+  brand, which failed to compile or resolved to an inner brand, and states
+  that an intersection of brands where none wraps the others has no
+  outermost brand.
 - `9a131ce`: 4.1 adds a row for `DataType.Exact<T, N>`, which takes over
   `Length<T, L>`'s exact form; 4.2 and 4.3 recognize it, 5.14 and 5.19 to
   5.22 name it, and 7.2 reports a number literal under `Length` and splits

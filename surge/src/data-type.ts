@@ -37,7 +37,9 @@ export namespace DataType {
 	 * Unlike {@link Packed}, this applies to the container it wraps and not
 	 * to the subtree under it: in `Length<Array<Array<string>>, u16>` the
 	 * outer array takes the u16 count and the inner ones keep the
-	 * variable-length count.
+	 * variable-length count. Around a `T` that already has a `Length` or an
+	 * {@link Exact}, it replaces that count (Transformer 4.17 in
+	 * docs/specs/transformer.md).
 	 *
 	 * @typeParam T the container whose count this sets
 	 * @typeParam L the count's width
@@ -70,7 +72,8 @@ export namespace DataType {
 	 *
 	 * So use `Exact` only where the length is fixed by construction. Like
 	 * {@link Length}, it applies to the container it wraps and not to the
-	 * subtree under it.
+	 * subtree under it, and around a `T` that already has a `Length` or an
+	 * `Exact`, it replaces that count.
 	 *
 	 * @typeParam T the container whose length this fixes
 	 * @typeParam N the length, a whole number literal

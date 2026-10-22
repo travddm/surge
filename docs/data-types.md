@@ -135,3 +135,9 @@ packs the object and gives the list a `u16` count. A brand applies to the type i
 wraps and to nothing that type contains, except `Packed<T>`, which covers
 every object, `Set` and `CFrame` inside it. A brand on a type it cannot apply
 to, such as `Length<number, DataType.u8>`, is a build error.
+
+`Length` or `Exact` around a type that already has one replaces its count,
+where the outer brand applies to that type:
+`Exact<Length<string[], DataType.u8>, 3>` is exactly 3 elements with no
+count, and `Length<Ids, DataType.u16>` gives an alias `Ids` a `u16` count
+whatever count it had.
