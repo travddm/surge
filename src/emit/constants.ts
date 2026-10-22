@@ -1,0 +1,144 @@
+/** The fixed numbers and injected names the emitter's modules share. */
+import type { ComponentWidths, NumWidth } from "../field";
+import { DEFAULT_COMPONENT_WIDTH } from "../field";
+
+/** What a `vector3`'s or a `cframe` position's absent widths mean. */
+export const DEFAULT_COMPONENTS: ComponentWidths = [
+	DEFAULT_COMPONENT_WIDTH,
+	DEFAULT_COMPONENT_WIDTH,
+	DEFAULT_COMPONENT_WIDTH,
+];
+
+export const WIDTH_BYTES: Record<NumWidth, number> = {
+	f32: 4,
+	f64: 8,
+	u8: 1,
+	u16: 2,
+	u24: 3,
+	u32: 4,
+	i8: 1,
+	i16: 2,
+	i24: 3,
+	i32: 4,
+};
+
+// Luau allows 200 registers per function, and every local the emitter
+// declares holds one until its scope ends (confirmed with Lune's
+// `luau.compile`: 100 `const [buf, pos] = alloc(n)` pairs in one function
+// fail with "Out of local registers"). Past `LOCALS_BUDGET` live locals the
+// emitter wraps runs of at most `LOCALS_PER_BLOCK` locals in a block, which
+// roblox-ts compiles to `do ... end`; Luau frees a block's registers at its
+// `end`. The budget leaves the rest of the 200 to parameters, loop state,
+// expression temporaries, and the temporaries roblox-ts adds itself.
+export const LOCALS_BUDGET = 120;
+export const LOCALS_PER_BLOCK = 32;
+// A run's fields declare locals that live to the end of the run: the position
+// each takes from the reservation, and what its write or read binds besides,
+// such as a `CFrame`'s position and rotation (`runLocals` in layout.ts).
+// `pushScoped` cannot split a run, because every field after the first reads
+// the reservation's locals, so a run has to fit in the block `pushScoped`
+// would give it. The bound is one local short of the block.
+export const ALLOC_RUN_LOCALS = LOCALS_PER_BLOCK - 1;
+// Luau holds a register for each level of a left-nested `a + b + c` while it
+// compiles it, and a function has 255, so a size of a few hundred terms failed
+// to compile. A size sums at most this many terms in one chain, and adds the
+// chains in pairs (`sum` in size.ts).
+export const TERMS_PER_SUM = 32;
+// An enum's index is filled by a loop over its item list (`ensureEnumTable`
+// in context.ts). Luau's compiler unrolls a loop with a literal bound of up to
+// a few dozen iterations, which for this body costs bytecode for each item:
+// at 24 items the unrolled loop was about 400 bytes larger than one bounded by
+// `#items`, which it does not unroll (Lune's `luau.compile` at level 2). Up to
+// this many items, the unrolled loop is the smaller of the two.
+export const ENUM_UNROLLED_ITEMS = 3;
+// An enum of more items than this holds its items' names in one string, which
+// fills its item list as the module loads. Each item of a list of `Enum.X.Y`
+// costs about 25 bytes of bytecode and each name in the string about 8, and
+// the loop over the string about 80 more than the loop over a list, so the
+// string is the smaller from six items (Lune's `luau.compile` at level 2).
+export const ENUM_LISTED_ITEMS = 5;
+
+/**
+ * The module of `@rbxts/surge` that holds the helpers generated code calls
+ * (Runtime API 5.1 in docs/specs/runtime-api.md), apart from
+ * the API a consumer imports from the package itself. A subpath the package's
+ * `typesVersions` maps to its compiled `out/abi`, so the import names no
+ * build directory.
+ */
+export const ABI_MODULE = "@rbxts/surge/abi";
+
+// The injected `@rbxts/surge` imports are aliased so that a user's own
+// `grow` (or any other export's name), at the top level or in a scope
+// enclosing the call site, can neither collide with nor shadow them.
+export function importAlias(name: string): string {
+	return `__surge_${name}`;
+}
+
+// The cursor state, declared in the closure each serializer is emitted into
+// where a recursion helper reads it, and otherwise in the `serialize` or
+// `deserialize` that uses it, rather than owned by `@rbxts/surge`. A
+// reservation is then a compare and two moves here instead of a call into
+// another module (Transformer 5.3 and 5.4 in docs/specs/transformer.md).
+// What that was worth is in
+// docs/research/generated-code-against-hand-written.md there. They carry the
+// import prefix for the same reason the aliases do: nothing a user wrote can
+// collide with them.
+export const SCRATCH = importAlias("scratch");
+export const CAPACITY = importAlias("capacity");
+export const CURSOR = importAlias("cursor");
+export const READ_BUFFER = importAlias("input");
+export const READ_CURSOR = importAlias("readCursor");
+export const READ_LENGTH = importAlias("inputLength");
+// The scratch buffer and its capacity that the closure keeps between calls of
+// a `serialize` that holds its state in locals. They are named apart from the
+// locals because a TypeScript `let` cannot read an outer variable of its own
+// name in its initializer.
+export const KEPT_SCRATCH = importAlias("keptScratch");
+export const KEPT_CAPACITY = importAlias("keptCapacity");
+// The blob channel's state (Transformer 5.9 in docs/specs/transformer.md): the
+// list `serialize` returns, and the list `deserialize`
+// was given and the next blob's index.
+export const WRITE_BLOBS = importAlias("writeBlobs");
+export const WRITE_BLOB_COUNT = importAlias("writeBlobCount");
+export const READ_BLOBS = importAlias("readBlobs");
+export const READ_BLOB_INDEX = importAlias("readBlobIndex");
+/**
+ * What a serializer starts with, doubled by `grow` from there. The cursor fold
+ * drops a capacity check where a reservation is known to end within this many
+ * bytes (Transformer 5.30), so a `serialize`'s scratch buffer must never hold
+ * fewer.
+ */
+export const INITIAL_CAPACITY = 64;
+/** The largest form `writePackedCFrame` can write: header, position, rotation. */
+export const PACKED_CFRAME_MAX_BYTES = 25;
+// A `cframe`'s rotation is an f32 axis-angle triple, or an i16 triple under
+// `DataType.Quantized`. `DataType.Transform` sets the widths of the position,
+// and of nothing else.
+export const ROTATION_BYTES = 12;
+export const QUANTIZED_ROTATION_BYTES = 6;
+export const QUANTIZED_COMPONENTS: ComponentWidths = ["i16", "i16", "i16"];
+/**
+ * What an axis-angle component is multiplied by before it is rounded to an
+ * i16 (Wire format 7.4 in docs/specs/wire-format.md). A
+ * component is at most pi once the angle is folded into [-pi, pi], and pi maps
+ * to the largest i16.
+ */
+export const QUANTIZED_ROTATION_SCALE = 32767 / Math.PI;
+/** The prefix every check's message carries, so one `pcall` can tell a rejection from a bug. */
+export const ERROR_PREFIX = "@rbxts/surge: ";
+/**
+ * The largest count `readChecks` accepts for an element that consumes no bytes
+ * (a literal constant, a blob, an object made only of those). Such an element
+ * costs nothing, so the payload's own length cannot bound it and the count
+ * needs a bound of its own. This is the largest count a `u24` prefix could
+ * have written: a shape that means to carry more than sixteen million absent
+ * or constant elements says so with a wider `DataType.Length`.
+ */
+export const ZERO_SIZE_COUNT_CAP = 1 << 24;
+/**
+ * A variable-length count below this is one byte (Wire format 6.9 in
+ * docs/specs/wire-format.md). From it up to `U16_COUNT_MAX` it is this
+ * marker and a `u16`, and above that the marker after it and a `u32`.
+ */
+export const LONG_COUNT_MARKER = 254;
+export const U16_COUNT_MAX = 65535;
