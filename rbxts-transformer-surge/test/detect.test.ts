@@ -327,6 +327,21 @@ describe("getDataTypeBrand / getSurgeBrand", () => {
 		).toMatchObject({ name: "Quantized" });
 	});
 
+	// A test for the inner brand's property alone would pass the inner
+	// `Length` here, since its inner type carries an `Exact` too.
+	test("a re-aliased chain that repeats a brand around another resolves to its outer application", () => {
+		expect(
+			brandOfP(
+				`import { DataType } from "@rbxts/surge"; type A = DataType.Exact<string[], 2>; type B = DataType.Length<A, DataType.u8>; type C = DataType.Exact<B, 3>; interface T { p: C; }`,
+			),
+		).toEqual({ name: "Exact", args: ["B", "3"] });
+		expect(
+			brandOfP(
+				`import { DataType } from "@rbxts/surge"; interface X { b: boolean; } type L = DataType.Length<DataType.Packed<DataType.Length<X[], DataType.u8>>, DataType.u16>; interface T { p: L; }`,
+			),
+		).toMatchObject({ name: "Length", args: [expect.anything(), "u16"] });
+	});
+
 	test("two applications of a brand where neither wraps the other have no outermost one", () => {
 		expect(
 			brandOfP(

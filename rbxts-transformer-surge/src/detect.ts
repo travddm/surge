@@ -221,41 +221,29 @@ export interface SurgeBrand {
 	readonly args: readonly ts.Type[];
 }
 
-/**
- * The type arguments `property` records on `type`, one list per application
- * of its brand, or none if the property is not surge's. A brand applied twice
- * carries the property twice, and the two intersect: `[A] & [B]`.
- */
-function brandRecords(checker: ts.TypeChecker, type: ts.Type, property: string): ReadonlyArray<readonly ts.Type[]> {
-	const brandProperty = type.getProperty(property);
-	if (!brandProperty || !isFromSurgePackage(brandProperty.declarations)) {
-		return [];
-	}
-	const brandType = checker.getNonNullableType(checker.getTypeOfSymbol(brandProperty));
-	return (brandType.isIntersection() ? brandType.types : [brandType])
-		.filter((record) => checker.isTupleType(record))
-		.map((record) => checker.getTypeArguments(record as ts.TypeReference));
+/** One application of a parameterized brand, with the type arguments it recorded. */
+interface BrandRecord {
+	readonly brand: ParameterizedBrand;
+	readonly args: readonly ts.Type[];
 }
 
 /**
- * The type arguments of the outermost application of `property`'s brand, or
- * `undefined` if there is none. Of a brand applied more than once, as in a
- * re-aliased `Length<Length<T, u8>, u16>`, the outer application recorded the
- * whole inner type, so its inner type carries every other record. Where none
- * does, as in `Vector<i16> & Vector<u8>`, no application is outermost.
+ * Every application of a parameterized brand that `type` carries, of any
+ * brand. Each records its arguments in its brand's property, so a brand
+ * applied twice carries the property twice, and the two intersect:
+ * `[A] & [B]`. A property not declared by surge records nothing.
  */
-function argumentsFromBrandProperty(
-	checker: ts.TypeChecker,
-	type: ts.Type,
-	property: string,
-): readonly ts.Type[] | undefined {
-	const records = brandRecords(checker, type, property);
-	if (records.length <= 1) {
-		return records[0];
-	}
-	return records.find(
-		(args) => args[0] !== undefined && brandRecords(checker, args[0], property).length === records.length - 1,
-	);
+function brandRecords(checker: ts.TypeChecker, type: ts.Type): BrandRecord[] {
+	return PARAMETERIZED_BRANDS.flatMap((brand) => {
+		const brandProperty = type.getProperty(brand.property);
+		if (!brandProperty || !isFromSurgePackage(brandProperty.declarations)) {
+			return [];
+		}
+		const brandType = checker.getNonNullableType(checker.getTypeOfSymbol(brandProperty));
+		return (brandType.isIntersection() ? brandType.types : [brandType])
+			.filter((record) => checker.isTupleType(record))
+			.map((record) => ({ brand, args: checker.getTypeArguments(record as ts.TypeReference) }));
+	});
 }
 
 /**
@@ -272,13 +260,17 @@ function argumentsFromBrandProperty(
  * length would be dropped with no error.
  *
  * A re-alias (`type Ids = DataType.Length<string[], u16>`) has no brand alias
- * left, so the properties are all there is. Where a re-aliased composition
- * has both, only one is outermost, and the arguments say which: the outer
- * brand recorded the whole inner brand, so its inner type still carries the
- * other's property, while the inner brand recorded its arguments before the
- * outer one was applied and has lost it. A brand that fixes its own value
- * type records widths instead of a type and so is never the outer one, which
- * is the same answer: `Vector` and `Transform` cannot wrap anything.
+ * left, so the brand properties are all there is, with one record per
+ * application ({@link brandRecords}). The outer application recorded the
+ * whole inner type, so its inner type carries every other record, of any
+ * brand, while each inner one recorded its arguments before the brands
+ * outside it were applied. Counting records rather than testing for a
+ * property keeps a chain that repeats a brand, as in a re-aliased
+ * `Exact<Length<Exact<T[], 2>, u8>, 3>`, from resolving to an inner brand. A
+ * brand that fixes its own value type records widths instead of a type and
+ * so is never the outer one: `Vector` and `Transform` cannot wrap anything.
+ * Where no record carries all the others, as in `Vector<i16> & Vector<u8>`,
+ * no brand is outermost and none applies.
  *
  * A width brand's property is read last. `Range<DataType.u8, 0, 100>` carries
  * `_surge_u8` as well as `_surge_range`, and the width is the inner brand.
@@ -290,20 +282,16 @@ export function getSurgeBrand(checker: ts.TypeChecker, type: ts.Type): SurgeBran
 		return { name: aliasSymbol.name, args: withArgs.aliasTypeArguments ?? [] };
 	}
 
-	const present: Array<{ brand: ParameterizedBrand; args: readonly ts.Type[] }> = [];
-	for (const brand of PARAMETERIZED_BRANDS) {
-		const args = argumentsFromBrandProperty(checker, type, brand.property);
-		if (args) {
-			present.push({ brand, args });
-		}
-	}
-	if (present.length === 0) {
+	const records = brandRecords(checker, type);
+	if (records.length === 0) {
 		const width = widthFromBrandProperty(type);
 		return width === undefined ? undefined : { name: width, args: [] };
 	}
 	const outermost =
-		present.find(({ brand, args }) =>
-			present.every((other) => other.brand === brand || args[0]?.getProperty(other.brand.property) !== undefined),
-		) ?? present[0];
-	return { name: outermost.brand.name, args: outermost.args };
+		records.length === 1
+			? records[0]
+			: records.find(
+					({ args }) => args[0] !== undefined && brandRecords(checker, args[0]).length === records.length - 1,
+				);
+	return outermost && { name: outermost.brand.name, args: outermost.args };
 }

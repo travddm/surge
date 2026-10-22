@@ -18,12 +18,12 @@ kind changes a byte:
 
 The candidates for strict rules, each accepted today with no diagnostic:
 
-| Group                         | Candidates                                                                                                                                                                                                                                                                                                                                                                                    |
-| ----------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| A brand replaced or redundant | `Packed<T>` inside a packed subtree; `Vector<DataType.f32>` and `Transform<DataType.f32>`, which walk to the unbranded field (rule 4 of [coding-standards.md](../coding-standards.md)); a default-width `Transform` inside `Packed<T>`; `Quantized<Quantized<CFrame>>`; `Range<DataType.u8, 0, 255>`, whose range is its width's own; a `Length` or `Exact` around another (Transformer 4.17) |
-| A brand that saves nothing    | `Packed<T>` with nothing in it to pack; `Range<number, 0, 1e10>`, which stays `f64`; `Range<number, 5, 5>`, 1 byte where the literal `5` takes none; `Exact<T, 0>`; a property typed `undefined` or `void`, which writes nothing, as `never` is already reported as removable (Transformer 4.8)                                                                                               |
-| A value sent as a blob        | `unknown`, `any`, `{}`, `object`, `defined`, an `Instance`, a Roblox type surge does not encode such as `TweenInfo`, and a union with such a member (Transformer 4.1, 4.4 and 7.1). Instances and the other types could be separate rules                                                                                                                                                     |
-| A default left implicit       | a plain `number`, which is `f64` (Transformer 4.1); a container with no `Length` or `Exact`, whose count is variable-length (Wire format 6.9)                                                                                                                                                                                                                                                 |
+| Group                         | Candidates                                                                                                                                                                                                                                                                                                                                                                                                    |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| A brand replaced or redundant | `Packed<T>` inside a packed subtree; `DataType.f64`, `Vector<DataType.f32>` and `Transform<DataType.f32>`, which walk to the unbranded field (rule 4 of [coding-standards.md](../coding-standards.md)); a default-width `Transform` inside `Packed<T>`; `Quantized<Quantized<CFrame>>`; `Range<DataType.u8, 0, 255>`, whose range is its width's own; a `Length` or `Exact` around another (Transformer 4.17) |
+| A brand that saves nothing    | `Packed<T>` with nothing in it to pack; `Range<number, 0, 1e10>`, which stays `f64`; `Range<number, 5, 5>`, 1 byte where the literal `5` takes none; `Exact<T, 0>`; a property typed `undefined` or `void`, which writes nothing, as `never` is already reported as removable (Transformer 4.8)                                                                                                               |
+| A value sent as a blob        | `unknown`, `any`, `{}`, `object`, `defined`, an `Instance`, a Roblox type surge does not encode such as `TweenInfo`, and a union with such a member (Transformer 4.1, 4.4 and 7.1). Instances and the other types could be separate rules                                                                                                                                                                     |
+| A default left implicit       | a plain `number`, which is `f64` (Transformer 4.1); a container with no `Length` or `Exact`, whose count is variable-length (Wire format 6.9)                                                                                                                                                                                                                                                                 |
 
 Two cases are likely diagnostics for every build, not strict rules:
 
@@ -31,8 +31,12 @@ Two cases are likely diagnostics for every build, not strict rules:
   in `Vector3 & { readonly __brand?: "p" }`, or an interface that extends
   one, is a `blob` instead of 12 or 24 bytes. Nothing states it: the 4.1
   rows match only the declaration in `@rbxts/types`, and `_nominal_Vector3`
-  then matches the blob row. `Vector<DataType.i16> & Vector<DataType.u8>`,
-  which Transformer 4.3 gives no outermost brand, ends the same way.
+  then matches the blob row.
+- An intersection of brands where none wraps the others has no outermost
+  brand (Transformer 4.3), so none of them applies:
+  `Vector<DataType.i16> & Vector<DataType.u8>` is a `blob`, and
+  `Length<string[], DataType.u8> & Length<string[], DataType.u16>` reports a
+  diagnostic that names neither brand.
 - An unknown key or value in the plugin entry, a typo included, is ignored
   today. The setting rejects it.
 

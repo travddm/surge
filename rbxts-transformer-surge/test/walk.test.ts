@@ -1485,6 +1485,10 @@ describe("TypeWalker Length<T, L> and Exact<T, N>", () => {
 			type Ids = DataType.Exact<DataType.Length<string[], DataType.u8>, 3>;
 			type Ids8 = DataType.Length<string[], DataType.u8>;
 			type Ids16 = DataType.Length<Ids8, DataType.u16>;
+			type Code = DataType.Exact<DataType.Exact<string, 3>, 4>;
+			type Two = DataType.Exact<string[], 2>;
+			type Counted = DataType.Length<Two, DataType.u8>;
+			type Three = DataType.Exact<Counted, 3>;
 			interface T {
 				exactOutside: DataType.Exact<DataType.Length<string[], DataType.u8>, 3>;
 				lengthOutside: DataType.Length<DataType.Exact<string, 4>, DataType.u8>;
@@ -1492,16 +1496,33 @@ describe("TypeWalker Length<T, L> and Exact<T, N>", () => {
 				reAliased: Ids;
 				aliasInside: DataType.Length<Ids8, DataType.u16>;
 				twoLengthsReAliased: Ids16;
+				twoExactsReAliased: Code;
+				exactAroundBoth: Three;
 			}`,
 		);
 		expect([...byName.entries()].sort()).toEqual([
 			["aliasInside", "u16"],
+			["exactAroundBoth", 3],
 			["exactOutside", 3],
 			["lengthOutside", "u8"],
 			["reAliased", 3],
+			["twoExactsReAliased", 4],
 			["twoLengths", "u16"],
 			["twoLengthsReAliased", "u16"],
 		]);
+	});
+
+	// 4.17 replaces the count only where the outer brand applies.
+	test("an Exact around a Length of a Map is Exact's diagnostic, and keeps the Length", () => {
+		const { field, diagnostics } = walkDeclaration(
+			`import { DataType } from "@rbxts/surge"; interface T { m: DataType.Exact<DataType.Length<Map<string, number>, DataType.u8>, 3>; }`,
+			"T",
+			{ surge: true },
+		);
+		expect(diagnostics).toHaveLength(1);
+		expect(diagnostics[0].message).toContain('"DataType.Exact" does not apply to a Map');
+		if (field.kind !== "object") throw new Error("expected an object");
+		expect(field.fields[0].field).toMatchObject({ kind: "dict", length: "u8" });
 	});
 
 	test("a number literal Exact cannot take is a diagnostic that does not name Exact", () => {

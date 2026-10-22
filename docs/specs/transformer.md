@@ -121,11 +121,12 @@ identity is tried for all seven brands before any brand property, and a width
 brand's property is tried after theirs, because `Range<T, Min, Max>` over a
 width brand carries both. In a composition of brands, the walk resolves the
 outermost brand and then walks its inner type, which resolves the next. A
-re-aliased composition of one brand with itself resolves the same way, as in
-`type Ids16 = DataType.Length<Ids, DataType.u16>` where `Ids` is a `Length`.
-Two applications of one brand where neither wraps the other, as in
-`Vector<DataType.i16> & Vector<DataType.u8>`, have no outermost brand, so
-neither brand applies.
+re-aliased composition resolves the same way, one that repeats a brand
+included, as in `type Ids16 = DataType.Length<Ids, DataType.u16>` where `Ids`
+is a `Length`, or a re-aliased `Exact<Length<Exact<T[], 2>, DataType.u8>, 3>`.
+An intersection of brands where none wraps the others, as in
+`Vector<DataType.i16> & Vector<DataType.u8>`, has no outermost brand, so none
+of them applies.
 
 **4.4** A union is a `guardedUnion` only if the write side can tell every
 constituent that is not opaque apart at run time: at most one constituent is
@@ -205,7 +206,9 @@ because `boolean` walks to `bool`; `Set<true>` is a `bitSet`.
 an `Exact` walks to the container the inner brand wraps, with the outer
 brand's count. The inner brand's count has no effect, and the walk reports no
 diagnostic for it: `Exact<Length<string[], DataType.u8>, 3>` is an `array` of
-exactly 3 elements, with no count written.
+exactly 3 elements, with no count written. Where the outer brand does not
+apply to that container, as `Exact` does not to a `dict`, the walk reports
+that diagnostic (7.2) and keeps the inner brand's count.
 
 ## 5. Emission
 
@@ -737,9 +740,10 @@ of `rbxts-transformer-surge`, cited by `describe` block. Source paths are in
 ## Changes
 
 - `418e160`: adds 4.17 (of two length brands on one container, the outer one
-  sets the count). 4.3 resolves a re-aliased composition of one brand with
-  itself, which failed to compile, and states that two applications where
-  neither wraps the other have no outermost brand.
+  sets the count). 4.3 resolves a re-aliased composition that repeats a
+  brand, which failed to compile or resolved to an inner brand, and states
+  that an intersection of brands where none wraps the others has no
+  outermost brand.
 - `9a131ce`: 4.1 adds a row for `DataType.Exact<T, N>`, which takes over
   `Length<T, L>`'s exact form; 4.2 and 4.3 recognize it, 5.14 and 5.19 to
   5.22 name it, and 7.2 reports a number literal under `Length` and splits
