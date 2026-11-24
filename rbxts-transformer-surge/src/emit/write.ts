@@ -84,6 +84,12 @@ export function writeField(ctx: EmitContext, field: Field, value: ts.Expression,
 			return writeGuardedUnion(ctx, field, value, out);
 		case "blob":
 			return writeBlob(ctx, value, out);
+		default: {
+			// A kind added to `Field` with no case above makes this assignment
+			// a type error. Without it, the missing case would write no bytes.
+			const unhandled: never = field;
+			throw new Error(`surge: internal error -- no write for ${JSON.stringify(unhandled)}`);
+		}
 	}
 }
 
