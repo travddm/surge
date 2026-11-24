@@ -5,11 +5,13 @@
  * (`emit/`) consumes. Producing this from a `ts.Type` is `walk.ts`'s job; turning it
  * into statements is the emitter's.
  *
- * A new kind needs a case in each switch over `kind` in the emitter:
- * `writeField` in emit/write.ts and `readField` in emit/read.ts, which mirror
- * each other; `minBytes` and `fixedBytes` in emit/layout.ts; `fieldToTypeNode`
- * in emit/types.ts; `guardFor` in emit/write.ts if it can be a
- * `guardedUnion` variant; and `measure` in emit/size.ts if a value of it can
+ * A new kind needs a case in each switch over `kind` in the emitter. A
+ * missing case is a compile error in `writeField` in emit/write.ts and
+ * `readField` in emit/read.ts, which mirror each other; in `minBytes`,
+ * `fixedBytes`, `runLocals` and `holdsBlob` in emit/layout.ts; and in
+ * `fieldToTypeNode` in emit/types.ts. The compiler does not check two more:
+ * `guardFor` in emit/write.ts needs a case if the kind can be a
+ * `guardedUnion` variant, and `measure` in emit/size.ts if a value of it can
  * be sized before it is written. Its bytes are a statement in
  * docs/specs/wire-format.md and a fact in surge/tests/src/tests/bytes.spec.ts.
  */

@@ -234,8 +234,25 @@ export function fixedBytes(field: Field): number | undefined {
 			}
 			return total;
 		}
-		default:
+		// The kinds the comment above rules out.
+		case "str":
+		case "buffer":
+		case "colorSequence":
+		case "numberSequence":
+		case "array":
+		case "dict":
+		case "optional":
+		case "taggedUnion":
+		case "guardedUnion":
+		case "blob":
+		case "recursiveRef":
 			return undefined;
+		default: {
+			// A kind added to `Field` with no case above makes this assignment
+			// a type error.
+			const unhandled: never = field;
+			throw new Error(`surge: internal error -- no fixed size rule for ${JSON.stringify(unhandled)}`);
+		}
 	}
 }
 
@@ -281,7 +298,20 @@ export function runLocals(field: Field, writeChecks: boolean): number {
 			return 2;
 		case "datatype":
 			return FIXED_DATATYPES[field.name].components.length > 1 ? 2 : 1;
-		default:
+		// Every other kind counts one local.
+		case "bool":
+		case "str":
+		case "buffer":
+		case "colorSequence":
+		case "numberSequence":
+		case "array":
+		case "dict":
+		case "optional":
+		case "literalConst":
+		case "taggedUnion":
+		case "guardedUnion":
+		case "blob":
+		case "recursiveRef":
 			return 1;
 	}
 }
@@ -310,7 +340,24 @@ export function holdsBlob(field: Field): boolean {
 			return field.variants.some((variant) => variant.fields.some((entry) => holdsBlob(entry.field)));
 		case "guardedUnion":
 			return field.variants.some(holdsBlob);
-		default:
+		// A kind that holds no other field, and a `recursiveRef`, which is not
+		// followed.
+		case "num":
+		case "bool":
+		case "str":
+		case "vector2":
+		case "buffer":
+		case "datatype":
+		case "vector3":
+		case "cframe":
+		case "color3":
+		case "colorSequence":
+		case "numberSequence":
+		case "enum":
+		case "bitSet":
+		case "literalConst":
+		case "literal":
+		case "recursiveRef":
 			return false;
 	}
 }
